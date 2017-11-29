@@ -18,7 +18,7 @@ This part of `curl` command will not be repeated, but should be used everywhere 
 If you only need to supply a single value it might be easiest to use query parameters:
 
 ```
-curl -X POST 'https://moonthor.com/api/values/?e=<EntitySlug>&v=<Value>'
+curl -X POST 'https://moonthor.com/api/values/?p=<Path>&v=<Value>'
 ```
 
 Often you might have multiple values you want to send in one call, so you just do:
@@ -27,13 +27,13 @@ Often you might have multiple values you want to send in one call, so you just d
 curl \
     -X POST \
     -H 'Content-Type: application/json' \
-    -d '[{e: "<EntitySlug>", v: <Value>}, ...]' \
+    -d '[{p: "<Path>", v: <Value>}, ...]' \
     'https://moonthor.com/api/values/'
 ```
 
 Parameters:
 
-    EntitySlug: defines an entity that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever entities you wish, as long as they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'). Dot should be used to denote hierarhical place of the entity.
+    Path: defines an entity that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever entities you wish, as long as they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'). Dot should be used to denote hierarhical place of the entity.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.
 
@@ -45,37 +45,37 @@ If one wishes to fill historical data or repair the values in the charts, PUT re
 curl \
     -X PUT \
     -H 'Content-Type: application/json' \
-    -d '[{e: "<EntitySlug>", t: <Timestamp>, v: <Value>}, ...]' \
+    -d '[{"p": "<Path>", "t": <Timestamp>, "v": <Value>}, ...]' \
     'https://moonthor.com/api/values/'
 ```
 
-    Timestamp: will be used to insert data at a specific time. Note that HTTP request is idempotent - last value will overwrite the previous ones for a specified EntitySlug and Timestamp pair.
+    Timestamp: will be used to insert data at a specific time. Note that HTTP request is idempotent - last value will overwrite the previous ones for a specified EntitySlug and Timestamp pair. If timestamp is floating point, it is rounded on 3 decimal places (millisecond)
 
 ## Removing values (DELETE)
 
 ```
 curl \
     -X DELETE \
-    'https://moonthor.com/api/values/?e=<EntitySlug>&t=<Timestamp>'
+    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom>&t1=<TimestampTo>'
 ```
 
 Parameters:
 
-    Timestamp: specify timestamp of a specific record to remove. The parameter is mandatory. If you wish to remove whole history of the entity, use value 'remove_all_history'.
+    TimestampFrom: start timestamp (included)
+    TimestampTo: end timestamp (included)
+        Specify time interval for removal. Both parameters are mandatory. If you wish to remove whole history for the path, use values `0` and `9999999999`.
 
 ## Reading values (GET)
 
-
-
 ```
-curl 'https://moonthor.com/api/values/?e=<EntitySlug[,EntitySlug...]>&ts=<TimestampFrom>&te=<TimestampTo>&max=<MaxCount>'
+curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&max=<MaxResults>'
 ```
 
 Parameters:
 
-    TimestampFrom: start timestamp (not included)
+    TimestampFrom: start timestamp (included)
     TimestampTo: end timestamp (included)
-    MaxCount: max. number of values returned. Note that this is just a suggestion and is limited by the system imposed max. count. The idea is to limit the max. number of points on charts for screens with smaller width (mobile). Depending on this parameter and the selected time interval aggregated data might be returned.
+    MaxResults: max. number of values returned. The idea is to limit the max. number of points on charts for screens with smaller width (mobile). Backend will use this parameter and the selected time interval to determine the level of aggregation used. Note that the results might be returned in batches on backend discretion - this parameter only determines the total maximum number of results.
 
 JSON response:
 
@@ -83,7 +83,7 @@ JSON response:
     aggregation_level: <AggregationLevel>,  // 0: raw data, >0: 3^(L-1) hours are aggregated in a single data point
     pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
     data: {
-        <EntitySlug0>: [
+        <Path0>: [
             { t: <Timestamp>, v: [<Value>, <MinValue>, <MaxValue>] }  // if data was aggregated
             { t: <Timestamp>, v: <Value> }  // if raw data was returned
         ],

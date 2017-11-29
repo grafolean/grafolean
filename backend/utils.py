@@ -1,0 +1,58 @@
+from colors import color
+import logging
+import psycopg2
+import psycopg2.extras
+import sys
+
+logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+logging.addLevelName(logging.DEBUG, color("DBG", 7))
+logging.addLevelName(logging.INFO, "INF")
+logging.addLevelName(logging.WARNING, color('WRN', fg='red'))
+logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
+log = logging.getLogger("{}.{}".format(__name__, "base"))
+
+
+host, dbname, user, password = ('localhost', 'moonthor', 'admin', 'admin')
+db = psycopg2.connect("dbname='{}' user='{}' host='{}' password='{}'".format(dbname, user, host, password))
+db.autocommit = True
+
+###########################
+#   DB schema migration   #
+###########################
+
+def migrate_if_needed():
+    with db.cursor() as c:
+        try:
+            c.execute('SELECT schema_version FROM runtime_data;')
+            res = c.fetchone()
+            existing_schema_version = res[0]
+        except psycopg2.ProgrammingError:
+            db.rollback()
+            existing_schema_version = 0
+
+    try_migrating_to = existing_schema_version + 1
+    while True:
+        method_name = 'migration_step_{}'.format(try_migrating_to)
+        if not hasattr(sys.modules[__name__], method_name):
+            break
+        log.info("Migrating DB schema to {}".format(try_migrating_to))
+        method_to_call = getattr(sys.modules[__name__], method_name)
+        method_to_call()
+        # automatically upgrade schema version if there is no exception:
+        with db.cursor() as c:
+            c.execute('UPDATE runtime_data SET schema_version = %s;', (try_migrating_to,))
+        try_migrating_to += 1
+
+
+def migration_step_1():
+    with db.cursor() as c:
+        c.execute('CREATE TABLE runtime_data (schema_version SMALLSERIAL NOT NULL);')
+        c.execute('INSERT INTO runtime_data (schema_version) VALUES (1);')
+
+        # TEXT: variable unlimited length (VARCHAR seems to be the same - no limit)
+        # NUMERIC(precision, scale): The precision is the total number of digits, while scale is the number of digits in the fraction part
+        # NUMERIC: numeric values of any precision and scale can be stored, up to the implementation limit on precision. A column of this kind will not coerce input values to any particular scale.
+        c.execute('CREATE TABLE measurements (path TEXT, ts NUMERIC(13, 3), value NUMERIC);')
+
+migrate_if_needed()
