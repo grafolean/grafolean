@@ -4,12 +4,15 @@ import flask
 import json
 import re
 from datatypes import Measurement
+import utils
 
 
 app = flask.Flask(__name__)
+# since this is API, we don't care about trailing slashes - and we don't want redirects:
+app.url_map.strict_slashes = False
 
 
-@app.route("/values/", methods=['PUT'])
+@app.route("/api/values", methods=['PUT'])
 def values_put():
     """
     If one wishes to fill historical data or repair the values in the charts, PUT requests should be used. Note that this kind of requests will *not* trigger any alarms (that would be pointless for past events).
@@ -38,7 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("operation", type=str, choices=['migrate', 'serve'])
     args = parser.parse_args()
 
-#    if args.operation == 'migrate':
-#        pass
-#    elif args.operation == 'serve':
-    app.run()
+    if args.operation == 'migrate':
+        utils.migrate_if_needed()
+    elif args.operation == 'serve':
+        app.run()

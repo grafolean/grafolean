@@ -25,7 +25,7 @@ class Path(_RegexValidatedInputValue):
 
 
 class Timestamp(_RegexValidatedInputValue):
-    _regex = re.compile(r'^[1-9][0-9]{1,9}([.][0-9]{1,3})?$')
+    _regex = re.compile(r'^[1-9][0-9]{1,9}([.][0-9]{1,6})?$')
 
 
 class MeasuredValue(_RegexValidatedInputValue):

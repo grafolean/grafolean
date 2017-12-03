@@ -55,4 +55,7 @@ def migration_step_1():
         # NUMERIC: numeric values of any precision and scale can be stored, up to the implementation limit on precision. A column of this kind will not coerce input values to any particular scale.
         c.execute('CREATE TABLE measurements (path TEXT, ts NUMERIC(13, 3), value NUMERIC);')
 
-migrate_if_needed()
+def migration_step_2():
+    with db.cursor() as c:
+        # let's allow microsecond precision - python's time.time() seems to think it is needed, so who are we to argue? :)
+        c.execute('ALTER TABLE measurements ALTER ts TYPE NUMERIC(16, 6);')
