@@ -29,10 +29,8 @@ def values_put():
     """
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return response 400:
-    for point in data:
-        m = Measurement(point['p'], point['t'], point['v'])
-        m.save()
-
+#    Measurement.save_posted_data_to_db(data)
+    Measurement.save_put_data_to_db(data)
     return ""
 
 

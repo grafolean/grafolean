@@ -59,3 +59,8 @@ def migration_step_2():
     with db.cursor() as c:
         # let's allow microsecond precision - python's time.time() seems to think it is needed, so who are we to argue? :)
         c.execute('ALTER TABLE measurements ALTER ts TYPE NUMERIC(16, 6);')
+
+def migration_step_3():
+    with db.cursor() as c:
+        # let's allow microsecond precision - python's time.time() seems to think it is needed, so who are we to argue? :)
+        c.execute('CREATE UNIQUE INDEX measurements_path_ts ON measurements (path, ts);')

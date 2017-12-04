@@ -1,6 +1,7 @@
 import re
 from utils import db, log
-#import psycopg2.extensions
+from iter_file import IteratorFile
+import psycopg2.extras
 
 
 class _RegexValidatedInputValue(object):
@@ -37,6 +38,23 @@ class Measurement(object):
         self.path = Path(path)
         self.ts = Timestamp(ts)
         self.value = MeasuredValue(value)
+
+    @classmethod
+    def save_posted_data_to_db(cls, posted_data):
+        with db.cursor() as c:
+            f = IteratorFile(("{}\t{}\t{}".format(str(Path(x['p'])), str(Timestamp(x['t'])), str(MeasuredValue(x['v']))) for x in posted_data))
+            c.copy_from(f, 'measurements', columns=('path', 'ts', 'value'))
+
+    @classmethod
+    def save_put_data_to_db(cls, put_data):
+        def _get_data(put_data):
+            for x in put_data:
+                yield (str(Path(x['p'])), str(Timestamp(x['t'])), str(MeasuredValue(x['v'])),)
+        data_iterator = _get_data(put_data)
+
+        with db.cursor() as c:
+            # https://stackoverflow.com/a/34529505/593487
+            psycopg2.extras.execute_values(c, "INSERT INTO MEASUREMENTS (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
 
     def save(self):
         with db.cursor() as c:
