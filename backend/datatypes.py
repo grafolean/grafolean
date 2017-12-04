@@ -2,6 +2,7 @@ import re
 from utils import db, log
 from iter_file import IteratorFile
 import psycopg2.extras
+from collections import defaultdict
 
 
 class _RegexValidatedInputValue(object):
@@ -39,39 +40,40 @@ class Aggregation(object):
     def __init__(self, level, up_to_level=None):
         self.level = level
         self._interval_size = 3600 * (self.FACTOR ** self.level)
-        self._dirty_intervals = set()
+        self._dirty_intervals = defaultdict(set)
         if up_to_level and up_to_level > level:
             self._parent_aggr = Aggregation(level + 1, up_to_level)
         else:
             self._parent_aggr = None
 
-    def mark_timestamp_as_dirty(self, ts):
-        self._dirty_intervals.add(int(ts) // self._interval_size)
+    def mark_timestamp_as_dirty(self, path, ts):
+        self._dirty_intervals[path].add(int(ts) // self._interval_size)
 
     def fix_aggregations(self):
         try:
             with db.cursor() as c:
-                for h in self._dirty_intervals:
-                    tsh = h * self._interval_size
-                    tsh_med = tsh + self._interval_size / 2
-                    if self.level == 0:
-                        c.execute("""
-                            INSERT INTO
-                                aggregations (level, tsmed, vmin, vmax, vavg)
-                                SELECT %s, %s, MIN(value), MAX(value), AVG(value) FROM measurements WHERE ts >= %s and ts < %s
-                            ON CONFLICT (level, tsmed) DO UPDATE SET
-                                vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                            (self.level, tsh + 1800, tsh, tsh + 3600,))
-                    else:
-                        c.execute("""
-                            INSERT INTO
-                                aggregations (level, tsmed, vmin, vmax, vavg)
-                                SELECT %s, %s, MIN(vmin), MAX(vmax), AVG(vavg) FROM aggregations WHERE level = %s and tsmed >= %s and tsmed < %s
-                            ON CONFLICT (level, tsmed) DO UPDATE SET
-                                vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                            (self.level, tsh_med, self.level - 1, tsh, tsh + self._interval_size,))
-                    if self._parent_aggr:
-                        self._parent_aggr.mark_timestamp_as_dirty(tsh_med)
+                for p in self._dirty_intervals:
+                    for h in self._dirty_intervals[p]:
+                        tsh = h * self._interval_size
+                        tsh_med = tsh + self._interval_size / 2
+                        if self.level == 0:
+                            c.execute("""
+                                INSERT INTO
+                                    aggregations (path, level, tsmed, vmin, vmax, vavg)
+                                    SELECT %s, %s, %s, MIN(value), MAX(value), AVG(value) FROM measurements WHERE path = %s AND ts >= %s AND ts < %s
+                                ON CONFLICT (path, level, tsmed) DO UPDATE SET
+                                    vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
+                                (p, self.level, tsh + 1800, p, tsh, tsh + 3600,))
+                        else:
+                            c.execute("""
+                                INSERT INTO
+                                    aggregations (path, level, tsmed, vmin, vmax, vavg)
+                                    SELECT %s, %s, %s, MIN(vmin), MAX(vmax), AVG(vavg) FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s
+                                ON CONFLICT (path, level, tsmed) DO UPDATE SET
+                                    vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
+                                (p, self.level, tsh_med, p, self.level - 1, tsh, tsh + self._interval_size,))
+                        if self._parent_aggr:
+                            self._parent_aggr.mark_timestamp_as_dirty(p, tsh_med)
         finally:
             if self._parent_aggr:
                 self._parent_aggr.fix_aggregations()
@@ -98,9 +100,10 @@ class Measurement(object):
             def _get_data(put_data, aggr):
                 for x in put_data:
                     ts_str = str(Timestamp(x['t']))
+                    path_str = str(Path(x['p']))
                     # while we are traversing our data, we might as well mark the dirty aggregation blocks:
-                    aggr.mark_timestamp_as_dirty(ts_str)
-                    yield (str(Path(x['p'])), ts_str, str(MeasuredValue(x['v'])),)
+                    aggr.mark_timestamp_as_dirty(path_str, ts_str)
+                    yield (path_str, ts_str, str(MeasuredValue(x['v'])),)
             data_iterator = _get_data(put_data, aggr)
 
             with db.cursor() as c:

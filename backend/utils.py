@@ -73,3 +73,11 @@ def migration_step_4():
 def migration_step_5():
     with db.cursor() as c:
         c.execute('CREATE INDEX measurements_ts ON measurements (ts);')
+
+def migration_step_6():
+    with db.cursor() as c:
+        # let's allow microsecond precision - python's time.time() seems to think it is needed, so who are we to argue? :)
+        c.execute('ALTER TABLE aggregations ADD path TEXT;')
+        c.execute('DROP INDEX aggregations_level_tsmed;')
+        c.execute('CREATE UNIQUE INDEX aggregations_path_level_tsmed ON aggregations (path, level, tsmed);')
+
