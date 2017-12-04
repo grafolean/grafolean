@@ -62,5 +62,14 @@ def migration_step_2():
 
 def migration_step_3():
     with db.cursor() as c:
-        # let's allow microsecond precision - python's time.time() seems to think it is needed, so who are we to argue? :)
         c.execute('CREATE UNIQUE INDEX measurements_path_ts ON measurements (path, ts);')
+
+def migration_step_4():
+    with db.cursor() as c:
+        #c.execute('CREATE DOMAIN AGGR_LEVEL AS SMALLINT CHECK (VALUE >= 0 AND VALUE <= 6)')  # 6: one point for every month
+        c.execute('CREATE TABLE aggregations (level SMALLINT, tsmed INTEGER, vmin NUMERIC, vmax NUMERIC, vavg NUMERIC);')
+        c.execute('CREATE UNIQUE INDEX aggregations_level_tsmed ON aggregations (level, tsmed);')
+
+def migration_step_5():
+    with db.cursor() as c:
+        c.execute('CREATE INDEX measurements_ts ON measurements (ts);')
