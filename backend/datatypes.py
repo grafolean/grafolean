@@ -3,6 +3,7 @@ from utils import db, log
 from iter_file import IteratorFile
 import psycopg2.extras
 from collections import defaultdict
+from functools import lru_cache
 
 
 class _RegexValidatedInputValue(object):
@@ -25,6 +26,24 @@ class _RegexValidatedInputValue(object):
 class Path(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-z0-9_-]+)([.][a-z0-9_-]+)*$')
 
+    def __init__(self, v, ensure_in_db=False):
+        super(Path, self).__init__(v)
+        if ensure_in_db:
+            self.path_id = Path._get_path_id_from_db(path=self.v)
+
+    @staticmethod
+    @lru_cache(maxsize=256)
+    def _get_path_id_from_db(path):
+        with db.cursor() as c:
+            path_cleaned = path.strip().lower()
+            c.execute('SELECT id FROM paths WHERE path=%s;', (path_cleaned,))
+            res = c.fetchone()
+            if not res:
+                c.execute('INSERT INTO paths (path) VALUES (%s) RETURNING id;', (path_cleaned,))
+                res = c.fetchone()
+            path_id = res[0]
+            return path_id
+
 
 class Timestamp(_RegexValidatedInputValue):
     _regex = re.compile(r'^[1-9][0-9]{1,9}([.][0-9]{1,6})?$')
@@ -46,14 +65,14 @@ class Aggregation(object):
         else:
             self._parent_aggr = None
 
-    def mark_timestamp_as_dirty(self, path, ts):
-        self._dirty_intervals[path].add(int(ts) // self._interval_size)
+    def mark_timestamp_as_dirty(self, path_id, ts):
+        self._dirty_intervals[path_id].add(int(ts) // self._interval_size)
 
     def fix_aggregations(self):
         try:
             with db.cursor() as c:
-                for p in self._dirty_intervals:
-                    for h in self._dirty_intervals[p]:
+                for p_id in self._dirty_intervals:
+                    for h in self._dirty_intervals[p_id]:
                         tsh = h * self._interval_size
                         tsh_med = tsh + self._interval_size / 2
                         if self.level == 0:
@@ -63,7 +82,7 @@ class Aggregation(object):
                                     SELECT %s, %s, %s, MIN(value), MAX(value), AVG(value) FROM measurements WHERE path = %s AND ts >= %s AND ts < %s
                                 ON CONFLICT (path, level, tsmed) DO UPDATE SET
                                     vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                                (p, self.level, tsh + 1800, p, tsh, tsh + 3600,))
+                                (p_id, self.level, tsh + 1800, p_id, tsh, tsh + 3600,))
                         else:
                             c.execute("""
                                 INSERT INTO
@@ -71,9 +90,9 @@ class Aggregation(object):
                                     SELECT %s, %s, %s, MIN(vmin), MAX(vmax), AVG(vavg) FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s
                                 ON CONFLICT (path, level, tsmed) DO UPDATE SET
                                     vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                                (p, self.level, tsh_med, p, self.level - 1, tsh, tsh + self._interval_size,))
+                                (p_id, self.level, tsh_med, p_id, self.level - 1, tsh, tsh + self._interval_size,))
                         if self._parent_aggr:
-                            self._parent_aggr.mark_timestamp_as_dirty(p, tsh_med)
+                            self._parent_aggr.mark_timestamp_as_dirty(p_id, tsh_med)
         finally:
             if self._parent_aggr:
                 self._parent_aggr.fix_aggregations()
@@ -85,11 +104,11 @@ class Measurement(object):
         self.ts = Timestamp(ts)
         self.value = MeasuredValue(value)
 
-    @classmethod
-    def save_posted_data_to_db(cls, posted_data):
-        with db.cursor() as c:
-            f = IteratorFile(("{}\t{}\t{}".format(str(Path(x['p'])), str(Timestamp(x['t'])), str(MeasuredValue(x['v']))) for x in posted_data))
-            c.copy_from(f, 'measurements', columns=('path', 'ts', 'value'))
+    # @classmethod
+    # def save_posted_data_to_db(cls, posted_data):
+    #     with db.cursor() as c:
+    #         f = IteratorFile(("{}\t{}\t{}".format(str(Path(x['p'])), str(Timestamp(x['t'])), str(MeasuredValue(x['v']))) for x in posted_data))
+    #         c.copy_from(f, 'measurements', columns=('path', 'ts', 'value'))
 
     @classmethod
     def save_put_data_to_db(cls, put_data):
@@ -100,10 +119,10 @@ class Measurement(object):
             def _get_data(put_data, aggr):
                 for x in put_data:
                     ts_str = str(Timestamp(x['t']))
-                    path_str = str(Path(x['p']))
+                    path = Path(x['p'], ensure_in_db=True)
                     # while we are traversing our data, we might as well mark the dirty aggregation blocks:
-                    aggr.mark_timestamp_as_dirty(path_str, ts_str)
-                    yield (path_str, ts_str, str(MeasuredValue(x['v'])),)
+                    aggr.mark_timestamp_as_dirty(path.path_id, ts_str)
+                    yield (path.path_id, ts_str, str(MeasuredValue(x['v'])),)
             data_iterator = _get_data(put_data, aggr)
 
             with db.cursor() as c:
