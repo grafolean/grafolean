@@ -33,7 +33,7 @@ curl \
 
 Parameters:
 
-    Path: defines an entity that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever entities you wish, as long as they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'). Dot should be used to denote hierarhical place of the entity.
+    Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'). Dot should be used to denote hierarhical pieces of the path.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.
 
@@ -68,19 +68,20 @@ Parameters:
 ## Reading values (GET)
 
 ```
-curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&max=<MaxResults>'
+curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&max=<MaxPoints>'
 ```
 
 Parameters:
 
-    TimestampFrom: start timestamp (included)
-    TimestampTo: end timestamp (included)
-    MaxResults: max. number of values returned. The idea is to limit the max. number of points on charts for screens with smaller width (mobile). Backend will use this parameter and the selected time interval to determine the level of aggregation used. Note that the results might be returned in batches on backend discretion - this parameter only determines the total maximum number of results.
+    PathN: path that the data was connected to
+    TimestampFrom: start timestamp (included) - optional
+    TimestampTo: end timestamp (included) - optional
+    MaxPoints: max. number of values returned - should reflect the client resolution and design choices. The idea is to limit the max. number of points on charts for screens with smaller width (mobile). Backend will use this parameter and the selected time interval to determine the level of aggregation used. Note that the results might be returned in batches on backend discretion - this parameter only lets backend choose the correct level of aggregation.
 
 JSON response:
 
 {
-    aggregation_level: <AggregationLevel>,  // 0: raw data, >0: 3^(L-1) hours are aggregated in a single data point
+    aggregation_level: <AggregationLevel>,  // -`: raw data, >=0: 3^L hours are aggregated in a single data point
     pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
     data: {
         <Path0>: [

@@ -1,9 +1,11 @@
-import re
-from utils import db, log
-from iter_file import IteratorFile
-import psycopg2.extras
 from collections import defaultdict
 from functools import lru_cache
+import math
+import psycopg2.extras
+import re
+import time
+
+from utils import db, log
 
 
 class _RegexValidatedInputValue(object):
@@ -55,13 +57,14 @@ class MeasuredValue(_RegexValidatedInputValue):
 
 class Aggregation(object):
     FACTOR = 3
+    MAX_AGGR_LEVEL = 6  # 6 == one point per month
 
-    def __init__(self, level, up_to_level=None):
+    def __init__(self, level=0):
         self.level = level
         self._interval_size = 3600 * (self.FACTOR ** self.level)
         self._dirty_intervals = defaultdict(set)
-        if up_to_level and up_to_level > level:
-            self._parent_aggr = Aggregation(level + 1, up_to_level)
+        if Aggregation.MAX_AGGR_LEVEL > level:
+            self._parent_aggr = Aggregation(level + 1)
         else:
             self._parent_aggr = None
 
@@ -113,7 +116,7 @@ class Measurement(object):
     @classmethod
     def save_put_data_to_db(cls, put_data):
 
-        aggr = Aggregation(0, up_to_level=6)
+        aggr = Aggregation()
         try:
             # to use execute_values, we need an iterator which will feed our data:
             def _get_data(put_data, aggr):
@@ -130,6 +133,60 @@ class Measurement(object):
                 psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
         finally:
             aggr.fix_aggregations()
+
+    @classmethod
+    def get_data(cls, paths, max_points, t_from=None, t_to=None):
+        """
+        {
+            aggregation_level: <AggregationLevel>,  // -1: raw data, >=0: 3^L hours are aggregated in a single data point
+            pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
+            data: {
+                <Path0>: [
+                    { t: <Timestamp>, v: [<Value>, <MinValue>, <MaxValue>] }  // if data was aggregated
+                    { t: <Timestamp>, v: <Value> }  // if raw data was returned
+                ],
+                ...
+            }
+        }
+        """
+        if t_from is None:
+            t_from = cls._get_oldest_measurement_time(paths)
+        if t_to is None:
+            t_to = Timestamp(time.time())
+        aggr_level = cls._get_aggr_level(max_points, math.ceil((t_to - t_from)/3600.0))
+        if aggr_level < 0:
+            return cls._fetch_raw_data(paths, t_from, t_to)
+        else:
+            return cls._fetch_aggr_data(paths, aggr_level, t_from, t_to)
+
+
+    @classmethod
+    def _get_aggr_level(cls, max_points, n_hours):
+        for l in range(-1, Aggregation.MAX_AGGR_LEVEL):
+            if max_points >= n_hours / (3**l):
+                return l
+        return Aggregation.MAX_AGGR_LEVEL
+
+    @classmethod
+    def _fetch_raw_data(cls, paths, t_from, t_to):
+        pass
+
+    @classmethod
+    def _fetch_aggr_data(cls, aggr_level, paths, t_from, t_to):
+        pass
+
+    @classmethod
+    def _get_oldest_measurement_time(cls, paths):
+        path_ids = []
+        for p in paths:
+            path_ids.append(Path._get_path_id_from_db(str(p)))
+
+        with db.cursor() as c:
+            c.execute('SELECT MIN(ts) FROM measurements where path in %s;', (path_ids,))
+            res = c.fetchone()
+            if not res:
+                return None
+            return res[0]
 
     def save(self):
         with db.cursor() as c:
