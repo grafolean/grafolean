@@ -1,5 +1,6 @@
 from collections import defaultdict
 from functools import lru_cache
+import json
 import math
 import psycopg2.extras
 import re
@@ -23,7 +24,6 @@ class _RegexValidatedInputValue(object):
 
     def __str__(self):
         return str(self.v)
-
 
 class Path(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-z0-9_-]+)([.][a-z0-9_-]+)*$')
@@ -50,6 +50,9 @@ class Path(_RegexValidatedInputValue):
 class Timestamp(_RegexValidatedInputValue):
     _regex = re.compile(r'^[1-9][0-9]{1,9}([.][0-9]{1,6})?$')
 
+    def __float__(self):
+        return float(self.v)
+
 
 class MeasuredValue(_RegexValidatedInputValue):
     _regex = re.compile(r'^[0-9]+([.][0-9]+)?$')
@@ -69,7 +72,7 @@ class Aggregation(object):
             self._parent_aggr = None
 
     def mark_timestamp_as_dirty(self, path_id, ts):
-        self._dirty_intervals[path_id].add(int(ts) // self._interval_size)
+        self._dirty_intervals[path_id].add(math.floor(float(ts)) // self._interval_size)
 
     def fix_aggregations(self):
         try:
@@ -153,12 +156,15 @@ class Measurement(object):
             t_from = cls._get_oldest_measurement_time(paths)
         if t_to is None:
             t_to = Timestamp(time.time())
-        aggr_level = cls._get_aggr_level(max_points, math.ceil((t_to - t_from)/3600.0))
+        aggr_level = cls._get_aggr_level(max_points, math.ceil((float(t_to) - float(t_from))/3600.0))
         if aggr_level < 0:
-            return cls._fetch_raw_data(paths, t_from, t_to)
+            data = cls._fetch_raw_data(paths, t_from, t_to)
         else:
-            return cls._fetch_aggr_data(paths, aggr_level, t_from, t_to)
-
+            data = cls._fetch_aggr_data(paths, aggr_level, t_from, t_to)
+        return json.dumps({
+            'aggregation_level': aggr_level,
+            'data': data,
+        })
 
     @classmethod
     def _get_aggr_level(cls, max_points, n_hours):
@@ -169,18 +175,31 @@ class Measurement(object):
 
     @classmethod
     def _fetch_raw_data(cls, paths, t_from, t_to):
-        pass
+        data = {}
+        with db.cursor() as c:
+            for p in paths:
+                data[str(p)] = []
+                path_id = Path._get_path_id_from_db(str(p))
+                c.execute('SELECT ts, value FROM measurements WHERE path = %s and ts >= %s AND ts <= %s;', (path_id, float(t_from), float(t_to),))
+                for ts, value in c:
+                    data[str(p)].append({'t': float(ts), 'v': float(value)})
+        return data
 
     @classmethod
-    def _fetch_aggr_data(cls, aggr_level, paths, t_from, t_to):
-        pass
+    def _fetch_aggr_data(cls, paths, aggr_level, t_from, t_to):
+        data = {}
+        with db.cursor() as c:
+            for p in paths:
+                data[str(p)] = []
+                path_id = Path._get_path_id_from_db(str(p))
+                c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed <= %s;', (path_id, aggr_level, float(t_from), float(t_to),))
+                for ts, vavg, vmin, vmax in c:
+                    data[str(p)].append({'t': float(ts), 'v': [float(vavg), float(vmin), float(vmax)]})
+        return data
 
     @classmethod
     def _get_oldest_measurement_time(cls, paths):
-        path_ids = []
-        for p in paths:
-            path_ids.append(Path._get_path_id_from_db(str(p)))
-
+        path_ids = [Path._get_path_id_from_db(str(p)) for p in paths]
         with db.cursor() as c:
             c.execute('SELECT MIN(ts) FROM measurements where path in %s;', (path_ids,))
             res = c.fetchone()
