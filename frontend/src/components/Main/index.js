@@ -9,9 +9,7 @@ class Main extends Component {
         <header className="App-header">
           <h1 className="App-title">MoonThor</h1>
         </header>
-        <p className="App-intro">
-          <Chart />
-        </p>
+        <Chart />
       </div>
     );
   }
