@@ -1,5 +1,14 @@
 import React, { Component } from 'react';
-import { ResponsiveContainer, LineChart, Line, AreaChart, Area, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  Area,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Brush,
+} from 'recharts';
 import moment from 'moment';
 
 const data = [
@@ -12,24 +21,27 @@ const data = [
   {t: 1080023400, uv: 3490, pv: 2120, amt: [2100,2150]},
 ];
 
+const timeTickFormatter = (tick) => moment(tick * 1000).format('HH:mm')
+
 class Chart extends Component {
   render() {
     return (
       <div style={{height: '250px'}}>
       <ResponsiveContainer width='30%'>
-        <AreaChart width={400} height={550} data={data}>
-          <Area type="linear" dataKey="pv" stroke="#ff6600" fillOpacity={0} fill="#ff6600" />
+        <ComposedChart width={400} height={550} data={data}>
+          <Line type="linear" dataKey="pv" stroke="#ff6600" />
           <Area type="linear" dataKey="amt" stroke="none" fillOpacity={0.1} fill="#ff6600" />
           <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
           <XAxis
             dataKey="t"
             type="number"
             domain={[3600*300000, 3600*300007]}
-            tickFormatter={(tick) => moment(tick * 1000).format('HH:mm')}
+            tickFormatter={timeTickFormatter}
             ticks={[1080000000, 1080003600, 1080007200, 1080010800, 1080014400, 1080018000, 1080021600, 1080025200]}
           />
+          <Brush dataKey='t' height={30} stroke="#8884d8" tickFormatter={timeTickFormatter} />
           <YAxis />
-        </AreaChart>
+        </ComposedChart>
       </ResponsiveContainer>
       </div>
     );
