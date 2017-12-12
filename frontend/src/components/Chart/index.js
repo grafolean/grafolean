@@ -1,14 +1,11 @@
 import React, { Component } from 'react';
 import {
-  ResponsiveContainer,
-  ComposedChart,
-  Area,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Brush,
-} from 'recharts';
+  VictoryChart,
+  VictoryLine,
+  VictoryAxis,
+//  VictoryZoomContainer,
+  VictorySelectionContainer,
+} from 'victory';
 import moment from 'moment';
 
 const data = [
@@ -27,22 +24,39 @@ class Chart extends Component {
   render() {
     return (
       <div style={{height: '250px'}}>
-      <ResponsiveContainer width='30%'>
-        <ComposedChart width={400} height={550} data={data}>
-          <Line type="linear" dataKey="pv" stroke="#ff6600" />
-          <Area type="linear" dataKey="amt" stroke="none" fillOpacity={0.1} fill="#ff6600" />
-          <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-          <XAxis
-            dataKey="t"
-            type="number"
-            domain={[3600*300000, 3600*300007]}
-            tickFormatter={timeTickFormatter}
-            ticks={[1080000000, 1080003600, 1080007200, 1080010800, 1080014400, 1080018000, 1080021600, 1080025200]}
+        <VictoryChart
+          containerComponent={
+//            <VictoryZoomContainer />
+            <VictorySelectionContainer
+              selectionDimension="x"
+              selectionStyle={{stroke: "transparent", fill: "yellow", fillOpacity: 0.2}}
+              onSelection={(selected_points, selection_bounds, props) => {
+                console.log("SELECTED POINTS", selected_points);
+                console.log("BOUNDS", selection_bounds);
+                console.log("PROPS", props)
+              }}
+            />
+          }
+          domain={{x: [1080000000, 1080025200], y: [0, 4500]}}
+        >
+          <VictoryAxis
+            tickFormat={timeTickFormatter}
+            tickValues={[1080000000, 1080003600, 1080007200, 1080010800, 1080014400, 1080018000, 1080021600, 1080025200]}
           />
-          <Brush dataKey='t' height={30} stroke="#8884d8" tickFormatter={timeTickFormatter} />
-          <YAxis />
-        </ComposedChart>
-      </ResponsiveContainer>
+          <VictoryAxis
+            dependentAxis
+            tickFormat={(tick) => `$${Math.round(tick)}M`}
+          />
+          <VictoryLine
+          data={data}
+          x="t"
+          y="uv"
+          style={{
+            data: { stroke: "#c43a31" },
+            parent: { border: "1px solid #ccc"},
+          }}
+        />
+      </VictoryChart>
       </div>
     );
   }
