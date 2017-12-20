@@ -1,6 +1,7 @@
 import fetch from 'cross-fetch'
+import { stringify } from 'qs'
 
-const ROOT_URL = 'https://localhost:3000/api'
+const ROOT_URL = 'http://localhost:5000/api'
 
 export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
 export function onRequestChartData(paths, fromTs, toTs) {
@@ -48,7 +49,12 @@ export function fetchChartData(paths, fromTs, toTs) {
     // update state:
     dispatch(onRequestChartData(paths, fromTs, toTs));
     // return function that will start the request from server:
-    return fetch(`${ROOT_URL}/values`)
+    let query_params = {
+      p: paths,
+      t0: fromTs,
+      t1: toTs,
+    }
+    return fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
       .then(handleFetchErrors)
       .then(
         response => dispatch(onReceiveChartDataSuccess(response.json())),

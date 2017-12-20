@@ -12,7 +12,7 @@ class Main extends Component {
           <h1 className="App-title">MoonThor</h1>
         </header>
         <Chart />
-        <input type="button" value="Refresh" onClick={() => { store.dispatch(fetchChartData("test.kaggle.execute_values", 1234567890, 1330089100, 500)) }} />
+        <input type="button" value="Refresh" onClick={() => { store.dispatch(fetchChartData("test.kaggle.execute_values", 1325317920, 1327897860)) }} />
       </div>
     );
   }
