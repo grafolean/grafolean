@@ -29,7 +29,7 @@ class Path(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-z0-9_-]+)([.][a-z0-9_-]+)*$')
 
     def __init__(self, v, ensure_in_db=False):
-        super(Path, self).__init__(v)
+        super().__init__(v)
         if ensure_in_db:
             self.path_id = Path._get_path_id_from_db(path=self.v)
 
@@ -180,7 +180,7 @@ class Measurement(object):
             for p in paths:
                 data[str(p)] = []
                 path_id = Path._get_path_id_from_db(str(p))
-                c.execute('SELECT ts, value FROM measurements WHERE path = %s and ts >= %s AND ts <= %s;', (path_id, float(t_from), float(t_to),))
+                c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s;', (path_id, float(t_from), float(t_to),))
                 for ts, value in c:
                     data[str(p)].append({'t': float(ts), 'v': float(value)})
         return data
@@ -201,7 +201,7 @@ class Measurement(object):
     def _get_oldest_measurement_time(cls, paths):
         path_ids = [Path._get_path_id_from_db(str(p)) for p in paths]
         with db.cursor() as c:
-            c.execute('SELECT MIN(ts) FROM measurements where path in %s;', (path_ids,))
+            c.execute('SELECT MIN(ts) FROM measurements WHERE path IN %s;', (path_ids,))
             res = c.fetchone()
             if not res:
                 return None
