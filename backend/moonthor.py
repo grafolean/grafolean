@@ -11,6 +11,12 @@ app = flask.Flask(__name__)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
 
+# allow cross-origin requests:
+@app.after_request
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app.route("/api/values", methods=['PUT'])
 def values_put():
