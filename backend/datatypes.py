@@ -50,6 +50,13 @@ class Path(_RegexValidatedInputValue):
 class Timestamp(_RegexValidatedInputValue):
     _regex = re.compile(r'^[1-9][0-9]{1,9}([.][0-9]{1,6})?$')
 
+    def __init__(self, v):
+        # allow initialization with numeric types:
+        if isinstance(v, (float, int,)):
+            self.v = v
+        else:
+            super().__init__(v)
+
     def __float__(self):
         return float(self.v)
 
@@ -199,7 +206,7 @@ class Measurement(object):
 
     @classmethod
     def _get_oldest_measurement_time(cls, paths):
-        path_ids = [Path._get_path_id_from_db(str(p)) for p in paths]
+        path_ids = tuple(Path._get_path_id_from_db(str(p)) for p in paths)
         with db.cursor() as c:
             c.execute('SELECT MIN(ts) FROM measurements WHERE path IN %s;', (path_ids,))
             res = c.fetchone()
