@@ -1,6 +1,5 @@
 from collections import defaultdict
 from functools import lru_cache
-import json
 import math
 import psycopg2.extras
 import re
@@ -111,6 +110,9 @@ class Aggregation(object):
 
 
 class Measurement(object):
+
+    MAX_DATAPOINTS_RETURNED = 500
+
     def __init__(self, path, ts, value):
         self.path = Path(path)
         self.ts = Timestamp(ts)
@@ -152,30 +154,6 @@ class Measurement(object):
             return aggr_level
 
     @classmethod
-    def get_data(cls, paths, aggr_level, t_from, t_to):
-        """
-        {
-            aggregation_level: <AggregationLevel>,  // -1: raw data, >=0: 3^L hours are aggregated in a single data point
-            pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
-            data: {
-                <Path0>: [
-                    { t: <Timestamp>, v: [<Value>, <MinValue>, <MaxValue>] }  // if data was aggregated
-                    { t: <Timestamp>, v: <Value> }  // if raw data was returned
-                ],
-                ...
-            }
-        }
-        """
-        if aggr_level is None:
-            data = cls._fetch_raw_data(paths, t_from, t_to)
-        else:
-            data = cls._fetch_aggr_data(paths, aggr_level, t_from, t_to)
-        return json.dumps({
-            'aggregation_level': aggr_level,
-            'data': data,
-        })
-
-    @classmethod
     def _get_aggr_level(cls, max_points, n_hours):
         for l in range(-1, Aggregation.MAX_AGGR_LEVEL):
             if max_points >= n_hours / (3**l):
@@ -183,28 +161,37 @@ class Measurement(object):
         return Aggregation.MAX_AGGR_LEVEL
 
     @classmethod
-    def _fetch_raw_data(cls, paths, t_from, t_to):
-        data = {}
+    def fetch_data(cls, paths, aggr_level, t_from, t_to):
+        paths_data = {}
         with db.cursor() as c:
             for p in paths:
-                data[str(p)] = []
-                path_id = Path._get_path_id_from_db(str(p))
-                c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s;', (path_id, float(t_from), float(t_to),))
-                for ts, value in c:
-                    data[str(p)].append({'t': float(ts), 'v': float(value)})
-        return data
+                str_p = str(p)
+                path_data = []
+                path_id = Path._get_path_id_from_db(str_p)
 
-    @classmethod
-    def _fetch_aggr_data(cls, paths, aggr_level, t_from, t_to):
-        data = {}
-        with db.cursor() as c:
-            for p in paths:
-                data[str(p)] = []
-                path_id = Path._get_path_id_from_db(str(p))
-                c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed <= %s;', (path_id, aggr_level, float(t_from), float(t_to),))
-                for ts, vavg, vmin, vmax in c:
-                    data[str(p)].append({'t': float(ts), 'v': [float(vavg), float(vmin), float(vmax)]})
-        return data
+                # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
+                if aggr_level is None:  # fetch raw data
+                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s LIMIT %s;', (path_id, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    for ts, value in c:
+                        path_data.append({'t': float(ts), 'v': float(value)})
+                else:  # fetch aggregated data
+                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed <= %s LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    for ts, vavg, vmin, vmax in c:
+                        path_data.append({'t': float(ts), 'v': [float(vavg), float(vmin), float(vmax)]})
+
+                # if we have one result too many, eliminate it and set "next_data_point" field:
+                if len(path_data) > Measurement.MAX_DATAPOINTS_RETURNED:
+                    paths_data[str_p] = {
+                        'next_data_point': path_data[Measurement.MAX_DATAPOINTS_RETURNED]['t'],
+                        'data': path_data[:Measurement.MAX_DATAPOINTS_RETURNED],
+                    }
+                else:
+                    paths_data[str_p] = {
+                        'next_data_point': None,
+                        'data': path_data,
+                    }
+
+        return paths_data
 
     @classmethod
     def get_oldest_measurement_time(cls, paths):

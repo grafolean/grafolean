@@ -97,7 +97,10 @@ def values_get():
             return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
 
     # finally, return the data:
-    return Measurement.get_data(paths, aggr_level, t_from, t_to)
+    paths_data = Measurement.fetch_data(paths, aggr_level, t_from, t_to)
+    return json.dumps({
+        'paths': paths_data,
+    })
 
 
 if __name__ == "__main__":
