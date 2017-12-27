@@ -2,22 +2,13 @@ import React, { Component } from 'react';
 import {
   VictoryChart,
   VictoryLine,
+  VictoryArea,
   VictoryAxis,
 //  VictoryZoomContainer,
   VictorySelectionContainer,
 } from 'victory';
 import Loading from '../Loading'
 import moment from 'moment';
-
-const data = [
-  {t: 1080001800, uv: 4000, pv: 2430, amt: [2400,2500]},
-  {t: 1080005400, uv: 3000, pv: 1398, amt: [1210,1600]},
-  {t: 1080009000, uv: 2000, pv: 2340, amt: [2290,2550]},
-  {t: 1080012600, uv: 2780, pv: 2108, amt: [2000,2200]},
-  {t: 1080016200, uv: 1890, pv: 2200, amt: [2181,2300]},
-  {t: 1080019800, uv: 2390, pv: 2600, amt: [2500,2700]},
-  {t: 1080023400, uv: 3490, pv: 2120, amt: [2100,2150]},
-];
 
 const timeTickFormatter = (tick) => moment(tick * 1000).format('HH:mm')
 
@@ -54,15 +45,26 @@ class Chart extends Component {
               dependentAxis
               tickFormat={(tick) => `$${Math.round(tick)}M`}
             />
+            <VictoryArea
+              data={this.props.data}
+              x="t"
+              y="ymin"
+              y0="ymax"
+              style={{
+                data: {
+                  fill: "#c43a31", fillOpacity: 0.2, strokeWidth: 0
+                },
+              }}
+            />
             <VictoryLine
-            data={data}
-            x="t"
-            y="uv"
-            style={{
-              data: { stroke: "#c43a31" },
-              parent: { border: "1px solid #ccc"},
-            }}
-          />
+              data={this.props.data}
+              x="t"
+              y="y"
+              style={{
+                data: { stroke: "#c43a31", strokeWidth: 1 },
+                parent: { border: "1px solid #ccc"},
+              }}
+            />
         </VictoryChart>
       )
 
