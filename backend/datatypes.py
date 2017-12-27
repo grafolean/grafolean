@@ -4,7 +4,6 @@ import json
 import math
 import psycopg2.extras
 import re
-import time
 
 from utils import db, log
 
@@ -145,7 +144,15 @@ class Measurement(object):
             aggr.fix_aggregations()
 
     @classmethod
-    def get_data(cls, paths, max_points, t_from=None, t_to=None):
+    def get_suggested_aggr_level(cls, paths, t_from, t_to, max_points=100):
+        aggr_level = cls._get_aggr_level(max_points, math.ceil((float(t_to) - float(t_from))/3600.0))
+        if aggr_level < 0:
+            return None
+        else:
+            return aggr_level
+
+    @classmethod
+    def get_data(cls, paths, aggr_level, t_from, t_to):
         """
         {
             aggregation_level: <AggregationLevel>,  // -1: raw data, >=0: 3^L hours are aggregated in a single data point
@@ -159,12 +166,7 @@ class Measurement(object):
             }
         }
         """
-        if t_from is None:
-            t_from = cls._get_oldest_measurement_time(paths)
-        if t_to is None:
-            t_to = Timestamp(time.time())
-        aggr_level = cls._get_aggr_level(max_points, math.ceil((float(t_to) - float(t_from))/3600.0))
-        if aggr_level < 0:
+        if aggr_level is None:
             data = cls._fetch_raw_data(paths, t_from, t_to)
         else:
             data = cls._fetch_aggr_data(paths, aggr_level, t_from, t_to)
@@ -205,7 +207,7 @@ class Measurement(object):
         return data
 
     @classmethod
-    def _get_oldest_measurement_time(cls, paths):
+    def get_oldest_measurement_time(cls, paths):
         path_ids = tuple(Path._get_path_id_from_db(str(p)) for p in paths)
         with db.cursor() as c:
             c.execute('SELECT MIN(ts) FROM measurements WHERE path IN %s;', (path_ids,))

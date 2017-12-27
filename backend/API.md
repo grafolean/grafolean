@@ -1,7 +1,7 @@
 
 ## Authentication
 
-Authentication is via standard HTTP Basic auth. Instead of password you neeed to use API token (available through UI). 
+Authentication is via standard HTTP Basic auth. Instead of password you need to use API token (available through UI).
 
 Supply them in Authorization header like this:
 
@@ -68,7 +68,7 @@ Parameters:
 ## Reading values (GET)
 
 ```
-curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&max=<MaxPoints>'
+curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>'
 ```
 
 Parameters:
@@ -76,20 +76,24 @@ Parameters:
     PathN: path that the data was connected to
     TimestampFrom: start timestamp (included) - optional
     TimestampTo: end timestamp (included) - optional
-    MaxPoints: max. number of values returned - should reflect the client resolution and design choices. The idea is to limit the max. number of points on charts for screens with smaller width (mobile). Backend will use this parameter and the selected time interval to determine the level of aggregation used. Note that the results might be returned in batches on backend discretion - this parameter only lets backend choose the correct level of aggregation.
+    AggregationLevel: values from 0 to 6 or string "no" are allowed. Aggregation level 0 returns one data point (average, min and max value) per hour. Every
+        higher aggr. level returns one data point per 3-times as much time. In other words, level 1 returns one data point per 3 hours, level 2 per 9 hours,... and
+        level 6 one data point per 3 ^ 6 hours or roughly 30 days. Special value "no" will return raw data (non-aggregated).
+        Parameter is mandatory - if absent, server will respond with a 301 redirect to URL which includes default aggregation level for selected time interval (by default
+        there will be fewer than 100 data points returned in almost all cases).
 
 JSON response:
 
 {
-    aggregation_level: <AggregationLevel>,  // -`: raw data, >=0: 3^L hours are aggregated in a single data point
-    pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
-    data: {
-        <Path0>: [
-            { t: <Timestamp>, v: [<Value>, <MinValue>, <MaxValue>] }  // if data was aggregated
-            { t: <Timestamp>, v: <Value> }  // if raw data was returned
-        ],
+    paths: [
+        <Path0>: {
+            data: [
+                { t: <Timestamp>, v: [<AvgValue>, <MinValue>, <MaxValue>] }  // if data was aggregated
+                { t: <Timestamp>, v: <Value> }  // if raw data was requested
+            ]
+        },
         ...
-    }
+    ]
 }
 
 

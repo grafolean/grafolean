@@ -3,6 +3,7 @@ import argparse
 import flask
 import json
 import re
+import time
 from datatypes import Measurement, Path, Timestamp
 import utils
 
@@ -53,28 +54,50 @@ def values_get():
             }
         }
     """
-    kwargs = {}
 
     # validate input parameters:
     paths_input = flask.request.args.get('p')
     if paths_input is None:
         return "Missing parameter: p\n\n", 400
     try:
-        kwargs['paths'] = [Path(p) for p in paths_input.split(',')]
+        paths = [Path(p) for p in paths_input.split(',')]
     except:
         return "Invalid parameter: p\n\n", 400
 
-    t_from = flask.request.args.get('t0')
-    if t_from:
-        kwargs['t_from'] = Timestamp(t_from)
+    t_from_input = flask.request.args.get('t0')
+    if t_from_input:
+        t_from = Timestamp(t_from_input)
+    else:
+        t_from = Measurement.get_oldest_measurement_time(paths)
 
-    t_to = flask.request.args.get('t1')
-    if t_to:
-        kwargs['t_to'] = Timestamp(t_to)
+    t_to_input = flask.request.args.get('t1')
+    if t_to_input:
+        t_to = Timestamp(t_to_input)
+    else:
+        t_to = Timestamp(time.time())
 
-    max_points = max(0, int(flask.request.args.get('max', 100)))
-    kwargs['max_points'] = max_points
-    return Measurement.get_data(**kwargs)
+    aggr_level_input = flask.request.args.get('a')
+    if not aggr_level_input:
+        # suggest the aggr. level based on paths and time interval and redirect to it:
+        suggested_aggr_level = Measurement.get_suggested_aggr_level(paths, t_from, t_to)
+        if suggested_aggr_level is None:
+            str_aggr_level = 'no'
+        else:
+            str_aggr_level = str(suggested_aggr_level)
+        url = flask.request.url + ('&' if '?' in flask.request.url else '?') + 'a=' + str_aggr_level
+        return flask.redirect(url, code=301)
+    elif aggr_level_input == 'no':
+        aggr_level = None
+    else:
+        try:
+            aggr_level = int(aggr_level_input)
+        except:
+            return "Invalid parameter: a\n\n", 400
+        if not (0 <= aggr_level <= 6):
+            return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
+
+    # finally, return the data:
+    return Measurement.get_data(paths, aggr_level, t_from, t_to)
 
 
 if __name__ == "__main__":
