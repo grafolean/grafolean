@@ -206,3 +206,12 @@ class Measurement(object):
     def save(self):
         with db.cursor() as c:
             c.execute('INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s);', (str(self.path), str(self.ts), str(self.value)))
+
+class Dashboard(object):
+    @classmethod
+    def save_data_to_db(cls, name, slug, method):
+        with db.cursor() as c:
+            if method == 'PUT':
+                psycopg2.extras.execute_values(c, "INSERT INTO dashboards (name, slug) VALUES (%s, %s) ON CONFLICT (slug) DO UPDATE SET name=excluded.name;", (name, slug,))
+            elif method == 'POST':
+                psycopg2.extras.execute_values(c, "INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (name, slug,))

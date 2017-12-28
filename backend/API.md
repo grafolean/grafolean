@@ -1,4 +1,9 @@
 
+Passing parameters:
+- GET & DELETE requests: query parameters (because it's a filter)
+- POST & PUT requests: JSON in body (structures are needed), with some exceptions allowing query parameters too if simplicity is paramount
+
+
 ## Authentication
 
 Authentication is via standard HTTP Basic auth. Instead of password you need to use API token (available through UI).
@@ -33,7 +38,8 @@ curl \
 
 Parameters:
 
-    Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'). Dot should be used to denote hierarhical pieces of the path.
+    Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as
+        they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'), which is treated as a separator by the system.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.
 
@@ -102,7 +108,80 @@ JSON response:
 }
 
 
-# Chart labels
+# Dashboards
+
+## Creating
+
+```
+curl \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{ \
+        "name": <DashboardName>, \
+        "slug": <DashboardSlug> \
+    }' \
+    'https://moonthor.com/api/dashboards/'
+```
+
+Parameters:
+
+    DashboardName: UTF-8 encoded name of the dashboard (non-UTF-8 strings will be rejected). Characters '<', '>', double and single quotes, and newlines
+        will be removed. Name will also be stripped of trailing and leading spaces and tabs. Maximum string length is 200 characters.
+    DashboardSlug: optional slug, made of lowercase letters ("a" to "z"), digits ("0" to "9") and hyphens ("-"). If not supplied it will be generated
+        automatically from dashboard name. Must be unique, otherwise POST request will be rejected. Accepted slug will be returned in JSON response.
+
+JSON response:
+
+{
+    "slug": <DashboardSlug>
+}
+
+
+## Reading
+
+```
+curl 'https://moonthor.com/api/dashboards/'
+```
+## Updating
+
+## Deleting
+
+
+# Charts
+
+## Creating
+
+```
+curl \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{
+        "content": [
+            { path_filter: <PathFilter0> },
+            { path_filter: <PathFilter1> },
+            ...
+        ],
+        "title": <ChartTitle>,
+        "slug": <ChartSlug>
+    ]' \
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
+```
+
+Parameters:
+
+    PathFilterN: either explicit path that should be included or a filter which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
+        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'.
+
+JSON response:
+
+{
+    slug: <DashboardSlug>
+}
+
+
+
+
+# Events
 
 Often one wishes to mark events on charts (version upgrades, sensor detections,...).
 

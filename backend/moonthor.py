@@ -4,7 +4,7 @@ import flask
 import json
 import re
 import time
-from datatypes import Measurement, Path, Timestamp
+from datatypes import Measurement, Dashboard, Path, Timestamp
 import utils
 
 
@@ -28,33 +28,6 @@ def values_put():
 
 @app.route("/api/values", methods=['GET'])
 def values_get():
-    """
-        curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&max=<MaxPoints>'
-
-        Parameters:
-
-            PathN: path that the data was connected to
-            TimestampFrom: start timestamp (included) - optional
-            TimestampTo: end timestamp (included) - optional
-            MaxPoints: max. number of values returned - should reflect the client resolution and design choices. The idea is to limit the max. number of points on
-                charts for screens with smaller width (mobile). Backend will use this parameter and the selected time interval to determine the level of aggregation 
-                used. Note that the results might be returned in batches (paginated) on backend discretion. Value of 0 means no aggregation (raw results). Default: 100. 
-
-        JSON response:
-
-        {
-            aggregation_level: <AggregationLevel>,  // -`: raw data, >=0: 3^L hours are aggregated in a single data point
-            pagination_timestamp: <LastTimestamp>,  // if not null, use LastTimestamp as TimestampFrom to fetch another batch of data
-            data: {
-                <Path0>: [
-                    { t: <Timestamp>, v: [<Value>, <MinValue>, <MaxValue>] }  // if data was aggregated
-                    { t: <Timestamp>, v: <Value> }  // if raw data was returned
-                ],
-                ...
-            }
-        }
-    """
-
     # validate input parameters:
     paths_input = flask.request.args.get('p')
     if paths_input is None:
@@ -102,6 +75,28 @@ def values_get():
         'paths': paths_data,
     })
 
+@app.route("/api/dashboards", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def dashboards_crud():
+    if flask.request.method == 'GET':
+        pass
+    elif flask.request.method in ['POST', 'PUT']:
+        data = flask.request.get_json()
+
+        # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
+        Dashboard.save_data_to_db(name=data['name'], slug=data['slug'], method=flask.request.method)
+        return ""
+    elif flask.request.method == 'DELETE':
+        pass
+
+@app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST', 'PUT', 'DELETE'])
+def charts_crud(dashboard_slug):
+    print("dashboard_slug: {}".format(dashboard_slug))
+    if flask.request.method == 'GET':
+        pass
+    elif flask.request.method in ['POST', 'PUT']:
+        pass
+    elif flask.request.method == 'DELETE':
+        pass
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
