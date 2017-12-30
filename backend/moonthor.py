@@ -18,8 +18,8 @@ app.url_map.strict_slashes = False
 # allow cross-origin requests:
 @app.after_request
 def after_request(response):
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.set_data(response.get_data() + b"\n")  # don't you just hate it when curl output hijacts half of the line?
     return response
 
 @app.route("/api/values", methods=['PUT'])
