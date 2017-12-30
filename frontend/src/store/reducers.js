@@ -4,11 +4,12 @@ import {
   ON_REQUEST_CHART_DATA,
   ON_RECEIVE_CHART_DATA_SUCCESS,
   ON_RECEIVE_CHART_DATA_FAILURE,
+  ON_REQUEST_DASHBOARDS_LIST,
+  ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
+  ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
 } from './actions'
 
 function chartdata(state={}, action) {
-  console.log(action);
-
   switch (action.type) {
     case ON_REQUEST_CHART_DATA:
       return state;
@@ -40,16 +41,29 @@ function chartdata(state={}, action) {
       }
       return newState;
     case ON_RECEIVE_CHART_DATA_FAILURE:
-      console.log(action);
       return state;
     default:
-      console.log(action);
+      return state;
+  }
+}
+
+function dashboards(state=[], action) {
+  switch (action.type) {
+    case ON_REQUEST_DASHBOARDS_LIST:
+      return state;
+    case ON_RECEIVE_CHART_DATA_FAILURE:
+      // how do I deal with this?
+      return state;
+    case ON_RECEIVE_DASHBOARDS_LIST_SUCCESS:
+      return action.json.list;
+    default:
       return state;
   }
 }
 
 const moonthorApp = combineReducers({
   chartdata,
+  dashboards,
 })
 
 export default moonthorApp

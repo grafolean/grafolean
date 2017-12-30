@@ -29,6 +29,29 @@ export function onReceiveChartDataFailure(errMsg) {
   }
 }
 
+export const ON_REQUEST_DASHBOARDS_LIST = 'ON_REQUEST_DASHBOARDS_LIST'
+export function onRequestDashboardsList() {
+  return {
+    type: ON_REQUEST_DASHBOARDS_LIST,
+  }
+}
+
+export const ON_RECEIVE_DASHBOARDS_LIST_SUCCESS = 'ON_RECEIVE_DASHBOARDS_LIST_SUCCESS'
+export function onReceiveDashboardsListSuccess(json) {
+  return {
+    type: ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
+    json: json,
+  }
+}
+
+export const ON_RECEIVE_DASHBOARDS_LIST_FAILURE = 'ON_RECEIVE_DASHBOARDS_LIST_FAILURE'
+export function onReceiveDashboardsListFailure(errMsg) {
+  return {
+    type: ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
+    errMsg,
+  }
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even
@@ -57,8 +80,22 @@ export function fetchChartData(paths, fromTs, toTs) {
     return fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
       .then(handleFetchErrors)
       .then(
-        response => dispatch(onReceiveChartDataSuccess(response.json())),
+        response => response.json().then(json => dispatch(onReceiveChartDataSuccess(json))),
         errorMsg => dispatch(onReceiveChartDataFailure(errorMsg))
+      )
+  }
+}
+
+export function fetchDashboardsList() {
+  // react-thunk - return function instead of object:
+  return function (dispatch) {
+    dispatch(onRequestDashboardsList());
+    // return function that will start the request from server:
+    return fetch(`${ROOT_URL}/dashboards`)
+      .then(handleFetchErrors)
+      .then(
+        response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
+        errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg))
       )
   }
 }

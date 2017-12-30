@@ -11,6 +11,7 @@ import Home from '../Home'
 import About from '../About'
 import Dashboard from '../Dashboard'
 import DashboardsList from '../DashboardsList'
+import DashboardsListContainer from '../../containers/DashboardsListContainer'
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -44,7 +45,7 @@ class Main extends Component {
 
         <Switch>
           <Route exact path='/' component={Home}/>
-          <Route exact path='/dashboards' component={DashboardsList}/>
+          <Route exact path='/dashboards' component={DashboardsListContainer}/>
           <Route exact path='/dashboards/:slug' component={Dashboard}/>
           <Route path='/about' component={About}/>
         </Switch>

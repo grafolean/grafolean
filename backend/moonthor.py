@@ -85,7 +85,7 @@ def values_get():
 def dashboards_crud():
     if flask.request.method == 'GET':
         rec = Dashboard.get(slug=None)
-        return json.dumps(rec), 200
+        return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
         dashboard = Dashboard.forge_from_input(flask.request)
