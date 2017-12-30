@@ -2,12 +2,11 @@
 import argparse
 import flask
 import json
+import psycopg2
 import re
-from slugify import slugify
 import time
 
-from datatypes import Measurement, Dashboard, Path, Timestamp
-from validators import DashboardInputs, DashboardSchemaInputs, ValuesInputs
+from datatypes import Measurement, Dashboard, Path, Timestamp, ValidationError
 import utils
 
 
@@ -21,6 +20,10 @@ def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.set_data(response.get_data() + b"\n")  # don't you just hate it when curl output hijacts half of the line?
     return response
+
+@app.errorhandler(ValidationError)
+def handle_invalid_usage(error):
+    return str(error), 400
 
 @app.route("/api/values", methods=['PUT'])
 def values_put():
@@ -76,27 +79,43 @@ def values_get():
     paths_data = Measurement.fetch_data(paths, aggr_level, t_from, t_to)
     return json.dumps({
         'paths': paths_data,
-    })
+    }), 200
 
-@app.route("/api/dashboards", methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route("/api/dashboards", methods=['GET', 'POST'])
 def dashboards_crud():
     if flask.request.method == 'GET':
-        return "yeah... not implemented yet"
+        rec = Dashboard.get(slug=None)
+        return json.dumps(rec), 200
 
-    elif flask.request.method in ['POST', 'PUT']:
-        for inputs in [DashboardSchemaInputs(flask.request), DashboardInputs(flask.request)]:
-            if not inputs.validate():
-                return inputs.errors[0] + "\n", 400
+    elif flask.request.method == 'POST':
+        dashboard = Dashboard.forge_from_input(flask.request)
+        try:
+            dashboard.insert()
+        except psycopg2.IntegrityError:
+            return "Dashboard with this slug already exists", 400
+        return "", 201
 
-        data = flask.request.get_json()
-        slug = data.get('slug')
-        if not slug:
-            slug = slugify(data['name'])
-        Dashboard.save_data_to_db(name=data['name'], slug=slug, method=flask.request.method)
-        return "valid!\n"
+
+@app.route("/api/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
+def dashboard_crud(dashboard_slug):
+    if flask.request.method == 'GET':
+        rec = Dashboard.get(slug=dashboard_slug)
+        if not rec:
+            return "No such dashboard", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        dashboard = Dashboard.forge_from_input(flask.request, force_slug=dashboard_slug)
+        rowcount = dashboard.update()
+        if not rowcount:
+            return "No such dashboard", 404
+        return "", 204
 
     elif flask.request.method == 'DELETE':
-        pass
+        rowcount = Dashboard.delete(dashboard_slug)
+        if not rowcount:
+            return "No such dashboard", 404
+        return "", 200
 
 @app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def charts_crud(dashboard_slug):

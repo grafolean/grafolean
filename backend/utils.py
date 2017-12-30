@@ -57,8 +57,11 @@ def migration_step_1():
         c.execute('CREATE UNIQUE INDEX measurements_path_ts ON measurements (path, ts);')
         # c.execute('CREATE INDEX measurements_ts ON measurements (ts);')
 
-        c.execute('CREATE DOMAIN AGGR_LEVEL AS SMALLINT CHECK (VALUE >= 0 AND VALUE <= 6)')  # 6: one point for every month
+        c.execute('CREATE DOMAIN AGGR_LEVEL AS SMALLINT CHECK (VALUE >= 0 AND VALUE <= 6);')  # 6: one point for about every month
         c.execute('CREATE TABLE aggregations (path INTEGER NOT NULL REFERENCES paths(id), level AGGR_LEVEL, tsmed INTEGER, vmin NUMERIC, vmax NUMERIC, vavg NUMERIC);')
         c.execute('CREATE UNIQUE INDEX aggregations_path_level_tsmed ON aggregations (path, level, tsmed);')
 
-
+def migration_step_2():
+    with db.cursor() as c:
+        c.execute('CREATE TABLE dashboards (name TEXT, slug VARCHAR(50));')
+        c.execute('CREATE UNIQUE INDEX dashboards_slug ON dashboards (slug);')

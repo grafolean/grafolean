@@ -3,8 +3,14 @@ from functools import lru_cache
 import math
 import psycopg2.extras
 import re
+from slugify import slugify
 
 from utils import db, log
+from validators import DashboardInputs, DashboardSchemaInputs, ValuesInputs
+
+
+class ValidationError(Exception):
+    pass
 
 
 class _RegexValidatedInputValue(object):
@@ -13,7 +19,7 @@ class _RegexValidatedInputValue(object):
 
     def __init__(self, v):
         if not self.is_valid(str(v)):
-            raise Exception("Invalid {} format: {}".format(self.__class__.__name__, v))
+            raise ValidationError("Invalid {} format: {}".format(self.__class__.__name__, v))
         self.v = v
 
     @classmethod
@@ -208,10 +214,60 @@ class Measurement(object):
             c.execute('INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s);', (str(self.path), str(self.ts), str(self.value)))
 
 class Dashboard(object):
+
+    def __init__(self, name, slug):
+        self.name = name
+        self.slug = slug
+
     @classmethod
-    def save_data_to_db(cls, name, slug, method):
+    def forge_from_input(cls, flask_request, force_slug=None):
+        for inputs in [DashboardSchemaInputs(flask_request), DashboardInputs(flask_request)]:
+            if not inputs.validate():
+                raise ValidationError(inputs.errors[0])
+
+        data = flask_request.get_json()
+        name = data['name']
+        slug = data.get('slug')
+        if force_slug:  # when updating existing record, we want to supply slug through query parameters, not through JSON
+            if slug:
+                raise ValidationError("Field 'slug' shouldn't be specified!")
+            slug = force_slug
+        else:
+            if not slug:
+                slug = slugify(name)
+        return cls(name, slug)
+
+    def insert(self):
         with db.cursor() as c:
-            if method == 'PUT':
-                psycopg2.extras.execute_values(c, "INSERT INTO dashboards (name, slug) VALUES (%s, %s) ON CONFLICT (slug) DO UPDATE SET name=excluded.name;", (name, slug,))
-            elif method == 'POST':
-                psycopg2.extras.execute_values(c, "INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (name, slug,))
+            c.execute("INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (self.name, self.slug,))
+
+    def update(self):
+        with db.cursor() as c:
+            c.execute("UPDATE dashboards SET name = %s WHERE slug = %s;", (self.name, self.slug,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(slug):
+        with db.cursor() as c:
+            c.execute("DELETE FROM dashboards WHERE slug = %s;", (slug,))
+            return c.rowcount
+
+    @staticmethod
+    def get(slug=None):
+        with db.cursor() as c:
+            if not slug:
+                ret = []
+                c.execute('SELECT name, slug FROM dashboards ORDER BY name;')
+                for name, slug in c:
+                    ret.append({'name': name, 'slug': slug})
+                return ret
+            else:
+                c.execute('SELECT name FROM dashboards WHERE slug = %s;', (slug,))
+                res = c.fetchone()
+                if not res:
+                    return None
+                return {
+                    'name': res[0],
+                    'slug': slug,
+                }
+
