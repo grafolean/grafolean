@@ -3,8 +3,11 @@ import argparse
 import flask
 import json
 import re
+from slugify import slugify
 import time
+
 from datatypes import Measurement, Dashboard, Path, Timestamp
+from validators import DashboardInputs, DashboardSchemaInputs, ValuesInputs
 import utils
 
 
@@ -28,7 +31,7 @@ def values_put():
 
 @app.route("/api/values", methods=['GET'])
 def values_get():
-    # validate input parameters:
+    # validate and convert input parameters:
     paths_input = flask.request.args.get('p')
     if paths_input is None:
         return "Missing parameter: p\n\n", 400
@@ -78,13 +81,20 @@ def values_get():
 @app.route("/api/dashboards", methods=['GET', 'POST', 'PUT', 'DELETE'])
 def dashboards_crud():
     if flask.request.method == 'GET':
-        pass
-    elif flask.request.method in ['POST', 'PUT']:
-        data = flask.request.get_json()
+        return "yeah... not implemented yet"
 
-        # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-        Dashboard.save_data_to_db(name=data['name'], slug=data['slug'], method=flask.request.method)
-        return ""
+    elif flask.request.method in ['POST', 'PUT']:
+        for inputs in [DashboardSchemaInputs(flask.request), DashboardInputs(flask.request)]:
+            if not inputs.validate():
+                return inputs.errors[0] + "\n", 400
+
+        data = flask.request.get_json()
+        slug = data.get('slug')
+        if not slug:
+            slug = slugify(data['name'])
+        Dashboard.save_data_to_db(name=data['name'], slug=slug, method=flask.request.method)
+        return "valid!\n"
+
     elif flask.request.method == 'DELETE':
         pass
 
