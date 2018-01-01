@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log
-from validators import DashboardInputs, DashboardSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, ChartInputs, ChartSchemaInputs, ValuesInputs
 
 
 class ValidationError(Exception):
@@ -213,6 +213,88 @@ class Measurement(object):
         with db.cursor() as c:
             c.execute('INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s);', (str(self.path), str(self.ts), str(self.value)))
 
+
+class Chart(object):
+
+    def __init__(self, dashboard_id, name, chart_id):
+        self.dashboard_id = dashboard_id
+        self.name = name
+        self.chart_id = chart_id
+
+    @classmethod
+    def forge_from_input(cls, flask_request, dashboard_slug, chart_id=None):
+        for inputs in [ChartSchemaInputs(flask_request), ChartInputs(flask_request)]:
+            if not inputs.validate():
+                raise ValidationError(inputs.errors[0])
+
+        data = flask_request.get_json()
+        name = data['name']
+        # users reference the dashboards by its slug, but we need to know its ID:
+        dashboard_id = Dashboard.get_id(dashboard_slug)
+        if not dashboard_id:
+            raise ValidationError("Unknown dashboard")
+
+        if chart_id is not None and not Chart._check_exists(chart_id):
+            raise ValidationError("Unknown chart id")
+
+        return cls(dashboard_id, name, chart_id)
+
+    @staticmethod
+    def _check_exists(chart_id):
+        with db.cursor() as c:
+            c.execute('SELECT id FROM charts WHERE id = %s;', (chart_id,))
+            res = c.fetchone()
+            if res:
+                return True
+            return False
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO charts (dashboard, name) VALUES (%s, %s);", (self.dashboard_id, self.name,))
+
+    def update(self):
+        with db.cursor() as c:
+            c.execute("UPDATE charts SET name = %s WHERE id = %s and dashboard = %s;", (self.name, self.chart_id, self.dashboard_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(dashboard_slug, chart_id):
+        dashboard_id = Dashboard.get_id(dashboard_slug)
+        with db.cursor() as c:
+            c.execute("DELETE FROM charts WHERE id = %s and dashboard = %s;", (chart_id, dashboard_id,))
+            return c.rowcount
+
+    @staticmethod
+    def get_list(dashboard_slug):
+        dashboard_id = Dashboard.get_id(dashboard_slug)
+        if not dashboard_id:
+            raise ValidationError("Unknown dashboard")
+
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, name FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
+            for chart_id, name in c:
+                ret.append({'id': chart_id, 'name': name})
+            return ret
+
+    @staticmethod
+    def get(dashboard_slug, chart_id):
+        dashboard_id = Dashboard.get_id(dashboard_slug)
+        if not dashboard_id:
+            raise ValidationError("Unknown dashboard")
+
+        with db.cursor() as c:
+            c.execute('SELECT name FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            return {
+                'id': chart_id,
+                'name': res[0],
+            }
+
+
+
 class Dashboard(object):
 
     def __init__(self, name, slug):
@@ -221,6 +303,7 @@ class Dashboard(object):
 
     @classmethod
     def forge_from_input(cls, flask_request, force_slug=None):
+        """ This function validates input and returns an object which can be used for inserting or updating. """
         for inputs in [DashboardSchemaInputs(flask_request), DashboardInputs(flask_request)]:
             if not inputs.validate():
                 raise ValidationError(inputs.errors[0])
@@ -230,7 +313,7 @@ class Dashboard(object):
         slug = data.get('slug')
         if force_slug:  # when updating existing record, we want to supply slug through query parameters, not through JSON
             if slug:
-                raise ValidationError("Field 'slug' shouldn't be specified!")
+                raise ValidationError("Field 'slug' shouldn't be specified in JSON body")
             slug = force_slug
         else:
             if not slug:
@@ -250,6 +333,8 @@ class Dashboard(object):
     def delete(slug):
         with db.cursor() as c:
             c.execute("DELETE FROM dashboards WHERE slug = %s;", (slug,))
+            # we must invalidate get_id()'s lru_cache, otherwise it will keep returning the old ID instead of None:
+            Dashboard.get_id.cache_clear()
             return c.rowcount
 
     @staticmethod
@@ -271,3 +356,15 @@ class Dashboard(object):
                     'slug': slug,
                 }
 
+    @staticmethod
+    @lru_cache(maxsize=256)
+    def get_id(slug):
+        """ This is a *cached* function which returns ID based on dashboard slug. Make sure
+            to invalidate lru_cache whenever one of the existing slug <-> ID relationships
+            changes in any way. """
+        with db.cursor() as c:
+            c.execute('SELECT id FROM dashboards WHERE slug = %s;', (slug,))
+            res = c.fetchone()
+            if not res:
+                return None
+            return res[0]

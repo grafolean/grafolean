@@ -35,3 +35,16 @@ class DashboardSchemaInputs(Inputs):
             'slug': {'type': 'string'},
         }
     })]
+
+class ChartInputs(Inputs):
+    json = {
+        'name': [val.InputRequired(), val.Length(min=1, max=200), IsUTF8()],
+    }
+class ChartSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'name': {'type': 'string'},
+        }
+    })]

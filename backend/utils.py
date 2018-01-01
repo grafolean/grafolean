@@ -63,5 +63,8 @@ def migration_step_1():
 
 def migration_step_2():
     with db.cursor() as c:
-        c.execute('CREATE TABLE dashboards (name TEXT, slug VARCHAR(50));')
+        c.execute('DROP TABLE charts;')
+        c.execute('DROP TABLE dashboards;')
+        c.execute('CREATE TABLE dashboards (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL, slug VARCHAR(50) NOT NULL);')
         c.execute('CREATE UNIQUE INDEX dashboards_slug ON dashboards (slug);')
+        c.execute('CREATE TABLE charts (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id), name TEXT NOT NULL);')

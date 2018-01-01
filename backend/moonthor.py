@@ -6,7 +6,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Dashboard, Path, Timestamp, ValidationError
+from datatypes import Measurement, Dashboard, Chart, Path, Timestamp, ValidationError
 import utils
 
 
@@ -14,16 +14,21 @@ app = flask.Flask(__name__)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
 
-# allow cross-origin requests:
+
 @app.after_request
 def after_request(response):
+    # allow cross-origin requests:
+    # (we will probably want to limit this to our domain later on, or make it configurable4)
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.set_data(response.get_data() + b"\n")  # don't you just hate it when curl output hijacts half of the line?
+    # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
+    response.set_data(response.get_data() + b"\n")
     return response
+
 
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
     return str(error), 400
+
 
 @app.route("/api/values", methods=['PUT'])
 def values_put():
@@ -31,6 +36,7 @@ def values_put():
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
     Measurement.save_put_data_to_db(data)
     return ""
+
 
 @app.route("/api/values", methods=['GET'])
 def values_get():
@@ -81,6 +87,7 @@ def values_get():
         'paths': paths_data,
     }), 200
 
+
 @app.route("/api/dashboards", methods=['GET', 'POST'])
 def dashboards_crud():
     if flask.request.method == 'GET':
@@ -117,15 +124,47 @@ def dashboard_crud(dashboard_slug):
             return "No such dashboard", 404
         return "", 200
 
-@app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST', 'PUT', 'DELETE'])
+
+@app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST'])
 def charts_crud(dashboard_slug):
-    print("dashboard_slug: {}".format(dashboard_slug))
     if flask.request.method == 'GET':
-        pass
-    elif flask.request.method in ['POST', 'PUT']:
-        pass
+        rec = Chart.get_list(dashboard_slug)
+        return json.dumps({'list': rec}), 200
+    elif flask.request.method == 'POST':
+        chart = Chart.forge_from_input(flask.request, dashboard_slug)
+        try:
+            chart.insert()
+        except psycopg2.IntegrityError:
+            return "Chart with this slug already exists", 400
+        return "", 201
+
+
+@app.route("/api/dashboards/<string:dashboard_slug>/charts/<string:chart_id>", methods=['GET', 'PUT', 'DELETE'])
+def chart_crud(dashboard_slug, chart_id):
+    try:
+        chart_id = int(chart_id)
+    except:
+        raise ValidationError("Invalid chart id")
+
+    if flask.request.method == 'GET':
+        rec = Chart.get(dashboard_slug, chart_id)
+        if not rec:
+            return "No such chart", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        chart = Chart.forge_from_input(flask.request, dashboard_slug, chart_id=chart_id)
+        rowcount = chart.update()
+        if not rowcount:
+            return "No such chart", 404
+        return "", 204
+
     elif flask.request.method == 'DELETE':
-        pass
+        rowcount = Chart.delete(dashboard_slug, chart_id)
+        if not rowcount:
+            return "No such chart", 404
+        return "", 200
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
