@@ -52,6 +52,31 @@ export function onReceiveDashboardsListFailure(errMsg) {
   }
 }
 
+export const ON_REQUEST_DASHBOARD_DETAILS = 'ON_REQUEST_DASHBOARD_DETAILS'
+export function onRequestDashboardDetails(slug) {
+  return {
+    type: ON_REQUEST_DASHBOARD_DETAILS,
+    slug,
+  }
+}
+
+export const ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS = 'ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS'
+export function onReceiveDashboardDetailsSuccess(slug, json) {
+  return {
+    type: ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS,
+    slug,
+    json,
+  }
+}
+
+export const ON_RECEIVE_DASHBOARD_DETAILS_FAILURE = 'ON_RECEIVE_DASHBOARD_DETAILS_FAILURE'
+export function onReceiveDashboardDetailsFailure(errMsg) {
+  return {
+    type: ON_RECEIVE_DASHBOARD_DETAILS_FAILURE,
+    errMsg,
+  }
+}
+
 export const ON_SUBMIT_DASHBOARD = 'ON_SUBMIT_DASHBOARD'
 export function onSubmitDashboard(formid) {
   return {
@@ -121,6 +146,20 @@ export function fetchDashboardsList() {
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
         errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg))
+      )
+  }
+}
+
+export function fetchDashboardDetails(slug) {
+  // react-thunk - return function instead of object:
+  return function (dispatch) {
+    dispatch(onRequestDashboardDetails());
+    // return function that will start the request from server:
+    return fetch(`${ROOT_URL}/dashboards/${slug}`)
+      .then(handleFetchErrors)
+      .then(
+        response => response.json().then(json => dispatch(onReceiveDashboardDetailsSuccess(slug, json))),
+        errorMsg => dispatch(onReceiveDashboardDetailsFailure(errorMsg))
       )
   }
 }

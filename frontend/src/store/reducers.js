@@ -7,6 +7,9 @@ import {
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
+  ON_REQUEST_DASHBOARD_DETAILS,
+  ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS,
+  ON_RECEIVE_DASHBOARD_DETAILS_FAILURE,
   ON_SUBMIT_DASHBOARD,
   ON_SUBMIT_DASHBOARD_SUCCESS,
   ON_SUBMIT_DASHBOARD_FAILURE,
@@ -50,7 +53,7 @@ function chartdata(state={}, action) {
   }
 }
 
-function dashboards(state=[], action) {
+function dashboardsList(state=[], action) {
   switch (action.type) {
     case ON_REQUEST_DASHBOARDS_LIST:
       return state;
@@ -58,6 +61,19 @@ function dashboards(state=[], action) {
       return state;
     case ON_RECEIVE_DASHBOARDS_LIST_SUCCESS:
       return action.json.list;
+    default:
+      return state;
+  }
+}
+
+function dashboardDetails(state={}, action) {
+  switch (action.type) {
+    case ON_REQUEST_DASHBOARD_DETAILS:
+      return state;
+    case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
+      return state;
+    case ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS:
+      return {...state, [action.slug]: action.json};
     default:
       return state;
   }
@@ -77,7 +93,10 @@ function forms(state={}, action) {
 
 const moonthorApp = combineReducers({
   chartdata,
-  dashboards,
+  dashboards: combineReducers({
+    list: dashboardsList,
+    details: dashboardDetails,
+  }),
   forms,
 })
 

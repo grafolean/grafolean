@@ -2,12 +2,12 @@ import { connect } from 'react-redux'
 import DashboardsList from '../components/DashboardsList'
 
 const mapStateToProps = (state, ownProps) => {
-  if (!state.dashboards) {
+  if ((!state.dashboards) || (!state.dashboards.list)) {
     return {}
   }
 
   return {
-    list: state.dashboards,
+    list: state.dashboards.list,
   }
 }
 

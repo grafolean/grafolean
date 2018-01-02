@@ -1,4 +1,8 @@
 import { connect } from 'react-redux'
+
+import store from '../store'
+import { fetchDashboardDetails } from '../store/actions';
+
 import DashboardView from '../components/DashboardView'
 
 const mapStateToProps = (state, ownProps) => {
@@ -10,18 +14,14 @@ const mapStateToProps = (state, ownProps) => {
     loading: true,
   }
 
-  if (!state.dashboards) {
-    return defaultProps;
-  }
-
-  let dashboardData = state.dashboards.filter((value) => {return (value.slug == slug)});
-  if (dashboardData.length == 0) {
+  if ((!state.dashboards) || (!state.dashboards.details) || (!state.dashboards.details[slug])) {
+    store.dispatch(fetchDashboardDetails(slug))
     return defaultProps;
   }
 
   return {
     ...defaultProps,
-    ...dashboardData[0],
+    ...state.dashboards.details[slug],
     loading: false,
   }
 }
