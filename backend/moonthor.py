@@ -23,6 +23,7 @@ def after_request(response):
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
+    time.sleep(1.0)  # so we can see "loading" signs
     return response
 
 
