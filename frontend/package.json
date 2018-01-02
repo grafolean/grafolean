@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "cross-fetch": "^1.1.1",
+    "lodash": "^4.17.4",
     "moment": "^2.19.3",
     "qs": "^6.5.1",
     "react": "^16.1.1",

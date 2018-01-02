@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Switch, Route, Link } from 'react-router-dom'
 import styled from 'styled-components';
+import uniqueId from 'lodash/uniqueId';
 
 import './Main.css';
 // import Chart from '../Chart'
@@ -9,9 +10,10 @@ import store from '../../store'
 import { fetchChartData } from '../../store/actions';
 import Home from '../Home'
 import About from '../About'
-import Dashboard from '../Dashboard'
 import DashboardsList from '../DashboardsList'
 import DashboardsListContainer from '../../containers/DashboardsListContainer'
+import DashboardViewContainer from '../../containers/DashboardViewContainer'
+import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -36,7 +38,7 @@ class Main extends Component {
               <Link to='/dashboards'>List of dashboards</Link><br />
               Favorites:
               <ul>
-                <li><Link to='/dashboards/asdf'>Dashboard: asdf</Link></li>
+                <li><Link to='/dashboards/view/asdf'>Dashboard: asdf</Link></li>
               </ul>
             </li>
             <li><Link to='/about'>About</Link></li>
@@ -46,7 +48,8 @@ class Main extends Component {
         <Switch>
           <Route exact path='/' component={Home}/>
           <Route exact path='/dashboards' component={DashboardsListContainer}/>
-          <Route exact path='/dashboards/:slug' component={Dashboard}/>
+          <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
+          <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
           <Route path='/about' component={About}/>
         </Switch>
 

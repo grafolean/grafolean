@@ -40,7 +40,7 @@ export const ON_RECEIVE_DASHBOARDS_LIST_SUCCESS = 'ON_RECEIVE_DASHBOARDS_LIST_SU
 export function onReceiveDashboardsListSuccess(json) {
   return {
     type: ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
-    json: json,
+    json,
   }
 }
 
@@ -48,6 +48,31 @@ export const ON_RECEIVE_DASHBOARDS_LIST_FAILURE = 'ON_RECEIVE_DASHBOARDS_LIST_FA
 export function onReceiveDashboardsListFailure(errMsg) {
   return {
     type: ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
+    errMsg,
+  }
+}
+
+export const ON_SUBMIT_DASHBOARD = 'ON_SUBMIT_DASHBOARD'
+export function onSubmitDashboard(formid) {
+  return {
+    type: ON_SUBMIT_DASHBOARD,
+    formid,
+  }
+}
+
+export const ON_SUBMIT_DASHBOARD_SUCCESS = 'ON_SUBMIT_DASHBOARD_SUCCESS'
+export function onSubmitDashboardSuccess(formid, slug) {
+  return {
+    type: ON_SUBMIT_DASHBOARD_SUCCESS,
+    formid,
+    slug,
+  }
+}
+
+export const ON_SUBMIT_DASHBOARD_FAILURE = 'ON_SUBMIT_DASHBOARD_FAILURE'
+export function onSubmitDashboardFailure(errMsg) {
+  return {
+    type: ON_SUBMIT_DASHBOARD_FAILURE,
     errMsg,
   }
 }
@@ -97,5 +122,24 @@ export function fetchDashboardsList() {
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
         errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg))
       )
+  }
+}
+
+export function submitNewDashboard(formid, name, slug) {
+  return function (dispatch) {
+    dispatch(onSubmitDashboard(formid));
+    return fetch(`${ROOT_URL}/dashboards`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({name, slug}),
+    })
+    .then(handleFetchErrors)
+    .then(
+      response => dispatch(onSubmitDashboardSuccess(formid, slug)),
+      errorMsg => dispatch(onSubmitDashboardFailure(errorMsg))
+    )
   }
 }

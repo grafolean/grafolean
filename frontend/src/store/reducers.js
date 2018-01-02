@@ -7,6 +7,9 @@ import {
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
+  ON_SUBMIT_DASHBOARD,
+  ON_SUBMIT_DASHBOARD_SUCCESS,
+  ON_SUBMIT_DASHBOARD_FAILURE,
 } from './actions'
 
 function chartdata(state={}, action) {
@@ -51,8 +54,7 @@ function dashboards(state=[], action) {
   switch (action.type) {
     case ON_REQUEST_DASHBOARDS_LIST:
       return state;
-    case ON_RECEIVE_CHART_DATA_FAILURE:
-      // how do I deal with this?
+    case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
       return state;
     case ON_RECEIVE_DASHBOARDS_LIST_SUCCESS:
       return action.json.list;
@@ -61,9 +63,22 @@ function dashboards(state=[], action) {
   }
 }
 
+function forms(state={}, action) {
+  switch (action.type) {
+    case ON_SUBMIT_DASHBOARD:
+      return {...state, [action.formid]: {loading: true}};
+    case ON_SUBMIT_DASHBOARD_SUCCESS:
+    case ON_SUBMIT_DASHBOARD_FAILURE:
+      return {...state, [action.formid]: {loading: false}};
+    default:
+      return state;
+  }
+}
+
 const moonthorApp = combineReducers({
   chartdata,
   dashboards,
+  forms,
 })
 
 export default moonthorApp

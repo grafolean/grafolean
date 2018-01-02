@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 
 import store from '../../store'
 import { fetchDashboardsList } from '../../store/actions';
@@ -17,13 +18,18 @@ class DashboardsList extends React.Component {
         {((!this.props.list) || (this.props.list.length == 0)) ? (
           <Loading />
         ) : (
-          <ul>
-            {this.props.list.map((v) => {
-              return (
-                <li>{v.name} ({v.slug})</li>
+          <div>
+            <Link to="/dashboards/new">+ Add dashboard</Link>
+            <ul>
+              {this.props.list.map((v) => {
+                return (
+                  <li>
+                    <Link to={`/dashboards/view/${v.slug}`}>{v.name}</Link>
+                  </li>
+                )}
               )}
-            )}
-          </ul>
+            </ul>
+          </div>
           )}
       </div>
     )
