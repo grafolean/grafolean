@@ -87,11 +87,11 @@ export function onSubmitDashboard(formid) {
 }
 
 export const ON_SUBMIT_DASHBOARD_SUCCESS = 'ON_SUBMIT_DASHBOARD_SUCCESS'
-export function onSubmitDashboardSuccess(formid, slug) {
+export function onSubmitDashboardSuccess(formid, json) {
   return {
     type: ON_SUBMIT_DASHBOARD_SUCCESS,
     formid,
-    slug,
+    slug: json.slug,
   }
 }
 
@@ -165,7 +165,7 @@ export function fetchDashboardDetails(slug) {
   }
 }
 
-export function submitNewDashboard(formid, name, slug) {
+export function submitNewDashboard(formid, name) {
   return function (dispatch) {
     dispatch(onSubmitDashboard(formid));
     return fetch(`${ROOT_URL}/dashboards`, {
@@ -174,11 +174,11 @@ export function submitNewDashboard(formid, name, slug) {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({name, slug}),
+      body: JSON.stringify({name}),
     })
     .then(handleFetchErrors)
     .then(
-      response => dispatch(onSubmitDashboardSuccess(formid, slug)),
+      response => response.json().then(json => dispatch(onSubmitDashboardSuccess(formid, json))),
       errorMsg => dispatch(onSubmitDashboardFailure(errorMsg))
     )
   }

@@ -8,7 +8,7 @@ import Loading from '../Loading';
 export default class DashboardNewForm extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {name: '', slug: ''};
+    this.state = {name: ''};
 
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -19,7 +19,7 @@ export default class DashboardNewForm extends React.Component {
   }
 
   handleSubmit(event) {
-    store.dispatch(submitNewDashboard(this.props.formid, this.state.name, this.state.slug))
+    store.dispatch(submitNewDashboard(this.props.formid, this.state.name))
     event.preventDefault();
   }
 
@@ -29,10 +29,6 @@ export default class DashboardNewForm extends React.Component {
         <label>
           Name:
           <input type="text" name="name" value={this.state.name} onChange={this.handleChange} />
-        </label>
-        <label>
-          Slug:
-          <input type="text" name="slug" value={this.state.slug} onChange={this.handleChange} />
         </label>
         {(this.props.loading)?(
           <Loading />
