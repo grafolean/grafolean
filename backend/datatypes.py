@@ -317,12 +317,26 @@ class Dashboard(object):
             slug = force_slug
         else:
             if not slug:
-                slug = slugify(name)
+                slug = cls._suggest_new_slug(name)
         return cls(name, slug)
+
+    @classmethod
+    def _suggest_new_slug(cls, name):
+        # Find a suitable slug from name, appending numbers for as long as it takes to find a non-existing slug.
+        # This is probably not 100% race-condition safe, but it doesn't matter - unique contraint is on DB level,
+        # and this is just a nicety from us.
+        postfix_nr = 1
+        while True:
+            slug = slugify(name) + ('' if postfix_nr == 1 else '-{}'.format(postfix_nr))
+            if Dashboard.get_id(slug) is None:
+                return slug  # we have found a slug which doesn't exist yet, use it
+            postfix_nr += 1
 
     def insert(self):
         with db.cursor() as c:
+            # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
             c.execute("INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (self.name, self.slug,))
+            Dashboard.get_id.cache_clear()
 
     def update(self):
         with db.cursor() as c:

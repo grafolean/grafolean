@@ -102,7 +102,7 @@ def dashboards_crud():
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
-        return "", 201
+        return json.dumps({'slug': dashboard.slug}), 201
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
