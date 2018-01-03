@@ -132,7 +132,7 @@ export function fetchChartData(paths, fromTs, toTs) {
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => dispatch(onReceiveChartDataSuccess(json))),
-        errorMsg => dispatch(onReceiveChartDataFailure(errorMsg))
+        errorMsg => dispatch(onReceiveChartDataFailure(errorMsg.toString()))
       )
   }
 }
@@ -146,7 +146,7 @@ export function fetchDashboardsList() {
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
-        errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg))
+        errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString()))
       )
   }
 }
@@ -179,7 +179,7 @@ export function submitNewDashboard(formid, name) {
     .then(handleFetchErrors)
     .then(
       response => response.json().then(json => dispatch(onSubmitDashboardSuccess(formid, json))),
-      errorMsg => dispatch(onSubmitDashboardFailure(errorMsg))
+      errorMsg => dispatch(onSubmitDashboardFailure(errorMsg.toString()))
     )
   }
 }

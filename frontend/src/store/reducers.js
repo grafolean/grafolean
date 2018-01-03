@@ -82,10 +82,11 @@ function dashboardDetails(state={}, action) {
 function forms(state={}, action) {
   switch (action.type) {
     case ON_SUBMIT_DASHBOARD:
-      return {...state, [action.formid]: {loading: true}};
+      return {...state, [action.formid]: {loading: true, submitted: false}};
     case ON_SUBMIT_DASHBOARD_SUCCESS:
+      return {...state, [action.formid]: {loading: false, submitted: true, slug: action.slug}};
     case ON_SUBMIT_DASHBOARD_FAILURE:
-      return {...state, [action.formid]: {loading: false}};
+      return {...state, [action.formid]: {loading: false, submitted: false}};
     default:
       return state;
   }

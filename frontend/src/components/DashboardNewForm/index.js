@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Redirect } from 'react-router-dom';
 
 import store from '../../store';
 import { submitNewDashboard } from '../../store/actions';
@@ -25,7 +26,10 @@ export default class DashboardNewForm extends React.Component {
 
   render() {
     return (
-      <form id={this.props.formid} onSubmit={this.handleSubmit}>
+      (this.props.submitted)? (
+        <Redirect to={`/dashboards/view/${this.props.slug}`} />
+      ):(
+        <form id={this.props.formid} onSubmit={this.handleSubmit}>
         <label>
           Name:
           <input type="text" name="name" value={this.state.name} onChange={this.handleChange} />
@@ -37,6 +41,7 @@ export default class DashboardNewForm extends React.Component {
         )}
 
       </form>
+      )
     );
   }
 }

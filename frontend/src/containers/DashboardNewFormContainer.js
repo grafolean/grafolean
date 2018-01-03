@@ -5,6 +5,7 @@ const mapStateToProps = (state, ownProps) => {
   let defaultProps = {
     formid: ownProps.formid,
     loading: false,
+    submitted: false,  // we use this to redirect from form after it is successfully submitted
   }
   if (!state.forms) {
     return defaultProps;
@@ -13,7 +14,7 @@ const mapStateToProps = (state, ownProps) => {
     return defaultProps;
   }
 
-  return {...defaultProps, loading: state.forms[ownProps.formid].loading }
+  return {...defaultProps, ...state.forms[ownProps.formid]}
 }
 
 const DashboardNewFormContainer = connect(
