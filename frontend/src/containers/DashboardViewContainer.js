@@ -11,7 +11,6 @@ const mapStateToProps = (state, ownProps) => {
 
   let defaultProps = {
     slug: slug,
-    loading: true,
   }
 
   if ((!state.dashboards) || (!state.dashboards.details) || (!state.dashboards.details[slug])) {
@@ -22,7 +21,6 @@ const mapStateToProps = (state, ownProps) => {
   return {
     ...defaultProps,
     ...state.dashboards.details[slug],
-    loading: false,
   }
 }
 

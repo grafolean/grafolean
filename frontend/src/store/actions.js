@@ -70,9 +70,10 @@ export function onReceiveDashboardDetailsSuccess(slug, json) {
 }
 
 export const ON_RECEIVE_DASHBOARD_DETAILS_FAILURE = 'ON_RECEIVE_DASHBOARD_DETAILS_FAILURE'
-export function onReceiveDashboardDetailsFailure(errMsg) {
+export function onReceiveDashboardDetailsFailure(slug, errMsg) {
   return {
     type: ON_RECEIVE_DASHBOARD_DETAILS_FAILURE,
+    slug,
     errMsg,
   }
 }
@@ -153,13 +154,13 @@ export function fetchDashboardsList() {
 export function fetchDashboardDetails(slug) {
   // react-thunk - return function instead of object:
   return function (dispatch) {
-    dispatch(onRequestDashboardDetails());
+    dispatch(onRequestDashboardDetails(slug));
     // return function that will start the request from server:
     return fetch(`${ROOT_URL}/dashboards/${slug}`)
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardDetailsSuccess(slug, json))),
-        errorMsg => dispatch(onReceiveDashboardDetailsFailure(errorMsg))
+        errorMsg => dispatch(onReceiveDashboardDetailsFailure(slug, errorMsg.toString()))
       )
   }
 }

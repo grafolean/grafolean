@@ -69,11 +69,11 @@ function dashboardsList(state=[], action) {
 function dashboardDetails(state={}, action) {
   switch (action.type) {
     case ON_REQUEST_DASHBOARD_DETAILS:
-      return state;
+      return {...state, [action.slug]: {loading: true}};
     case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
-      return state;
+      return {...state, [action.slug]: {loading: false, success: false}};
     case ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS:
-      return {...state, [action.slug]: action.json};
+      return {...state, [action.slug]: {...action.json, loading: false, success: false}};
     default:
       return state;
   }
@@ -91,6 +91,18 @@ function forms(state={}, action) {
   }
 }
 
+function notifications(state=[],action) {
+  switch (action.type) {
+    case ON_RECEIVE_CHART_DATA_FAILURE:
+    case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
+    case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
+    case ON_SUBMIT_DASHBOARD_FAILURE:
+      return [{type: 'error', message: action.errMsg}, ...state]
+    default:
+      return state;
+  }
+}
+
 const moonthorApp = combineReducers({
   chartdata,
   dashboards: combineReducers({
@@ -98,6 +110,7 @@ const moonthorApp = combineReducers({
     details: dashboardDetails,
   }),
   forms,
+  notifications,
 })
 
 export default moonthorApp
