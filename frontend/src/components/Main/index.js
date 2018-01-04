@@ -19,7 +19,6 @@ import NotificationsContainer from '../../containers/NotificationsContainer'
 
 const Navigation = styled.div`
   padding: 40px 40px;
-  background-color: #eeeeee;
   width: 400px;
   text-align: left;
 `
@@ -118,7 +117,12 @@ export default class Main extends Component {
               open={this.state.sidebarOpen}
               docked={this.state.sidebarDocked}
               onSetOpen={this.onSetSidebarOpen}
-              shadow={false}>
+              shadow={false}
+              styles={{
+                sidebar: {
+                  backgroundColor: 'white',
+                }
+              }}>
           {(this.state.sidebarDocked)?(
             <Header>
               <h1 className="App-title">MoonThor</h1>
