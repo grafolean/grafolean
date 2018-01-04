@@ -1,9 +1,10 @@
 import React, { Component } from 'react';
 
-import Loading from '../Loading';
-
 import store from '../../store'
-import { fetchDashboardDetails } from '../../store/actions';
+import { fetchDashboardDetails, submitShowNewChartForm } from '../../store/actions';
+
+import Loading from '../Loading';
+import AddChart from '../AddChart';
 
 export default class DashboardView extends React.Component {
 
@@ -13,25 +14,27 @@ export default class DashboardView extends React.Component {
 
   render() {
 
-    if ((!this.props.valid) && (!this.props.fetching)) {
-      return (
-        <div>
-          Could not fetch data - please try again.
-        </div>
-      )
+    if (!this.props.valid) {
+      if (this.props.fetching)
+        return <Loading />
+      else
+        return (
+          <div>
+            Could not fetch data - please try again.
+          </div>
+        )
     }
 
     return (
       <div>
-          Dashboard:
-          <hr />
-          {(this.props.fetching)?(
-            <Loading />
-          ):('')}
-          {(this.props.valid)?(
-            this.props.data.name
-          ):('')}
+        Dashboard:
+        <hr />
+        {(this.props.fetching)?(
+          <Loading />
+        ):('')}
+        {this.props.data.name}
 
+        <AddChart dashboardSlug={this.props.match.params.slug}/>
       </div>
     )
   }

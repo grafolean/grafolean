@@ -75,6 +75,8 @@ function dashboardsList(
 
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
+    case ON_SUBMIT_DASHBOARD_FAILURE:
+    case ON_SUBMIT_DASHBOARD_SUCCESS:
       // it might be good if we marked data as stale, but we re-fetch it on each componentWillMount anyway...
       return {...state, refetch: true};
     default:

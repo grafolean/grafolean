@@ -128,6 +128,33 @@ export function onSubmitDeleteDashboardFailure(slug, errMsg) {
   }
 }
 
+export const ON_SUBMIT_NEW_CHART = 'ON_SUBMIT_NEW_CHART'
+export function onSubmitNewChart(formid, dashboardSlug) {
+  return {
+    type: ON_SUBMIT_NEW_CHART,
+    formid,
+    dashboardSlug,
+  }
+}
+
+export const ON_SUBMIT_NEW_CHART_SUCCESS = 'ON_SUBMIT_NEW_CHART_SUCCESS'
+export function onSubmitNewChartSuccess(formid, dashboardSlug) {
+  return {
+    type: ON_SUBMIT_NEW_CHART_SUCCESS,
+    formid,
+    dashboardSlug,
+  }
+}
+
+export const ON_SUBMIT_NEW_CHART_FAILURE = 'ON_SUBMIT_NEW_CHART_FAILURE'
+export function onSubmitNewChartFailure(dashboardSlug, errMsg) {
+  return {
+    type: ON_SUBMIT_NEW_CHART_FAILURE,
+    dashboardSlug,
+    errMsg,
+  }
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even
@@ -199,7 +226,9 @@ export function submitNewDashboard(formid, name) {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({name}),
+      body: JSON.stringify({
+        name,
+      }),
     })
     .then(handleFetchErrors)
     .then(
@@ -219,6 +248,27 @@ export function submitDeleteDashboard(slug) {
     .then(
       response => dispatch(onSubmitDeleteDashboardSuccess(slug)),
       errorMsg => dispatch(onSubmitDeleteDashboardFailure(slug, errorMsg.toString()))
+    )
+  }
+}
+
+export function submitNewChart(formid, dashboardSlug, name) {
+  return function (dispatch) {
+    dispatch(onSubmitNewChart(formid, dashboardSlug));
+    return fetch(`${ROOT_URL}/dashboards/${dashboardSlug}/charts`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+      }),
+    })
+    .then(handleFetchErrors)
+    .then(
+      response => dispatch(onSubmitNewChartSuccess(dashboardSlug)),
+      errorMsg => dispatch(onSubmitNewChartFailure(dashboardSlug, errorMsg.toString()))
     )
   }
 }

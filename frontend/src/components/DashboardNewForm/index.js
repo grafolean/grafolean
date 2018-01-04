@@ -30,17 +30,17 @@ export default class DashboardNewForm extends React.Component {
         <Redirect to={`/dashboards/view/${this.props.slug}`} />
       ):(
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
-        <label>
-          Name:
-          <input type="text" name="name" value={this.state.name} onChange={this.handleChange} />
-        </label>
-        {(this.props.loading)?(
-          <Loading />
-        ):(
-          <input type="submit" value="Submit" />
-        )}
+          <label>
+            Name:
+            <input type="text" name="name" value={this.state.name} onChange={this.handleChange} />
+          </label>
+          {(this.props.loading)?(
+            <Loading />
+          ):(
+            <input type="submit" value="Submit" />
+          )}
 
-      </form>
+        </form>
       )
     );
   }

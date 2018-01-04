@@ -23,7 +23,6 @@ const NotificationOuter = styled.li`
 
 class Notifications extends Component {
   render() {
-    console.log(this.props.notifications)
     return (
       <NotificationsList>
         {this.props.notifications.map((v) => {
