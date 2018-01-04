@@ -34,6 +34,14 @@ export default class DashboardView extends React.Component {
         ):('')}
         {this.props.data.name}
 
+        <ul>
+          {this.props.data.charts.map((v) => {
+            return (
+              <li key={v.id}>Chart: {v.name}</li>
+            )
+          })}
+        </ul>
+
         <AddChart dashboardSlug={this.props.match.params.slug}/>
       </div>
     )
