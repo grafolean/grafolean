@@ -155,6 +155,14 @@ export function onSubmitNewChartFailure(dashboardSlug, errMsg) {
   }
 }
 
+export const REMOVE_NOTIFICATION = 'REMOVE_NOTIFICATION'
+export function removeNotification(notificationId) {
+  return {
+    type: REMOVE_NOTIFICATION,
+    notificationId,
+  }
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even

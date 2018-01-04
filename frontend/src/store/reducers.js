@@ -1,5 +1,4 @@
 import { combineReducers } from 'redux'
-import omit from 'lodash/omit';
 import uniqueId from 'lodash/uniqueId';
 
 import {
@@ -18,6 +17,7 @@ import {
   ON_SUBMIT_DELETE_DASHBOARD,
   ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
   ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
+  REMOVE_NOTIFICATION,
 } from './actions'
 
 function chartdata(state={}, action) {
@@ -143,6 +143,8 @@ function notifications(state=[],action) {
       return [{type: 'error', message: action.errMsg, id: uniqueId('notif-')}, ...state]
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
       return [{type: 'info', message: "Successfully removed dashboard", id: uniqueId('notif-')}, ...state]
+    case REMOVE_NOTIFICATION:
+      return state.filter(n => n.id != action.notificationId);
     default:
       return state;
   }
