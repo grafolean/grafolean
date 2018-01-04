@@ -72,7 +72,7 @@ class Main extends Component {
               <Route exact path='/dashboards' component={DashboardsListContainer}/>
               <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
               <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-              <Route path='/about' component={About}/>
+              <Route exact path='/about' component={About}/>
             </Switch>
           </Content>
 

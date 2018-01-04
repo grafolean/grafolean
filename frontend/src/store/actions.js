@@ -103,6 +103,31 @@ export function onSubmitDashboardFailure(errMsg) {
   }
 }
 
+export const ON_SUBMIT_DELETE_DASHBOARD = 'ON_SUBMIT_DELETE_DASHBOARD'
+export function onSubmitDeleteDashboard(slug) {
+  return {
+    type: ON_SUBMIT_DELETE_DASHBOARD,
+    slug,
+  }
+}
+
+export const ON_SUBMIT_DELETE_DASHBOARD_SUCCESS = 'ON_SUBMIT_DELETE_DASHBOARD_SUCCESS'
+export function onSubmitDeleteDashboardSuccess(slug) {
+  return {
+    type: ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
+    slug,
+  }
+}
+
+export const ON_SUBMIT_DELETE_DASHBOARD_FAILURE = 'ON_SUBMIT_DELETE_DASHBOARD_FAILURE'
+export function onSubmitDeleteDashboardFailure(slug, errMsg) {
+  return {
+    type: ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
+    slug,
+    errMsg,
+  }
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even
@@ -180,6 +205,20 @@ export function submitNewDashboard(formid, name) {
     .then(
       response => response.json().then(json => dispatch(onSubmitDashboardSuccess(formid, json))),
       errorMsg => dispatch(onSubmitDashboardFailure(errorMsg.toString()))
+    )
+  }
+}
+
+export function submitDeleteDashboard(slug) {
+  return function (dispatch) {
+    dispatch(onSubmitDeleteDashboard(slug));
+    return fetch(`${ROOT_URL}/dashboards/${slug}`, {
+      method: 'DELETE',
+    })
+    .then(handleFetchErrors)
+    .then(
+      response => dispatch(onSubmitDeleteDashboardSuccess(slug)),
+      errorMsg => dispatch(onSubmitDeleteDashboardFailure(slug, errorMsg.toString()))
     )
   }
 }

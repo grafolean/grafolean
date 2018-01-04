@@ -16,7 +16,7 @@ const NotificationOuter = styled.li`
   &.warning {
     background-color: #ffeedd;
   }
-  &.notice {
+  &.info {
     background-color: #ddffdd;
   }
 `

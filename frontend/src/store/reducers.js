@@ -1,4 +1,5 @@
 import { combineReducers } from 'redux'
+import omit from 'lodash/omit';
 
 import {
   ON_REQUEST_CHART_DATA,
@@ -13,6 +14,9 @@ import {
   ON_SUBMIT_DASHBOARD,
   ON_SUBMIT_DASHBOARD_SUCCESS,
   ON_SUBMIT_DASHBOARD_FAILURE,
+  ON_SUBMIT_DELETE_DASHBOARD,
+  ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
+  ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
 } from './actions'
 
 function chartdata(state={}, action) {
@@ -53,29 +57,63 @@ function chartdata(state={}, action) {
   }
 }
 
-function dashboardsList(state=[], action) {
+function dashboardsList(
+  state={
+    fetching: false,  // when true, fresh data is being fetched ("loading" sign can be shown)
+    valid: false,     // when true, data can be shown on screen
+    refetch: true,    // a signal to start fetching as soon as convenient
+    data: [],         // list of dashboards
+  }, action) {
+
   switch (action.type) {
     case ON_REQUEST_DASHBOARDS_LIST:
-      return state;
+      return {...state, fetching: true, refetch: false};
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
-      return state;
+      return {...state, fetching: false, data: [], valid: false};  // valid: data should be re-fetched (in response to some user action, not automatically!) before use
     case ON_RECEIVE_DASHBOARDS_LIST_SUCCESS:
-      return action.json.list;
+      return {...state, fetching: false, data: action.json.list, valid: true};
+
+    case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
+    case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
+      // it might be good if we marked data as stale, but we re-fetch it on each componentWillMount anyway...
+      return {...state, refetch: true};
     default:
       return state;
   }
 }
 
 function dashboardDetails(state={}, action) {
+  if (!action.slug)
+    return state;
+  // each action is really concerned only with the part of the state that is determined by the slug:
+  let slugState = dashboardDetailsPerSlug(state[action.slug], action);
+  if (slugState === false)  // unknown action
+    return state;
+  return {...state, [action.slug]: slugState};
+}
+function dashboardDetailsPerSlug(slugState={
+    fetching: false,  // data is being fetched from server
+    deleting: false,  // dashboard is being deleted
+    valid: false,     // data can be displayed
+    data: {},         // dashboard data
+  }, action) {
+
   switch (action.type) {
     case ON_REQUEST_DASHBOARD_DETAILS:
-      return {...state, [action.slug]: {loading: true}};
+      return {...slugState, fetching: true};
     case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
-      return {...state, [action.slug]: {loading: false, success: false}};
+      return {...slugState, fetching: false, valid: false};
     case ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS:
-      return {...state, [action.slug]: {...action.json, loading: false, success: false}};
+      return {...slugState, fetching: false, data: action.json, valid: true};
+
+    case ON_SUBMIT_DELETE_DASHBOARD:
+      return {...slugState, deleting: true, valid: false};
+    case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
+      return undefined;  // deleting failed, we have no idea what happened - refetch data if you need it
+    case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
+      return undefined;  // remove the details for this dashboard
     default:
-      return state;
+      return false;
   }
 }
 
@@ -98,7 +136,10 @@ function notifications(state=[],action) {
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
     case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
     case ON_SUBMIT_DASHBOARD_FAILURE:
+    case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
       return [{type: 'error', message: action.errMsg}, ...state]
+    case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
+      return [{type: 'info', message: "Successfully removed dashboard"}, ...state]
     default:
       return state;
   }

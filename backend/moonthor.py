@@ -21,6 +21,7 @@ def after_request(response):
     # (we will probably want to limit this to our domain later on, or make it configurable4)
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
     time.sleep(1.0)  # so we can see "loading" signs
