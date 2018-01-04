@@ -94,7 +94,7 @@ def values_get():
 @app.route("/api/dashboards", methods=['GET', 'POST'])
 def dashboards_crud():
     if flask.request.method == 'GET':
-        rec = Dashboard.get(slug=None)
+        rec = Dashboard.get_list()
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':

@@ -352,23 +352,29 @@ class Dashboard(object):
             return c.rowcount
 
     @staticmethod
-    def get(slug=None):
+    def get_list():
         with db.cursor() as c:
-            if not slug:
-                ret = []
-                c.execute('SELECT name, slug FROM dashboards ORDER BY name;')
-                for name, slug in c:
-                    ret.append({'name': name, 'slug': slug})
-                return ret
-            else:
-                c.execute('SELECT name FROM dashboards WHERE slug = %s;', (slug,))
-                res = c.fetchone()
-                if not res:
-                    return None
-                return {
-                    'name': res[0],
-                    'slug': slug,
-                }
+            ret = []
+            c.execute('SELECT name, slug FROM dashboards ORDER BY name;')
+            for name, slug in c:
+                ret.append({'name': name, 'slug': slug})
+            return ret
+
+    @staticmethod
+    def get(slug):
+        with db.cursor() as c:
+            c.execute('SELECT name FROM dashboards WHERE slug = %s;', (slug,))
+            res = c.fetchone()
+            if not res:
+                return None
+            name = res[0]
+
+        charts = Chart.get_list(slug)
+        return {
+            'name': name,
+            'slug': slug,
+            'charts': charts,
+        }
 
     @staticmethod
     @lru_cache(maxsize=256)
