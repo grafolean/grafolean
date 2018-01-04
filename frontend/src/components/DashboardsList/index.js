@@ -27,7 +27,7 @@ export default class DashboardsList extends React.Component {
             <ul>
               {this.props.data.map((v) => {
                 return (
-                  <li>
+                  <li key={v.slug}>
                     <Link to={`/dashboards/view/${v.slug}`}>{v.name}</Link>
                     (<DashboardDeleteLinkContainer slug={v.slug} />)
                   </li>

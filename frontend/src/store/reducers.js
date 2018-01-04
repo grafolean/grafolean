@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux'
 import omit from 'lodash/omit';
+import uniqueId from 'lodash/uniqueId';
 
 import {
   ON_REQUEST_CHART_DATA,
@@ -139,9 +140,9 @@ function notifications(state=[],action) {
     case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
     case ON_SUBMIT_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
-      return [{type: 'error', message: action.errMsg}, ...state]
+      return [{type: 'error', message: action.errMsg, id: uniqueId('notif-')}, ...state]
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
-      return [{type: 'info', message: "Successfully removed dashboard"}, ...state]
+      return [{type: 'info', message: "Successfully removed dashboard", id: uniqueId('notif-')}, ...state]
     default:
       return state;
   }

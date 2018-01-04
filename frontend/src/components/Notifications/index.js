@@ -27,7 +27,7 @@ class Notifications extends Component {
       <NotificationsList>
         {this.props.notifications.map((v) => {
           return(
-            <NotificationOuter className={v.type}>
+            <NotificationOuter className={v.type} key={v.id}>
               {v.message}
             </NotificationOuter>
           )
