@@ -4,7 +4,7 @@ import store from '../../store'
 import { fetchDashboardDetails, submitShowNewChartForm } from '../../store/actions';
 
 import Loading from '../Loading';
-import AddChart from '../AddChart';
+import ChartAddForm from '../ChartAddForm';
 
 export default class DashboardView extends React.Component {
 
@@ -42,7 +42,7 @@ export default class DashboardView extends React.Component {
           })}
         </ul>
 
-        <AddChart dashboardSlug={this.props.match.params.slug}/>
+        <ChartAddForm dashboardSlug={this.props.match.params.slug}/>
       </div>
     )
   }
