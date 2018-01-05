@@ -48,8 +48,11 @@ export default class Main extends Component {
       mql: mql,
       sidebarDocked: props.docked,
       sidebarOpen: props.open,
+      windowWidth: 0,
+      windowHeight: 0,
     }
 
+    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
     this.onSetSidebarOpen = this.onSetSidebarOpen.bind(this);
     this.onBurgerClick = this.onBurgerClick.bind(this);
@@ -81,8 +84,18 @@ export default class Main extends Component {
     this.setState({mql: this.state.mql, sidebarDocked: this.state.mql.matches});
   }
 
+  componentDidMount() {
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions);
+  }
+
   componentWillUnmount() {
     this.state.mql.removeListener(this.mediaQueryChanged);
+    window.removeEventListener('resize', this.updateWindowDimensions);
+  }
+
+  updateWindowDimensions() {
+    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
   }
 
   mediaQueryChanged() {
@@ -93,11 +106,11 @@ export default class Main extends Component {
     let sidebarContent = (
       <Navigation>
         {(!this.state.sidebarDocked)?(
-          <div>
-            <h1 className="App-title">MoonThor</h1>
-            <a href="#" onClick={this.onSidebarXClick}>X</a>
-          </div>
+          <a href="#" onClick={this.onSidebarXClick}>X</a>
         ):('')}
+        <Header>
+          <h1 className="App-title">MoonThor</h1>
+        </Header>
         <ul>
           <li><Link to='/' onClick={this.onSidebarLinkClick}>Home</Link></li>
           <li>
@@ -120,16 +133,13 @@ export default class Main extends Component {
               shadow={false}
               styles={{
                 sidebar: {
-                  backgroundColor: 'white',
-                }
+                  backgroundColor: (this.state.sidebarDocked)?('#dedede'):('white'),
+                  maxWidth: (this.state.sidebarDocked)?('700px'):((this.state.windowWidth - 80) + 'px'),  // always leave a bit of place to the right of menu
+                },
               }}>
-          {(this.state.sidebarDocked)?(
-            <Header>
-              <h1 className="App-title">MoonThor</h1>
-            </Header>
-          ):(
+          {(!this.state.sidebarDocked)?(
             <a href="#" onClick={this.onBurgerClick}>burger</a>
-          )}
+          ):('')}
 
         <Flex>
 
