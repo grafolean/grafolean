@@ -39,7 +39,8 @@ curl \
 Parameters:
 
     Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as
-        they are lowercase and include only characters a-z, 0-9, dash ('-') and dot ('.'), which is treated as a separator by the system.
+        they are lowercase and include only characters a-z, 0-9, dash ('-'), underscore ('_') and dot ('.'), which is treated as a separator by the system. Maximum
+        length is 200 characters.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.
 
@@ -156,13 +157,12 @@ curl \
     -X POST \
     -H 'Content-Type: application/json' \
     -d '{
+        "name": <ChartTitle>,
         "content": [
             { path_filter: <PathFilter0> },
             { path_filter: <PathFilter1> },
             ...
         ],
-        "title": <ChartTitle>,
-        "slug": <ChartSlug>
     ]' \
     'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
 ```
@@ -170,7 +170,8 @@ curl \
 Parameters:
 
     PathFilterN: either explicit path that should be included or a filter which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
-        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'.
+        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Maximum of 50 filters per
+        chart are allowed.
 
 JSON response:
 

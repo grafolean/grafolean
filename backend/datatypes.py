@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log
-from validators import DashboardInputs, DashboardSchemaInputs, ChartInputs, ChartSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, ChartSchemaInputs, ValuesInputs
 
 
 class ValidationError(Exception):
@@ -49,6 +49,22 @@ class Path(_RegexValidatedInputValue):
                 res = c.fetchone()
             path_id = res[0]
             return path_id
+
+
+class PathFilter(_RegexValidatedInputValue):
+    _regex = re.compile(r'^(([a-z0-9_-]+)|([*?]))([.](([a-z0-9_-]+)|([*?])))*$')
+    # valid:
+    #   "asdf"
+    #   "asdf.123"
+    #   "*.asdf.123"
+    #   "*.asdf.?"
+    #   "123.*.asdf.*.123"
+    # invalid:
+    #   "asdf."
+    #   ".asdf"
+    #   "asdf*"
+    #   "asdf?"
+    #   "123..asdf"
 
 
 class Timestamp(_RegexValidatedInputValue):
@@ -216,18 +232,28 @@ class Measurement(object):
 
 class Chart(object):
 
-    def __init__(self, dashboard_id, name, chart_id):
+    def __init__(self, dashboard_id, name, path_filters, chart_id):
         self.dashboard_id = dashboard_id
         self.name = name
+        self.path_filters = path_filters
         self.chart_id = chart_id
 
     @classmethod
     def forge_from_input(cls, flask_request, dashboard_slug, chart_id=None):
-        for inputs in [ChartSchemaInputs(flask_request), ChartInputs(flask_request)]:
-            if not inputs.validate():
-                raise ValidationError(inputs.errors[0])
+        # It turns out that validating lists is not trivial with flask-inputs and WTForms. Also, this
+        # validation is getting to be a nuisance, so we need to replace it in future. But for now let's
+        # check only schema and we'll validate data types below:
+        inputs = ChartSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
 
         data = flask_request.get_json()
+
+        # jsonschema already makes sure that there is exactly one key in each content dict, and
+        # that this key is "path_filter", so we must just check it for validity by creating
+        # PathFilter() instances:
+        path_filters = [PathFilter(x['path_filter']) for x in data.get('content', [])]
+
         name = data['name']
         # users reference the dashboards by its slug, but we need to know its ID:
         dashboard_id = Dashboard.get_id(dashboard_slug)
@@ -237,7 +263,7 @@ class Chart(object):
         if chart_id is not None and not Chart._check_exists(chart_id):
             raise ValidationError("Unknown chart id")
 
-        return cls(dashboard_id, name, chart_id)
+        return cls(dashboard_id, name, path_filters, chart_id)
 
     @staticmethod
     def _check_exists(chart_id):
@@ -250,11 +276,13 @@ class Chart(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO charts (dashboard, name) VALUES (%s, %s);", (self.dashboard_id, self.name,))
+            path_filters_text = ",".join(map(str, self.path_filters))
+            c.execute("INSERT INTO charts (dashboard, name, path_filters) VALUES (%s, %s, %s);", (self.dashboard_id, self.name, path_filters_text,))
 
     def update(self):
         with db.cursor() as c:
-            c.execute("UPDATE charts SET name = %s WHERE id = %s and dashboard = %s;", (self.name, self.chart_id, self.dashboard_id,))
+            path_filters_text = ",".join(map(str, self.path_filters))
+            c.execute("UPDATE charts SET name = %s, path_filters = %s WHERE id = %s and dashboard = %s;", (self.name, path_filters_text, self.chart_id, self.dashboard_id,))
             return c.rowcount
 
     @staticmethod
@@ -271,10 +299,14 @@ class Chart(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
+            c.execute('SELECT id, name, path_filters FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
-            c.execute('SELECT id, name FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
-            for chart_id, name in c:
-                ret.append({'id': chart_id, 'name': name})
+            for chart_id, name, path_filters in c:
+                ret.append({
+                    'id': chart_id,
+                    'name': name,
+                    'path_filters': path_filters.split(",") if path_filters else [],  # if empty string, return empty list
+                })
             return ret
 
     @staticmethod
@@ -284,13 +316,14 @@ class Chart(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
-            c.execute('SELECT name FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
+            c.execute('SELECT name, path_filters FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
             return {
                 'id': chart_id,
                 'name': res[0],
+                'path_filters': res[1].split(",") if res[1] else [],  # if empty string, return empty list
             }
 
 
@@ -334,8 +367,8 @@ class Dashboard(object):
 
     def insert(self):
         with db.cursor() as c:
-            # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
             c.execute("INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (self.name, self.slug,))
+            # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
             Dashboard.get_id.cache_clear()
 
     def update(self):
@@ -381,7 +414,7 @@ class Dashboard(object):
     def get_id(slug):
         """ This is a *cached* function which returns ID based on dashboard slug. Make sure
             to invalidate lru_cache whenever one of the existing slug <-> ID relationships
-            changes in any way. """
+            changes in any way (delete, insert). """
         with db.cursor() as c:
             c.execute('SELECT id FROM dashboards WHERE slug = %s;', (slug,))
             res = c.fetchone()
