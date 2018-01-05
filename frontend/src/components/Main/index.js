@@ -19,7 +19,6 @@ import NotificationsContainer from '../../containers/NotificationsContainer'
 
 const Navigation = styled.div`
   padding: 40px 40px;
-  width: 400px;
   text-align: left;
 `
 
@@ -30,7 +29,6 @@ const Flex = styled.div`
 const Header = styled.header`
   background-color: #eeffee;
   padding: 20px;
-  width: 100%;
 `
 
 const Content = styled.div`
