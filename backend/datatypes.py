@@ -56,13 +56,13 @@ class PathFilter(_RegexValidatedInputValue):
 
     @staticmethod
     @lru_cache(maxsize=1024)
-    def find_matching_paths(path_filters, limit=100):
+    def find_matching_paths(path_filters, limit=200):
         with db.cursor() as c:
             found_paths = set()
             limit_reached = False
             for pf in path_filters:
                 pf_regex = PathFilter._regex_from_filter(pf)
-                c.execute('SELECT path FROM paths WHERE path ~ %s;', (pf_regex,))
+                c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, limit - len(found_paths) + 1,))
                 for path in c:
                     if len(found_paths) > limit:  # we have found one element over the limit - we don't add it, but we know it exists
                         limit_reached = True
@@ -74,16 +74,17 @@ class PathFilter(_RegexValidatedInputValue):
 
 
     @staticmethod
-    def _regex_from_filter(path_filter):
+    def _regex_from_filter(path_filter_str):
+        """ Prepares regex for asking Postgres from supplied path filter string. """
         # - replace all "." with "[.]"
         # - replace all "*" with ".*"
         # - replace all "?" with "[^.]+"
         # - add ^ and $
-        path_filter = path_filter.replace(".", "[.]")
-        path_filter = path_filter.replace("*", ".+")
-        path_filter = path_filter.replace("?", "[^.]+")
-        path_filter = "^{}$".format(path_filter)
-        return path_filter
+        path_filter_str = path_filter_str.replace(".", "[.]")
+        path_filter_str = path_filter_str.replace("*", ".+")
+        path_filter_str = path_filter_str.replace("?", "[^.]+")
+        path_filter_str = "^{}$".format(path_filter_str)
+        return path_filter_str
 
 
 class Timestamp(_RegexValidatedInputValue):
