@@ -154,7 +154,11 @@ def chart_crud(dashboard_slug, chart_id):
         raise ValidationError("Invalid chart id")
 
     if flask.request.method == 'GET':
-        rec = Chart.get(dashboard_slug, chart_id)
+        try:
+            paths_limit = int(flask.request.args.get('paths_limit', 200))
+        except:
+            return "Invalid parameter: paths_limit\n\n", 400
+        rec = Chart.get(dashboard_slug, chart_id, paths_limit=paths_limit)
         if not rec:
             return "No such chart", 404
         return json.dumps(rec), 200

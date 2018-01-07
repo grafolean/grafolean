@@ -345,7 +345,7 @@ class Chart(object):
             return ret
 
     @staticmethod
-    def get(dashboard_slug, chart_id):
+    def get(dashboard_slug, chart_id, paths_limit=200):
         dashboard_id = Dashboard.get_id(dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
@@ -355,10 +355,14 @@ class Chart(object):
             res = c.fetchone()
             if not res:
                 return None
+            path_filters = res[1].split(",") if res[1] else []
+            paths, paths_limit_reached = PathFilter.find_matching_paths(path_filters, limit=paths_limit)
             return {
                 'id': chart_id,
                 'name': res[0],
-                'path_filters': res[1].split(",") if res[1] else [],  # if empty string, return empty list
+                'path_filters': path_filters,  # if empty string, return empty list
+                'paths': paths,
+                'paths_limit_reached': paths_limit_reached,
             }
 
 
