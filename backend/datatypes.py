@@ -53,18 +53,37 @@ class Path(_RegexValidatedInputValue):
 
 class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^(([a-z0-9_-]+)|([*?]))([.](([a-z0-9_-]+)|([*?])))*$')
-    # valid:
-    #   "asdf"
-    #   "asdf.123"
-    #   "*.asdf.123"
-    #   "*.asdf.?"
-    #   "123.*.asdf.*.123"
-    # invalid:
-    #   "asdf."
-    #   ".asdf"
-    #   "asdf*"
-    #   "asdf?"
-    #   "123..asdf"
+
+    @staticmethod
+    @lru_cache(maxsize=1024)
+    def find_matching_paths(path_filters, limit=100):
+        with db.cursor() as c:
+            found_paths = set()
+            limit_reached = False
+            for pf in path_filters:
+                pf_regex = PathFilter._regex_from_filter(pf)
+                c.execute('SELECT path FROM paths WHERE path ~ %s;', (pf_regex,))
+                for path in c:
+                    if len(found_paths) > limit:  # we have found one element over the limit - we don't add it, but we know it exists
+                        limit_reached = True
+                        return found_paths, True
+
+                    found_paths.add(path)
+
+        return found_paths, False
+
+
+    @staticmethod
+    def _regex_from_filter(path_filter):
+        # - replace all "." with "[.]"
+        # - replace all "*" with ".*"
+        # - replace all "?" with "[^.]+"
+        # - add ^ and $
+        path_filter = path_filter.replace(".", "[.]")
+        path_filter = path_filter.replace("*", ".+")
+        path_filter = path_filter.replace("?", "[^.]+")
+        path_filter = "^{}$".format(path_filter)
+        return path_filter
 
 
 class Timestamp(_RegexValidatedInputValue):
