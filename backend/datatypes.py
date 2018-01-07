@@ -55,23 +55,34 @@ class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^(([a-z0-9_-]+)|([*?]))([.](([a-z0-9_-]+)|([*?])))*$')
 
     @staticmethod
-    @lru_cache(maxsize=1024)
     def find_matching_paths(path_filters, limit=200):
+        all_found_paths = set()
+        was_limit_reached = False
+        for pf in path_filters:
+            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(pf, limit)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
+            all_found_paths |= found_paths
+            if was_limit_reached or len(all_found_paths) > limit:
+                # always return only up to a limit elements:
+                return list(all_found_paths)[:limit], True
+
+        return list(all_found_paths), False
+
+    @staticmethod
+    @lru_cache(maxsize=1024)
+    def _find_matching_paths_for_filter(path_filter, total_limit):
+        # if path filter is just a path (no wildcards in it), we just return it:
+        if '*' not in path_filter and '?' not in path_filter:
+            return set((path_filter,)), False
+
+        found_paths = set()
+        pf_regex = PathFilter._regex_from_filter(path_filter)
         with db.cursor() as c:
-            found_paths = set()
-            limit_reached = False
-            for pf in path_filters:
-                pf_regex = PathFilter._regex_from_filter(pf)
-                c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, limit - len(found_paths) + 1,))
-                for path in c:
-                    if len(found_paths) > limit:  # we have found one element over the limit - we don't add it, but we know it exists
-                        limit_reached = True
-                        return found_paths, True
-
-                    found_paths.add(path)
-
+            c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, total_limit + 1,))
+            for path in c:
+                if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
+                    return found_paths, True
+                found_paths.add(path)
         return found_paths, False
-
 
     @staticmethod
     def _regex_from_filter(path_filter_str):
@@ -313,7 +324,7 @@ class Chart(object):
             return c.rowcount
 
     @staticmethod
-    def get_list(dashboard_slug):
+    def get_list(dashboard_slug, paths_limit=200):
         dashboard_id = Dashboard.get_id(dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
@@ -322,10 +333,14 @@ class Chart(object):
             c.execute('SELECT id, name, path_filters FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
             for chart_id, name, path_filters in c:
+                path_filters = path_filters.split(",") if path_filters else []  # if empty string, return empty list
+                paths, paths_limit_reached = PathFilter.find_matching_paths(path_filters, limit=paths_limit)
                 ret.append({
                     'id': chart_id,
                     'name': name,
-                    'path_filters': path_filters.split(",") if path_filters else [],  # if empty string, return empty list
+                    'path_filters': path_filters,
+                    'paths': paths,
+                    'paths_limit_reached': paths_limit_reached,
                 })
             return ret
 

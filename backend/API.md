@@ -179,6 +179,18 @@ JSON response:
     slug: <DashboardSlug>
 }
 
+## Reading
+
+```
+curl \
+    -X GET \
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts?paths_limit=<PathsLimit>'
+```
+
+Parameters:
+
+    PathsLimit: maximum number of paths returned for each chart (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
+        will be set to `true` if the limit is exceeded.
 
 
 

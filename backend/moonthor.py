@@ -131,7 +131,11 @@ def dashboard_crud(dashboard_slug):
 @app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST'])
 def charts_crud(dashboard_slug):
     if flask.request.method == 'GET':
-        rec = Chart.get_list(dashboard_slug)
+        try:
+            paths_limit = int(flask.request.args.get('paths_limit', 200))
+        except:
+            return "Invalid parameter: paths_limit\n\n", 400
+        rec = Chart.get_list(dashboard_slug, paths_limit=paths_limit)
         return json.dumps({'list': rec}), 200
     elif flask.request.method == 'POST':
         chart = Chart.forge_from_input(flask.request, dashboard_slug)
