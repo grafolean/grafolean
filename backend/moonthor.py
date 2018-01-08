@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import argparse
 import flask
+from flask_sockets import Sockets
 import json
 import psycopg2
 import re
@@ -13,6 +14,15 @@ import utils
 app = flask.Flask(__name__)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
+sockets = Sockets(app)
+
+
+@sockets.route('/echo')
+def echo_socket(ws):
+    while not ws.closed:
+        message = ws.receive()
+        if message:
+            ws.send("You said: " + message)
 
 
 @app.after_request
@@ -185,4 +195,8 @@ if __name__ == "__main__":
     if args.operation == 'migrate':
         utils.migrate_if_needed()
     elif args.operation == 'serve':
-        app.run()
+#        app.run()
+        from gevent import pywsgi
+        from geventwebsocket.handler import WebSocketHandler
+        server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
+        server.serve_forever()
