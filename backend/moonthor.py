@@ -67,7 +67,7 @@ def values_get():
     aggr_level_input = flask.request.args.get('a')
     if not aggr_level_input:
         # suggest the aggr. level based on paths and time interval and redirect to it:
-        suggested_aggr_level = Measurement.get_suggested_aggr_level(paths, t_from, t_to)
+        suggested_aggr_level = Measurement.get_suggested_aggr_level(t_from, t_to)
         if suggested_aggr_level is None:
             str_aggr_level = 'no'
         else:

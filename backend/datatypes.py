@@ -199,7 +199,7 @@ class Measurement(object):
             aggr.fix_aggregations()
 
     @classmethod
-    def get_suggested_aggr_level(cls, paths, t_from, t_to, max_points=100):
+    def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
         aggr_level = cls._get_aggr_level(max_points, math.ceil((float(t_to) - float(t_from))/3600.0))
         if aggr_level < 0:
             return None
