@@ -5,6 +5,7 @@ import { fetchDashboardDetails, submitShowNewChartForm } from '../../store/actio
 
 import Loading from '../Loading';
 import ChartAddForm from '../ChartAddForm';
+import ChartContainer from '../../containers/ChartContainer';
 
 export default class DashboardView extends React.Component {
 
@@ -34,13 +35,13 @@ export default class DashboardView extends React.Component {
         ):('')}
         {this.props.data.name}
 
-        <ul>
+        <div>
           {this.props.data.charts.map((v) => {
             return (
-              <li key={v.id}>Chart: {v.name}</li>
+              <ChartContainer key={v.id} chartId={v.id} name={v.name} paths={v.paths}/>
             )
           })}
-        </ul>
+        </div>
 
         <ChartAddForm dashboardSlug={this.props.match.params.slug}/>
       </div>
