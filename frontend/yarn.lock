@@ -6496,17 +6496,17 @@ verror@1.10.0:
     core-util-is "1.0.2"
     extsprintf "^1.2.0"
 
-victory-chart@^24.3.0:
-  version "24.3.1"
-  resolved "https://registry.yarnpkg.com/victory-chart/-/victory-chart-24.3.1.tgz#6ab97743f5bbe9f8b93938c1d2fae6cccd537ccc"
+victory-chart@^24.6.1:
+  version "24.6.1"
+  resolved "https://registry.yarnpkg.com/victory-chart/-/victory-chart-24.6.1.tgz#8e1a85ab42c2e471d356e15f1637430cd57aca90"
   dependencies:
     d3-voronoi "^1.1.2"
     lodash "^4.17.4"
-    victory-core "^20.2.0"
+    victory-core "^20.6.0"
 
-victory-core@^20.0.0, victory-core@^20.2.0:
-  version "20.3.0"
-  resolved "https://registry.yarnpkg.com/victory-core/-/victory-core-20.3.0.tgz#e51e3bd9794f116ebbeab4cd939e00c106f1572f"
+victory-core@^20.6.0:
+  version "20.6.0"
+  resolved "https://registry.yarnpkg.com/victory-core/-/victory-core-20.6.0.tgz#5f5f4ac43364c9025dbbfbcd97a2f3feb3f9f6ad"
   dependencies:
     d3-ease "^1.0.0"
     d3-interpolate "^1.1.1"
@@ -6515,21 +6515,21 @@ victory-core@^20.0.0, victory-core@^20.2.0:
     d3-timer "^1.0.0"
     lodash "^4.17.4"
 
-victory-pie@^13.1.0:
-  version "13.1.0"
-  resolved "https://registry.yarnpkg.com/victory-pie/-/victory-pie-13.1.0.tgz#e23fe543939ab82f05d81a321093997911ab1cc3"
+victory-pie@^13.3.1:
+  version "13.3.1"
+  resolved "https://registry.yarnpkg.com/victory-pie/-/victory-pie-13.3.1.tgz#26cf91ad492ea5f84785dfc34b705e58515f2386"
   dependencies:
     d3-shape "^1.0.0"
     lodash "^4.17.4"
-    victory-core "^20.0.0"
+    victory-core "^20.6.0"
 
-victory@^0.24.2:
-  version "0.24.2"
-  resolved "https://registry.yarnpkg.com/victory/-/victory-0.24.2.tgz#8f0f40ca192cf782344a8cd33cac06a53453c5cb"
+victory@^0.24.5:
+  version "0.24.5"
+  resolved "https://registry.yarnpkg.com/victory/-/victory-0.24.5.tgz#2dccb0d8a4ad67d41a0c2989d4faee0f57cf6c74"
   dependencies:
-    victory-chart "^24.3.0"
-    victory-core "^20.2.0"
-    victory-pie "^13.1.0"
+    victory-chart "^24.6.1"
+    victory-core "^20.6.0"
+    victory-pie "^13.3.1"
 
 vm-browserify@0.0.4:
   version "0.0.4"

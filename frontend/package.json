@@ -17,7 +17,7 @@
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
     "styled-components": "^2.2.4",
-    "victory": "^0.24.2"
+    "victory": "^0.24.5"
   },
   "scripts": {
     "start": "react-scripts start",
