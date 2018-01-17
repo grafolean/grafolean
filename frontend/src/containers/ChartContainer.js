@@ -20,6 +20,7 @@ const mapStateToProps = (state, ownProps) => {
       "aaa.bbb.ccc.111": {
         visible: true,
         name: "Path 1",
+        color: "#ff0000",
         data: [
           {t: 1080001800, y: 3413, ymin: 3400, ymax: 3500},
           {t: 1080005400, y: 1398, ymin: 1210, ymax: 1600},
@@ -31,16 +32,17 @@ const mapStateToProps = (state, ownProps) => {
         ],
       },
       "aaa.bbb.ccc.222": {
-        visible: false,
+        visible: true,
         name: "Path 2",
+        color: "#ff6600",
         data: [
-          {t: 1080001800, y: 2413, ymin: 2413, ymax: 2413},
-          {t: 1080005400, y: 3398, ymin: 3398, ymax: 3398},
-          {t: 1080009000, y: 2240, ymin: 2240, ymax: 2240},
-          {t: 1080012600, y: 2308, ymin: 2308, ymax: 2308},
-          {t: 1080016200, y: 1500, ymin: 1500, ymax: 1500},
-          {t: 1080019800, y: 2200, ymin: 2200, ymax: 2200},
-          {t: 1080023400, y: 1720, ymin: 1720, ymax: 1720},
+          {t: 1080001800, y: 2413, ymin: 2313, ymax: 2483},
+          {t: 1080005400, y: 3398, ymin: 3298, ymax: 3598},
+          {t: 1080009000, y: 2240, ymin: 2220, ymax: 2260},
+          {t: 1080012600, y: 2308, ymin: 2108, ymax: 2408},
+          {t: 1080016200, y: 1500, ymin: 1300, ymax: 1560},
+          {t: 1080019800, y: 2200, ymin: 2100, ymax: 2270},
+          {t: 1080023400, y: 1720, ymin: 1700, ymax: 1780},
         ],
       },
     },

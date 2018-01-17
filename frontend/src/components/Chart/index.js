@@ -42,6 +42,7 @@ class Chart extends Component {
             />
 
             {(this.props.isAggregated)?(
+              // aggregated charts have the min/max shadow behind the lines:
               Object.keys(this.props.series).filter(path => {
                 return this.props.series[path].visible;
               }).map((path) => {
@@ -52,7 +53,7 @@ class Chart extends Component {
                     x="t" y="ymin" y0="ymax"
                     style={{
                       data: {
-                        fill: "#c43a31", fillOpacity: 0.2, strokeWidth: 0
+                        fill: this.props.series[path].color, fillOpacity: 0.2, strokeWidth: 0
                       },
                     }}
                   />
@@ -69,8 +70,8 @@ class Chart extends Component {
                   data={this.props.series[path].data}
                   x="t" y="y"
                   style={{
-                    data: { stroke: "#c43a31", strokeWidth: 1 },
-                    parent: { border: "1px solid #ccc"},
+                    data: { stroke: this.props.series[path].color, strokeWidth: 1 },
+//                    parent: { border: "1px solid #ccc"},
                   }}
                 />
               )
