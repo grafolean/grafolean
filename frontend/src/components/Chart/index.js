@@ -41,18 +41,31 @@ class Chart extends Component {
               tickFormat={(tick) => `$${Math.round(tick)}M`}
             />
 
-            {Object.keys(this.props.series).map((path) => {
-              return ([
-                <VictoryArea
-                  data={this.props.series[path].data}
-                  x="t" y="ymin" y0="ymax"
-                  style={{
-                    data: {
-                      fill: "#c43a31", fillOpacity: 0.2, strokeWidth: 0
-                    },
-                  }}
-                />,
+            {(this.props.isAggregated)?(
+              Object.keys(this.props.series).filter(path => {
+                return this.props.series[path].visible;
+              }).map((path) => {
+                return (
+                  <VictoryArea
+                    key={`area-${path}`}
+                    data={this.props.series[path].data}
+                    x="t" y="ymin" y0="ymax"
+                    style={{
+                      data: {
+                        fill: "#c43a31", fillOpacity: 0.2, strokeWidth: 0
+                      },
+                    }}
+                  />
+                )
+              })
+            ):(null)}
+
+            {Object.keys(this.props.series).filter(path => {
+              return this.props.series[path].visible;
+            }).map((path) => {
+              return (
                 <VictoryLine
+                  key={`line-${path}`}
                   data={this.props.series[path].data}
                   x="t" y="y"
                   style={{
@@ -60,8 +73,9 @@ class Chart extends Component {
                     parent: { border: "1px solid #ccc"},
                   }}
                 />
-              ])
+              )
             })}
+
         </VictoryChart>
       )
 

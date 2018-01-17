@@ -18,6 +18,7 @@ const mapStateToProps = (state, ownProps) => {
     loading: false,
     series: {
       "aaa.bbb.ccc.111": {
+        visible: true,
         name: "Path 1",
         data: [
           {t: 1080001800, y: 3413, ymin: 3400, ymax: 3500},
@@ -30,6 +31,7 @@ const mapStateToProps = (state, ownProps) => {
         ],
       },
       "aaa.bbb.ccc.222": {
+        visible: false,
         name: "Path 2",
         data: [
           {t: 1080001800, y: 2413, ymin: 2413, ymax: 2413},
