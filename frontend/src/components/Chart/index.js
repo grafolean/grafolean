@@ -40,6 +40,17 @@ class Chart extends Component {
               dependentAxis
               tickFormat={(tick) => `$${Math.round(tick)}M`}
             />
+            <VictoryAxis
+              dependentAxis
+              orientation="right"
+              tickFormat={(tick) => `$${Math.round(tick)}M`}
+            />
+            <VictoryAxis
+              dependentAxis
+              orientation="left"
+              offsetX={+20}
+              tickFormat={(tick) => `${Math.round(tick)} EUR`}
+            />
 
             {(this.props.isAggregated)?(
               // aggregated charts have the min/max shadow behind the lines:
