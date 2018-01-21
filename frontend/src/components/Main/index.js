@@ -32,7 +32,7 @@ const Header = styled.header`
 `
 
 const Content = styled.div`
-  background-color: #ffffcc;
+  background-color: #ffffff;
 `
 
 const mql = window.matchMedia(`(min-width: 800px)`);
