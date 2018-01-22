@@ -34,7 +34,7 @@ def after_request(response):
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
-    time.sleep(1.0)  # so we can see "loading" signs
+    #time.sleep(1.0)  # so we can see "loading" signs
     return response
 
 

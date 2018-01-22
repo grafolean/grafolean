@@ -4,7 +4,8 @@ import {
   VictoryLine,
   VictoryArea,
   VictoryAxis,
-//  VictoryZoomContainer,
+  VictoryZoomContainer,
+  VictoryTheme,
   VictorySelectionContainer,
 } from 'victory';
 import Loading from '../Loading'
@@ -32,6 +33,13 @@ class Chart extends Component {
         ) : (
           <VictoryChart
             domain={this.props.domain}
+            theme={VictoryTheme.material}
+            allowZoom={false}
+            containerComponent={
+              <VictoryZoomContainer
+                allowZoom={false}
+              />
+            }
           >
             <VictoryAxis
               {...this._domainXTickProps(this.props.domain.x[0], this.props.domain.x[1])}
