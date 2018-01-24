@@ -22,6 +22,7 @@ export default class RePinchy extends React.Component {
   static defaultProps = {
     width: 200,  // RePinchy's viewport width & height
     height: 300,
+    scaleFactor: 1.1,
     renderSub: (x, y, scale) => {
       return <p>Please specify renderSub prop!</p>
     }
@@ -34,13 +35,13 @@ export default class RePinchy extends React.Component {
       x: 0,
       y: 0,
       scale: 1,
-      debugMessages: [  // easier debugging of (touch) events on mobile devices
-        {id: 0, msg: "Init"},
-      ],
       overlay: {
         shown: false,
         msg: "",
-      }
+      },
+      debugMessages: [  // easier debugging of (touch) events on mobile devices
+        {id: 0, msg: "Init"},
+      ],
     }
 
     this.handleTouchStart = this.handleTouchStart.bind(this);
@@ -101,7 +102,30 @@ export default class RePinchy extends React.Component {
       return;
     }
 
+    let currentTargetRect = event.currentTarget.getBoundingClientRect();
+
     this.log("Wheel CTRL!", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
+    const event_offsetX = event.pageX - currentTargetRect.left,
+          event_offsetY = event.pageY - currentTargetRect.top;
+
+    if (event.deltaY < 0) {
+      this.setState((oldState) => {
+        return {
+          scale: oldState.scale * this.props.scaleFactor,
+          x: event_offsetX - (event_offsetX - oldState.x) * this.props.scaleFactor,
+          y: event_offsetY - (event_offsetY - oldState.y) * this.props.scaleFactor,
+        }
+      })
+    }
+    else if (event.deltaY > 0) {
+      this.setState((oldState) => {
+        return {
+          scale: oldState.scale / this.props.scaleFactor,
+          x: event_offsetX - (event_offsetX - oldState.x) / this.props.scaleFactor,
+          y: event_offsetY - (event_offsetY - oldState.y) / this.props.scaleFactor,
+        }
+      })
+    }
     event.preventDefault();
   }
 
@@ -162,9 +186,17 @@ export default class RePinchy extends React.Component {
             border: '1px solid #eeeeee',
           }}
           >
-            <img
-              src={`http://lorempixel.com/600/400/nature/`}
-              />
+            <div
+              style={{
+                  width: this.props.width,
+                  height: this.props.height,
+                  marginLeft: this.state.x,
+                  marginTop: this.state.y,
+                  transformOrigin: "top left",
+                  transform: `scale(${this.state.scale})`,
+              }}>
+              <img src="/static/nature.jpeg" />
+            </div>
           {/*this.props.renderSub(this.state.x, this.state.y, this.state.scale)*/}
         </div>
         {(this.state.overlay.shown)?(
