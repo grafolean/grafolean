@@ -35,6 +35,8 @@ export default class RePinchy extends React.Component {
       x: 0,
       y: 0,
       scale: 1,
+      zoomStartState: null,  // if zooming is in progress (for example when pinching) this contains start x, y and scale
+      twinTouch: null,
       overlay: {
         shown: false,
         msg: "",
@@ -53,48 +55,132 @@ export default class RePinchy extends React.Component {
 
   // https://reactjs.org/docs/events.html
   handleTouchStart(event) {
-    if (event.touches.length == 1) this.handleSingleTouchStart(event);
-    else if (event.touches.length == 2) this.handleTwinTouchStart(event);
+    if (event.touches.length == 1) {
+      event.preventDefault();  // !!! disable in production
+      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
+      return;
+    }
+    if (event.touches.length == 2) {
+      event.preventDefault();
+      //this.clearOverlay();
+      this.handleTwinTouchStart(event);
+    }
   }
 
   handleTouchMove(event) {
-    if (event.touches.length == 1) this.handleSingleTouchMove(event);
-    else if (event.touches.length == 2) this.handleTwinTouchMove(event);
+    if (event.touches.length == 1) {
+      event.preventDefault();  // !!! disable in production
+      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
+      return;
+    }
+    if (event.touches.length == 2) {
+      event.preventDefault();
+      //this.clearOverlay();
+      this.handleTwinTouchMove(event);
+    }
   }
 
   handleTouchEnd(event) {
-    if (event.touches.length == 1) this.handleSingleTouchEnd(event);
-    else if (event.touches.length == 2) this.handleTwinTouchEnd(event);
+    event.preventDefault();
+    if (event.touches.length == 1) {
+      event.preventDefault();  // !!! disable in production
+      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
+      return;
+    }
+    if (event.touches.length == 2) {
+      event.preventDefault();
+      //this.clearOverlay();
+      this.handleTwinTouchEnd(event);
+    }
   }
 
-  handleSingleTouchStart(event) {
-    this.log("Single touch start", event.touches[0].clientX, event.touches[0].clientY);
-    this.ensureOverlayShown("Use 2 fingers to zoom and pan");
-  }
-  handleSingleTouchMove(event) {
-    this.log("Single touch move", event.touches);
-    this.ensureOverlayShown("Use 2 fingers to zoom and pan");
-  }
-  handleSingleTouchEnd(event) {
-    this.log("Single touch end", event.touches);
-    this.ensureOverlayShown("Use 2 fingers to zoom and pan");
-  }
+  getTwinTouchDims(touches, element) {
+    const rect = element.getBoundingClientRect();
+    const dist = Math.sqrt(Math.pow(touches[0].clientX - touches[1].clientX, 2) + Math.pow(touches[0].clientY - touches[1].clientY, 2));
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2 - rect.left,
+      y: (touches[0].clientY + touches[1].clientY) / 2 - rect.top,
+      dist,
+    };
+  };
 
   handleTwinTouchStart(event) {
-    this.log("Twin touch start", event.touches);
-    this.setState({lastTouches: [...event.touches]})
-    event.preventDefault();
+    this.log("Twin touch start");
+    event.persist();
+    const startTwinTouch = this.getTwinTouchDims(event.touches, event.currentTarget);
+    this.setState((oldState) => {
+      return {
+        twinTouch: {
+          ...startTwinTouch,
+        },
+        zoomStartState: {  // remember old state so you can apply transformations from it; should be much more accurate
+          x: oldState.x,
+          y: oldState.y,
+          scale: oldState.scale,
+        }
+      }
+    })
   }
+
   handleTwinTouchMove(event) {
-    this.log("Twin touch move", event.touches);
-    this.setState({lastTouches: [...event.touches]})
-    event.preventDefault();
+
+    /*
+      In general, we have 2 actions user can perform with multitouch / twin touch:
+      - zoom in/out (pinch)
+      - pan (can be modified to only allow x or y but not both)
+    */
+
+    this.log("Twin touch move");
+    event.persist();
+    const newTwinTouch = this.getTwinTouchDims(event.touches, event.currentTarget);
+
+
+
+    this.setState((oldState) => {
+      if (oldState.twinTouch === null)
+        return oldState;
+      const scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
+      const dx = newTwinTouch.x - oldState.twinTouch.x;
+      const dy = newTwinTouch.y - oldState.twinTouch.y;
+      //const newScale = oldState.zoomStartState.scale * scaleFactor;
+      const newX = oldState.zoomStartState.x + dx
+      const newY = oldState.zoomStartState.y + dy
+//      return this._applyZoomFunc(newX, newY, scaleFactor)(oldState);
+      let scaleOldStateFunc = this._applyZoomFunc(newTwinTouch.x, oldState.y + newTwinTouch.y, scaleFactor);
+      let ret = scaleOldStateFunc(oldState);
+      ret.x += newX;
+      ret.y += newY;
+      // let ret = {
+      //   scale: oldState.zoomStartState.scale * scaleFactor,
+      //   x: newX,
+      //   y: newY,
+      // }
+      return ret;
+    })
   }
+
   handleTwinTouchEnd(event) {
-    this.log("Twin touch end", event.touches);
-    this.setState({lastTouches: [...event.touches]})
+    this.log("Twin touch end");
+    this.setState({twinTouch: null})
     event.preventDefault();
   }
+
+  _applyZoom(zoomOffsetX, zoomOffsetY, scaleFactor) {
+    this.setState(this._applyZoomFunc(zoomOffsetX, zoomOffsetY, scaleFactor))
+  }
+
+  _applyZoomFunc(zoomOffsetX, zoomOffsetY, scaleFactor) {
+    // returns the function which can be used to setState
+    return (oldState) => {
+      let startState = (oldState.zoomStartState === null) ? (oldState) : (oldState.zoomStartState);
+      return {
+        scale: startState.scale * scaleFactor,
+        x: zoomOffsetX - (zoomOffsetX - startState.x) * scaleFactor,
+        y: zoomOffsetY - (zoomOffsetY - startState.y) * scaleFactor,
+      }
+    }
+  }
+
   handleWheel(event) {
     if (!event.ctrlKey) {
       this.log("Wheel", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
@@ -109,22 +195,10 @@ export default class RePinchy extends React.Component {
           event_offsetY = event.pageY - currentTargetRect.top;
 
     if (event.deltaY < 0) {
-      this.setState((oldState) => {
-        return {
-          scale: oldState.scale * this.props.scaleFactor,
-          x: event_offsetX - (event_offsetX - oldState.x) * this.props.scaleFactor,
-          y: event_offsetY - (event_offsetY - oldState.y) * this.props.scaleFactor,
-        }
-      })
+      this._applyZoom(event_offsetX, event_offsetY, this.props.scaleFactor);
     }
     else if (event.deltaY > 0) {
-      this.setState((oldState) => {
-        return {
-          scale: oldState.scale / this.props.scaleFactor,
-          x: event_offsetX - (event_offsetX - oldState.x) / this.props.scaleFactor,
-          y: event_offsetY - (event_offsetY - oldState.y) / this.props.scaleFactor,
-        }
-      })
+      this._applyZoom(event_offsetX, event_offsetY, 1.0 / this.props.scaleFactor);
     }
     event.preventDefault();
   }
