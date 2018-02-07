@@ -49,8 +49,13 @@ export default class RePinchy extends React.Component {
     this.handleTouchStart = this.handleTouchStart.bind(this);
     this.handleTouchMove = this.handleTouchMove.bind(this);
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
+    this.handleMouseDown = this.handleMouseDown.bind(this);
+    this.handleMouseUp = this.handleMouseUp.bind(this);
+    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleClickCapture = this.handleClickCapture.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.clearOverlay = this.clearOverlay.bind(this);
+    this.onTestButtonClick = this.onTestButtonClick.bind(this);
   }
 
   // https://reactjs.org/docs/events.html
@@ -63,6 +68,7 @@ export default class RePinchy extends React.Component {
     if (event.touches.length == 2) {
       event.preventDefault();
       //this.clearOverlay();
+      //let {x, y, dist} = this._getTwinTouchDims(event);
       this.handleTwinTouchStart(event);
     }
   }
@@ -94,12 +100,15 @@ export default class RePinchy extends React.Component {
     }
   }
 
-  getTwinTouchDims(touches, element) {
-    const rect = element.getBoundingClientRect();
-    const dist = Math.sqrt(Math.pow(touches[0].clientX - touches[1].clientX, 2) + Math.pow(touches[0].clientY - touches[1].clientY, 2));
+  _getTwinTouchDims(event) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const dist = Math.sqrt(Math.pow(event.touches[0].clientX - event.touches[1].clientX, 2) + Math.pow(event.touches[0].clientY - event.touches[1].clientY, 2));
+    let x = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+    let y = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
+    this.log("Touch:", x, y, dist);
     return {
-      x: (touches[0].clientX + touches[1].clientX) / 2 - rect.left,
-      y: (touches[0].clientY + touches[1].clientY) / 2 - rect.top,
+      x,
+      y,
       dist,
     };
   };
@@ -107,7 +116,7 @@ export default class RePinchy extends React.Component {
   handleTwinTouchStart(event) {
     this.log("Twin touch start");
     event.persist();
-    const startTwinTouch = this.getTwinTouchDims(event.touches, event.currentTarget);
+    const startTwinTouch = this._getTwinTouchDims(event);
     this.setState((oldState) => {
       return {
         twinTouch: {
@@ -130,32 +139,18 @@ export default class RePinchy extends React.Component {
       - pan (can be modified to only allow x or y but not both)
     */
 
-    this.log("Twin touch move");
+    //this.log("Twin touch move");
     event.persist();
-    const newTwinTouch = this.getTwinTouchDims(event.touches, event.currentTarget);
-
-
-
+    const newTwinTouch = this._getTwinTouchDims(event);
     this.setState((oldState) => {
       if (oldState.twinTouch === null)
         return oldState;
-      const scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
-      const dx = newTwinTouch.x - oldState.twinTouch.x;
-      const dy = newTwinTouch.y - oldState.twinTouch.y;
-      //const newScale = oldState.zoomStartState.scale * scaleFactor;
-      const newX = oldState.zoomStartState.x + dx
-      const newY = oldState.zoomStartState.y + dy
-//      return this._applyZoomFunc(newX, newY, scaleFactor)(oldState);
-      let scaleOldStateFunc = this._applyZoomFunc(newTwinTouch.x, oldState.y + newTwinTouch.y, scaleFactor);
-      let ret = scaleOldStateFunc(oldState);
-      ret.x += newX;
-      ret.y += newY;
-      // let ret = {
-      //   scale: oldState.zoomStartState.scale * scaleFactor,
-      //   x: newX,
-      //   y: newY,
-      // }
-      return ret;
+      let scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
+      return {
+        x: newTwinTouch.x - (oldState.twinTouch.x - oldState.zoomStartState.x) * scaleFactor,
+        y: newTwinTouch.y - (oldState.twinTouch.y - oldState.zoomStartState.y) * scaleFactor,
+        scale: oldState.zoomStartState.scale * scaleFactor,
+      };
     })
   }
 
@@ -200,6 +195,31 @@ export default class RePinchy extends React.Component {
     else if (event.deltaY > 0) {
       this._applyZoom(event_offsetX, event_offsetY, 1.0 / this.props.scaleFactor);
     }
+    event.preventDefault();
+  }
+
+  handleMouseDown(event) {
+    console.log("mouse down");
+    event.preventDefault();
+  }
+
+  handleMouseUp(event) {
+    console.log("mouse up");
+    event.preventDefault();
+  }
+
+  handleMouseMove(event) {
+    console.log("mouse move");
+  }
+
+  handleClickCapture(event) {
+    // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
+    console.log("mouse click");
+    //event.stopPropagation();
+  }
+
+  onTestButtonClick(event) {
+    console.log("Yeah!");
     event.preventDefault();
   }
 
@@ -250,6 +270,10 @@ export default class RePinchy extends React.Component {
           onTouchMove={this.handleTouchMove}
           onTouchEnd={this.handleTouchEnd}
           onWheel={this.handleWheel}
+          onMouseDown={this.handleMouseDown}
+          onMouseUp={this.handleMouseUp}
+          onMouseMove={this.handleMouseMove}
+          onClickCapture={this.handleClickCapture}
           style={{
             position: 'absolute',
             left: 0,
@@ -268,8 +292,14 @@ export default class RePinchy extends React.Component {
                   marginTop: this.state.y,
                   transformOrigin: "top left",
                   transform: `scale(${this.state.scale})`,
+                  position: 'relative',
               }}>
-              <img src="/static/nature.jpeg" />
+              <img src="/static/nature.jpeg" style={{
+                position: 'absolute',
+              }}/>
+              <input type="submit" onClick={this.onTestButtonClick} style={{
+                position: 'absolute',
+              }}/>
             </div>
           {/*this.props.renderSub(this.state.x, this.state.y, this.state.scale)*/}
         </div>
