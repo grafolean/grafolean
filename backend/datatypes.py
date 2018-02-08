@@ -171,14 +171,8 @@ class Measurement(object):
         self.ts = Timestamp(ts)
         self.value = MeasuredValue(value)
 
-    # @classmethod
-    # def save_posted_data_to_db(cls, posted_data):
-    #     with db.cursor() as c:
-    #         f = IteratorFile(("{}\t{}\t{}".format(str(Path(x['p'])), str(Timestamp(x['t'])), str(MeasuredValue(x['v']))) for x in posted_data))
-    #         c.copy_from(f, 'measurements', columns=('path', 'ts', 'value'))
-
     @classmethod
-    def save_put_data_to_db(cls, put_data):
+    def save_values_data_to_db(cls, put_data, update_on_conflict=True):
 
         aggr = Aggregation()
         try:
@@ -194,7 +188,10 @@ class Measurement(object):
 
             with db.cursor() as c:
                 # https://stackoverflow.com/a/34529505/593487
-                psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
+                if update_on_conflict:
+                    psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
+                else:
+                    psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s", data_iterator, "(%s, %s, %s)", page_size=100)
         finally:
             aggr.fix_aggregations()
 
