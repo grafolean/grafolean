@@ -39,7 +39,7 @@ curl \
 Parameters:
 
     Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as
-        they are lowercase and include only characters a-z, 0-9, dash ('-'), underscore ('_') and dot ('.'), which is treated as a separator by the system. Maximum
+        they include only characters a-z, A-Z, 0-9, dash ('-'), underscore ('_') and dot ('.'), which is treated as a separator by the system. Maximum
         length is 200 characters.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.

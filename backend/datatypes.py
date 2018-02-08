@@ -30,7 +30,7 @@ class _RegexValidatedInputValue(object):
         return str(self.v)
 
 class Path(_RegexValidatedInputValue):
-    _regex = re.compile(r'^([a-z0-9_-]+)([.][a-z0-9_-]+)*$')
+    _regex = re.compile(r'^([a-zA-Z0-9_-]+)([.][a-zA-Z0-9_-]+)*$')
 
     def __init__(self, v, ensure_in_db=False):
         super().__init__(v)
@@ -41,7 +41,7 @@ class Path(_RegexValidatedInputValue):
     @lru_cache(maxsize=256)
     def _get_path_id_from_db(path):
         with db.cursor() as c:
-            path_cleaned = path.strip().lower()
+            path_cleaned = path.strip()
             c.execute('SELECT id FROM paths WHERE path=%s;', (path_cleaned,))
             res = c.fetchone()
             if not res:
@@ -52,7 +52,7 @@ class Path(_RegexValidatedInputValue):
 
 
 class PathFilter(_RegexValidatedInputValue):
-    _regex = re.compile(r'^(([a-z0-9_-]+)|([*?]))([.](([a-z0-9_-]+)|([*?])))*$')
+    _regex = re.compile(r'^(([a-zA-Z0-9_-]+)|([*?]))([.](([a-zA-Z0-9_-]+)|([*?])))*$')
 
     @staticmethod
     def find_matching_paths(path_filters, limit=200):
