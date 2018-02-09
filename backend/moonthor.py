@@ -47,7 +47,40 @@ def handle_invalid_usage(error):
 def values_put():
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-    Measurement.save_put_data_to_db(data)
+    Measurement.save_values_data_to_db(data)
+    return ""
+
+
+@app.route("/api/values", methods=['POST'])
+def values_post():
+    # data comes from two sources, query params and JSON body. We use both and append timestamp to each
+    # piece, then we use the same function as for PUT:
+    data = []
+    now = time.time()
+    json_data = flask.request.get_json()
+    if json_data:
+        for x in json_data:
+            if x.get('t'):
+                return "Parameter 't' shouldn't be specified with POST", 400
+        data = [{
+                'p': x['p'],
+                'v': x['v'],
+                't': now,
+                } for x in json_data]
+    query_params_p = flask.request.args.get('p')
+    if query_params_p:
+        if flask.request.args.get('t'):
+            return "Query parameter 't' shouldn't be specified with POST", 400
+        data.append({
+            'p': query_params_p,
+            'v': flask.request.args.get('v'),
+            't': now,
+        })
+    if not data:
+        return "Missing data", 400
+
+    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
+    Measurement.save_values_data_to_db(data)
     return ""
 
 

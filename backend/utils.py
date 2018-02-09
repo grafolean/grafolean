@@ -63,8 +63,8 @@ def migration_step_1():
 
 def migration_step_2():
     with db.cursor() as c:
-        c.execute('DROP TABLE charts;')
-        c.execute('DROP TABLE dashboards;')
+        #c.execute('DROP TABLE charts;')
+        #c.execute('DROP TABLE dashboards;')
         c.execute('CREATE TABLE dashboards (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL, slug VARCHAR(50) NOT NULL);')
         c.execute('CREATE UNIQUE INDEX dashboards_slug ON dashboards (slug);')
         # yes, I know Postgres has arrays - but there is no advantage in using them (instead of comma-separated text) for path_filters, and it makes

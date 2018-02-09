@@ -5,3 +5,4 @@ WTForms==2.1
 -e git+https://github.com/nathancahill/flask-inputs.git@9d7d32902fe04ceb5a6344edaa35b070cf93a6dc#egg=Flask_Inputs
 python-slugify==1.2.4
 Flask-Sockets==0.2.1
+jsonschema==2.6.0
