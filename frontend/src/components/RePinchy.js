@@ -36,7 +36,8 @@ export default class RePinchy extends React.Component {
       y: 0,
       scale: 1,
       zoomStartState: null,  // if zooming is in progress (for example when pinching) this contains start x, y and scale
-      twinTouch: null,
+      twinTouch: null,  // internal data about progress of twin finger touch
+      mousePan: null,  // internal data abour progress of mounse pan operation (drag to pan)
       overlay: {
         shown: false,
         msg: "",
@@ -199,17 +200,54 @@ export default class RePinchy extends React.Component {
   }
 
   handleMouseDown(event) {
-    console.log("mouse down");
-    event.preventDefault();
-  }
+    console.log("mouse down")
+    // we need to listen for mouseup anywhere, not just over our component, so we need to
+    // register event listener:
+    window.addEventListener('mouseup', this.handleMouseUp, false);
+    window.addEventListener('mousemove', this.handleMouseMove, false);
 
-  handleMouseUp(event) {
-    console.log("mouse up");
+    const event_clientX = event.clientX,
+          event_clientY = event.clientY;
+    this.setState((oldState) => {
+      return {
+        mousePan: {
+          startClientX: event_clientX,
+          startClientY: event_clientY,
+        },
+        zoomStartState: {  // remember old state so you can apply transformations from it; should be much more accurate
+          x: oldState.x,
+          y: oldState.y,
+          scale: oldState.scale,
+        }
+      };
+    })
     event.preventDefault();
   }
 
   handleMouseMove(event) {
-    console.log("mouse move");
+    //console.log("mouse move");
+    if (!this.state.mousePan)
+      return;
+    const event_clientX = event.clientX,
+          event_clientY = event.clientY;
+    this.setState((oldState) => {
+      return {
+        x: oldState.zoomStartState.x + (event_clientX - oldState.mousePan.startClientX),
+        y: oldState.zoomStartState.y + (event_clientY - oldState.mousePan.startClientY),
+      };
+    });
+  }
+
+  handleMouseUp(event) {
+    console.log("mouse up");
+    // event listener did its work, now unregister it:
+    window.removeEventListener('mouseup', this.handleMouseUp, false);
+    window.removeEventListener('mousemove', this.handleMouseMove, false);
+    this.setState({
+      mousePan: null,
+      zoomStartState: null,
+    });
+    event.preventDefault();
   }
 
   handleClickCapture(event) {
@@ -271,8 +309,6 @@ export default class RePinchy extends React.Component {
           onTouchEnd={this.handleTouchEnd}
           onWheel={this.handleWheel}
           onMouseDown={this.handleMouseDown}
-          onMouseUp={this.handleMouseUp}
-          onMouseMove={this.handleMouseMove}
           onClickCapture={this.handleClickCapture}
           style={{
             position: 'absolute',
