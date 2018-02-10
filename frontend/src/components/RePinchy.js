@@ -35,7 +35,9 @@ export default class RePinchy extends React.Component {
       x: 0,
       y: 0,
       scale: 1,
-      zoomStartState: null,  // if zooming is in progress (for example when pinching) this contains start x, y and scale
+      zoomInProgress: false,
+
+      zoomStartState: null,  // if zooming/panning is in progress (for example when pinching) this contains start x, y and scale
       twinTouch: null,  // internal data about progress of twin finger touch
       mousePan: null,  // internal data abour progress of mounse pan operation (drag to pan)
       overlay: {
@@ -55,8 +57,16 @@ export default class RePinchy extends React.Component {
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
+    this.handleCtrlKeyUp = this.handleCtrlKeyUp.bind(this);
     this.clearOverlay = this.clearOverlay.bind(this);
     this.onTestButtonClick = this.onTestButtonClick.bind(this);
+  }
+
+  componentDidMount(){
+    document.addEventListener("keyup", this.handleCtrlKeyUp, false);
+  }
+  componentWillUnmount(){
+    document.removeEventListener("keyup", this.handleCtrlKeyUp, false);
   }
 
   // https://reactjs.org/docs/events.html
@@ -88,17 +98,8 @@ export default class RePinchy extends React.Component {
   }
 
   handleTouchEnd(event) {
-    event.preventDefault();
-    if (event.touches.length == 1) {
-      event.preventDefault();  // !!! disable in production
-      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
-      return;
-    }
-    if (event.touches.length == 2) {
-      event.preventDefault();
-      //this.clearOverlay();
-      this.handleTwinTouchEnd(event);
-    }
+    // when touch ends, it ends - it doesn't matter with how many fingers:
+    this.handleTwinTouchEnd(event);
   }
 
   _getTwinTouchDims(event) {
@@ -127,7 +128,8 @@ export default class RePinchy extends React.Component {
           x: oldState.x,
           y: oldState.y,
           scale: oldState.scale,
-        }
+        },
+        zoomInProgress: true,
       }
     })
   }
@@ -144,7 +146,7 @@ export default class RePinchy extends React.Component {
     event.persist();
     const newTwinTouch = this._getTwinTouchDims(event);
     this.setState((oldState) => {
-      if (oldState.twinTouch === null)
+      if ((oldState.twinTouch === null) || (!oldState.zoomInProgress))
         return oldState;
       let scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
       return {
@@ -157,7 +159,11 @@ export default class RePinchy extends React.Component {
 
   handleTwinTouchEnd(event) {
     this.log("Twin touch end");
-    this.setState({twinTouch: null})
+    this.setState({
+      twinTouch: null,
+      zoomStartState: null,
+      zoomInProgress: false,
+    })
     event.preventDefault();
   }
 
@@ -189,6 +195,8 @@ export default class RePinchy extends React.Component {
     this.log("Wheel CTRL!", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
     const event_offsetX = event.pageX - currentTargetRect.left,
           event_offsetY = event.pageY - currentTargetRect.top;
+
+    this.setState({zoomInProgress: true})
 
     if (event.deltaY < 0) {
       this._applyZoom(event_offsetX, event_offsetY, this.props.scaleFactor);
@@ -250,6 +258,14 @@ export default class RePinchy extends React.Component {
     event.preventDefault();
   }
 
+  handleCtrlKeyUp(event) {
+    if (event.keyCode === 17) {
+      this.setState({
+        zoomInProgress: false,
+      })
+    }
+  }
+
   handleClickCapture(event) {
     // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
     console.log("mouse click");
@@ -309,6 +325,8 @@ export default class RePinchy extends React.Component {
           onTouchEnd={this.handleTouchEnd}
           onWheel={this.handleWheel}
           onMouseDown={this.handleMouseDown}
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp}
           onClickCapture={this.handleClickCapture}
           style={{
             position: 'absolute',
@@ -320,7 +338,7 @@ export default class RePinchy extends React.Component {
             border: '1px solid #eeeeee',
           }}
           >
-          {this.props.renderSub(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale)}
+          {this.props.renderSub(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
         </div>
         {(this.state.overlay.shown)?(
           [

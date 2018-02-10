@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 
+import MoonChart from '../MoonChart';
 import RePinchy from '../RePinchy';
 
 const Home = () => {
@@ -11,7 +12,7 @@ const Home = () => {
         width={200}
         height={300}
         renderSub={
-          (w, h, x, y, scale) => (
+          (w, h, x, y, scale, zoomInProgress) => (
             <div
               style={{
                   width: w,
@@ -19,15 +20,13 @@ const Home = () => {
                   marginLeft: x,
                   marginTop: 0,
                   transformOrigin: "top left",
-                  transform: `scale(${scale})`,
-                  position: 'relative',
+                  transform: `scale(${scale}, 1)`,
+                  backgroundColor: (zoomInProgress) ? ('yellow') : ('white'),
               }}>
-              <img src="/static/nature.jpeg" style={{
-                position: 'absolute',
-              }}/>
-              <input type="submit" onClick={console.log("YEAH, clicked!")} style={{
-                position: 'absolute',
-              }}/>
+              <MoonChart
+                width={200}
+                height={100}
+              />
             </div>
           )} />
 
