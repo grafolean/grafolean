@@ -320,24 +320,7 @@ export default class RePinchy extends React.Component {
             border: '1px solid #eeeeee',
           }}
           >
-            <div
-              style={{
-                  width: this.props.width,
-                  height: this.props.height,
-                  marginLeft: this.state.x,
-                  marginTop: this.state.y,
-                  transformOrigin: "top left",
-                  transform: `scale(${this.state.scale})`,
-                  position: 'relative',
-              }}>
-              <img src="/static/nature.jpeg" style={{
-                position: 'absolute',
-              }}/>
-              <input type="submit" onClick={this.onTestButtonClick} style={{
-                position: 'absolute',
-              }}/>
-            </div>
-          {/*this.props.renderSub(this.state.x, this.state.y, this.state.scale)*/}
+          {this.props.renderSub(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale)}
         </div>
         {(this.state.overlay.shown)?(
           [

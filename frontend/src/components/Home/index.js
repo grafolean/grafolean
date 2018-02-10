@@ -8,17 +8,27 @@ const Home = () => {
     <div>
       Home.
       <RePinchy
-        wdth={200}
+        width={200}
         height={300}
         renderSub={
-          (x, y, scale) => (
-            <img
-              src={`http://lorempixel.com/600/400/nature/`}
+          (w, h, x, y, scale) => (
+            <div
               style={{
-                pointerEvents: scale === 1 ? 'auto' : 'none',
-                transform: `translate3d(${x}px, ${y}px, 0) scale(${scale})`,
-                transformOrigin: '0 0',
-              }} />
+                  width: w,
+                  height: h,
+                  marginLeft: x,
+                  marginTop: 0,
+                  transformOrigin: "top left",
+                  transform: `scale(${scale})`,
+                  position: 'relative',
+              }}>
+              <img src="/static/nature.jpeg" style={{
+                position: 'absolute',
+              }}/>
+              <input type="submit" onClick={console.log("YEAH, clicked!")} style={{
+                position: 'absolute',
+              }}/>
+            </div>
           )} />
 
     </div>
