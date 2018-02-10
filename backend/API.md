@@ -108,6 +108,20 @@ JSON response:
     ]
 }
 
+# Paths
+
+## Reading paths (GET)
+
+```
+curl 'https://moonthor.com/api/paths/'
+```
+
+JSON response:
+
+[
+    <Path0>,
+    ...
+]
 
 # Dashboards
 

@@ -50,6 +50,13 @@ class Path(_RegexValidatedInputValue):
             path_id = res[0]
             return path_id
 
+    @staticmethod
+    def get_all_paths():
+        with db.cursor() as c:
+            c.execute('SELECT path FROM paths ORDER BY path;')
+            for path, in c:
+                yield(path)
+
 
 class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^(([a-zA-Z0-9_-]+)|([*?]))([.](([a-zA-Z0-9_-]+)|([*?])))*$')

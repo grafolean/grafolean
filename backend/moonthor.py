@@ -134,6 +134,11 @@ def values_get():
     }), 200
 
 
+@app.route("/api/paths", methods=['GET'])
+def paths_get():
+    return json.dumps(list(Path.get_all_paths())), 200
+
+
 @app.route("/api/dashboards", methods=['GET', 'POST'])
 def dashboards_crud():
     if flask.request.method == 'GET':
