@@ -13,22 +13,13 @@ const Home = () => {
         height={300}
         renderSub={
           (w, h, x, y, scale, zoomInProgress) => (
-            <div
-              style={{
-                  width: w,
-                  height: h,
-                  marginLeft: x,
-                  marginTop: 0,
-                  transformOrigin: "top left",
-                  transform: `scale(${scale}, 1)`,
-                  backgroundColor: (zoomInProgress) ? ('yellow') : ('white'),
-              }}>
               <MoonChart
                 portWidth={w}
                 portHeight={h}
                 panX={x}
                 paxY={0}
-                scale={3600}
+                scale={scale}
+                zoomInProgress={zoomInProgress}
                 minX={1234567820.0}
                 maxX={1234569220.0}
                 minY={0}
@@ -70,7 +61,6 @@ const Home = () => {
                   ],
                 }}
               />
-            </div>
           )} />
 
     </div>

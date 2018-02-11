@@ -22,7 +22,8 @@ export default class RePinchy extends React.Component {
   static defaultProps = {
     width: 200,  // RePinchy's viewport width & height
     height: 300,
-    scaleFactor: 1.1,
+    initialScale: 1.0,
+    wheelScaleFactor: 1.1,  // how fast wheel zooms in/out
     renderSub: (x, y, scale) => {
       return <p>Please specify renderSub prop!</p>
     }
@@ -34,7 +35,7 @@ export default class RePinchy extends React.Component {
     this.state = {
       x: 0,
       y: 0,
-      scale: 1,
+      scale: this.props.initialScale,
       zoomInProgress: false,
 
       zoomStartState: null,  // if zooming/panning is in progress (for example when pinching) this contains start x, y and scale
@@ -199,10 +200,10 @@ export default class RePinchy extends React.Component {
     this.setState({zoomInProgress: true})
 
     if (event.deltaY < 0) {
-      this._applyZoom(event_offsetX, event_offsetY, this.props.scaleFactor);
+      this._applyZoom(event_offsetX, event_offsetY, this.props.wheelScaleFactor);
     }
     else if (event.deltaY > 0) {
-      this._applyZoom(event_offsetX, event_offsetY, 1.0 / this.props.scaleFactor);
+      this._applyZoom(event_offsetX, event_offsetY, 1.0 / this.props.wheelScaleFactor);
     }
     event.preventDefault();
   }
