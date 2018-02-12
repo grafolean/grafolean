@@ -20,8 +20,8 @@ const Home = () => {
                 paxY={0}
                 scale={scale}
                 zoomInProgress={zoomInProgress}
-                minX={1234567820.0}
-                maxX={1234569220.0}
+                minTimestamp={1234567820.0}
+                maxTimestamp={1234569220.0}
                 minY={0}
                 maxY={250}
                 data={{
