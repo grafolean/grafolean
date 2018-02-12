@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 
-const XAxisLabel = styled.text`
-  font-family: "Comic Sans MS", cursive, sans-serif;
-  font-size: 12px;
-  text-anchor: middle;
-  fill: #333333;
-  stroke: none;
+import XAxisTick from './xaxistick';
+
+const Line = styled.line`
+  shape-rendering: crispEdges;
+  stroke: #999999;
+  stroke-width: 1;
 `
+Line.displayName = "Line"
 
 export default class TimestampXAxis extends Component {
 
@@ -17,7 +18,7 @@ export default class TimestampXAxis extends Component {
     https://www.highcharts.com/demo/line-boost/dark-unica
   */
 
-  _getXLabels(minTimestamp, maxTimestamp, chartWidth) {
+  _getXLabels(minTimestamp, maxTimestamp, scale) {
     return [
       {x: 20, l: "01:00"},
       {x: 70, l: "02:00"},
@@ -31,13 +32,11 @@ export default class TimestampXAxis extends Component {
     return (
       <g>
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
-        <line x1={0} y1={0} x2={this.props.width} y2={0} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
+        <Line x1={0} y1={0} x2={this.props.width} y2={0} />
 
-        <line x1={20} y1={0} x2={20} y2={3} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
-        <XAxisLabel x={20} y={15}>1:00</XAxisLabel>
+        <XAxisTick x={20} label="1:00" />
 
-        <line x1={70} y1={0} x2={70} y2={3} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
-        <XAxisLabel x={70} y={15}>2:00</XAxisLabel>
+        <XAxisTick x={70} label="2:00" />
       </g>
     );
   }

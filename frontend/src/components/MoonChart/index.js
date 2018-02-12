@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import TimestampXAxis from './timestampxaxis'
+import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 
 export default class MoonChart extends Component {
@@ -40,8 +40,7 @@ export default class MoonChart extends Component {
           </g>
           <g transform={`translate(${yAxisWidth - 1} ${xAxisTop})`}>
             <TimestampXAxis
-              portWidth={this.props.portWidth - yAxisWidth}
-              width={chartWidth}
+              width={this.props.portWidth - yAxisWidth}
               height={xAxisHeight}
               color="#999999"
 
