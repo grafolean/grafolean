@@ -11,13 +11,18 @@ const Home = () => {
       <RePinchy
         width={600}
         height={300}
+        revertX={-1}
+        initialState={{
+          x: 1234567820.0,
+          y: 0.0,
+          scale: 1.0,
+        }}
         renderSub={
           (w, h, x, y, scale, zoomInProgress) => (
               <MoonChart
                 portWidth={w}
                 portHeight={h}
                 panX={x}
-                paxY={0}
                 scale={scale}
                 zoomInProgress={zoomInProgress}
                 minTimestamp={1234567820.0}
