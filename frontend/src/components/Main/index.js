@@ -6,12 +6,8 @@ import uniqueId from 'lodash/uniqueId';
 
 import './Main.css';
 // import Chart from '../Chart'
-import ChartContainer from '../../containers/ChartContainer'
-import store from '../../store'
-import { fetchChartData } from '../../store/actions';
 import Home from '../Home'
 import About from '../About'
-import DashboardsList from '../DashboardsList'
 import DashboardsListContainer from '../../containers/DashboardsListContainer'
 import DashboardViewContainer from '../../containers/DashboardViewContainer'
 import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'

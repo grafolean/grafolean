@@ -1,10 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import MoonChart from '../MoonChart';
 import RePinchy from '../RePinchy';
 
 const Home = () => {
-  let width = 1920, height = 1080;
   return (
     <div>
       Home.

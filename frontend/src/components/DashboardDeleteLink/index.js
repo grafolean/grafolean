@@ -1,5 +1,4 @@
-import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom';
+import React from 'react';
 
 import store from '../../store';
 import { submitDeleteDashboard } from '../../store/actions';

@@ -73,12 +73,12 @@ export default class RePinchy extends React.Component {
 
   // https://reactjs.org/docs/events.html
   handleTouchStart(event) {
-    if (event.touches.length == 1) {
+    if (event.touches.length === 1) {
       event.preventDefault();  // !!! disable in production
       //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
       return;
     }
-    if (event.touches.length == 2) {
+    if (event.touches.length === 2) {
       event.preventDefault();
       //this.clearOverlay();
       //let {x, y, dist} = this._getTwinTouchDims(event);
@@ -87,12 +87,12 @@ export default class RePinchy extends React.Component {
   }
 
   handleTouchMove(event) {
-    if (event.touches.length == 1) {
+    if (event.touches.length === 1) {
       event.preventDefault();  // !!! disable in production
       //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
       return;
     }
-    if (event.touches.length == 2) {
+    if (event.touches.length === 2) {
       event.preventDefault();
       //this.clearOverlay();
       this.handleTwinTouchMove(event);
@@ -315,7 +315,7 @@ export default class RePinchy extends React.Component {
   }
 
   render() {
-    return ([
+    return (
       <div style={{
         position: 'relative',
         width: this.props.width,
@@ -375,12 +375,7 @@ export default class RePinchy extends React.Component {
             </div>
           ]
         ):(null)}
-      </div>,
-      <div style={{width: 200, height: 700}}>
-        {this.state.debugMessages.map((item) =>
-          <p key={item.id}>{item.id}. {item.msg}</p>
-        )}
-      </div>]
-  );
+      </div>
+    );
   }
 }

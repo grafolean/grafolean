@@ -1,8 +1,5 @@
 import { connect } from 'react-redux'
 
-import store from '../store'
-import { fetchDashboardDetails } from '../store/actions';
-
 import DashboardView from '../components/DashboardView'
 
 const mapStateToProps = (state, ownProps) => {

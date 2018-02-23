@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import store from '../../store';
 import { submitNewChart } from '../../store/actions';

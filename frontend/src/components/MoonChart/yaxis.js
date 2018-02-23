@@ -13,7 +13,7 @@ export default class YAxis extends Component {
 
   render() {
     return (
-      <g class="y-axis">
+      <g>
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
         <line x1={this.props.width - 1} y1={0} x2={this.props.width - 1} y2={this.props.height} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
 

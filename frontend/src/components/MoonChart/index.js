@@ -7,7 +7,6 @@ export default class MoonChart extends Component {
 
   render() {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
-    const chartWidth = Math.round(this.props.scale * (this.props.maxX - this.props.minX));
     const yAxisWidth = Math.min(Math.round(this.props.portWidth * 0.1), 100);
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
     const xAxisTop = this.props.portHeight - xAxisHeight;

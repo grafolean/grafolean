@@ -6,7 +6,6 @@ import {
   VictoryAxis,
   VictoryZoomContainer,
   VictoryTheme,
-  VictorySelectionContainer,
 } from 'victory';
 import Loading from '../Loading'
 import moment from 'moment';

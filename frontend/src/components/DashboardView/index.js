@@ -1,7 +1,7 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import store from '../../store'
-import { fetchDashboardDetails, submitShowNewChartForm } from '../../store/actions';
+import { fetchDashboardDetails } from '../../store/actions';
 
 import Loading from '../Loading';
 import ChartAddForm from '../ChartAddForm';

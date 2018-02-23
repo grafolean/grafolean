@@ -144,7 +144,7 @@ function notifications(state=[],action) {
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
       return [{type: 'info', message: "Successfully removed dashboard", id: uniqueId('notif-')}, ...state]
     case REMOVE_NOTIFICATION:
-      return state.filter(n => n.id != action.notificationId);
+      return state.filter(n => n.id !== action.notificationId);
     default:
       return state;
   }

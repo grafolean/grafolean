@@ -26,17 +26,17 @@ export default class TimestampXAxis extends Component {
     const firstTs = (Math.floor(panX / 60.0) + 1) * 60.0;
     let ret = []
     for (let ts = firstTs; ts < ts1; ts += 60) {
-      ret.push({x: ts - panX, l: timeTickFormatter(ts)})
+      ret.push({ts: ts, x: ts - panX, l: timeTickFormatter(ts)})
     }
     return ret;
-    if (scale == 1.0) {
-      return [
-        {x: 20, l: "01:00"},
-        {x: 70, l: "02:00"},
-        {x: 120, l: "03:00"},
-        {x: 170, l: "04:00"},
-      ]
-    }
+    // if (scale == 1.0) {
+    //   return [
+    //     {x: 20, l: "01:00"},
+    //     {x: 70, l: "02:00"},
+    //     {x: 120, l: "03:00"},
+    //     {x: 170, l: "04:00"},
+    //   ]
+    // }
   }
 
   render() {
@@ -47,7 +47,7 @@ export default class TimestampXAxis extends Component {
         <Line x1={0} y1={0} x2={this.props.width} y2={0} />
 
         {tickInfos.map((tickInfo) => (
-          <XAxisTick x={tickInfo.x} label={tickInfo.l} />
+          <XAxisTick key={tickInfo.ts} x={tickInfo.x} label={tickInfo.l} />
         ))}
       </g>
     );
