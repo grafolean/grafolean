@@ -6,6 +6,7 @@ import uniqueId from 'lodash/uniqueId';
 
 import './Main.css';
 // import Chart from '../Chart'
+import Button from '../Button'
 import Home from '../Home'
 import About from '../About'
 import DashboardsListContainer from '../../containers/DashboardsListContainer'
@@ -100,7 +101,7 @@ export default class Main extends Component {
     let sidebarContent = (
       <Navigation>
         {(!this.state.sidebarDocked)?(
-          <a href="#" onClick={this.onSidebarXClick}>X</a>
+          <Button onClick={this.onSidebarXClick}>X</Button>
         ):('')}
         <Header>
           <h1 className="App-title">MoonThor</h1>
@@ -132,7 +133,7 @@ export default class Main extends Component {
                 },
               }}>
           {(!this.state.sidebarDocked)?(
-            <a href="#" onClick={this.onBurgerClick}>burger</a>
+            <Button onClick={this.onBurgerClick}>burger</Button>
           ):('')}
 
         <Flex>

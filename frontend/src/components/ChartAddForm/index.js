@@ -4,6 +4,7 @@ import store from '../../store';
 import { submitNewChart } from '../../store/actions';
 
 import Loading from '../Loading';
+import Button from '../Button';
 
 export default class ChartAddForm extends React.Component {
 
@@ -72,7 +73,7 @@ export default class ChartAddForm extends React.Component {
     if (!this.state.formOpened) {
       return (
         <div>
-            <a href="#" onClick={(event) => this.handleShowHideForm(event, true)}>+ add chart</a>
+            <Button onClick={(event) => this.handleShowHideForm(event, true)}>+ add chart</Button>
 
         </div>
       )
@@ -80,7 +81,7 @@ export default class ChartAddForm extends React.Component {
 
     return (
       <div>
-        <a href="#" onClick={(event) => this.handleShowHideForm(event, false)}>- cancel</a>
+        <Button onClick={(event) => this.handleShowHideForm(event, false)}>- cancel</Button>
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
           <label>
             Chart title:
