@@ -10,6 +10,7 @@ const Home = () => {
       <RePinchy
         width={600}
         height={300}
+        padLeft={60}
         initialState={{
           x: -1234567820.0,
           y: 0.0,

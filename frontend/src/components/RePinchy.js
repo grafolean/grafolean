@@ -22,6 +22,7 @@ export default class RePinchy extends React.Component {
   static defaultProps = {
     width: 200,  // RePinchy's viewport width & height
     height: 300,
+    padLeft: 0,  // how much the zoomable inner component is padded on left
     initialScale: 1.0,
     wheelScaleFactor: 1.1,  // how fast wheel zooms in/out
     renderSub: (x, y, scale) => {
@@ -106,7 +107,7 @@ export default class RePinchy extends React.Component {
   _getTwinTouchDims(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     const dist = Math.sqrt(Math.pow(event.touches[0].clientX - event.touches[1].clientX, 2) + Math.pow(event.touches[0].clientY - event.touches[1].clientY, 2));
-    let x = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left;
+    let x = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left - this.props.padLeft;
     let y = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
     this.log("Touch:", x, y, dist);
     return {
@@ -194,7 +195,7 @@ export default class RePinchy extends React.Component {
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
     this.log("Wheel CTRL!", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
-    const event_offsetX = event.pageX - currentTargetRect.left,
+    const event_offsetX = event.pageX - currentTargetRect.left - this.props.padLeft,
           event_offsetY = event.pageY - currentTargetRect.top;
 
     this.setState({zoomInProgress: true})
