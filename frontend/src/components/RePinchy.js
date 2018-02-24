@@ -24,7 +24,6 @@ export default class RePinchy extends React.Component {
     height: 300,
     initialScale: 1.0,
     wheelScaleFactor: 1.1,  // how fast wheel zooms in/out
-    revertX: 1,  // -1 if you want to revert x position
     renderSub: (x, y, scale) => {
       return <p>Please specify renderSub prop!</p>
     }
@@ -152,8 +151,8 @@ export default class RePinchy extends React.Component {
         return oldState;
       let scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
       return {
-        x: newTwinTouch.x - this.props.revertX * (oldState.twinTouch.x - oldState.zoomStartState.x) * scaleFactor,
-        y: newTwinTouch.y - this.props.revertX * (oldState.twinTouch.y - oldState.zoomStartState.y) * scaleFactor,
+        x: newTwinTouch.x - (oldState.twinTouch.x - oldState.zoomStartState.x) * scaleFactor,
+        y: newTwinTouch.y - (oldState.twinTouch.y - oldState.zoomStartState.y) * scaleFactor,
         scale: oldState.zoomStartState.scale * scaleFactor,
       };
     })
@@ -242,8 +241,8 @@ export default class RePinchy extends React.Component {
           event_clientY = event.clientY;
     this.setState((oldState) => {
       return {
-        x: oldState.zoomStartState.x + this.props.revertX * (event_clientX - oldState.mousePan.startClientX),
-        y: oldState.zoomStartState.y + this.props.revertX * (event_clientY - oldState.mousePan.startClientY),
+        x: oldState.zoomStartState.x + (event_clientX - oldState.mousePan.startClientX),
+        y: oldState.zoomStartState.y + (event_clientY - oldState.mousePan.startClientY),
       };
     });
   }
