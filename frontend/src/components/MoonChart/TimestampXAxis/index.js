@@ -22,21 +22,20 @@ export default class TimestampXAxis extends Component {
   */
 
   _getXTicksPositions(panX, scale, width) {
-    const ts1 = panX + (width / scale);
-    const firstTs = (Math.floor(panX / 60.0) + 1) * 60.0;
+
+    const _x2ts = (x, scale) => { return x / scale; }
+    const _ts2x = (ts, scale) => { return ts * scale; }
+
+    const ts0 = _x2ts(panX, scale);
+    const ts1 = ts0 + _x2ts(width, scale);
+    const tsSpacing = 120;  // the distance between two consecutive ticks
+
+    const firstTs = (Math.floor(ts0 / tsSpacing) + 1) * tsSpacing;
     let ret = []
-    for (let ts = firstTs; ts < ts1; ts += 60) {
-      ret.push({ts: ts, x: ts - panX, l: timeTickFormatter(ts)})
+    for (let ts = firstTs; ts < ts1; ts += tsSpacing) {
+      ret.push({ts: ts, x: _ts2x(ts, scale) - panX, l: timeTickFormatter(ts)})
     }
     return ret;
-    // if (scale == 1.0) {
-    //   return [
-    //     {x: 20, l: "01:00"},
-    //     {x: 70, l: "02:00"},
-    //     {x: 120, l: "03:00"},
-    //     {x: 170, l: "04:00"},
-    //   ]
-    // }
   }
 
   render() {
