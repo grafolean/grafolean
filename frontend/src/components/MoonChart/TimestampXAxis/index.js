@@ -4,7 +4,9 @@ import moment from 'moment';
 
 import XAxisTick from './xaxistick';
 
-const timeTickFormatter = (tick) => moment(tick * 1000).format('HH:mm')
+const minutesTickFormatter = (ts) => moment(ts * 1000).format('HH:mm');
+const _x2ts = (x, scale) => { return x / scale; }
+const _ts2x = (ts, scale) => { return ts * scale; }
 
 const Line = styled.line`
   shape-rendering: crispEdges;
@@ -22,18 +24,24 @@ export default class TimestampXAxis extends Component {
   */
 
   _getXTicksPositions(panX, scale, width) {
-
-    const _x2ts = (x, scale) => { return x / scale; }
-    const _ts2x = (ts, scale) => { return ts * scale; }
-
+    console.log(scale)
     const ts0 = _x2ts(panX, scale);
-    const ts1 = ts0 + _x2ts(width, scale);
-    const tsSpacing = 120;  // the distance between two consecutive ticks
+    const ts1 = _x2ts(panX + width, scale);
+    let minorTicksSpacing, labelSpacing;
+    if (scale > 1.3) {
+      [minorTicksSpacing, labelSpacing] = [10, 60];
+    }
+    else {
+      [minorTicksSpacing, labelSpacing] = [60, 120];
+    }
 
-    const firstTs = (Math.floor(ts0 / tsSpacing) + 1) * tsSpacing;
+    const firstTs = (Math.floor(ts0 / minorTicksSpacing) + 1) * minorTicksSpacing;
     let ret = []
-    for (let ts = firstTs; ts < ts1; ts += tsSpacing) {
-      ret.push({ts: ts, x: _ts2x(ts, scale) - panX, l: timeTickFormatter(ts)})
+    for (let ts = firstTs; ts < ts1; ts += minorTicksSpacing) {
+      if (ts % labelSpacing === 0)
+        ret.push({ts: ts, x: _ts2x(ts, scale) - panX, l: minutesTickFormatter(ts)})
+      else
+        ret.push({ts: ts, x: _ts2x(ts, scale) - panX, l: null})
     }
     return ret;
   }

@@ -23,7 +23,9 @@ export default class XAxisTick extends Component {
     return (
       <g>
         <Tick x1={this.props.x} y1={0} x2={this.props.x} y2={3} />
-        <Label x={this.props.x} y={15}>{this.props.label}</Label>
+        (this.props.label === null):(null)?(
+          <Label x={this.props.x} y={15}>{this.props.label}</Label>
+        )
       </g>
     );
   }
