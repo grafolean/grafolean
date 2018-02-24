@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 
 const YAxisLabel = styled.text`
@@ -8,8 +8,9 @@ const YAxisLabel = styled.text`
   fill: #333333;
   stroke: none;
 `
+YAxisLabel.displayName = 'YAxisLabel'
 
-export default class YAxis extends Component {
+export default class YAxis extends React.Component {
 
   render() {
     return (

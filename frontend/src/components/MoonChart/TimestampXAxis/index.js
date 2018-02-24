@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
 
@@ -17,7 +17,7 @@ const Line = styled.line`
 `
 Line.displayName = "Line"
 
-export default class TimestampXAxis extends Component {
+export default class TimestampXAxis extends React.Component {
 
   /*
     We wish to display sensible X axis labels depending on time range selected. For example, this looks

@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 
 import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 
-export default class MoonChart extends Component {
+export default class MoonChart extends React.Component {
 
   render() {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
