@@ -30,6 +30,8 @@ export default class RePinchy extends React.Component {
     }
   };
 
+  mouseMoveState = null;  // if zooming/panning with mouse down/move/up is in progress this contains all necessary data about progress
+
   constructor() {
     super(...arguments);
 
@@ -57,6 +59,7 @@ export default class RePinchy extends React.Component {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.updateMouseMove = this.updateMouseMove.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleCtrlKeyUp = this.handleCtrlKeyUp.bind(this);
@@ -210,53 +213,64 @@ export default class RePinchy extends React.Component {
   }
 
   handleMouseDown(event) {
-    console.log("mouse down")
-    // we need to listen for mouseup anywhere, not just over our component, so we need to
-    // register event listener:
+    // mouse drag started, let's remember everything we need to know to follow it:
+    this.mouseMoveState = {
+      startState: {
+        x: this.state.x,
+        y: this.state.y,
+        scale: this.state.scale,
+      },
+      mouseDownEvent: {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      },
+      dirty: false,  // this flag makes checking if something has changed much easier
+      animationId: requestAnimationFrame(this.updateMouseMove),
+    }
+
+    // we need to listen for mousemove/up anywhere, not just over our component, so we need to
+    // register event listener manually:
     window.addEventListener('mouseup', this.handleMouseUp, false);
     window.addEventListener('mousemove', this.handleMouseMove, false);
 
-    const event_clientX = event.clientX,
-          event_clientY = event.clientY;
-    this.setState((oldState) => {
-      return {
-        mousePan: {
-          startClientX: event_clientX,
-          startClientY: event_clientY,
-        },
-        zoomStartState: {  // remember old state so you can apply transformations from it; should be much more accurate
-          x: oldState.x,
-          y: oldState.y,
-          scale: oldState.scale,
-        }
-      };
-    })
     event.preventDefault();
   }
 
-  handleMouseMove(event) {
-    //console.log("mouse move");
-    if (!this.state.mousePan)
+  updateMouseMove() {
+    // schedule a repeat:
+    if (!this.mouseMoveState)
       return;
-    const event_clientX = event.clientX,
-          event_clientY = event.clientY;
+    this.mouseMoveState.animationId = requestAnimationFrame(this.updateMouseMove)
+
+    if (!this.mouseMoveState.dirty)
+      return;
+    this.mouseMoveState.dirty = false;
     this.setState((oldState) => {
       return {
-        x: oldState.zoomStartState.x + (event_clientX - oldState.mousePan.startClientX),
-        y: oldState.zoomStartState.y + (event_clientY - oldState.mousePan.startClientY),
+        x: this.mouseMoveState.startState.x + (this.mouseMoveState.mouseMoveEvent.clientX - this.mouseMoveState.mouseDownEvent.clientX),
+        y: this.mouseMoveState.startState.y + (this.mouseMoveState.mouseMoveEvent.clientY - this.mouseMoveState.mouseDownEvent.clientY),
       };
     });
   }
 
+  handleMouseMove(event) {
+    if (!this.mouseMoveState)
+      return;
+    this.mouseMoveState.mouseMoveEvent = {
+      clientX: event.clientX,
+      clientY: event.clientY,
+    }
+    this.mouseMoveState.dirty = true;  // we could compare if x/y really changed, but we wouldn't have gotten mousemove if they didn't
+  }
+
   handleMouseUp(event) {
-    console.log("mouse up");
     // event listener did its work, now unregister it:
     window.removeEventListener('mouseup', this.handleMouseUp, false);
     window.removeEventListener('mousemove', this.handleMouseMove, false);
-    this.setState({
-      mousePan: null,
-      zoomStartState: null,
-    });
+    // stop animation and forget about the whole mouse drag:
+    cancelAnimationFrame(this.mouseMoveState.animationId);
+    this.mouseMoveState = null;
+
     event.preventDefault();
   }
 
