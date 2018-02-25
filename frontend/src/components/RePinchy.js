@@ -24,6 +24,8 @@ export default class RePinchy extends React.Component {
     height: 300,
     padLeft: 0,  // how much the zoomable inner component is padded on left
     initialScale: 1.0,
+    minScale: 2.8837376326873415e-7,
+    maxScale: 128.0,
     wheelScaleFactor: 1.1,  // how fast wheel zooms in/out
     renderSub: (x, y, scale) => {
       return <p>Please specify renderSub prop!</p>
@@ -180,8 +182,14 @@ export default class RePinchy extends React.Component {
     // returns the function which can be used to setState
     return (oldState) => {
       let startState = (oldState.zoomStartState === null) ? (oldState) : (oldState.zoomStartState);
+      let newScale = startState.scale * scaleFactor;
+      // check scale boundaries:
+      if (newScale < this.props.minScale || newScale > this.props.maxScale) {
+        scaleFactor = 1.0;
+        newScale = startState.scale;
+      }
       return {
-        scale: startState.scale * scaleFactor,
+        scale: newScale,
         x: zoomOffsetX - (zoomOffsetX - startState.x) * scaleFactor,
         y: zoomOffsetY - (zoomOffsetY - startState.y) * scaleFactor,
       }
