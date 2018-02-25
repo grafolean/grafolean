@@ -9,8 +9,9 @@ const MinorTick = styled.line`
 MinorTick.displayName = "MinorTick"
 
 const MajorTick = styled.line`
+  shape-rendering: crispEdges;
   stroke: #999999;
-  stroke-width: 1.6;
+  stroke-width: 1;
 `
 MajorTick.displayName = "MajorTick"
 
