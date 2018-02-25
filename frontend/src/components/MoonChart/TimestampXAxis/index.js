@@ -4,9 +4,10 @@ import moment from 'moment';
 
 import XAxisTick from './xaxistick';
 
-const secondsTickFormatter = (ts) => moment(ts * 1000).format('HH:mm:ss');
-const minutesTickFormatter = (ts) => moment(ts * 1000).format('HH:mm');
-const hoursTickFormatter = (ts) => moment(ts * 1000).format('HH');
+// http://momentjs.com/docs/#/parsing/string-format/
+const secondsTickFormatter = (ts) => moment(ts * 1000).utcOffset(0).format('HH:mm:ss');
+const minutesTickFormatter = (ts) => moment(ts * 1000).utcOffset(0).format('HH:mm');
+const daysTickFormatter = (ts) => moment(ts * 1000).format('D.M.');
 const _x2ts = (x, scale) => { return x / scale; }
 const _ts2x = (ts, scale) => { return ts * scale; }
 
@@ -53,7 +54,10 @@ export default class TimestampXAxis extends React.Component {
     else if (scale > 0.9) {
       [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [10, 60, 60, minutesTickFormatter];
     }
-    else if (scale > 0.23) {
+    else if (scale > 0.50) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [60, 120, 120, minutesTickFormatter];
+    }
+    else if (scale > 0.28) {
       [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [60, 300, 300, minutesTickFormatter];
     }
     else if (scale > 0.082) {
@@ -62,8 +66,62 @@ export default class TimestampXAxis extends React.Component {
     else if (scale > 0.035) {
       [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 1800, 1800, minutesTickFormatter];
     }
-    else {
+    else if (scale > 0.016) {
       [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 3600, 3600, minutesTickFormatter];
+    }
+    else if (scale > 0.010) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 3600, 2*3600, minutesTickFormatter];
+    }
+    else if (scale > 0.0048) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 4*3600, 4*3600, minutesTickFormatter];
+    }
+    else if (scale > 0.0027) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 6*3600, 6*3600, minutesTickFormatter];
+    }
+    else if (scale > 0.00138) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 12*3600, 12*3600, minutesTickFormatter];
+    }
+    else if (scale > 0.0011) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 12*3600, 24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.0008) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [12*3600, 12*3600, 24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.0007) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 24*3600, 24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.00036) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 2*24*3600, 2*24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.00016) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 4*24*3600, 4*24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.00010) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 8*24*3600, 8*24*3600, daysTickFormatter];
+    }
+    else if (scale > 0.0) {
+      // now we are above the threshold, so we need to use special math to get 1st of each month:
+      //[minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [moment.duration({'days' : 1}), 16*24*3600, 16*24*3600, daysTickFormatter];
+      let ret = []
+      const dayDuration = moment.duration({'days' : 1});
+      const tsMin = _x2ts(panX, scale);
+      const tsMax = _x2ts(panX + width, scale);
+      const start = moment(tsMin*1000).startOf('day').add(dayDuration);
+      const end = moment(tsMax*1000).endOf('day');
+      for (let day = start; day.isBefore(end); day.add(dayDuration)) {
+        let ts = day.unix();
+        let isFirstOfMonth = (day.date() === 1);
+        ret.push({
+          ts,
+          x: _ts2x(ts, scale) - panX,
+          isMajor: isFirstOfMonth,
+          label: (isFirstOfMonth) ? (day.format("D.M.YYYY")) : (null),
+        })
+      }
+      return ret;
+    }
+    else if (scale > 0.0) {
+      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 24*3600, 24*3600, daysTickFormatter];
     }
 
     let ret = []
