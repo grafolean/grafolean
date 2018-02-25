@@ -4,10 +4,6 @@ import moment from 'moment';
 
 import XAxisTick from './xaxistick';
 
-// http://momentjs.com/docs/#/parsing/string-format/
-const secondsTickFormatter = (ts) => moment(ts * 1000).utcOffset(0).format('HH:mm:ss');
-const minutesTickFormatter = (ts) => moment(ts * 1000).utcOffset(0).format('HH:mm');
-const daysTickFormatter = (ts) => moment(ts * 1000).format('D.M.');
 const _x2ts = (x, scale) => { return x / scale; }
 const _ts2x = (ts, scale) => { return ts * scale; }
 
@@ -29,111 +25,140 @@ export default class TimestampXAxis extends React.Component {
   _getXTicksPositions(panX, scale, width) {
     console.log(scale)
 
-    let minorTicksSpacing, majorTicksSpacing, labelSpacing;  // make sure every one of these is divisible by minorTicksSpacing
-    let tickFormatter = minutesTickFormatter;
+    // depending on scale, we use different label formatting, spacing,... to display ticks. First set
+    // the vars for every possible scale:
+    let minorTickDurationUnit, isMajorTickCallback, tickLabelCallback;  // http://momentjs.com/docs/#/parsing/string-format/
+    let minorTickDurationQuantity = 1;
     if (scale > 72.0) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [1, 1, 1, secondsTickFormatter];
-      tickFormatter = secondsTickFormatter;
+      minorTickDurationUnit = 'second'
+      isMajorTickCallback = (m) => (true);
+      tickLabelCallback = (m, isMajorTick) => (m.format("HH:mm:ss"));
     }
     else if (scale > 25.0) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [1, 5, 5, secondsTickFormatter];
-      tickFormatter = secondsTickFormatter;
+      minorTickDurationUnit = 'second'
+      isMajorTickCallback = (m) => (m.second() % 5 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm:ss")) : (null));
     }
     else if (scale > 7.4) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [1, 10, 10, secondsTickFormatter];
-      tickFormatter = secondsTickFormatter;
+      minorTickDurationUnit = 'second'
+      isMajorTickCallback = (m) => (m.second() % 10 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm:ss")) : (null));
     }
     else if (scale > 4.1) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [1, 10, 30, secondsTickFormatter];
-      tickFormatter = secondsTickFormatter;
-    }
-    else if (scale > 3.0) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [1, 10, 60, secondsTickFormatter];
-      tickFormatter = secondsTickFormatter;
+      minorTickDurationUnit = 'second'
+      minorTickDurationQuantity = 10
+      isMajorTickCallback = (m) => (m.second() % 30 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm:ss")) : (null));
     }
     else if (scale > 0.9) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [10, 60, 60, minutesTickFormatter];
+      minorTickDurationUnit = 'second'
+      minorTickDurationQuantity = 10
+      isMajorTickCallback = (m) => ((m.second() === 0));
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.50) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [60, 120, 120, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      isMajorTickCallback = (m) => (m.minute() % 2 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.28) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [60, 300, 300, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      isMajorTickCallback = (m) => (m.minute() % 5 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.082) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [60, 600, 600, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      isMajorTickCallback = (m) => (m.minute() % 10 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.035) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 1800, 1800, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      minorTickDurationQuantity = 10
+      isMajorTickCallback = (m) => (m.minute() % 30 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.016) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 3600, 3600, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      minorTickDurationQuantity = 10
+      isMajorTickCallback = (m) => (m.minute() === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.010) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [600, 3600, 2*3600, minutesTickFormatter];
+      minorTickDurationUnit = 'minute'
+      minorTickDurationQuantity = 10
+      isMajorTickCallback = (m) => (m.minute() === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick && (m.hour() % 2 === 0)) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.0048) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 4*3600, 4*3600, minutesTickFormatter];
+      minorTickDurationUnit = 'hour'
+      isMajorTickCallback = (m) => (m.hour() % 4 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.0027) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 6*3600, 6*3600, minutesTickFormatter];
+      minorTickDurationUnit = 'hour'
+      isMajorTickCallback = (m) => (m.hour() % 6 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.00138) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 12*3600, 12*3600, minutesTickFormatter];
-    }
-    else if (scale > 0.0011) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 12*3600, 24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'hour'
+      isMajorTickCallback = (m) => (m.hour() % 12 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("HH:mm")) : (null));
     }
     else if (scale > 0.0008) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [12*3600, 12*3600, 24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'hour'
+      minorTickDurationQuantity = 12
+      isMajorTickCallback = (m) => (m.hour() % 12 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick && m.hour() === 0) ? (m.format("D.M.")) : (null));
     }
     else if (scale > 0.0007) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 24*3600, 24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (true);
+      tickLabelCallback = (m, isMajorTick) => (m.format("D.M."));
     }
     else if (scale > 0.00036) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 2*24*3600, 2*24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (m.date() % 2 === 1);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("D.M.")) : (null));
     }
     else if (scale > 0.00016) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 4*24*3600, 4*24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (m.date() % 4 === 1);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("D.M.")) : (null));
     }
     else if (scale > 0.00010) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [24*3600, 8*24*3600, 8*24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (m.date() % 8 === 1);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("D.M.")) : (null));
+    }
+    else if (scale > 0.00007) {
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (m.date() === 1 || m.date() === 15);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("D.M.")) : (null));
     }
     else if (scale > 0.0) {
-      // now we are above the threshold, so we need to use special math to get 1st of each month:
-      //[minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [moment.duration({'days' : 1}), 16*24*3600, 16*24*3600, daysTickFormatter];
-      let ret = []
-      const dayDuration = moment.duration({'days' : 1});
-      const tsMin = _x2ts(panX, scale);
-      const tsMax = _x2ts(panX + width, scale);
-      const start = moment(tsMin*1000).startOf('day').add(dayDuration);
-      const end = moment(tsMax*1000).endOf('day');
-      for (let day = start; day.isBefore(end); day.add(dayDuration)) {
-        let ts = day.unix();
-        let isFirstOfMonth = (day.date() === 1);
-        ret.push({
-          ts,
-          x: _ts2x(ts, scale) - panX,
-          isMajor: isFirstOfMonth,
-          label: (isFirstOfMonth) ? (day.format("D.M.YYYY")) : (null),
-        })
-      }
-      return ret;
-    }
-    else if (scale > 0.0) {
-      [minorTicksSpacing, majorTicksSpacing, labelSpacing, tickFormatter] = [3600, 24*3600, 24*3600, daysTickFormatter];
+      minorTickDurationUnit = 'day'
+      isMajorTickCallback = (m) => (m.date() === 1);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM")) : (null));
     }
 
+    // now that you know how, display the ticks and labels:
     let ret = []
     const tsMin = _x2ts(panX, scale);
     const tsMax = _x2ts(panX + width, scale);
-    const firstTs = (Math.floor(tsMin / minorTicksSpacing) + 1) * minorTicksSpacing;
-    for (let ts = firstTs; ts < tsMax; ts += minorTicksSpacing) {
+    let minorTickDuration = moment.duration(minorTickDurationQuantity, minorTickDurationUnit + 's');  // not sure if 's' is needed - moment.js documentation indicates so: http://momentjs.com/docs/#/durations/
+    // make sure that start is aligned with minorTickDurationQuantity times minorTickDurationUnit:
+    const start = moment(tsMin*1000).startOf(minorTickDurationUnit);
+    let maybeUnrounded = start.get(minorTickDurationUnit);
+    start.set(minorTickDurationUnit, maybeUnrounded - (maybeUnrounded % minorTickDurationQuantity)).add(minorTickDuration);
+    const end = moment(tsMax*1000).endOf(minorTickDurationUnit);
+    for (let m = start; m.isBefore(end); m.add(minorTickDuration)) {
+      let ts = m.unix();
+      let _isMajorTick = isMajorTickCallback(m);
       ret.push({
         ts,
         x: _ts2x(ts, scale) - panX,
-        isMajor: (ts % majorTicksSpacing === 0) ? (true) : (false),
-        label: (ts % labelSpacing === 0) ? (tickFormatter(ts)) : (null),
+        isMajor: _isMajorTick,
+        label: tickLabelCallback(m, _isMajorTick),
       })
     }
     return ret;
