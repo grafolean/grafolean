@@ -135,10 +135,50 @@ export default class TimestampXAxis extends React.Component {
       isMajorTickCallback = (m) => (m.date() === 1 || m.date() === 15);
       tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("D.M.")) : (null));
     }
-    else if (scale > 0.0) {
+    else if (scale > 0.000049) {
       minorTickDurationUnit = 'day'
       isMajorTickCallback = (m) => (m.date() === 1);
-      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM")) : (null));
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM YYYY")) : (null));
+    }
+    else if (scale > 0.000033) {
+      minorTickDurationUnit = 'month'
+      isMajorTickCallback = (m) => (true);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM YYYY")) : (null));
+    }
+    else if (scale > 0.000015) {
+      minorTickDurationUnit = 'month'
+      isMajorTickCallback = (m) => (m.month() % 2 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM YYYY")) : (null));
+    }
+    else if (scale > 0.0000089) {
+      minorTickDurationUnit = 'month'
+      isMajorTickCallback = (m) => (m.month() % 6 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("MMM YYYY")) : (null));
+    }
+    else if (scale > 0.0000028) {
+      minorTickDurationUnit = 'month'
+      isMajorTickCallback = (m) => (m.month() === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
+    }
+    else if (scale > 0.0000017) {
+      minorTickDurationUnit = 'year'
+      isMajorTickCallback = (m) => (true);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
+    }
+    else if (scale > 0.00000074) {
+      minorTickDurationUnit = 'year'
+      isMajorTickCallback = (m) => (m.year() % 2 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
+    }
+    else if (scale > 0.00000042) {
+      minorTickDurationUnit = 'year'
+      isMajorTickCallback = (m) => (m.year() % 4 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
+    }
+    else if (scale > 0.0) {
+      minorTickDurationUnit = 'year'
+      isMajorTickCallback = (m) => (m.year() % 8 === 0);
+      tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
     }
 
     // now that you know how, display the ticks and labels:
