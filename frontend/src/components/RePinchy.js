@@ -362,7 +362,25 @@ export default class RePinchy extends React.Component {
             border: '1px solid #eeeeee',
           }}
           >
-          {this.props.renderSub(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
+
+          {
+            // There must be exactly one child which is a function, returning elements to be rendered. Example:
+            // <RePinchy
+            //   width={600}
+            //   height={300}
+            //   padLeft={60}
+            //   initialState={{
+            //     x: -1234567820.0,
+            //     y: 0.0,
+            //     scale: 1.0,
+            //   }}>
+            //   {(w, h, x, y, scale, zoomInProgress) => (
+            //     <MoonChart ...props />
+            //   )}
+            // </RePinchy>
+          }
+          {this.props.children(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
+
         </div>
         {(this.state.overlay.shown)?(
           [
