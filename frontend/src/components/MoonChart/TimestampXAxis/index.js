@@ -23,7 +23,6 @@ export default class TimestampXAxis extends React.Component {
   */
 
   _getXTicksPositions(panX, scale, width) {
-    console.log(scale)
 
     // depending on scale, we use different label formatting, spacing,... to display ticks. First set
     // the vars for every possible scale:
