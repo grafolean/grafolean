@@ -156,14 +156,14 @@ curl 'https://moonthor.com/api/dashboards/'
 curl \
     -X POST \
     -H 'Content-Type: application/json' \
-    -d '{
-        "name": <ChartTitle>,
-        "content": [
-            { path_filter: <PathFilter0> },
-            { path_filter: <PathFilter1> },
-            ...
-        ],
-    ]' \
+    -d '{ \
+        "name": <ChartTitle>, \
+        "content": [ \
+            { path_filter: <PathFilter0> }, \
+            { path_filter: <PathFilter1> }, \
+            ... \
+        ], \
+    }' \
     'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
 ```
 
@@ -176,7 +176,7 @@ Parameters:
 JSON response:
 
 {
-    slug: <DashboardSlug>
+    slug: <ChartId>
 }
 
 ## Reading
