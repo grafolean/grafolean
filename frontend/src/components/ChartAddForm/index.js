@@ -65,7 +65,7 @@ export default class ChartAddForm extends React.Component {
   }
 
   handleSubmit(event) {
-    store.dispatch(submitNewChart(this.props.formid, this.props.dashboardSlug, this.state.name))
+    store.dispatch(submitNewChart(this.props.formid, this.props.dashboardSlug, this.state.name, this.state.pathFilters))
     event.preventDefault();
   }
 

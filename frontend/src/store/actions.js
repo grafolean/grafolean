@@ -1,30 +1,36 @@
 import fetch from 'cross-fetch'
 import { stringify } from 'qs'
 
-const ROOT_URL = 'http://192.168.123.10:5000/api'
+const ROOT_URL = 'http://192.168.123.11:5000/api'
 
 export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
-export function onRequestChartData(paths, fromTs, toTs) {
+export function onRequestChartData(paths, aggrLevel, fromTs, toTs) {
   return {
     type: ON_REQUEST_CHART_DATA,
     paths,  // should be pathsFilters really - backend should return all paths that match the filter and their data
+    aggrLevel,
     fromTs,
     toTs,
   }
 }
 
 export const ON_RECEIVE_CHART_DATA_SUCCESS = 'ON_RECEIVE_CHART_DATA_SUCCESS'
-export function onReceiveChartDataSuccess(json) {
+export function onReceiveChartDataSuccess(paths, aggrLevel, fromTs, toTs, json) {
   return {
     type: ON_RECEIVE_CHART_DATA_SUCCESS,
+    paths,
+    aggrLevel,
+    fromTs,
+    toTs,
     json,
   }
 }
 
 export const ON_RECEIVE_CHART_DATA_FAILURE = 'ON_RECEIVE_CHART_DATA_FAILURE'
-export function onReceiveChartDataFailure(errMsg) {
+export function onReceiveChartDataFailure(paths, errMsg) {
   return {
     type: ON_RECEIVE_CHART_DATA_FAILURE,
+    paths,
     errMsg,
   }
 }
@@ -177,22 +183,23 @@ function handleFetchErrors(response) {
   return response;
 }
 
-export function fetchChartData(paths, fromTs, toTs) {
+export function fetchChartData(paths, aggrLevel,  fromTs, toTs) {
   // react-thunk - return function instead of object:
   return function (dispatch) {
     // update state:
-    dispatch(onRequestChartData(paths, fromTs, toTs));
+    dispatch(onRequestChartData(paths, aggrLevel, fromTs, toTs));
     // return function that will start the request from server:
     let query_params = {
-      p: paths,
+      p: paths.join(","),
       t0: fromTs,
       t1: toTs,
+      a: aggrLevel,
     }
     return fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
       .then(handleFetchErrors)
       .then(
-        response => response.json().then(json => dispatch(onReceiveChartDataSuccess(json))),
-        errorMsg => dispatch(onReceiveChartDataFailure(errorMsg.toString()))
+        response => response.json().then(json => dispatch(onReceiveChartDataSuccess(paths, aggrLevel, fromTs, toTs, json))),
+        errorMsg => dispatch(onReceiveChartDataFailure(paths, errorMsg.toString()))
       )
   }
 }
@@ -260,7 +267,7 @@ export function submitDeleteDashboard(slug) {
   }
 }
 
-export function submitNewChart(formid, dashboardSlug, name) {
+export function submitNewChart(formid, dashboardSlug, name, pathFilters) {
   return function (dispatch) {
     dispatch(onSubmitNewChart(formid, dashboardSlug));
     return fetch(`${ROOT_URL}/dashboards/${dashboardSlug}/charts`, {
@@ -271,6 +278,7 @@ export function submitNewChart(formid, dashboardSlug, name) {
       },
       body: JSON.stringify({
         name,
+        content: pathFilters.filter((pathFilterInfo) => (!!pathFilterInfo.value)).map((pathFilterInfo) => ({'path_filter': pathFilterInfo.value})),
       }),
     })
     .then(handleFetchErrors)

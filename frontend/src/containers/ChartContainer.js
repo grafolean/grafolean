@@ -1,7 +1,27 @@
 import { connect } from 'react-redux'
 import Chart from '../components/Chart'
 
+import store from '../store';
+import { fetchChartData } from '../store/actions';
+
 const mapStateToProps = (state, ownProps) => {
+
+  // we should have the data about each of the paths in our state; if it's not there, we must
+  // request it:
+  const pathsWithoutChartData = ownProps.paths.filter((path) => (!state.chartData.hasOwnProperty(path)))
+  if (pathsWithoutChartData.length > 0) {
+    store.dispatch(fetchChartData(pathsWithoutChartData, 0, ownProps.fromTs, ownProps.toTs));
+    return {
+      fetching: true,
+    }
+  }
+
+  const pathsFetchingData = ownProps.paths.filter((path) => (!!state.chartData[path].fetching))
+  if (pathsFetchingData.length > 0) {
+    return {
+      fetching: true,
+    }
+  }
 
   const exampleProps = {
     chartId: 1,
