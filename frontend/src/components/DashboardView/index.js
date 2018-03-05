@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 
 import store from '../../store'
 import { fetchDashboardDetails } from '../../store/actions';
@@ -27,6 +28,12 @@ export default class DashboardView extends React.Component {
         )
     }
 
+    const width = 600, height = 300;
+    const chartWidth = 540;
+    const toTs = moment().unix();
+    const fromTs = moment().subtract(1, 'month').unix();
+    const initialScale = chartWidth / (toTs - fromTs);
+    const initialPanX = - fromTs * initialScale;
     return (
       <div>
         Dashboard:
@@ -42,13 +49,13 @@ export default class DashboardView extends React.Component {
             return (
               <RePinchy
                 key={v.id}
-                width={600}
-                height={300}
-                padLeft={60}
+                width={width}
+                height={height}
+                padLeft={width - chartWidth}
                 initialState={{
-                  x: -1234567820.0,
+                  x: initialPanX,
                   y: 0.0,
-                  scale: 1.0,
+                  scale: initialScale,
                 }}
               >
                 {(w, h, x, y, scale, zoomInProgress) => (
@@ -57,7 +64,8 @@ export default class DashboardView extends React.Component {
                     paths={v.paths}
                     portWidth={w}
                     portHeight={h}
-                    panX={-x}
+                    fromTs={Math.round(-x/scale)}
+                    toTs={Math.round(-x/scale) + Math.round(w / scale)}
                     scale={scale}
                     zoomInProgress={zoomInProgress}
                   />

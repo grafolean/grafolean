@@ -7,17 +7,37 @@ import Loading from '../Loading'
 import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 
+const MAX_AGGR_LEVEL = 6
+
 export default class MoonChart extends React.Component {
   state = {
     fetching: true,
   }
 
+
+  _getSuggestedAggrLevel(fromTs, toTs, maxPoints=100) {
+    let aggrLevel = this._getAggrLevel(maxPoints, Math.ceil((toTs - fromTs)/3600.0));
+    if (aggrLevel < 0)
+        return "no";
+    else
+        return aggrLevel;
+  }
+
+  _getAggrLevel(maxPoints, nHours) {
+    for (let l=-1; l<MAX_AGGR_LEVEL; l++) {
+      if (maxPoints >= nHours / (3**l))
+        return l
+    };
+    return MAX_AGGR_LEVEL
+  }
+
   componentDidMount() {
+    const aggrLevel = this._getSuggestedAggrLevel(this.props.fromTs, this.props.toTs);
     let query_params = {
       p: this.props.paths.join(","),
       t0: this.props.fromTs,
       t1: this.props.toTs,
-      a: this.props.aggrLevel,
+      a: aggrLevel,
     }
     fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
       .then(handleFetchErrors)
@@ -68,7 +88,6 @@ export default class MoonChart extends React.Component {
       >
         {/* svg width depends on scale and x domain (minX and maxX) */}
         <svg width={this.props.portWidth} height={this.props.portHeight}>
-          <circle cx={this.props.panX + this.props.portHeight / 2 * this.props.scale} cy={this.props.portHeight / 2} r={this.props.portHeight / 2 * this.props.scale} fill="red" />
 
           <rect x={0} y={xAxisTop} width={yAxisWidth} height={xAxisHeight} fill="white" stroke="none" />
           <g transform={`translate(0 0)`}>
@@ -88,7 +107,7 @@ export default class MoonChart extends React.Component {
               color="#999999"
 
               scale={this.props.scale}
-              panX={this.props.panX}
+              panX={this.props.fromTs * this.props.scale /* we should pass fromTs and toTs here */}
 
               minTimestamp={this.props.minTimestamp}
               maxTimestamp={this.props.maxTimestamp}
