@@ -1,11 +1,55 @@
 import React from 'react';
+import { stringify } from 'qs'
 
+import { ROOT_URL, handleFetchErrors } from '../../store/actions';
+
+import Loading from '../Loading'
 import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 
 export default class MoonChart extends React.Component {
+  state = {
+    fetching: true,
+  }
+
+  componentDidMount() {
+    let query_params = {
+      p: this.props.paths.join(","),
+      t0: this.props.fromTs,
+      t1: this.props.toTs,
+      a: this.props.aggrLevel,
+    }
+    fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
+      .then(handleFetchErrors)
+      .then(
+        response => response.json().then(json => {
+          this.setState({
+            fetching: false,
+            data: json.paths,
+          })
+        }),
+        errorMsg => {
+          this.setState({
+            fetching: false,
+            errorMsg,
+          })
+        }
+      )
+  }
 
   render() {
+    if (this.props.fetching) {
+      return (
+        <Loading />
+      )
+    }
+
+    if (this.props.errorMsg) {
+      return (
+        <div>{this.props.errorMsg}</div>
+      )
+    }
+
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const yAxisWidth = Math.min(Math.round(this.props.portWidth * 0.1), 100);
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);

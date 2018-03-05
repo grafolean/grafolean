@@ -1,7 +1,7 @@
 import fetch from 'cross-fetch'
 import { stringify } from 'qs'
 
-const ROOT_URL = 'http://192.168.123.11:5000/api'
+export const ROOT_URL = 'http://192.168.123.11:5000/api'
 
 export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
 export function onRequestChartData(paths, aggrLevel, fromTs, toTs) {
@@ -176,7 +176,7 @@ export function removeNotification(notificationId) {
 //     (with ok status set to false), and it will only reject on network failure
 //     or if anything prevented the request from completing. "
 // https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-function handleFetchErrors(response) {
+export function handleFetchErrors(response) {
   if (!response.ok) {
       throw Error(response.statusText);
   }

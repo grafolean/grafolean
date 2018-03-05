@@ -5,7 +5,8 @@ import { fetchDashboardDetails } from '../../store/actions';
 
 import Loading from '../Loading';
 import ChartAddForm from '../ChartAddForm';
-import ChartContainer from '../../containers/ChartContainer';
+import RePinchy from '../RePinchy';
+import MoonChart from '../MoonChart';
 
 export default class DashboardView extends React.Component {
 
@@ -33,12 +34,35 @@ export default class DashboardView extends React.Component {
         {(this.props.fetching)?(
           <Loading />
         ):('')}
+
         {this.props.data.name}
 
         <div>
           {this.props.data.charts.map((v) => {
             return (
-              <ChartContainer key={v.id} chartId={v.id} name={v.name} paths={v.paths}/>
+              <RePinchy
+                key={v.id}
+                width={600}
+                height={300}
+                padLeft={60}
+                initialState={{
+                  x: -1234567820.0,
+                  y: 0.0,
+                  scale: 1.0,
+                }}
+              >
+                {(w, h, x, y, scale, zoomInProgress) => (
+                  <MoonChart
+                    chartId={v.id}
+                    paths={v.paths}
+                    portWidth={w}
+                    portHeight={h}
+                    panX={-x}
+                    scale={scale}
+                    zoomInProgress={zoomInProgress}
+                  />
+                )}
+              </RePinchy>
             )
           })}
         </div>
