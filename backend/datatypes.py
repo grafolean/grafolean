@@ -211,10 +211,11 @@ class Measurement(object):
         return Aggregation.MAX_AGGR_LEVEL
 
     @classmethod
-    def fetch_data(cls, paths, aggr_level, t_from, t_to):
+    def fetch_data(cls, paths, aggr_level, t_froms, t_to):
+        # t_froms: an array of t_from, one for each path (because the subsequent fetchings usually request a different t_from for each path)
         paths_data = {}
         with db.cursor() as c:
-            for p in paths:
+            for p, t_from in zip(paths, t_froms):
                 str_p = str(p)
                 path_data = []
                 path_id = Path._get_path_id_from_db(str_p)

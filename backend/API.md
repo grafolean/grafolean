@@ -63,7 +63,7 @@ curl \
 ```
 curl \
     -X DELETE \
-    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom>&t1=<TimestampTo>'
+    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom|TimestampsFrom>&t1=<TimestampTo>'
 ```
 
 Parameters:
@@ -81,8 +81,8 @@ curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t
 Parameters:
 
     PathN: path that the data was connected to
-    TimestampFrom: start timestamp (included) - optional
-    TimestampTo: end timestamp (included) - optional
+    TimestampFrom/TimestampsFrom: start timestamp/s (inclusive) - optional; either a single timestamp (with up to 6 digits) or a comma separated list of timestamps, one for each path
+    TimestampTo: end timestamp (inclusive) - optional
     AggregationLevel: values from 0 to 6 or string "no" are allowed. Aggregation level 0 returns one data point (average, min and max value) per hour. Every
         higher aggr. level returns one data point per 3-times as much time. In other words, level 1 returns one data point per 3 hours, level 2 per 9 hours,... and
         level 6 one data point per 3 ^ 6 hours or roughly 30 days. Special value "no" will return raw data (non-aggregated).
