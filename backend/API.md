@@ -89,8 +89,8 @@ Parameters:
         Parameter is mandatory - if absent, server will respond with a 301 redirect to URL which includes default aggregation level for selected time interval (by default
         there will be fewer than 100 data points returned in almost all cases).
 
-    Note that number of returned data points will never exceed 500. If requested time interval and aggr. level would return more than 500 results, incomplete response with only
-    first 500 data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
+    Note that number of returned data points will never exceed 100000. If requested time interval and aggr. level would return more than 100k results, incomplete response with only
+    first 100k data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
     updated time interval.
 
 JSON response:

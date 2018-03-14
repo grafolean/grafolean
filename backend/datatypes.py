@@ -164,7 +164,7 @@ class Aggregation(object):
 
 class Measurement(object):
 
-    MAX_DATAPOINTS_RETURNED = 500
+    MAX_DATAPOINTS_RETURNED = 100000
 
     def __init__(self, path, ts, value):
         self.path = Path(path)
