@@ -70,10 +70,10 @@ export default class RePinchy extends React.Component {
   }
 
   componentDidMount(){
-    document.addEventListener("keyup", this.handleCtrlKeyUp, false);
+    document.addEventListener("keyup", this.handleCtrlKeyUp, true);
   }
   componentWillUnmount(){
-    document.removeEventListener("keyup", this.handleCtrlKeyUp, false);
+    document.removeEventListener("keyup", this.handleCtrlKeyUp, true);
   }
 
   // https://reactjs.org/docs/events.html
