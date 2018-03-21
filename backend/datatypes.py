@@ -228,7 +228,7 @@ class Measurement(object):
                 else:  # fetch aggregated data
                     c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed <= %s LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
                     for ts, vavg, vmin, vmax in c:
-                        path_data.append({'t': float(ts), 'v': [float(vavg), float(vmin), float(vmax)]})
+                        path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
                 if len(path_data) > Measurement.MAX_DATAPOINTS_RETURNED:

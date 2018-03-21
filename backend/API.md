@@ -96,16 +96,16 @@ Parameters:
 JSON response:
 
 {
-    paths: [
+    paths: {
         <Path0>: {
             next_data_point: null|<Timestamp>,  // if not null, use Timestamp as TimestampFrom to fetch another batch of data
             data: [
-                { t: <Timestamp>, v: [<AvgValue>, <MinValue>, <MaxValue>] }  // if data was aggregated
+                { t: <Timestamp>, v: <AvgValue>, minv: <MinValue>, maxv: <MaxValue> }  // if data was aggregated
                 { t: <Timestamp>, v: <Value> }  // if raw data was requested
             ]
         },
         ...
-    ]
+    }
 }
 
 
