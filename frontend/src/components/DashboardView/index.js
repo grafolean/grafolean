@@ -7,7 +7,7 @@ import { fetchDashboardDetails } from '../../store/actions';
 import Loading from '../Loading';
 import ChartAddForm from '../ChartAddForm';
 import RePinchy from '../RePinchy';
-import MoonChart from '../MoonChart';
+import MoonChartContainer from '../MoonChart';
 
 export default class DashboardView extends React.Component {
 
@@ -59,7 +59,7 @@ export default class DashboardView extends React.Component {
                 }}
               >
                 {(w, h, x, y, scale, zoomInProgress) => (
-                  <MoonChart
+                  <MoonChartContainer
                     chartId={v.id}
                     paths={v.paths}
                     portWidth={w}

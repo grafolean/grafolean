@@ -1,56 +1,143 @@
 import React from 'react';
-import { stringify } from 'qs'
+import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
 import Loading from '../Loading'
 import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
+import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
 
-const MAX_AGGR_LEVEL = 6
+export default class MoonChartContainer extends React.Component {
+  requestsInProgress = [
+    // {
+    //   aggrLevel: ...
+    //   fromTs: ...,
+    //   toTs: ...,
+    // },
+  ];
+  fetchedData = {
+    /*
+    aggrLevel: [
+      {
+        fromTs,
+        toTs,
+        paths: {
+          <path0> : [
+            { t:..., v:..., vmin:..., max:... },  // aggregation
+            { t:..., v:... },  // no aggregation
+          ],
+        },
+      },
+       ...
+    ]
+    */
+  };
+  paths = null;
 
-export default class MoonChart extends React.Component {
-  state = {
-    fetching: true,
-  }
-
-
-  _getSuggestedAggrLevel(fromTs, toTs, maxPoints=100) {
-    // returns -1 for no aggregation, aggr. level otherwise
-    let nHours = Math.ceil((toTs - fromTs) / 3600.0);
-    for (let l=-1; l<MAX_AGGR_LEVEL; l++) {
-      if (maxPoints >= nHours / (3**l)) {
-        return l;
-      };
-    };
-    return MAX_AGGR_LEVEL;
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: null,
+      errorMsg: null,
+    }
+    // make sure paths never change - if they do, there should be no effect:
+    // (because data fetching logic can't deal with changing paths)
+    this.paths = props.paths;
   }
 
   componentDidMount() {
-    const aggrLevel = this._getSuggestedAggrLevel(this.props.fromTs, this.props.toTs);  // -1 for no aggregation
-    let query_params = {
-      p: this.props.paths.join(","),
-      t0: this.props.fromTs,
-      t1: this.props.toTs,
-      a: (aggrLevel < 0) ? ('no') : (aggrLevel),
+    this.ensureData(this.props.fromTs, this.props.toTs);
+  }
+
+  componentWillReceiveProps(nextProps) {
+    this.ensureData(nextProps.fromTs, nextProps.toTs);
+  }
+
+  ensureData(fromTs, toTs) {
+    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs);  // -1 for no aggregation
+    const existingIntervals = [
+      // anything that we might have already fetched for this aggrLevel:
+      ...(this.fetchedData[`${aggrLevel}`] || []),
+      // and anything that is being fetched:
+      ...this.requestsInProgress.filter((v) => (v.aggrLevel === aggrLevel)),
+    ];
+
+    const diffTs = toTs - fromTs;
+    const wantedIntervals = getMissingIntervals(existingIntervals, { fromTs: fromTs - diffTs/2, toTs: toTs + diffTs/2 });  // do we have everything we need, plus some more?
+    if (wantedIntervals.length === 0) {
+      return;
+    }
+
+    const intervalsToFeFetched = getMissingIntervals(existingIntervals, { fromTs: fromTs - diffTs, toTs: toTs + diffTs });  // fetch a bit more than we checked for, we don't want to fetch too often
+    for (let intervalToBeFetched of intervalsToFeFetched) {
+      this.startFetchRequest(intervalToBeFetched.fromTs - 1, intervalToBeFetched.toTs + 1, aggrLevel);  // take a tiny bit more, so you'll be able to merge intervals safely
     };
-    fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
+  }
+
+  saveResponseData(fromTs, toTs, aggrLevel, json) {
+    const dataBlock = {
+      fromTs,
+      toTs,
+      paths: Object.keys(json.paths).reduce((prevValue, path) => {
+        prevValue[path] = json.paths[path].data;
+        return prevValue;
+      }, {}),
+    };
+    this.fetchedData[aggrLevel] = this.fetchedData[aggrLevel] || [];
+    this.fetchedData[aggrLevel].push(dataBlock);
+    this.setState({
+      data: this.fetchedData[aggrLevel],
+    });
+  }
+
+  startFetchRequest(fromTs, toTs, aggrLevel) {
+    const requestInProgress = {  // prepare an object and remember its reference; you will need it when removing it from the list
+      aggrLevel,
+      fromTs,
+      toTs,
+    };
+    this.requestsInProgress.push(requestInProgress);
+
+    fetch(`${ROOT_URL}/values?${stringify({
+      p: this.paths.join(","),
+      t0: fromTs,
+      t1: toTs,
+      a: (aggrLevel < 0) ? ('no') : (aggrLevel),
+    })}`)
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => {
-          this.setState({
-            fetching: false,
-            data: json.paths,
-            aggrLevel,
-          })
+          this.saveResponseData(fromTs, toTs, aggrLevel, json);
+          // remove the info about this particular request:
+          this.requestsInProgress = this.requestsInProgress.filter((r) => (r !== requestInProgress));
         }),
         errorMsg => {
           this.setState({
-            fetching: false,
             errorMsg,
           })
         }
       )
+  }
+
+  render() {
+    return (
+      <MoonChartView
+        {...this.props}
+        data={this.state.data}
+        errorMsg={this.state.errorMsg}
+      />
+    )
+  }
+}
+
+class MoonChartView extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      errorMsg: null,
+    };
   }
 
   render() {
@@ -71,10 +158,10 @@ export default class MoonChart extends React.Component {
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
     const xAxisTop = this.props.portHeight - xAxisHeight;
     const yAxisHeight = xAxisTop
-    const _v2y = (this.state.aggrLevel < 0) ?
-      ((v) => ((v / 1000.0) * yAxisHeight)) :
-      ((v) => ((v[0] / 1000.0) * yAxisHeight));
-    const _ts2x = (ts) => ( (ts - this.props.fromTs) * this.props.scale );
+    // const _v2y = (this.state.aggrLevel < 0) ?
+    //   ((v) => ((v / 1000.0) * yAxisHeight)) :
+    //   ((v) => ((v[0] / 1000.0) * yAxisHeight));
+    // const _ts2x = (ts) => ( (ts - this.props.fromTs) * this.props.scale );
 
     return (
       <div
@@ -91,8 +178,8 @@ export default class MoonChart extends React.Component {
         {/* svg width depends on scale and x domain (minX and maxX) */}
         <svg width={this.props.portWidth} height={this.props.portHeight}>
 
-          {this.props.paths.map((path) => {
-            const visiblePoints = this.state.data[path].data.filter( (p) => ((p.t >= this.props.fromTs) && (p.t <= this.props.toTs)) );
+          {/* {this.props.paths.map((path) => {
+            const visiblePoints = (this.props.data) ? (this.props.data[path].filter( (p) => ((p.t >= this.props.fromTs) && (p.t <= this.props.toTs)) ) ) : ([]);
             return (
               <g transform={`translate(${yAxisWidth - 1} 0)`}>
                 {visiblePoints.map((p) => (
@@ -100,7 +187,7 @@ export default class MoonChart extends React.Component {
                 ))}
               </g>
             )
-          })}
+          })} */}
 
           <rect x={0} y={xAxisTop} width={yAxisWidth} height={xAxisHeight} fill="white" stroke="none" />
           <g transform={`translate(0 0)`}>
