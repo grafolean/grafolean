@@ -22,7 +22,7 @@ export default class MoonChartContainer extends React.Component {
       {
         fromTs,
         toTs,
-        paths: {
+        pathsData: {
           <path0> : [
             { t:..., v:..., vmin:..., max:... },  // aggregation
             { t:..., v:... },  // no aggregation
@@ -71,21 +71,40 @@ export default class MoonChartContainer extends React.Component {
 
     const intervalsToFeFetched = getMissingIntervals(existingIntervals, { fromTs: fromTs - diffTs, toTs: toTs + diffTs });  // fetch a bit more than we checked for, we don't want to fetch too often
     for (let intervalToBeFetched of intervalsToFeFetched) {
-      this.startFetchRequest(intervalToBeFetched.fromTs - 1, intervalToBeFetched.toTs + 1, aggrLevel);  // take a tiny bit more, so you'll be able to merge intervals safely
+      this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel);  // take exactly what is needed, so you'll be able to merge intervals easily
     };
   }
 
   saveResponseData(fromTs, toTs, aggrLevel, json) {
-    const dataBlock = {
-      fromTs,
-      toTs,
-      paths: Object.keys(json.paths).reduce((prevValue, path) => {
-        prevValue[path] = json.paths[path].data;
-        return prevValue;
-      }, {}),
-    };
+    // make sure aggregation level exists:
     this.fetchedData[aggrLevel] = this.fetchedData[aggrLevel] || [];
-    this.fetchedData[aggrLevel].push(dataBlock);
+
+    // find all existing intervals which are touching our interval so you can merge
+    // them to a single block:
+    const existingBlockBefore = this.fetchedData[aggrLevel].find((b) => (b.toTs === fromTs));
+    const existingBlockAfter = this.fetchedData[aggrLevel].find((b) => (b.fromTs === toTs));
+    // if there are any, merge them together:
+    let pathsData = {};
+    for (let path of this.paths) {
+      pathsData[path] = [
+        ...(existingBlockBefore ? existingBlockBefore.pathsData[path] : []),
+        ...json.paths[path].data,
+        ...(existingBlockAfter ? existingBlockAfter.pathsData[path] : []),
+      ]
+    };
+    const mergedBlock = {
+      fromTs: (existingBlockBefore) ? (existingBlockBefore.fromTs) : (fromTs),
+      toTs: (existingBlockAfter) ? (existingBlockAfter.toTs) : (toTs),
+      pathsData: pathsData,
+    }
+
+    // then construct new this.fetchedData from data blocks that came before, our merged block and those that are after:
+    this.fetchedData[aggrLevel] = [
+      ...this.fetchedData[aggrLevel].filter((b) => (b.toTs < mergedBlock.fromTs)),
+      mergedBlock,
+      ...this.fetchedData[aggrLevel].filter((b) => (b.fromTs > mergedBlock.toTs)),
+    ];
+
     this.setState({
       data: this.fetchedData[aggrLevel],
     });
