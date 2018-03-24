@@ -82,7 +82,7 @@ Parameters:
 
     PathN: path that the data was connected to
     TimestampFrom/TimestampsFrom: start timestamp/s (inclusive) - optional; either a single timestamp (with up to 6 digits) or a comma separated list of timestamps, one for each path
-    TimestampTo: end timestamp (inclusive) - optional
+    TimestampTo: end timestamp (exclusive) - optional
     AggregationLevel: values from 0 to 6 or string "no" are allowed. Aggregation level 0 returns one data point (average, min and max value) per hour. Every
         higher aggr. level returns one data point per 3-times as much time. In other words, level 1 returns one data point per 3 hours, level 2 per 9 hours,... and
         level 6 one data point per 3 ^ 6 hours or roughly 30 days. Special value "no" will return raw data (non-aggregated).
