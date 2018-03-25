@@ -56,6 +56,10 @@ export default class MoonChartContainer extends React.Component {
 
   ensureData(fromTs, toTs) {
     const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs);  // -1 for no aggregation
+    this.setState((oldState) => ({
+      aggrLevel: aggrLevel,
+      fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
+    }));
     const existingIntervals = [
       // anything that we might have already fetched for this aggrLevel:
       ...(this.fetchedData[`${aggrLevel}`] || []),
@@ -145,6 +149,7 @@ export default class MoonChartContainer extends React.Component {
         {...this.props}
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
+        aggrLevel={this.state.aggrLevel}
       />
     )
   }
@@ -222,26 +227,30 @@ class MoonChartView extends React.Component {
             backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
         }}
       >
-        {/* svg width depends on scale and x domain (minX and maxX) */}
         <svg width={this.props.portWidth} height={this.props.portHeight}>
-
+          {/*
+            Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
+            only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
+          */}
           {this.props.fetchedIntervalsData
-            // every interval which (at least partially) matches fromTs/toTs:
-            .filter((interval) => (!(interval.toTs < this.props.fromTs || interval.fromTs > this.props.toTs)))
-            .map((interval, intervalIndex) => (
-              // every path:
-              Object.keys(interval.pathsData).map((path, pathIndex) => {
-                const pathPoints = interval.pathsData[path];
-                return (
-                  <g key={`g-${intervalIndex}-${pathIndex}`} transform={`translate(${yAxisWidth - 1} 0)`}>
-                    {pathPoints.map((p, pi) => (
-                      // point:
-                      <circle key={`p-${intervalIndex}-${pathIndex}-${pi}`} cx={_ts2x(p.t, this.props.scale)} cy={_v2y(p.v)} r={2} />
-                    ))}
-                  </g>
-                );
-              })
-            ))
+            .map((interval, intervalIndex) => {
+              return (
+                <g key={`i-${this.props.aggrLevel}-${intervalIndex}`} transform={`translate(${yAxisWidth - 1} 0)`}>
+                  {/* draw every path: */}
+                  {Object.keys(interval.pathsData).map((path, pathIndex) => {
+                    const pathPoints = interval.pathsData[path];
+                    return (
+                      <g key={`g-${intervalIndex}-${pathIndex}`}>
+                        {pathPoints.map((p, pi) => (
+                          // point:
+                          <circle key={`p-${intervalIndex}-${pathIndex}-${pi}`} cx={_ts2x(p.t, this.props.scale)} cy={_v2y(p.v)} r={2} />
+                        ))}
+                      </g>
+                    );
+                  })}
+                </g>
+              );
+            })
           }
 
           {/* {this.props.data.map((path) => {
