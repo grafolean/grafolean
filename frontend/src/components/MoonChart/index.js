@@ -38,7 +38,7 @@ export default class MoonChartContainer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      data: null,
+      fetchedIntervalsData: [],
       errorMsg: null,
     }
     // make sure paths never change - if they do, there should be no effect:
@@ -106,7 +106,7 @@ export default class MoonChartContainer extends React.Component {
     ];
 
     this.setState({
-      data: this.fetchedData[aggrLevel],
+      fetchedIntervalsData: this.fetchedData[aggrLevel],
     });
   }
 
@@ -143,7 +143,7 @@ export default class MoonChartContainer extends React.Component {
     return (
       <MoonChartView
         {...this.props}
-        data={this.state.data}
+        fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
       />
     )
@@ -177,10 +177,38 @@ class MoonChartView extends React.Component {
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
     const xAxisTop = this.props.portHeight - xAxisHeight;
     const yAxisHeight = xAxisTop
-    // const _v2y = (this.state.aggrLevel < 0) ?
-    //   ((v) => ((v / 1000.0) * yAxisHeight)) :
-    //   ((v) => ((v[0] / 1000.0) * yAxisHeight));
-    // const _ts2x = (ts) => ( (ts - this.props.fromTs) * this.props.scale );
+    const _v2y = (v) => ((v / 1000.0) * yAxisHeight);
+    const _ts2x = (ts) => ( (ts - this.props.fromTs) * this.props.scale );
+    /*
+      this.props.fetchedIntervalsData:
+        [
+          {
+            "fromTs": 1516870170,
+            "toTs": 1524922170,
+            "pathsData": {
+              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.buying": [
+                {
+                  "minv": 650.65,
+                  "v": 662.0042527615335,
+                  "maxv": 668.02,
+                  "t": 1518118200
+                },
+                // ...
+              ],
+              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.selling": [
+                {
+                  "minv": 650.6,
+                  "v": 659.263127842755,
+                  "maxv": 665.81,
+                  "t": 1518118200
+                },
+                // ...
+              ]
+            }
+          },
+          //...
+        ]
+    */
 
     return (
       <div
@@ -197,7 +225,26 @@ class MoonChartView extends React.Component {
         {/* svg width depends on scale and x domain (minX and maxX) */}
         <svg width={this.props.portWidth} height={this.props.portHeight}>
 
-          {/* {this.props.paths.map((path) => {
+          {this.props.fetchedIntervalsData
+            // every interval which (at least partially) matches fromTs/toTs:
+            .filter((interval) => (!(interval.toTs < this.props.fromTs || interval.fromTs > this.props.toTs)))
+            .map((interval, intervalIndex) => (
+              // every path:
+              Object.keys(interval.pathsData).map((path, pathIndex) => {
+                const pathPoints = interval.pathsData[path];
+                return (
+                  <g key={`g-${intervalIndex}-${pathIndex}`} transform={`translate(${yAxisWidth - 1} 0)`}>
+                    {pathPoints.map((p, pi) => (
+                      // point:
+                      <circle key={`p-${intervalIndex}-${pathIndex}-${pi}`} cx={_ts2x(p.t, this.props.scale)} cy={_v2y(p.v)} r={2} />
+                    ))}
+                  </g>
+                );
+              })
+            ))
+          }
+
+          {/* {this.props.data.map((path) => {
             const visiblePoints = (this.props.data) ? (this.props.data[path].filter( (p) => ((p.t >= this.props.fromTs) && (p.t <= this.props.toTs)) ) ) : ([]);
             return (
               <g transform={`translate(${yAxisWidth - 1} 0)`}>
