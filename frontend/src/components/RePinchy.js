@@ -65,6 +65,7 @@ export default class RePinchy extends React.Component {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseMoveCheckCtrl = this.handleMouseMoveCheckCtrl.bind(this);
     this.updateMouseMoveCoords = this.updateMouseMoveCoords.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
@@ -202,6 +203,9 @@ export default class RePinchy extends React.Component {
     this.setState({
       zoomInProgress: this.zoomInProgress,
     });
+    // listening for keyUp for Ctrl doesn't always work for unknown reasons (not because of onblur), so
+    // we use a failsafe:
+    window.addEventListener('mousemove', this.handleMouseMoveCheckCtrl, true);
 
     let scaleFactor;
     if (event.deltaY < 0) {
@@ -236,12 +240,26 @@ export default class RePinchy extends React.Component {
 
   handleCtrlKeyUp(event) {
     if (event.keyCode === 17) {
-      console.log("Ctrl key unpressed!");  // for unknown reasons, this doesn't always work - this is added in hope we catch it in the wild
-      this.zoomInProgress = false;
-      this.setState({
-        zoomInProgress: this.zoomInProgress,
-      });
+      this.onCtrlKeyUp();
     }
+  }
+
+  // safeguard because sometimes handleCtrlKeyUp() is not called :
+  handleMouseMoveCheckCtrl(event) {
+    // https://stackoverflow.com/a/8875522/593487
+    if (event.ctrlKey) {
+      return;  // it seems all is ok (Ctrl is still pressed)
+    };
+    console.log("KeyUp event failed to detect Ctrl key up, fixing with workaround")
+    this.onCtrlKeyUp();
+  }
+
+  onCtrlKeyUp() {
+    this.zoomInProgress = false;
+    this.setState({
+      zoomInProgress: this.zoomInProgress,
+    });
+    window.removeEventListener('mousemove', this.handleMouseMoveCheckCtrl, true);  // no need for the workaround anymore
   }
 
   handleMouseDown(event) {
