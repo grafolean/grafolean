@@ -37,15 +37,19 @@ export default class RePinchy extends React.Component {
   constructor() {
     super(...arguments);
 
-    this.state = {
-      x: this.props.initialState.x || 0,
-      y: this.props.initialState.y || 0,
-      scale: this.props.initialState.scale || 1.0,
-      zoomInProgress: false,
+    this.x = this.props.initialState.x || 0;
+    this.y = this.props.initialState.y || 0;
+    this.scale = this.props.initialState.scale || 1.0;
+    this.zoomInProgress = false;
+    this.zoomStartState = null;  // if zooming/panning is in progress (for example when pinching) this contains start x, y and scale
+    this.twinTouch = null;  // internal data about progress of twin finger touch
+    this.mousePan = null;  // internal data abour progress of mouse pan operation (drag to pan)
 
-      zoomStartState: null,  // if zooming/panning is in progress (for example when pinching) this contains start x, y and scale
-      twinTouch: null,  // internal data about progress of twin finger touch
-      mousePan: null,  // internal data abour progress of mounse pan operation (drag to pan)
+    this.state = {
+      x: this.x,
+      y: this.y,
+      scale: this.scale,
+
       overlay: {
         shown: false,
         msg: "",
@@ -61,7 +65,7 @@ export default class RePinchy extends React.Component {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
-    this.updateMouseMove = this.updateMouseMove.bind(this);
+    this.updateMouseMoveCoords = this.updateMouseMoveCoords.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
     this.handleWheel = this.handleWheel.bind(this);
     this.handleCtrlKeyUp = this.handleCtrlKeyUp.bind(this);
@@ -126,19 +130,18 @@ export default class RePinchy extends React.Component {
     this.log("Twin touch start");
     event.persist();
     const startTwinTouch = this._getTwinTouchDims(event);
-    this.setState((oldState) => {
-      return {
-        twinTouch: {
-          ...startTwinTouch,
-        },
-        zoomStartState: {  // remember old state so you can apply transformations from it; should be much more accurate
-          x: oldState.x,
-          y: oldState.y,
-          scale: oldState.scale,
-        },
-        zoomInProgress: true,
-      }
-    })
+    this.zoomStartState = {  // remember old state so you can apply transformations from it; should be much more accurate
+      x: this.x,
+      y: this.y,
+      scale: this.scale,
+    };
+    this.twinTouch = {
+      ...startTwinTouch,
+    };
+    this.zoomInProgress = true;
+    this.setState({
+      zoomInProgress: this.zoomInProgress,
+    });
   }
 
   handleTwinTouchMove(event) {
@@ -146,55 +149,41 @@ export default class RePinchy extends React.Component {
     /*
       In general, we have 2 actions user can perform with multitouch / twin touch:
       - zoom in/out (pinch)
-      - pan (can be modified to only allow x or y but not both)
+      - pan
     */
 
     //this.log("Twin touch move");
     event.persist();
     const newTwinTouch = this._getTwinTouchDims(event);
-    this.setState((oldState) => {
-      if ((oldState.twinTouch === null) || (!oldState.zoomInProgress))
-        return oldState;
-      let scaleFactor = newTwinTouch.dist / oldState.twinTouch.dist;
-      return {
-        x: newTwinTouch.x - (oldState.twinTouch.x - oldState.zoomStartState.x) * scaleFactor,
-        y: newTwinTouch.y - (oldState.twinTouch.y - oldState.zoomStartState.y) * scaleFactor,
-        scale: oldState.zoomStartState.scale * scaleFactor,
-      };
-    })
+
+    if ((this.twinTouch === null) || (!this.zoomInProgress)) {
+      return;
+    };
+
+    let scaleFactor = newTwinTouch.dist / this.twinTouch.dist;
+    this.x = newTwinTouch.x - (this.twinTouch.x - this.zoomStartState.x) * scaleFactor;
+    this.y = newTwinTouch.y - (this.twinTouch.y - this.zoomStartState.y) * scaleFactor;
+    this.scale = this.zoomStartState.scale * scaleFactor;
+    // now update state with this information:
+    this.setState({
+      x: this.x,
+      y: this.y,
+      scale: this.scale,
+    });
   }
 
   handleTwinTouchEnd(event) {
     this.log("Twin touch end");
+
+    this.twinTouch = null;
+    this.zoomStartState = null;
+    this.zoomInProgress = false;
     this.setState({
-      twinTouch: null,
-      zoomStartState: null,
-      zoomInProgress: false,
-    })
+      zoomInProgress: this.zoomInProgress,
+    });
     event.preventDefault();
   }
 
-  _applyZoom(zoomOffsetX, zoomOffsetY, scaleFactor) {
-    this.setState(this._applyZoomFunc(zoomOffsetX, zoomOffsetY, scaleFactor))
-  }
-
-  _applyZoomFunc(zoomOffsetX, zoomOffsetY, scaleFactor) {
-    // returns the function which can be used to setState
-    return (oldState) => {
-      let startState = (oldState.zoomStartState === null) ? (oldState) : (oldState.zoomStartState);
-      let newScale = startState.scale * scaleFactor;
-      // check scale boundaries:
-      if (newScale < this.props.minScale || newScale > this.props.maxScale) {
-        scaleFactor = 1.0;
-        newScale = startState.scale;
-      }
-      return {
-        scale: newScale,
-        x: zoomOffsetX - (zoomOffsetX - startState.x) * scaleFactor,
-        y: zoomOffsetY - (zoomOffsetY - startState.y) * scaleFactor,
-      }
-    }
-  }
 
   handleWheel(event) {
     if (!event.ctrlKey) {
@@ -206,18 +195,53 @@ export default class RePinchy extends React.Component {
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
     this.log("Wheel CTRL!", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
-    const event_offsetX = event.pageX - currentTargetRect.left - this.props.padLeft,
-          event_offsetY = event.pageY - currentTargetRect.top;
+    const event_offsetX = event.pageX - currentTargetRect.left - this.props.padLeft;
+    const event_offsetY = event.pageY - currentTargetRect.top;
 
-    this.setState({zoomInProgress: true})
+    this.zoomInProgress = true;
+    this.setState({
+      zoomInProgress: this.zoomInProgress,
+    });
 
+    let scaleFactor;
     if (event.deltaY < 0) {
-      this._applyZoom(event_offsetX, event_offsetY, this.props.wheelScaleFactor);
+      scaleFactor = this.props.wheelScaleFactor;
     }
     else if (event.deltaY > 0) {
-      this._applyZoom(event_offsetX, event_offsetY, 1.0 / this.props.wheelScaleFactor);
+      scaleFactor = 1.0 / this.props.wheelScaleFactor;
     }
+    else {
+      return;  // not sure if this can happen, but let's play safe
+    }
+
+
+    let newScale = this.scale * scaleFactor;
+    // check scale boundaries:
+    if (newScale < this.props.minScale || newScale > this.props.maxScale) {
+      return;  // nothing to do - scaling out of bounds / not allowed
+    };
+
+    this.x = event_offsetX - (event_offsetX - this.x) * scaleFactor;
+    this.y = event_offsetY - (event_offsetY - this.y) * scaleFactor;
+    this.scale = newScale;
+
+    this.setState({
+      x: this.x,
+      y: this.y,
+      scale: this.scale,
+    });
+
     event.preventDefault();
+  }
+
+  handleCtrlKeyUp(event) {
+    if (event.keyCode === 17) {
+      console.log("Ctrl key unpressed!");  // for unknown reasons, this doesn't always work - this is added in hope we catch it in the wild
+      this.zoomInProgress = false;
+      this.setState({
+        zoomInProgress: this.zoomInProgress,
+      });
+    }
   }
 
   handleMouseDown(event) {
@@ -233,61 +257,53 @@ export default class RePinchy extends React.Component {
         clientY: event.clientY,
       },
       dirty: false,  // this flag makes checking if something has changed much easier
-      animationId: requestAnimationFrame(this.updateMouseMove),
+      animationId: null,
     }
 
     // we need to listen for mousemove/up anywhere, not just over our component, so we need to
     // register event listener manually:
-    window.addEventListener('mouseup', this.handleMouseUp, false);
-    window.addEventListener('mousemove', this.handleMouseMove, false);
+    window.addEventListener('mouseup', this.handleMouseUp, true);
+    window.addEventListener('mousemove', this.handleMouseMove, true);
 
     event.preventDefault();
   }
 
-  updateMouseMove() {
-    // schedule a repeat:
-    if (!this.mouseMoveState)
-      return;
-    this.mouseMoveState.animationId = requestAnimationFrame(this.updateMouseMove)
+  updateMouseMoveCoords() {
+    // remember that we have updated state so it can be scheduled next time again:
+    this.mouseMoveState.animationId = null;
 
-    if (!this.mouseMoveState.dirty)
-      return;
-    this.mouseMoveState.dirty = false;
-    this.setState((oldState) => {
-      return {
-        x: this.mouseMoveState.startState.x + (this.mouseMoveState.mouseMoveEvent.clientX - this.mouseMoveState.mouseDownEvent.clientX),
-        y: this.mouseMoveState.startState.y + (this.mouseMoveState.mouseMoveEvent.clientY - this.mouseMoveState.mouseDownEvent.clientY),
-      };
+    this.x = this.mouseMoveState.startState.x + (this.mouseMoveState.mouseMoveEvent.clientX - this.mouseMoveState.mouseDownEvent.clientX);
+    this.y = this.mouseMoveState.startState.y + (this.mouseMoveState.mouseMoveEvent.clientY - this.mouseMoveState.mouseDownEvent.clientY);
+    this.setState({
+      x: this.x,
+      y: this.y,
     });
   }
 
   handleMouseMove(event) {
-    if (!this.mouseMoveState)
+    if (!this.mouseMoveState) {
       return;
+    };
     this.mouseMoveState.mouseMoveEvent = {
       clientX: event.clientX,
       clientY: event.clientY,
-    }
-    this.mouseMoveState.dirty = true;  // we could compare if x/y really changed, but we wouldn't have gotten mousemove if they didn't
+    };
+    // if updating is not yet scheduled for, schedule it:
+    if (this.mouseMoveState.animationId === null) {
+      this.mouseMoveState.animationId = requestAnimationFrame(this.updateMouseMoveCoords);
+    };
   }
 
   handleMouseUp(event) {
     // event listener did its work, now unregister it:
-    window.removeEventListener('mouseup', this.handleMouseUp, false);
-    window.removeEventListener('mousemove', this.handleMouseMove, false);
-    // stop animation and forget about the whole mouse drag:
-    cancelAnimationFrame(this.mouseMoveState.animationId);
+    window.removeEventListener('mouseup', this.handleMouseUp, true);
+    window.removeEventListener('mousemove', this.handleMouseMove, true);
+    if (this.mouseMoveState.animationId !== null) {
+      // updateMouseMoveCoords would have trouble updating without data, so let's cancel its invocation:
+      cancelAnimationFrame(this.mouseMoveState.animationId);
+    };
     this.mouseMoveState = null;
-
     event.preventDefault();
-  }
-
-  handleCtrlKeyUp(event) {
-    if (event.keyCode === 17) {
-      this.setState({
-        zoomInProgress: false,
-      })
-    }
   }
 
   handleClickCapture(event) {
@@ -309,8 +325,8 @@ export default class RePinchy extends React.Component {
           {id: oldState.debugMessages[0].id + 1, msg: msg},
           ...oldState.debugMessages.slice(0, 15),
         ]
-      }
-    })
+      };
+    });
   }
 
   ensureOverlayShown(msg) {
