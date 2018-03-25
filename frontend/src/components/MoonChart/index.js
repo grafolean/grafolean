@@ -163,15 +163,40 @@ class IntervalLineChart extends React.PureComponent {
       <g>
         {/* draw every path: */}
         {Object.keys(this.props.interval.pathsData).map((path, pathIndex) => {
-          const pathPoints = this.props.interval.pathsData[path];
+          const pathPoints = this.props.interval.pathsData[path].map((p) => ({
+            x: ts2x(p.t),
+            y: v2y(p.v),
+            minY: v2y(p.minv),
+            maxY: v2y(p.maxv),
+          }));
+          pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
+          const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
+          const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
+          const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
           return (
             <g key={`g-${pathIndex}`}>
-              {pathPoints.map((p, pi) => (
-                // point:
-                <circle key={`p-${pathIndex}-${pi}`} cx={ts2x(p.t)} cy={v2y(p.v)} r={2} style={{
-                  fill: `hsl(${Math.random() * 255}, 100%, 50%)`,
-                }} />
-              ))}
+              <path
+                d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
+                style={{
+                  fill: '#ffeedd',
+                  stroke: 'none',
+                }}
+              />
+              <path
+                d={`M${linePoints.join("L")}`}
+                style={{
+                  fill: 'none',
+                  stroke: '#ff6622',
+                }}
+              />
+              {(!this.props.isAggr) ? (
+                pathPoints.map((p, pi) => (
+                  // points:
+                  <circle key={`p-${pathIndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
+                    fill: `hsl(${Math.random() * 255}, 100%, 50%)`,
+                  }} />
+                ))
+              ) : (null)}
             </g>
           );
         })}
@@ -263,6 +288,7 @@ class MoonChartView extends React.Component {
                   interval={interval}
                   yAxisHeight={yAxisHeight}
                   scale={this.props.scale}
+                  isAggr={this.props.aggrLevel >= 0}
                 />
               ))
             }
