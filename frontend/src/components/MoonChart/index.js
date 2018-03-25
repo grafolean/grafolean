@@ -155,6 +155,31 @@ export default class MoonChartContainer extends React.Component {
   }
 }
 
+class IntervalLineChart extends React.PureComponent {
+  render() {
+    const v2y = (v) => ((v / 1000.0) * this.props.yAxisHeight);
+    const ts2x = (ts) => ( ts * this.props.scale );
+    return (
+      <g>
+        {/* draw every path: */}
+        {Object.keys(this.props.interval.pathsData).map((path, pathIndex) => {
+          const pathPoints = this.props.interval.pathsData[path];
+          return (
+            <g key={`g-${pathIndex}`}>
+              {pathPoints.map((p, pi) => (
+                // point:
+                <circle key={`p-${pathIndex}-${pi}`} cx={ts2x(p.t)} cy={v2y(p.v)} r={2} style={{
+                  fill: `hsl(${Math.random() * 255}, 100%, 50%)`,
+                }} />
+              ))}
+            </g>
+          );
+        })}
+      </g>
+    );
+  }
+}
+
 class MoonChartView extends React.Component {
 
   constructor(props) {
@@ -181,9 +206,7 @@ class MoonChartView extends React.Component {
     const yAxisWidth = Math.min(Math.round(this.props.portWidth * 0.1), 100);
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
     const xAxisTop = this.props.portHeight - xAxisHeight;
-    const yAxisHeight = xAxisTop
-    const _v2y = (v) => ((v / 1000.0) * yAxisHeight);
-    const _ts2x = (ts) => ( (ts - this.props.fromTs) * this.props.scale );
+    const yAxisHeight = xAxisTop;
     /*
       this.props.fetchedIntervalsData:
         [
@@ -232,26 +255,18 @@ class MoonChartView extends React.Component {
             Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
             only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
           */}
-          {this.props.fetchedIntervalsData
-            .map((interval, intervalIndex) => {
-              return (
-                <g key={`i-${this.props.aggrLevel}-${intervalIndex}`} transform={`translate(${yAxisWidth - 1} 0)`}>
-                  {/* draw every path: */}
-                  {Object.keys(interval.pathsData).map((path, pathIndex) => {
-                    const pathPoints = interval.pathsData[path];
-                    return (
-                      <g key={`g-${intervalIndex}-${pathIndex}`}>
-                        {pathPoints.map((p, pi) => (
-                          // point:
-                          <circle key={`p-${intervalIndex}-${pathIndex}-${pi}`} cx={_ts2x(p.t, this.props.scale)} cy={_v2y(p.v)} r={2} />
-                        ))}
-                      </g>
-                    );
-                  })}
-                </g>
-              );
-            })
-          }
+          <g transform={`translate(${yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
+            {this.props.fetchedIntervalsData
+              .map((interval, intervalIndex) => (
+                <IntervalLineChart
+                  key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                  interval={interval}
+                  yAxisHeight={yAxisHeight}
+                  scale={this.props.scale}
+                />
+              ))
+            }
+          </g>
 
           {/* {this.props.data.map((path) => {
             const visiblePoints = (this.props.data) ? (this.props.data[path].filter( (p) => ((p.t >= this.props.fromTs) && (p.t <= this.props.toTs)) ) ) : ([]);
