@@ -26,13 +26,13 @@ export default class RePinchy extends React.Component {
     initialScale: 1.0,
     minScale: 2.8837376326873415e-7,
     maxScale: 128.0,
+    touchScaleFactorDisabledBetween: [0.7, 1.4],  // this allows pan without zoom with (inaccurate) touchscreen gestures
     wheelScaleFactor: 1.1,  // how fast wheel zooms in/out
     renderSub: (x, y, scale) => {
       return <p>Please specify renderSub prop!</p>
     }
   };
 
-  mouseMoveState = null;  // if zooming/panning with mouse down/move/up is in progress this contains all necessary data about progress
 
   constructor() {
     super(...arguments);
@@ -41,9 +41,8 @@ export default class RePinchy extends React.Component {
     this.y = this.props.initialState.y || 0;
     this.scale = this.props.initialState.scale || 1.0;
     this.zoomInProgress = false;
-    this.zoomStartState = null;  // if zooming/panning is in progress (for example when pinching) this contains start x, y and scale
     this.twinTouch = null;  // internal data about progress of twin finger touch
-    this.mousePan = null;  // internal data abour progress of mouse pan operation (drag to pan)
+    this.mouseMoveState = null;  // internal data abour progress of mouse pan operation (drag to pan)
 
     this.state = {
       x: this.x,
@@ -117,30 +116,28 @@ export default class RePinchy extends React.Component {
 
   _getTwinTouchDims(event) {
     const rect = event.currentTarget.getBoundingClientRect();
-    const dist = Math.sqrt(Math.pow(event.touches[0].clientX - event.touches[1].clientX, 2) + Math.pow(event.touches[0].clientY - event.touches[1].clientY, 2));
-    let x = (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left - this.props.padLeft;
-    let y = (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top;
-    this.log("Touch:", x, y, dist);
     return {
-      x,
-      y,
-      dist,
-    };
+      dx: event.touches[0].clientX - event.touches[1].clientX,
+      dy: event.touches[0].clientY - event.touches[1].clientY,
+      x: (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left - this.props.padLeft,
+      y: (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top,
+    }
   };
 
   handleTwinTouchStart(event) {
-    this.log("Twin touch start");
-    event.persist();
     const startTwinTouch = this._getTwinTouchDims(event);
-    this.zoomStartState = {  // remember old state so you can apply transformations from it; should be much more accurate
-      x: this.x,
-      y: this.y,
-      scale: this.scale,
-    };
     this.twinTouch = {
-      ...startTwinTouch,
+      x: startTwinTouch.x,
+      y: startTwinTouch.y,
+      dist: Math.sqrt(startTwinTouch.dx * startTwinTouch.dx + startTwinTouch.dy * startTwinTouch.dy),
+      zoomStartState: {  // remember old state so you can apply transformations from it; should be much more accurate
+        x: this.x,
+        y: this.y,
+        scale: this.scale,
+      },
       animationId: null,
       newTwinTouchDims: null,
+      allowScaling: false,  // initially disable scale until scale factor leaves forbidden area
     };
     this.zoomInProgress = true;
     this.setState({
@@ -156,10 +153,20 @@ export default class RePinchy extends React.Component {
     */
     this.twinTouch.animationId = null;
 
-    let scaleFactor = this.twinTouch.newTwinTouchDims.dist / this.twinTouch.dist;
-    this.x = this.twinTouch.newTwinTouchDims.x - (this.twinTouch.x - this.zoomStartState.x) * scaleFactor;
-    this.y = this.twinTouch.newTwinTouchDims.y - (this.twinTouch.y - this.zoomStartState.y) * scaleFactor;
-    this.scale = this.zoomStartState.scale * scaleFactor;
+    const dist = Math.sqrt(this.twinTouch.newTwinTouchDims.dx * this.twinTouch.newTwinTouchDims.dx + this.twinTouch.newTwinTouchDims.dy * this.twinTouch.newTwinTouchDims.dy);
+    let scaleFactor = dist / this.twinTouch.dist;
+    if (!this.twinTouch.allowScaling) {  // check if user has broken out of "forbidden scaling" area - if yes, allow any scale factor:
+      if (scaleFactor < this.props.touchScaleFactorDisabledBetween[0] || scaleFactor > this.props.touchScaleFactorDisabledBetween[1]) {
+        this.twinTouch.allowScaling = true;
+      }
+    };
+    if (!this.twinTouch.allowScaling) {
+      scaleFactor = 1.0;
+    }
+
+    this.x = this.twinTouch.newTwinTouchDims.x - (this.twinTouch.x - this.twinTouch.zoomStartState.x) * scaleFactor;
+    this.y = this.twinTouch.newTwinTouchDims.y - (this.twinTouch.y - this.twinTouch.zoomStartState.y) * scaleFactor;
+    this.scale = this.twinTouch.zoomStartState.scale * scaleFactor;
     this.setState({
       x: this.x,
       y: this.y,
@@ -186,7 +193,6 @@ export default class RePinchy extends React.Component {
       cancelAnimationFrame(this.twinTouch.animationId);
     };
     this.twinTouch = null;
-    this.zoomStartState = null;
     this.zoomInProgress = false;
     this.setState({
       zoomInProgress: this.zoomInProgress,
