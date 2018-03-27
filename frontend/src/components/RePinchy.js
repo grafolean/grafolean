@@ -61,6 +61,7 @@ export default class RePinchy extends React.Component {
 
     this.handleTouchStart = this.handleTouchStart.bind(this);
     this.handleTouchMove = this.handleTouchMove.bind(this);
+    this.updateTwinTouchMoveCoords = this.updateTwinTouchMoveCoords.bind(this);
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -138,6 +139,8 @@ export default class RePinchy extends React.Component {
     };
     this.twinTouch = {
       ...startTwinTouch,
+      animationId: null,
+      newTwinTouchDims: null,
     };
     this.zoomInProgress = true;
     this.setState({
@@ -145,27 +148,18 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  handleTwinTouchMove(event) {
-
+  updateTwinTouchMoveCoords() {
     /*
-      In general, we have 2 actions user can perform with multitouch / twin touch:
+      We have 2 actions user can perform with multitouch / twin touch:
       - zoom in/out (pinch)
       - pan
     */
+    this.twinTouch.animationId = null;
 
-    //this.log("Twin touch move");
-    event.persist();
-    const newTwinTouch = this._getTwinTouchDims(event);
-
-    if ((this.twinTouch === null) || (!this.zoomInProgress)) {
-      return;
-    };
-
-    let scaleFactor = newTwinTouch.dist / this.twinTouch.dist;
-    this.x = newTwinTouch.x - (this.twinTouch.x - this.zoomStartState.x) * scaleFactor;
-    this.y = newTwinTouch.y - (this.twinTouch.y - this.zoomStartState.y) * scaleFactor;
+    let scaleFactor = this.twinTouch.newTwinTouchDims.dist / this.twinTouch.dist;
+    this.x = this.twinTouch.newTwinTouchDims.x - (this.twinTouch.x - this.zoomStartState.x) * scaleFactor;
+    this.y = this.twinTouch.newTwinTouchDims.y - (this.twinTouch.y - this.zoomStartState.y) * scaleFactor;
     this.scale = this.zoomStartState.scale * scaleFactor;
-    // now update state with this information:
     this.setState({
       x: this.x,
       y: this.y,
@@ -173,9 +167,24 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  handleTwinTouchEnd(event) {
-    this.log("Twin touch end");
+  handleTwinTouchMove(event) {
+    if ((this.twinTouch === null) || (!this.zoomInProgress)) {
+      return;
+    };
+    // just remember the data about touch:
+    this.twinTouch.newTwinTouchDims = this._getTwinTouchDims(event);
+    // ...and schedule update:
+    if (this.twinTouch.animationId === null) {
+      this.twinTouch.animationId = requestAnimationFrame(this.updateTwinTouchMoveCoords);
+    };
 
+  }
+
+  handleTwinTouchEnd(event) {
+    if (this.twinTouch && this.twinTouch.animationId !== null) {
+      // updateTwinTouchMoveCoords would have trouble updating without data, so let's cancel its invocation:
+      cancelAnimationFrame(this.twinTouch.animationId);
+    };
     this.twinTouch = null;
     this.zoomStartState = null;
     this.zoomInProgress = false;

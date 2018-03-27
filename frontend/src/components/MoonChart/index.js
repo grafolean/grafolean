@@ -327,8 +327,9 @@ class MoonChartView extends React.Component {
               color="#999999"
 
               scale={this.props.scale}
-              panX={this.props.fromTs * this.props.scale /* we should pass fromTs and toTs here */}
-
+              panX={
+                this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
+              }
             />
           </g>
         </svg>
