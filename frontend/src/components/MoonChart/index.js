@@ -8,6 +8,8 @@ import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
 
+const randomColor = () => (`hsl(${Math.random() * 255}, 100%, 50%)`);
+
 export default class MoonChartContainer extends React.Component {
   requestsInProgress = [
     // {
@@ -173,12 +175,14 @@ class IntervalLineChart extends React.PureComponent {
           const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
           const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
           const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
+          const serieColor = randomColor();
           return (
             <g key={`g-${pathIndex}`}>
               <path
                 d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
                 style={{
-                  fill: '#ffeedd',
+                  fill: serieColor,
+                  opacity: 0.2,
                   stroke: 'none',
                 }}
               />
@@ -186,14 +190,14 @@ class IntervalLineChart extends React.PureComponent {
                 d={`M${linePoints.join("L")}`}
                 style={{
                   fill: 'none',
-                  stroke: '#ff6622',
+                  stroke: serieColor,
                 }}
               />
               {(!this.props.isAggr) ? (
                 pathPoints.map((p, pi) => (
                   // points:
                   <circle key={`p-${pathIndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
-                    fill: `hsl(${Math.random() * 255}, 100%, 50%)`,
+                    fill: serieColor,
                   }} />
                 ))
               ) : (null)}
