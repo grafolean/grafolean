@@ -62,6 +62,7 @@ export default class RePinchy extends React.Component {
     this.handleTouchMove = this.handleTouchMove.bind(this);
     this.updateTwinTouchMoveCoords = this.updateTwinTouchMoveCoords.bind(this);
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
+    this.killTouchHandler = this.killTouchHandler.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -81,35 +82,81 @@ export default class RePinchy extends React.Component {
     document.removeEventListener("keyup", this.handleCtrlKeyUp, true);
   }
 
+  killTouchHandler(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return false;
+  }
+
+  killTouch() {
+    document.body.style.touchAction = 'none';
+    document.getElementById('root').style.touchAction = 'none';
+    // document.body.addEventListener("touchstart", this.killTouchHandler, true);
+    // document.body.addEventListener("touchmove", this.killTouchHandler, true);
+    // document.body.addEventListener("touchstart", this.killTouchHandler, false);
+    // document.body.addEventListener("touchmove", this.killTouchHandler, false);
+    // document.addEventListener("touchstart", this.killTouchHandler, true);
+    // document.addEventListener("touchmove", this.killTouchHandler, true);
+    document.addEventListener("touchstart", this.killTouchHandler, false);
+    document.addEventListener("touchmove", this.killTouchHandler, false);
+  }
+
+  resurrectTouch() {
+    document.body.style.touchAction = 'auto';
+    document.getElementById('root').style.touchAction = 'auto';
+    // document.body.removeEventListener("touchstart", this.killTouchHandler, true);
+    // document.body.removeEventListener("touchmove", this.killTouchHandler, true);
+    // document.body.removeEventListener("touchstart", this.killTouchHandler, false);
+    // document.body.removeEventListener("touchmove", this.killTouchHandler, false);
+    // document.removeEventListener("touchstart", this.killTouchHandler, true);
+    // document.removeEventListener("touchmove", this.killTouchHandler, true);
+    document.removeEventListener("touchstart", this.killTouchHandler, false);
+    document.removeEventListener("touchmove", this.killTouchHandler, false);
+  }
+
   // https://reactjs.org/docs/events.html
   handleTouchStart(event) {
-    if (event.touches.length === 1) {
-      event.preventDefault();  // !!! disable in production
-      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
-      return;
-    }
+    // if not double touch, just ignore it. You have no idea if a twin touch will follow or not.
     if (event.touches.length === 2) {
-      event.preventDefault();
-      //this.clearOverlay();
-      //let {x, y, dist} = this._getTwinTouchDims(event);
-      this.handleTwinTouchStart(event);
+      if (!this.twinTouch) {  // just in case this gets called twice... not sure if it can happen, better safe than sorry
+        this.clearOverlay();
+        this.handleTwinTouchStart(event);
+        this.killTouch();
+      }
     }
   }
 
   handleTouchMove(event) {
+    // https://blog.mobiscroll.com/working-with-touch-events/
+    // " In Firefox Mobile the native scroll can be killed only if preventDefault() is called on the
+    //   touchstart event. Unfortunately at touchstart we don’t really know if we want scroll or not."
+    console.log("touchmove", event.touches.length)
     if (event.touches.length === 1) {
-      event.preventDefault();  // !!! disable in production
-      //this.ensureOverlayShown("Use 2 fingers to zoom and pan");
+      if (this.twinTouch) {
+        // are we already in the middle of twin touch session? Just ignore this event.
+        return;
+      };
+      this.ensureOverlayShown("Use 2 fingers to zoom and pan");
       return;
     }
     if (event.touches.length === 2) {
-      event.preventDefault();
-      //this.clearOverlay();
+      // document.getElementsByTagName('body').style.touchAction = 'none';  // disable
+      // possible solution:
+    //   document.body.addEventListener("touchmove", function(event) {
+    //     event.preventDefault();
+    //     event.stopPropagation();
+    // }, true);
+
+      this.clearOverlay();
       this.handleTwinTouchMove(event);
     }
   }
 
   handleTouchEnd(event) {
+    console.log("touchend", event.touches.length)
+    if (this.twinTouch) {
+      this.resurrectTouch();
+    };
     // when touch ends, it ends - it doesn't matter with how many fingers:
     this.handleTwinTouchEnd(event);
   }
@@ -197,7 +244,6 @@ export default class RePinchy extends React.Component {
     this.setState({
       zoomInProgress: this.zoomInProgress,
     });
-    event.preventDefault();
   }
 
 
@@ -363,23 +409,28 @@ export default class RePinchy extends React.Component {
   }
 
   ensureOverlayShown(msg) {
-    let clearOverlayTimeoutHandle = setTimeout(this.clearOverlay, 2000);
-    if (this.state.overlay.timeoutHandle) {
-      clearTimeout(this.state.overlay.timeoutHandle);
-    }
+    if (this.clearOverlayTimeoutHandle) {
+      clearTimeout(this.clearOverlayTimeoutHandle);
+      this.clearOverlayTimeoutHandle = null;
+    };
+    this.clearOverlayTimeoutHandle = setTimeout(this.clearOverlay, 2000);
 
     this.setState((oldState) => {
       return {
         overlay: {
           shown: true,
           msg: msg,
-          timeoutHandle: clearOverlayTimeoutHandle,
         }
       }
     });
   }
 
   clearOverlay() {
+    if (!this.clearOverlayTimeoutHandle) {
+      return;
+    };
+    clearTimeout(this.clearOverlayTimeoutHandle);
+    this.clearOverlayTimeoutHandle = null;
     this.setState((oldState) => {
       return { overlay: { shown: false } }
     });
@@ -393,9 +444,9 @@ export default class RePinchy extends React.Component {
         height: this.props.height,
       }}>
         <div
-          onTouchStart={this.handleTouchStart}
-          onTouchMove={this.handleTouchMove}
-          onTouchEnd={this.handleTouchEnd}
+          onTouchStartCapture={this.handleTouchStart}
+          onTouchMoveCapture={this.handleTouchMove}
+          onTouchEndCapture={this.handleTouchEnd}
           onWheel={this.handleWheel}
           onMouseDown={this.handleMouseDown}
           onKeyDown={this.handleKeyDown}
@@ -409,6 +460,7 @@ export default class RePinchy extends React.Component {
             height: this.props.height,
             overflow: 'hidden',
             border: '1px solid #eeeeee',
+            touchAction: 'auto',
           }}
           >
 
