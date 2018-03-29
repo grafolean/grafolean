@@ -3,7 +3,6 @@ import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
-import Loading from '../Loading'
 import TimestampXAxis from './TimestampXAxis'
 import YAxis from './yaxis'
 import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
@@ -137,16 +136,20 @@ export default class MoonChartContainer extends React.Component {
       .then(
         response => response.json().then(json => {
           this.saveResponseData(fromTs, toTs, aggrLevel, json);
-          // remove the info about this particular request:
+          return null;
+        }),
+        errorMsg => {
+          return errorMsg;
+        }
+      )
+      .then(
+        errorMsg => {
+          // whatever happened, remove the info about this particular request:
           this.requestsInProgress = this.requestsInProgress.filter((r) => (r !== requestInProgress));
           this.setState({
             fetching: this.requestsInProgress.length > 0,
-          })
-        }),
-        errorMsg => {
-          this.setState({
             errorMsg,
-          })
+          });
         }
       )
   }
@@ -218,20 +221,7 @@ class IntervalLineChart extends React.PureComponent {
 
 class MoonChartView extends React.Component {
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      errorMsg: null,
-    };
-  }
-
   render() {
-    if (this.state.errorMsg) {
-      return (
-        <div>{this.state.errorMsg}</div>
-      )
-    }
-
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const yAxisWidth = Math.min(Math.round(this.props.portWidth * 0.1), 100);
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
@@ -281,13 +271,29 @@ class MoonChartView extends React.Component {
             position: 'relative',
         }}
       >
-        {(this.props.fetching) && (
+
+        {(this.props.fetching || this.props.errorMsg) && (
           <div style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-          }}>
-            <Loading padding='10px' wh={32} />
+              position: 'absolute',
+              right: 9,
+              top: 9,
+            }}
+          >
+            {(this.props.fetching) ? (
+              <i className="fa fa-spinner fa-spin" style={{
+                  color: '#666',
+                  fontSize: 30,
+                }}
+              />
+            ) : (
+              <i className="fa fa-exclamation-triangle" style={{
+                  color: '#660000',
+                  margin: 5,
+                  fontSize: 20,
+                }}
+                title={this.props.errorMsg}
+              />
+            )}
           </div>
         )}
 

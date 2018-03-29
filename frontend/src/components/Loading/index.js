@@ -1,16 +1,17 @@
 import React, { Component } from 'react';
-import styled from 'styled-components';
 
-
+const DEFAULT_STYLE = {
+  padding: '40px',
+}
 class Loading extends Component {
-  defaultProps = {
-    padding: '40px',
+  static defaultProps = {
     wh: 64,
   }
   render() {
     return (
       <div style={{
-        padding: (this.props.hasOwnProperty('padding')) ? (this.props.padding) : ('40px'),
+        ...DEFAULT_STYLE,
+        ...this.props.style,
       }}>
         <img src="/static/loading.gif" width={this.props.wh} height={this.props.wh} alt="Please wait, loading..." />
       </div>
