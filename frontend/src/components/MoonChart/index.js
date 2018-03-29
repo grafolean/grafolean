@@ -123,6 +123,9 @@ export default class MoonChartContainer extends React.Component {
       toTs,
     };
     this.requestsInProgress.push(requestInProgress);
+    this.setState({
+      fetching: true,
+    })
 
     fetch(`${ROOT_URL}/values?${stringify({
       p: this.paths.join(","),
@@ -136,6 +139,9 @@ export default class MoonChartContainer extends React.Component {
           this.saveResponseData(fromTs, toTs, aggrLevel, json);
           // remove the info about this particular request:
           this.requestsInProgress = this.requestsInProgress.filter((r) => (r !== requestInProgress));
+          this.setState({
+            fetching: this.requestsInProgress.length > 0,
+          })
         }),
         errorMsg => {
           this.setState({
@@ -149,6 +155,7 @@ export default class MoonChartContainer extends React.Component {
     return (
       <MoonChartView
         {...this.props}
+        fetching={this.state.fetching}
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
         aggrLevel={this.state.aggrLevel}
@@ -219,12 +226,6 @@ class MoonChartView extends React.Component {
   }
 
   render() {
-    if (this.state.fetching) {
-      return (
-        <Loading />
-      )
-    }
-
     if (this.state.errorMsg) {
       return (
         <div>{this.state.errorMsg}</div>
@@ -277,8 +278,19 @@ class MoonChartView extends React.Component {
             //transformOrigin: "top left",
             //transform: `scale(${this.props.scale}, 1)`,
             backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
+            position: 'relative',
         }}
       >
+        {(this.props.fetching) && (
+          <div style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+          }}>
+            <Loading padding='10px' wh={32} />
+          </div>
+        )}
+
         <svg width={this.props.portWidth} height={this.props.portHeight}>
           {/*
             Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is

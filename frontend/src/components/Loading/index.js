@@ -2,16 +2,18 @@ import React, { Component } from 'react';
 import styled from 'styled-components';
 
 
-const LoadingPlaceholder = styled.div`
-  padding: 40px 40px;
-`
-
 class Loading extends Component {
+  defaultProps = {
+    padding: '40px',
+    wh: 64,
+  }
   render() {
     return (
-      <LoadingPlaceholder>
-        <img src="/static/loading.gif" alt="Please wait, loading..." />
-      </LoadingPlaceholder>
+      <div style={{
+        padding: (this.props.hasOwnProperty('padding')) ? (this.props.padding) : ('40px'),
+      }}>
+        <img src="/static/loading.gif" width={this.props.wh} height={this.props.wh} alt="Please wait, loading..." />
+      </div>
     );
   }
 }
