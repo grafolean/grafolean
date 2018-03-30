@@ -350,8 +350,6 @@ class MoonChartView extends React.Component {
             width: legendWidth,
             height: this.props.portHeight,
             float: 'right',
-            display: 'flex',
-            flexDirection: 'column',
           }}
         >
           <Legend
