@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
 
+import './legend.css';
+
 import { generateSerieColor } from './utils';
 
 const LegendRect = styled.div`
@@ -27,6 +29,10 @@ export default class Legend extends React.Component {
   render() {
     return (
       <div>
+        <div className="path-filter">
+          <input type="text" value="" name="asdf"/><i className="fa fa-filter" />
+        </div>
+
         {this.props.paths.map(path => (
           <div style={{
             position: 'relative',

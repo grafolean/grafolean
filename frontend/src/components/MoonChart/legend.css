@@ -1,0 +1,4 @@
+input { border: 1px solid #999999; border-bottom: 1px solid #cccccc; border-right: 1px solid #cccccc; }
+
+div.path-filter input { margin: 0 5px 0 20px; width: 120px; }
+div.path-filter i.fa { color: #66cccc; }
