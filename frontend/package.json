@@ -19,6 +19,7 @@
     "react-thunk": "^1.0.0",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
+    "seedrandom": "^2.4.3",
     "styled-components": "^2.2.4"
   },
   "scripts": {

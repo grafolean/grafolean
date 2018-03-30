@@ -1,3 +1,4 @@
+import seedrandom from 'seedrandom';
 
 export const MAX_AGGR_LEVEL = 6;
 
@@ -33,3 +34,8 @@ export const getMissingIntervals = (existingIntervals, wantedInterval) => {
   }
   return wantedIntervals;
 }
+
+export const generateSerieColor = (path) => {
+  var rng = seedrandom(path);
+  return `hsl(${rng() * 255}, 100%, 50%)`;
+};

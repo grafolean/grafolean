@@ -3,11 +3,10 @@ import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
-import TimestampXAxis from './TimestampXAxis'
-import YAxis from './yaxis'
-import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
-
-const randomColor = () => (`hsl(${Math.random() * 255}, 100%, 50%)`);
+import TimestampXAxis from './TimestampXAxis';
+import YAxis from './yaxis';
+import Legend from './legend';
+import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
 
 export default class MoonChartContainer extends React.Component {
   requestsInProgress = [
@@ -185,7 +184,7 @@ class IntervalLineChart extends React.PureComponent {
           const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
           const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
           const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
-          const serieColor = randomColor();
+          const serieColor = generateSerieColor(path);
           return (
             <g key={`g-${pathIndex}`}>
               <path
@@ -227,6 +226,7 @@ class MoonChartView extends React.Component {
     const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
     const xAxisTop = this.props.portHeight - xAxisHeight;
     const yAxisHeight = xAxisTop;
+    const legendWidth = 200;
     /*
       this.props.fetchedIntervalsData:
         [
@@ -259,98 +259,105 @@ class MoonChartView extends React.Component {
     */
 
     return (
-      <div
-        style={{
-            width: this.props.portWidth,
-            height: this.props.portHeight,
-            //marginLeft: this.props.panX,
-            //marginTop: 0,
-            //transformOrigin: "top left",
-            //transform: `scale(${this.props.scale}, 1)`,
-            backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
-            position: 'relative',
-        }}
-      >
+      <div>
+        <div className="chart"
+          style={{
+              width: this.props.portWidth - legendWidth,
+              height: this.props.portHeight,
+              //marginLeft: this.props.panX,
+              //marginTop: 0,
+              //transformOrigin: "top left",
+              //transform: `scale(${this.props.scale}, 1)`,
+              backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
+              position: 'relative',
+              float: 'left',
+          }}
+        >
 
-        {(this.props.fetching || this.props.errorMsg) && (
-          <div style={{
-              position: 'absolute',
-              right: 9,
-              top: 9,
-            }}
-          >
-            {(this.props.fetching) ? (
-              <i className="fa fa-spinner fa-spin" style={{
-                  color: '#666',
-                  fontSize: 30,
-                }}
-              />
-            ) : (
-              <i className="fa fa-exclamation-triangle" style={{
-                  color: '#660000',
-                  margin: 5,
-                  fontSize: 20,
-                }}
-                title={this.props.errorMsg}
-              />
-            )}
-          </div>
-        )}
-
-        <svg width={this.props.portWidth} height={this.props.portHeight}>
-          {/*
-            Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
-            only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
-          */}
-          <g transform={`translate(${yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
-            {this.props.fetchedIntervalsData
-              .map((interval, intervalIndex) => (
-                <IntervalLineChart
-                  key={`i-${this.props.aggrLevel}-${intervalIndex}`}
-                  interval={interval}
-                  yAxisHeight={yAxisHeight}
-                  scale={this.props.scale}
-                  isAggr={this.props.aggrLevel >= 0}
+          {(this.props.fetching || this.props.errorMsg) && (
+            <div style={{
+                position: 'absolute',
+                right: 9,
+                top: 9,
+              }}
+            >
+              {(this.props.fetching) ? (
+                <i className="fa fa-spinner fa-spin" style={{
+                    color: '#666',
+                    fontSize: 30,
+                  }}
                 />
-              ))
-            }
-          </g>
+              ) : (
+                <i className="fa fa-exclamation-triangle" style={{
+                    color: '#660000',
+                    margin: 5,
+                    fontSize: 20,
+                  }}
+                  title={this.props.errorMsg}
+                />
+              )}
+            </div>
+          )}
 
-          {/* {this.props.data.map((path) => {
-            const visiblePoints = (this.props.data) ? (this.props.data[path].filter( (p) => ((p.t >= this.props.fromTs) && (p.t <= this.props.toTs)) ) ) : ([]);
-            return (
-              <g transform={`translate(${yAxisWidth - 1} 0)`}>
-                {visiblePoints.map((p) => (
-                  <circle cx={_ts2x(p.t, this.props.scale)} cy={_v2y(p.v)} r={2} />
-                ))}
-              </g>
-            )
-          })} */}
-
-          <rect x={0} y={xAxisTop} width={yAxisWidth} height={xAxisHeight} fill="white" stroke="none" />
-          <g transform={`translate(0 0)`}>
-            <YAxis
-              width={yAxisWidth}
-              height={yAxisHeight}
-              color="#999999"
-
-              minY={this.props.minY}
-              maxY={this.props.maxY}
-            />
-          </g>
-          <g transform={`translate(${yAxisWidth - 1} ${xAxisTop})`}>
-            <TimestampXAxis
-              width={this.props.portWidth - yAxisWidth}
-              height={xAxisHeight}
-              color="#999999"
-
-              scale={this.props.scale}
-              panX={
-                this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
+          <svg width={this.props.portWidth - legendWidth} height={this.props.portHeight}>
+          
+            {/*
+              Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
+              only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
+            */}
+            <g transform={`translate(${yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
+              {this.props.fetchedIntervalsData
+                .map((interval, intervalIndex) => (
+                  <IntervalLineChart
+                    key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                    interval={interval}
+                    yAxisHeight={yAxisHeight}
+                    scale={this.props.scale}
+                    isAggr={this.props.aggrLevel >= 0}
+                  />
+                ))
               }
-            />
-          </g>
-        </svg>
+            </g>
+
+            <rect x={0} y={xAxisTop} width={yAxisWidth} height={xAxisHeight} fill="white" stroke="none" />
+            <g transform={`translate(0 0)`}>
+              <YAxis
+                width={yAxisWidth}
+                height={yAxisHeight}
+                color="#999999"
+
+                minY={this.props.minY}
+                maxY={this.props.maxY}
+              />
+            </g>
+            <g transform={`translate(${yAxisWidth - 1} ${xAxisTop})`}>
+              <TimestampXAxis
+                width={this.props.portWidth - yAxisWidth - legendWidth}
+                height={xAxisHeight}
+                color="#999999"
+
+                scale={this.props.scale}
+                panX={
+                  this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
+                }
+              />
+            </g>
+          </svg>
+        </div>
+        <div
+          className="legend"
+          style={{
+            width: legendWidth,
+            height: this.props.portHeight,
+            float: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <Legend
+            paths={this.props.paths}
+          />
+        </div>
       </div>
     );
   }
