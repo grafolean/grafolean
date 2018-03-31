@@ -1,14 +1,89 @@
 import React from 'react';
+import moment from 'moment';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
+import RePinchy from '../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './yaxis';
 import Legend from './legend';
 import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
 
-export default class MoonChartContainer extends React.Component {
+const WidgetTitle = (props) => (
+  <div class="widget-title">
+    <h1>{props.title}</h1>
+  </div>
+)
+
+export default class MoonChartWidget extends React.Component {
+
+  render() {
+    const widgetWidth = this.props.width;
+    const chartWidth = widgetWidth * 0.7;
+    const chartHeight = this.props.height;
+    const legendWidth = widgetWidth * 0.3;
+    const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), 100);  // 10% of chart width, max. 100px
+    const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
+
+    const toTs = moment().unix();
+    const fromTs = moment().subtract(1, 'month').unix();
+    const initialScale = chartWidth / (toTs - fromTs);
+    const initialPanX = - fromTs * initialScale;
+    return (
+      <div className="moonchart-widget">
+        <WidgetTitle
+          title={this.props.title}
+        />
+
+        <RePinchy
+          width={widgetWidth}
+          height={chartHeight}
+          navAreaX={yAxisWidth}
+          navAreaY={0}
+          navAreaW={chartWidth - yAxisWidth}
+          navAreaH={chartHeight}
+          initialState={{
+            x: initialPanX,
+            y: 0.0,
+            scale: initialScale,
+          }}
+        >
+          {(x, y, scale, zoomInProgress) => (
+            <div className="repinchy-content">
+              <ChartContainer
+                paths={this.props.paths}
+                width={chartWidth}
+                height={chartHeight}
+                fromTs={Math.round(-x/scale)}
+                toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
+                scale={scale}
+                zoomInProgress={zoomInProgress}
+                xAxisHeight={xAxisHeight}
+                yAxisWidth={yAxisWidth}
+              />
+              <div
+                className="legend"
+                style={{
+                  width: legendWidth,
+                  height: chartHeight,
+                  float: 'right',
+                }}
+              >
+                <Legend
+                  paths={this.props.paths}
+                />
+              </div>
+            </div>
+          )}
+        </RePinchy>
+
+      </div>
+    )
+  }
+}
+
+class ChartContainer extends React.Component {
   requestsInProgress = [
     // {
     //   aggrLevel: ...
@@ -155,7 +230,7 @@ export default class MoonChartContainer extends React.Component {
 
   render() {
     return (
-      <MoonChartView
+      <ChartView
         {...this.props}
         fetching={this.state.fetching}
         fetchedIntervalsData={this.state.fetchedIntervalsData}
@@ -218,15 +293,12 @@ class IntervalLineChart extends React.PureComponent {
   }
 }
 
-class MoonChartView extends React.Component {
+class ChartView extends React.Component {
 
   render() {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
-    const yAxisWidth = Math.min(Math.round(this.props.portWidth * 0.1), 100);
-    const xAxisHeight = Math.min(Math.round(this.props.portHeight * 0.1), 50);
-    const xAxisTop = this.props.portHeight - xAxisHeight;
+    const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
-    const legendWidth = 200;
     /*
       this.props.fetchedIntervalsData:
         [
@@ -259,18 +331,18 @@ class MoonChartView extends React.Component {
     */
 
     return (
-      <div>
+      <div
+        style={{
+          ...this.props.style,
+        }}
+      >
         <div className="chart"
           style={{
-              width: this.props.portWidth - legendWidth,
-              height: this.props.portHeight,
-              //marginLeft: this.props.panX,
-              //marginTop: 0,
-              //transformOrigin: "top left",
-              //transform: `scale(${this.props.scale}, 1)`,
-              backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
-              position: 'relative',
-              float: 'left',
+            width: this.props.width,
+            height: this.props.height,
+            backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
+            position: 'relative',
+            float: 'left',
           }}
         >
 
@@ -299,13 +371,13 @@ class MoonChartView extends React.Component {
             </div>
           )}
 
-          <svg width={this.props.portWidth - legendWidth} height={this.props.portHeight}>
+          <svg width={this.props.width} height={this.props.height}>
           
             {/*
               Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
               only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
             */}
-            <g transform={`translate(${yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
+            <g transform={`translate(${this.props.yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
               {this.props.fetchedIntervalsData
                 .map((interval, intervalIndex) => (
                   <IntervalLineChart
@@ -319,10 +391,10 @@ class MoonChartView extends React.Component {
               }
             </g>
 
-            <rect x={0} y={xAxisTop} width={yAxisWidth} height={xAxisHeight} fill="white" stroke="none" />
+            <rect x={0} y={xAxisTop} width={this.props.yAxisWidth} height={this.props.xAxisHeight} fill="white" stroke="none" />
             <g transform={`translate(0 0)`}>
               <YAxis
-                width={yAxisWidth}
+                width={this.props.yAxisWidth}
                 height={yAxisHeight}
                 color="#999999"
 
@@ -330,10 +402,10 @@ class MoonChartView extends React.Component {
                 maxY={this.props.maxY}
               />
             </g>
-            <g transform={`translate(${yAxisWidth - 1} ${xAxisTop})`}>
+            <g transform={`translate(${this.props.yAxisWidth - 1} ${xAxisTop})`}>
               <TimestampXAxis
-                width={this.props.portWidth - yAxisWidth - legendWidth}
-                height={xAxisHeight}
+                width={this.props.width - this.props.yAxisWidth}
+                height={this.props.xAxisHeight}
                 color="#999999"
 
                 scale={this.props.scale}
@@ -343,18 +415,6 @@ class MoonChartView extends React.Component {
               />
             </g>
           </svg>
-        </div>
-        <div
-          className="legend"
-          style={{
-            width: legendWidth,
-            height: this.props.portHeight,
-            float: 'right',
-          }}
-        >
-          <Legend
-            paths={this.props.paths}
-          />
         </div>
       </div>
     );

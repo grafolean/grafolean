@@ -1,13 +1,11 @@
 import React from 'react';
-import moment from 'moment';
 
 import store from '../../store'
 import { fetchDashboardDetails } from '../../store/actions';
 
 import Loading from '../Loading';
 import ChartAddForm from '../ChartAddForm';
-import RePinchy from '../RePinchy';
-import MoonChartContainer from '../MoonChart';
+import MoonChartWidget from '../MoonChart';
 
 export default class DashboardView extends React.Component {
 
@@ -28,51 +26,24 @@ export default class DashboardView extends React.Component {
         )
     }
 
-    const width = 600, height = 300;
-    const chartWidth = 540;
-    const toTs = moment().unix();
-    const fromTs = moment().subtract(1, 'month').unix();
-    const initialScale = chartWidth / (toTs - fromTs);
-    const initialPanX = - fromTs * initialScale;
     return (
       <div>
         Dashboard:
         <hr />
-        {(this.props.fetching)?(
-          <Loading />
-        ):('')}
 
         {this.props.data.name}
 
         <div>
-          {this.props.data.charts.map((v) => {
-            return (
-              <RePinchy
-                key={v.id}
-                width={width}
-                height={height}
-                padLeft={width - chartWidth}
-                initialState={{
-                  x: initialPanX,
-                  y: 0.0,
-                  scale: initialScale,
-                }}
-              >
-                {(w, h, x, y, scale, zoomInProgress) => (
-                  <MoonChartContainer
-                    chartId={v.id}
-                    paths={v.paths}
-                    portWidth={w}
-                    portHeight={h}
-                    fromTs={Math.round(-x/scale)}
-                    toTs={Math.round(-x/scale) + Math.round(w / scale)}
-                    scale={scale}
-                    zoomInProgress={zoomInProgress}
-                  />
-                )}
-              </RePinchy>
-            )
-          })}
+          {this.props.data.charts.map((chart) => (
+            <MoonChartWidget
+              key={chart.id}
+              width={700}
+              height={300}
+              chartId={chart.id}
+              title={chart.name}
+              paths={chart.paths}
+            />
+          ))}
         </div>
 
         <ChartAddForm dashboardSlug={this.props.match.params.slug}/>

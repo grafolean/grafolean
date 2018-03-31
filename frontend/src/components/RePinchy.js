@@ -23,7 +23,11 @@ export default class RePinchy extends React.Component {
     width: 200,  // RePinchy's viewport width & height
     height: 300,
     padLeft: 0,  // how much the zoomable inner component is padded on left
-    initialScale: 1.0,
+    initialState: {
+      x: 0,
+      y: 0,
+      scale: 1.0,
+    },
     minScale: 2.8837376326873415e-7,
     maxScale: 128.0,
     touchScaleFactorDisabledBetween: [0.7, 1.4],  // this allows pan without zoom with (inaccurate) touchscreen gestures
@@ -37,8 +41,8 @@ export default class RePinchy extends React.Component {
   constructor() {
     super(...arguments);
 
-    this.x = this.props.initialState.x || 0;
-    this.y = this.props.initialState.y || 0;
+    this.x = this.props.initialState.x;
+    this.y = this.props.initialState.y;
     this.scale = this.props.initialState.scale || 1.0;
     this.zoomInProgress = false;
     this.twinTouch = null;  // internal data about progress of twin finger touch
@@ -480,7 +484,7 @@ export default class RePinchy extends React.Component {
             //   )}
             // </RePinchy>
           }
-          {this.props.children(this.props.width, this.props.height, this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
+          {this.props.children(this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
 
         </div>
         {(this.state.overlay.shown)?(
