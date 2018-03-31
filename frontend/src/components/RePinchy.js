@@ -22,7 +22,12 @@ export default class RePinchy extends React.Component {
   static defaultProps = {
     width: 200,  // RePinchy's viewport width & height
     height: 300,
-    padLeft: 0,  // how much the zoomable inner component is padded on left
+    activeArea: {
+      x: 0,
+      y: 0,
+      w: 200,
+      h: 200,
+    },
     initialState: {
       x: 0,
       y: 0,
@@ -170,7 +175,7 @@ export default class RePinchy extends React.Component {
     return {
       dx: event.touches[0].clientX - event.touches[1].clientX,
       dy: event.touches[0].clientY - event.touches[1].clientY,
-      x: (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left - this.props.padLeft,
+      x: (event.touches[0].clientX + event.touches[1].clientX) / 2 - rect.left,
       y: (event.touches[0].clientY + event.touches[1].clientY) / 2 - rect.top,
     }
   };
@@ -261,7 +266,7 @@ export default class RePinchy extends React.Component {
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
     this.log("Wheel CTRL!", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
-    const event_offsetX = event.pageX - currentTargetRect.left - this.props.padLeft;
+    const event_offsetX = event.pageX - currentTargetRect.left;
     const event_offsetY = event.pageY - currentTargetRect.top;
 
     this.zoomInProgress = true;
@@ -448,14 +453,6 @@ export default class RePinchy extends React.Component {
         height: this.props.height,
       }}>
         <div
-          onTouchStartCapture={this.handleTouchStart}
-          onTouchMoveCapture={this.handleTouchMove}
-          onTouchEndCapture={this.handleTouchEnd}
-          onWheel={this.handleWheel}
-          onMouseDown={this.handleMouseDown}
-          onKeyDown={this.handleKeyDown}
-          onKeyUp={this.handleKeyUp}
-          onClickCapture={this.handleClickCapture}
           style={{
             position: 'absolute',
             left: 0,
@@ -463,27 +460,25 @@ export default class RePinchy extends React.Component {
             width: this.props.width,
             height: this.props.height,
             overflow: 'hidden',
-            border: '1px solid #eeeeee',
             touchAction: 'auto',
           }}
           >
-
-          {
-            // There must be exactly one child which is a function, returning elements to be rendered. Example:
-            // <RePinchy
-            //   width={600}
-            //   height={300}
-            //   padLeft={60}
-            //   initialState={{
-            //     x: -1234567820.0,
-            //     y: 0.0,
-            //     scale: 1.0,
-            //   }}>
-            //   {(w, h, x, y, scale, zoomInProgress) => (
-            //     <MoonChart ...props />
-            //   )}
-            // </RePinchy>
-          }
+          {/*
+            There must be exactly one child which is a function, returning elements to be rendered. Example:
+            <RePinchy
+              width={600}
+              height={300}
+              activeArea={{ x: 0, y:0, w: 600, h: 300 }}
+              initialState={{
+                x: -1234567820.0,
+                y: 0.0,
+                scale: 1.0,
+              }}>
+              {(x, y, scale, zoomInProgress) => (
+                <MoonChart ...props />
+              )}
+            </RePinchy>
+          */}
           {this.props.children(this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
 
         </div>
@@ -491,10 +486,10 @@ export default class RePinchy extends React.Component {
           [
             <div key='overlay-bg' style={{
               position: 'absolute',
-              left: 0,
-              top: 0,
-              width: this.props.width,
-              height: this.props.height,
+              left: this.props.activeArea.x,
+              top: this.props.activeArea.y,
+              width: this.props.activeArea.w,
+              height: this.props.activeArea.h,
               backgroundColor: '#000000',
               opacity: 0.2,
               pointerEvents: 'none',  // do not catch mouse and touch events
@@ -502,10 +497,10 @@ export default class RePinchy extends React.Component {
             }}></div>,
             <div key='overlay-text' style={{
               position: 'absolute',
-              left: 0,
-              top: 0,
-              width: this.props.width,
-              height: this.props.height,
+              left: this.props.activeArea.x,
+              top: this.props.activeArea.y,
+              width: this.props.activeArea.w,
+              height: this.props.activeArea.h,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -520,6 +515,27 @@ export default class RePinchy extends React.Component {
             </div>
           ]
         ):(null)}
+
+        <div
+          onTouchStartCapture={this.handleTouchStart}
+          onTouchMoveCapture={this.handleTouchMove}
+          onTouchEndCapture={this.handleTouchEnd}
+          onWheel={this.handleWheel}
+          onMouseDown={this.handleMouseDown}
+          onKeyDown={this.handleKeyDown}
+          onKeyUp={this.handleKeyUp}
+          onClickCapture={this.handleClickCapture}
+          style={{
+            position: 'absolute',
+            left: this.props.activeArea.x,
+            top: this.props.activeArea.y,
+            width: this.props.activeArea.w,
+            height: this.props.activeArea.h,
+            overflow: 'hidden',
+            touchAction: 'auto',
+          }}
+        >
+        </div>
       </div>
     );
   }

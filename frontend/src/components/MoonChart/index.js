@@ -39,10 +39,12 @@ export default class MoonChartWidget extends React.Component {
         <RePinchy
           width={widgetWidth}
           height={chartHeight}
-          navAreaX={yAxisWidth}
-          navAreaY={0}
-          navAreaW={chartWidth - yAxisWidth}
-          navAreaH={chartHeight}
+          activeArea={{
+            x: yAxisWidth,
+            y: 0,
+            w: chartWidth - yAxisWidth,
+            h: chartHeight - xAxisHeight,
+          }}
           initialState={{
             x: initialPanX,
             y: 0.0,
