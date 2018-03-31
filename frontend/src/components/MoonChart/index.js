@@ -18,6 +18,13 @@ const WidgetTitle = (props) => (
 
 export default class MoonChartWidget extends React.Component {
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      selectedPaths: new Set(props.paths),
+    }
+  }
+
   render() {
     const widgetWidth = this.props.width;
     const chartWidth = widgetWidth * 0.7;
@@ -55,6 +62,7 @@ export default class MoonChartWidget extends React.Component {
             <div className="repinchy-content">
               <ChartContainer
                 paths={this.props.paths}
+                selectedPaths={this.state.selectedPaths}
                 width={chartWidth}
                 height={chartHeight}
                 fromTs={Math.round(-x/scale)}
@@ -74,6 +82,11 @@ export default class MoonChartWidget extends React.Component {
               >
                 <Legend
                   paths={this.props.paths}
+                  onSelectedPathsChange={(selectedPaths) => {
+                    this.setState({
+                      selectedPaths,
+                    });
+                  }}
                 />
               </div>
             </div>
@@ -250,46 +263,49 @@ class IntervalLineChart extends React.PureComponent {
     return (
       <g>
         {/* draw every path: */}
-        {Object.keys(this.props.interval.pathsData).map((path, pathIndex) => {
-          const pathPoints = this.props.interval.pathsData[path].map((p) => ({
-            x: ts2x(p.t),
-            y: v2y(p.v),
-            minY: v2y(p.minv),
-            maxY: v2y(p.maxv),
-          }));
-          pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
-          const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
-          const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
-          const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
-          const serieColor = generateSerieColor(path);
-          return (
-            <g key={`g-${pathIndex}`}>
-              <path
-                d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
-                style={{
-                  fill: serieColor,
-                  opacity: 0.2,
-                  stroke: 'none',
-                }}
-              />
-              <path
-                d={`M${linePoints.join("L")}`}
-                style={{
-                  fill: 'none',
-                  stroke: serieColor,
-                }}
-              />
-              {(!this.props.isAggr) ? (
-                pathPoints.map((p, pi) => (
-                  // points:
-                  <circle key={`p-${pathIndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
+        {Object.keys(this.props.interval.pathsData)
+          .filter(path => this.props.selectedPaths.has(path))
+          .map((path, pathIndex) => {
+            const pathPoints = this.props.interval.pathsData[path].map((p) => ({
+              x: ts2x(p.t),
+              y: v2y(p.v),
+              minY: v2y(p.minv),
+              maxY: v2y(p.maxv),
+            }));
+            pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
+            const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
+            const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
+            const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
+            const serieColor = generateSerieColor(path);
+            return (
+              <g key={`g-${pathIndex}`}>
+                <path
+                  d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
+                  style={{
                     fill: serieColor,
-                  }} />
-                ))
-              ) : (null)}
-            </g>
-          );
-        })}
+                    opacity: 0.2,
+                    stroke: 'none',
+                  }}
+                />
+                <path
+                  d={`M${linePoints.join("L")}`}
+                  style={{
+                    fill: 'none',
+                    stroke: serieColor,
+                  }}
+                />
+                {(!this.props.isAggr) ? (
+                  pathPoints.map((p, pi) => (
+                    // points:
+                    <circle key={`p-${pathIndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
+                      fill: serieColor,
+                    }} />
+                  ))
+                ) : (null)}
+              </g>
+            );
+          })
+        }
       </g>
     );
   }
@@ -388,6 +404,7 @@ class ChartView extends React.Component {
                     yAxisHeight={yAxisHeight}
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
+                    selectedPaths={this.props.selectedPaths}
                   />
                 ))
               }
