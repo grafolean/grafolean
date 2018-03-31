@@ -30,13 +30,16 @@ export default class Legend extends React.Component {
     return (
       <div>
         <div className="path-filter">
-          <input type="text" value="" name="asdf"/><i className="fa fa-filter" />
+          <input type="text" name="pathFilter"/><i className="fa fa-filter" />
         </div>
 
         {this.props.paths.map(path => (
-          <div style={{
-            position: 'relative',
-          }}>
+          <div
+            key={path}
+            style={{
+              position: 'relative',
+            }}
+          >
             <div style={{
                 position: 'absolute',
                 left: 10,

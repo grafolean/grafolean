@@ -11,7 +11,7 @@ import Legend from './legend';
 import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
 
 const WidgetTitle = (props) => (
-  <div class="widget-title">
+  <div className="widget-title">
     <h1>{props.title}</h1>
   </div>
 )

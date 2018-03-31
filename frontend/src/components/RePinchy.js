@@ -391,7 +391,7 @@ export default class RePinchy extends React.Component {
 
   handleClickCapture(event) {
     // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
-    console.log("mouse click");
+    //console.log("mouse click");
     //event.stopPropagation();
   }
 
