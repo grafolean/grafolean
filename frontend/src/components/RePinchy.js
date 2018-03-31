@@ -71,7 +71,7 @@ export default class RePinchy extends React.Component {
     this.handleTouchMove = this.handleTouchMove.bind(this);
     this.updateTwinTouchMoveCoords = this.updateTwinTouchMoveCoords.bind(this);
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
-    this.killTouchHandler = this.killTouchHandler.bind(this);
+    this.maybeKillDefaultTouchHandler = this.maybeKillDefaultTouchHandler.bind(this);
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -81,46 +81,30 @@ export default class RePinchy extends React.Component {
     this.handleWheel = this.handleWheel.bind(this);
     this.handleCtrlKeyUp = this.handleCtrlKeyUp.bind(this);
     this.clearOverlay = this.clearOverlay.bind(this);
-    this.onTestButtonClick = this.onTestButtonClick.bind(this);
   }
 
   componentDidMount(){
     document.addEventListener("keyup", this.handleCtrlKeyUp, true);
+    document.addEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
+    document.addEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
   }
+
   componentWillUnmount(){
     document.removeEventListener("keyup", this.handleCtrlKeyUp, true);
+    document.removeEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
+    document.removeEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
   }
 
-  killTouchHandler(event) {
+  maybeKillDefaultTouchHandler(event) {
+    if (!this.twinTouch) {
+      return;  // do nothing - we are not in the middle of double touch
+    }
     event.preventDefault();
     event.stopImmediatePropagation();
-    return false;
-  }
-
-  killTouch() {
-    document.body.style.touchAction = 'none';
-    document.getElementById('root').style.touchAction = 'none';
-    // document.body.addEventListener("touchstart", this.killTouchHandler, true);
-    // document.body.addEventListener("touchmove", this.killTouchHandler, true);
-    // document.body.addEventListener("touchstart", this.killTouchHandler, false);
-    // document.body.addEventListener("touchmove", this.killTouchHandler, false);
-    // document.addEventListener("touchstart", this.killTouchHandler, true);
-    // document.addEventListener("touchmove", this.killTouchHandler, true);
-    document.addEventListener("touchstart", this.killTouchHandler, false);
-    document.addEventListener("touchmove", this.killTouchHandler, false);
-  }
-
-  resurrectTouch() {
-    document.body.style.touchAction = 'auto';
-    document.getElementById('root').style.touchAction = 'auto';
-    // document.body.removeEventListener("touchstart", this.killTouchHandler, true);
-    // document.body.removeEventListener("touchmove", this.killTouchHandler, true);
-    // document.body.removeEventListener("touchstart", this.killTouchHandler, false);
-    // document.body.removeEventListener("touchmove", this.killTouchHandler, false);
-    // document.removeEventListener("touchstart", this.killTouchHandler, true);
-    // document.removeEventListener("touchmove", this.killTouchHandler, true);
-    document.removeEventListener("touchstart", this.killTouchHandler, false);
-    document.removeEventListener("touchmove", this.killTouchHandler, false);
+    if (event.nativeEvent) {
+      event.nativeEvent.preventDefault();
+      event.nativeEvent.stopImmediatePropagation();
+    };
   }
 
   // https://reactjs.org/docs/events.html
@@ -130,7 +114,6 @@ export default class RePinchy extends React.Component {
       if (!this.twinTouch) {  // just in case this gets called twice... not sure if it can happen, better safe than sorry
         this.clearOverlay();
         this.handleTwinTouchStart(event);
-        this.killTouch();
       }
     }
   }
@@ -139,7 +122,6 @@ export default class RePinchy extends React.Component {
     // https://blog.mobiscroll.com/working-with-touch-events/
     // " In Firefox Mobile the native scroll can be killed only if preventDefault() is called on the
     //   touchstart event. Unfortunately at touchstart we don’t really know if we want scroll or not."
-    console.log("touchmove", event.touches.length)
     if (event.touches.length === 1) {
       if (this.twinTouch) {
         // are we already in the middle of twin touch session? Just ignore this event.
@@ -162,10 +144,6 @@ export default class RePinchy extends React.Component {
   }
 
   handleTouchEnd(event) {
-    console.log("touchend", event.touches.length)
-    if (this.twinTouch) {
-      this.resurrectTouch();
-    };
     // when touch ends, it ends - it doesn't matter with how many fingers:
     this.handleTwinTouchEnd(event);
   }
@@ -398,11 +376,6 @@ export default class RePinchy extends React.Component {
     // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
     //console.log("mouse click");
     //event.stopPropagation();
-  }
-
-  onTestButtonClick(event) {
-    console.log("Yeah!");
-    event.preventDefault();
   }
 
   log(...msgs) {
