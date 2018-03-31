@@ -84,15 +84,15 @@ export default class RePinchy extends React.Component {
   }
 
   componentDidMount(){
-    document.addEventListener("keyup", this.handleCtrlKeyUp, true);
-    document.addEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
-    document.addEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
+    window.addEventListener("keyup", this.handleCtrlKeyUp, true);
+    window.addEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
+    window.addEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
   }
 
   componentWillUnmount(){
-    document.removeEventListener("keyup", this.handleCtrlKeyUp, true);
-    document.removeEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
-    document.removeEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
+    window.removeEventListener("keyup", this.handleCtrlKeyUp, true);
+    window.removeEventListener("touchstart", this.maybeKillDefaultTouchHandler, { passive: false });
+    window.removeEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
   }
 
   maybeKillDefaultTouchHandler(event) {
