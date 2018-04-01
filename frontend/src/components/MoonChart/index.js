@@ -270,8 +270,7 @@ class ChartContainer extends React.Component {
 
 class IntervalLineChart extends React.PureComponent {
   render() {
-    const maxYValue = 1000.0;
-    const v2y = (v) => ((1 - v / maxYValue) * this.props.yAxisHeight);
+    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.yAxisHeight);
     const ts2x = (ts) => ( ts * this.props.scale );
     return (
       <g>
@@ -330,6 +329,8 @@ class ChartView extends React.Component {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
+    const maxYValue = 1000.0;
+
     /*
       this.props.fetchedIntervalsData:
         [
@@ -415,6 +416,7 @@ class ChartView extends React.Component {
                     key={`i-${this.props.aggrLevel}-${intervalIndex}`}
                     interval={interval}
                     yAxisHeight={yAxisHeight}
+                    maxYValue={maxYValue}
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
                     selectedPaths={this.props.selectedPaths}
@@ -429,9 +431,6 @@ class ChartView extends React.Component {
                 width={this.props.yAxisWidth}
                 height={yAxisHeight}
                 color="#999999"
-
-                minY={this.props.minY}
-                maxY={this.props.maxY}
               />
             </g>
             <g transform={`translate(${this.props.yAxisWidth - 1} ${xAxisTop})`}>
