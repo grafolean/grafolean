@@ -10,9 +10,20 @@ import YAxis from './yaxis';
 import Legend from './legend';
 import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
 
+import './index.css';
+
 const WidgetTitle = (props) => (
   <div className="widget-title">
-    <h1>{props.title}</h1>
+    <h1>{props.title} <i className="fa fa-pencil" /></h1>
+    <a>
+      <i className="fa fa-edit" />
+    </a>
+    <a>
+      <i className="fa fa-trash" />
+    </a>
+    <a>
+      <i className="fa fa-arrows-alt" />
+    </a>
   </div>
 )
 
@@ -38,60 +49,61 @@ export default class MoonChartWidget extends React.Component {
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = - fromTs * initialScale;
     return (
-      <div className="moonchart-widget">
+      <div className="moonchart-widget widget">
         <WidgetTitle
           title={this.props.title}
         />
-
-        <RePinchy
-          width={widgetWidth}
-          height={chartHeight}
-          activeArea={{
-            x: yAxisWidth,
-            y: 0,
-            w: chartWidth - yAxisWidth,
-            h: chartHeight - xAxisHeight,
-          }}
-          initialState={{
-            x: initialPanX,
-            y: 0.0,
-            scale: initialScale,
-          }}
-        >
-          {(x, y, scale, zoomInProgress) => (
-            <div className="repinchy-content">
-              <ChartContainer
-                paths={this.props.paths}
-                selectedPaths={this.state.selectedPaths}
-                width={chartWidth}
-                height={chartHeight}
-                fromTs={Math.round(-x/scale)}
-                toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
-                scale={scale}
-                zoomInProgress={zoomInProgress}
-                xAxisHeight={xAxisHeight}
-                yAxisWidth={yAxisWidth}
-              />
-              <div
-                className="legend"
-                style={{
-                  width: legendWidth,
-                  height: chartHeight,
-                  float: 'right',
-                }}
-              >
-                <Legend
+        <div className="widget-content">
+          <RePinchy
+            width={widgetWidth}
+            height={chartHeight}
+            activeArea={{
+              x: yAxisWidth,
+              y: 0,
+              w: chartWidth - yAxisWidth,
+              h: chartHeight - xAxisHeight,
+            }}
+            initialState={{
+              x: initialPanX,
+              y: 0.0,
+              scale: initialScale,
+            }}
+          >
+            {(x, y, scale, zoomInProgress) => (
+              <div className="repinchy-content">
+                <ChartContainer
                   paths={this.props.paths}
-                  onSelectedPathsChange={(selectedPaths) => {
-                    this.setState({
-                      selectedPaths,
-                    });
-                  }}
+                  selectedPaths={this.state.selectedPaths}
+                  width={chartWidth}
+                  height={chartHeight}
+                  fromTs={Math.round(-x/scale)}
+                  toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
+                  scale={scale}
+                  zoomInProgress={zoomInProgress}
+                  xAxisHeight={xAxisHeight}
+                  yAxisWidth={yAxisWidth}
                 />
+                <div
+                  className="legend"
+                  style={{
+                    width: legendWidth,
+                    height: chartHeight,
+                    float: 'right',
+                  }}
+                >
+                  <Legend
+                    paths={this.props.paths}
+                    onSelectedPathsChange={(selectedPaths) => {
+                      this.setState({
+                        selectedPaths,
+                      });
+                    }}
+                  />
+                </div>
               </div>
-            </div>
-          )}
-        </RePinchy>
+            )}
+          </RePinchy>
+        </div>
 
       </div>
     )

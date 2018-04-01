@@ -424,7 +424,7 @@ export default class RePinchy extends React.Component {
         position: 'relative',
         width: this.props.width,
         height: this.props.height,
-      }}>
+      }} className="repinchy">
         <div
           style={{
             position: 'absolute',
