@@ -270,7 +270,8 @@ class ChartContainer extends React.Component {
 
 class IntervalLineChart extends React.PureComponent {
   render() {
-    const v2y = (v) => ((v / 1000.0) * this.props.yAxisHeight);
+    const maxYValue = 1000.0;
+    const v2y = (v) => ((1 - v / maxYValue) * this.props.yAxisHeight);
     const ts2x = (ts) => ( ts * this.props.scale );
     return (
       <g>
