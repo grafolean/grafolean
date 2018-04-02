@@ -142,8 +142,8 @@ class ChartContainer extends React.Component {
     this.state = {
       fetchedIntervalsData: [],
       errorMsg: null,
-      minYValue: 0,
-      maxYValue: 0,
+      minYValue: null,
+      maxYValue: null,
     }
     // make sure paths never change - if they do, there should be no effect:
     // (because data fetching logic can't deal with changing paths)
@@ -227,8 +227,8 @@ class ChartContainer extends React.Component {
 
     this.setState(oldState => ({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
-      minYValue: Math.floor(Math.min(oldState.minYValue, minYValue)),
-      maxYValue: Math.ceil(Math.max(oldState.maxYValue, maxYValue)),
+      minYValue: (oldState.minYValue === null) ? (minYValue) : Math.floor(Math.min(oldState.minYValue, minYValue)),
+      maxYValue: (oldState.maxYValue === null) ? (maxYValue) : Math.ceil(Math.max(oldState.maxYValue, maxYValue)),
     }));
   }
 
@@ -448,6 +448,8 @@ class ChartView extends React.Component {
               <YAxis
                 width={this.props.yAxisWidth}
                 height={yAxisHeight}
+                minYValue={this.props.minYValue}
+                maxYValue={this.props.maxYValue}
                 color="#999999"
               />
             </g>
