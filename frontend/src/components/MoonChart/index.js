@@ -341,12 +341,36 @@ class IntervalLineChart extends React.PureComponent {
   }
 }
 
+class Grid extends React.Component {
+  render() {
+    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.height);
+    return (
+      <g>
+        {this.props.yTicks !== null && this.props.yTicks.map(v => {
+          const y = v2y(v);
+          return (
+            <line x1={0} y1={y} x2={this.props.width + 300} y2={y} shapeRendering="crispEdges" stroke="#f3f3f3" strokeWidth="1"/>
+          )
+        })}
+      </g>
+    );
+  }
+}
+
 class ChartView extends React.Component {
+
+  getYTicks() {
+    if ((this.props.minYValue === null) || (this.props.maxYValue === null)) {
+      return null;
+    };
+    return [0, 100, 200, 300, 400, 500, 600, 700];
+  }
 
   render() {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
+    const yTicks = this.getYTicks();
 
     /*
       this.props.fetchedIntervalsData:
@@ -422,6 +446,14 @@ class ChartView extends React.Component {
 
           <svg width={this.props.width} height={this.props.height}>
           
+            <g transform={`translate(${this.props.yAxisWidth} 0)`}>
+              <Grid
+                width={this.props.width - this.props.yAxisWidth}
+                height={yAxisHeight}
+                maxYValue={this.props.maxYValue}
+                yTicks={yTicks}
+              />
+            </g>
             {/*
               Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
               only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
@@ -450,6 +482,7 @@ class ChartView extends React.Component {
                 height={yAxisHeight}
                 minYValue={this.props.minYValue}
                 maxYValue={this.props.maxYValue}
+                yTicks={yTicks}
                 color="#999999"
               />
             </g>
