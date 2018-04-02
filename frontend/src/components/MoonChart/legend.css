@@ -1,8 +1,10 @@
-input { border: 1px solid #999999; border-bottom: 1px solid #cccccc; border-right: 1px solid #cccccc; }
+input { border: 1px solid #ccc; background-color: #fff; padding: 1px 5px; }
 
 div.path-filter { margin-bottom: 10px; }
-  div.path-filter input { margin: 0 5px 0 20px; width: 120px; }
+  div.path-filter input { margin: 0 5px 0 15px; width: 130px; }
   div.path-filter i.fa { color: #66cccc; }
 div.legend div.path-checkbox { padding: 1px; background-color: #ffffff; position: absolute; left: 15px; top: 4px; border: 1px solid #ff6600; }
   div.legend div.path-checkbox > div { width: 10px; height: 10px; }
 div.legend div.path-filter-noresults { font-size: 12px; font-style: italic; padding: 5px 20px; }
+
+span.legend-label { font-size: 10px; overflow-wrap: break-word; }
