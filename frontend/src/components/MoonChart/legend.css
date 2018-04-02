@@ -5,3 +5,4 @@ div.path-filter { margin-bottom: 10px; }
   div.path-filter i.fa { color: #66cccc; }
 div.legend div.path-checkbox { padding: 1px; background-color: #ffffff; position: absolute; left: 15px; top: 4px; border: 1px solid #ff6600; }
   div.legend div.path-checkbox > div { width: 10px; height: 10px; }
+div.legend div.path-filter-noresults { font-size: 12px; font-style: italic; padding: 5px 20px; }

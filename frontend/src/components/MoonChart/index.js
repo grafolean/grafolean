@@ -32,7 +32,7 @@ export default class MoonChartWidget extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedPaths: new Set(props.paths),
+      drawnPaths: [ ...props.paths ],
     }
   }
 
@@ -73,7 +73,7 @@ export default class MoonChartWidget extends React.Component {
               <div className="repinchy-content">
                 <ChartContainer
                   paths={this.props.paths}
-                  selectedPaths={this.state.selectedPaths}
+                  drawnPaths={this.state.drawnPaths}
                   width={chartWidth}
                   height={chartHeight}
                   fromTs={Math.round(-x/scale)}
@@ -93,9 +93,9 @@ export default class MoonChartWidget extends React.Component {
                 >
                   <Legend
                     paths={this.props.paths}
-                    onSelectedPathsChange={(selectedPaths) => {
+                    onDrawnPathsChange={(drawnPaths) => {
                       this.setState({
-                        selectedPaths,
+                        drawnPaths,
                       });
                     }}
                   />
@@ -276,7 +276,7 @@ class IntervalLineChart extends React.PureComponent {
       <g>
         {/* draw every path: */}
         {Object.keys(this.props.interval.pathsData)
-          .filter(path => this.props.selectedPaths.has(path))
+          .filter(path => this.props.drawnPaths.includes(path))
           .map((path, pathIndex) => {
             const pathPoints = this.props.interval.pathsData[path].map((p) => ({
               x: ts2x(p.t),
@@ -419,7 +419,7 @@ class ChartView extends React.Component {
                     maxYValue={maxYValue}
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
-                    selectedPaths={this.props.selectedPaths}
+                    drawnPaths={this.props.drawnPaths}
                   />
                 ))
               }
