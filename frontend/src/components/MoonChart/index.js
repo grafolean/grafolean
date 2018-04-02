@@ -142,6 +142,8 @@ class ChartContainer extends React.Component {
     this.state = {
       fetchedIntervalsData: [],
       errorMsg: null,
+      minYValue: 0,
+      maxYValue: 0,
     }
     // make sure paths never change - if they do, there should be no effect:
     // (because data fetching logic can't deal with changing paths)
@@ -211,9 +213,23 @@ class ChartContainer extends React.Component {
       ...this.fetchedData[aggrLevel].filter((b) => (b.fromTs > mergedBlock.toTs)),
     ];
 
-    this.setState({
+    // while you are saving data, update min/max value:
+    let minYValue = 0;
+    let maxYValue = Number.NEGATIVE_INFINITY;
+    for (let path of this.paths) {
+      minYValue = json.paths[path].data.reduce((prevValue, d) => (
+        Math.min(prevValue, (aggrLevel < 0) ? (d.v) : (d.minv))
+      ), minYValue);
+      maxYValue = json.paths[path].data.reduce((prevValue, d) => (
+        Math.max(prevValue, (aggrLevel < 0) ? (d.v) : (d.maxv))
+      ), maxYValue);
+    }
+
+    this.setState(oldState => ({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
-    });
+      minYValue: Math.floor(Math.min(oldState.minYValue, minYValue)),
+      maxYValue: Math.ceil(Math.max(oldState.maxYValue, maxYValue)),
+    }));
   }
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -263,6 +279,8 @@ class ChartContainer extends React.Component {
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
         aggrLevel={this.state.aggrLevel}
+        minYValue={this.state.minYValue}
+        maxYValue={this.state.maxYValue}
       />
     )
   }
@@ -329,7 +347,6 @@ class ChartView extends React.Component {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
-    const maxYValue = 1000.0;
 
     /*
       this.props.fetchedIntervalsData:
@@ -416,7 +433,8 @@ class ChartView extends React.Component {
                     key={`i-${this.props.aggrLevel}-${intervalIndex}`}
                     interval={interval}
                     yAxisHeight={yAxisHeight}
-                    maxYValue={maxYValue}
+                    minYValue={this.props.minYValue}
+                    maxYValue={this.props.maxYValue}
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
                     drawnPaths={this.props.drawnPaths}
