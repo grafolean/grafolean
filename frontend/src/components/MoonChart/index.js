@@ -14,7 +14,7 @@ import './index.css';
 
 const WidgetTitle = (props) => (
   <div className="widget-title">
-    <h1>{props.title} <i className="fa fa-pencil" /></h1>
+    <h1>{props.title}</h1>
     <a>
       <i className="fa fa-edit" />
     </a>
