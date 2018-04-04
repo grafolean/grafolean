@@ -51,7 +51,7 @@ export default class RePinchy extends React.Component {
     this.scale = this.props.initialState.scale || 1.0;
     this.zoomInProgress = false;
     this.twinTouch = null;  // internal data about progress of twin finger touch
-    this.mouseMoveState = null;  // internal data abour progress of mouse pan operation (drag to pan)
+    this.mouseDrag = null;  // internal data abour progress of mouse pan operation (drag to pan)
 
     this.state = {
       x: this.x,
@@ -312,7 +312,7 @@ export default class RePinchy extends React.Component {
 
   handleMouseDown(event) {
     // mouse drag started, let's remember everything we need to know to follow it:
-    this.mouseMoveState = {
+    this.mouseDrag = {
       startState: {
         x: this.state.x,
         y: this.state.y,
@@ -336,10 +336,10 @@ export default class RePinchy extends React.Component {
 
   updateMouseMoveCoords() {
     // remember that we have updated state so it can be scheduled next time again:
-    this.mouseMoveState.animationId = null;
+    this.mouseDrag.animationId = null;
 
-    this.x = this.mouseMoveState.startState.x + (this.mouseMoveState.mouseMoveEvent.clientX - this.mouseMoveState.mouseDownEvent.clientX);
-    this.y = this.mouseMoveState.startState.y + (this.mouseMoveState.mouseMoveEvent.clientY - this.mouseMoveState.mouseDownEvent.clientY);
+    this.x = this.mouseDrag.startState.x + (this.mouseDrag.mouseMoveEvent.clientX - this.mouseDrag.mouseDownEvent.clientX);
+    this.y = this.mouseDrag.startState.y + (this.mouseDrag.mouseMoveEvent.clientY - this.mouseDrag.mouseDownEvent.clientY);
     this.setState({
       x: this.x,
       y: this.y,
@@ -347,16 +347,16 @@ export default class RePinchy extends React.Component {
   }
 
   handleMouseMove(event) {
-    if (!this.mouseMoveState) {
+    if (!this.mouseDrag) {
       return;
     };
-    this.mouseMoveState.mouseMoveEvent = {
+    this.mouseDrag.mouseMoveEvent = {
       clientX: event.clientX,
       clientY: event.clientY,
     };
     // if updating is not yet scheduled for, schedule it:
-    if (this.mouseMoveState.animationId === null) {
-      this.mouseMoveState.animationId = requestAnimationFrame(this.updateMouseMoveCoords);
+    if (this.mouseDrag.animationId === null) {
+      this.mouseDrag.animationId = requestAnimationFrame(this.updateMouseMoveCoords);
     };
   }
 
@@ -364,11 +364,11 @@ export default class RePinchy extends React.Component {
     // event listener did its work, now unregister it:
     window.removeEventListener('mouseup', this.handleMouseUp, true);
     window.removeEventListener('mousemove', this.handleMouseMove, true);
-    if (this.mouseMoveState.animationId !== null) {
+    if (this.mouseDrag.animationId !== null) {
       // updateMouseMoveCoords would have trouble updating without data, so let's cancel its invocation:
-      cancelAnimationFrame(this.mouseMoveState.animationId);
+      cancelAnimationFrame(this.mouseDrag.animationId);
     };
-    this.mouseMoveState = null;
+    this.mouseDrag = null;
     event.preventDefault();
   }
 
