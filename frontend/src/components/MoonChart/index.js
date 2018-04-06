@@ -69,7 +69,7 @@ export default class MoonChartWidget extends React.Component {
               scale: initialScale,
             }}
           >
-            {(x, y, scale, zoomInProgress) => (
+            {(x, y, scale, zoomInProgress, pointerPosition) => (
               <div className="repinchy-content">
                 <ChartContainer
                   paths={this.props.paths}
@@ -82,6 +82,7 @@ export default class MoonChartWidget extends React.Component {
                   zoomInProgress={zoomInProgress}
                   xAxisHeight={xAxisHeight}
                   yAxisWidth={yAxisWidth}
+                  pointerPosition={this.pointerPosition}
                 />
                 <div
                   className="legend"

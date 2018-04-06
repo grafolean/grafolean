@@ -57,6 +57,7 @@ export default class RePinchy extends React.Component {
       x: this.x,
       y: this.y,
       scale: this.scale,
+      pointerPosition: null,
 
       overlay: {
         shown: false,
@@ -72,9 +73,9 @@ export default class RePinchy extends React.Component {
     this.updateTwinTouchMoveCoords = this.updateTwinTouchMoveCoords.bind(this);
     this.handleTouchEnd = this.handleTouchEnd.bind(this);
     this.maybeKillDefaultTouchHandler = this.maybeKillDefaultTouchHandler.bind(this);
-    this.handleMouseDown = this.handleMouseDown.bind(this);
-    this.handleMouseUp = this.handleMouseUp.bind(this);
-    this.handleMouseMove = this.handleMouseMove.bind(this);
+    this.handleMouseDownDrag = this.handleMouseDownDrag.bind(this);
+    this.handleMouseUpDrag = this.handleMouseUpDrag.bind(this);
+    this.handleMouseMoveDrag = this.handleMouseMoveDrag.bind(this);
     this.handleMouseMoveCheckCtrl = this.handleMouseMoveCheckCtrl.bind(this);
     this.updateMouseMoveCoords = this.updateMouseMoveCoords.bind(this);
     this.handleClickCapture = this.handleClickCapture.bind(this);
@@ -310,7 +311,7 @@ export default class RePinchy extends React.Component {
     window.removeEventListener('mousemove', this.handleMouseMoveCheckCtrl, true);  // no need for the workaround anymore
   }
 
-  handleMouseDown(event) {
+  handleMouseDownDrag(event) {
     // mouse drag started, let's remember everything we need to know to follow it:
     this.mouseDrag = {
       startState: {
@@ -328,8 +329,8 @@ export default class RePinchy extends React.Component {
 
     // we need to listen for mousemove/up anywhere, not just over our component, so we need to
     // register event listener manually:
-    window.addEventListener('mouseup', this.handleMouseUp, true);
-    window.addEventListener('mousemove', this.handleMouseMove, true);
+    window.addEventListener('mouseup', this.handleMouseUpDrag, true);
+    window.addEventListener('mousemove', this.handleMouseMoveDrag, true);
 
     event.preventDefault();
   }
@@ -346,7 +347,7 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  handleMouseMove(event) {
+  handleMouseMoveDrag(event) {
     if (!this.mouseDrag) {
       return;
     };
@@ -360,16 +361,30 @@ export default class RePinchy extends React.Component {
     };
   }
 
-  handleMouseUp(event) {
+  handleMouseUpDrag(event) {
     // event listener did its work, now unregister it:
-    window.removeEventListener('mouseup', this.handleMouseUp, true);
-    window.removeEventListener('mousemove', this.handleMouseMove, true);
+    window.removeEventListener('mouseup', this.handleMouseUpDrag, true);
+    window.removeEventListener('mousemove', this.handleMouseMoveDrag, true);
     if (this.mouseDrag.animationId !== null) {
       // updateMouseMoveCoords would have trouble updating without data, so let's cancel its invocation:
       cancelAnimationFrame(this.mouseDrag.animationId);
     };
     this.mouseDrag = null;
     event.preventDefault();
+  }
+
+  handleMouseMove = (ev) => {
+    if (this.mouseDrag) {
+      return;  // if we are dragging, we shouldn't care about pointer position
+    };
+
+    let rect = ev.currentTarget.getBoundingClientRect();
+    this.setState({
+      pointerPosition: {
+        x: ev.clientX - rect.left,
+        y: ev.clientY - rect.top,
+      }
+    });
   }
 
   handleClickCapture(event) {
@@ -452,7 +467,7 @@ export default class RePinchy extends React.Component {
               )}
             </RePinchy>
           */}
-          {this.props.children(this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress)}
+          {this.props.children(this.state.x, this.state.y, this.state.scale, this.state.zoomInProgress, this.state.pointerPosition)}
 
         </div>
         {(this.state.overlay.shown)?(
@@ -494,7 +509,8 @@ export default class RePinchy extends React.Component {
           onTouchMoveCapture={this.handleTouchMove}
           onTouchEndCapture={this.handleTouchEnd}
           onWheel={this.handleWheel}
-          onMouseDown={this.handleMouseDown}
+          onMouseDown={this.handleMouseDownDrag}
+          onMouseMove={this.handleMouseMove}
           onKeyDown={this.handleKeyDown}
           onKeyUp={this.handleKeyUp}
           onClickCapture={this.handleClickCapture}
