@@ -326,6 +326,9 @@ export default class RePinchy extends React.Component {
       dirty: false,  // this flag makes checking if something has changed much easier
       animationId: null,
     }
+    this.setState({
+      pointerPosition: null,  // dragging (pan) has started - we don't publish pointer position anymore
+    })
 
     // we need to listen for mousemove/up anywhere, not just over our component, so we need to
     // register event listener manually:
@@ -385,6 +388,12 @@ export default class RePinchy extends React.Component {
         y: ev.clientY - rect.top + this.props.activeArea.y,
       }
     });
+  }
+
+  handleMouseLeave = (ev) => {
+    this.setState({
+      pointerPosition: null,
+    })
   }
 
   handleClickCapture(event) {
@@ -511,6 +520,7 @@ export default class RePinchy extends React.Component {
           onWheel={this.handleWheel}
           onMouseDown={this.handleMouseDownDrag}
           onMouseMove={this.handleMouseMove}
+          onMouseLeave={this.handleMouseLeave}
           onKeyDown={this.handleKeyDown}
           onKeyUp={this.handleKeyUp}
           onClickCapture={this.handleClickCapture}
