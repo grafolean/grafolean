@@ -82,7 +82,7 @@ export default class MoonChartWidget extends React.Component {
                   zoomInProgress={zoomInProgress}
                   xAxisHeight={xAxisHeight}
                   yAxisWidth={yAxisWidth}
-                  pointerPosition={this.pointerPosition}
+                  pointerPosition={pointerPosition}
                 />
                 <div
                   className="legend"
@@ -419,6 +419,17 @@ class ChartView extends React.Component {
             float: 'left',
           }}
         >
+
+          {this.props.pointerPosition && (
+            <div style={{
+              width: 10,
+              height: 10,
+              position: 'absolute',
+              left: this.props.pointerPosition.x - 5,
+              top: this.props.pointerPosition.y - 5,
+              backgroundColor: '#ff6600',
+            }}></div>
+          )}
 
           {(this.props.fetching || this.props.errorMsg) && (
             <div style={{

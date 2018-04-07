@@ -381,8 +381,8 @@ export default class RePinchy extends React.Component {
     let rect = ev.currentTarget.getBoundingClientRect();
     this.setState({
       pointerPosition: {
-        x: ev.clientX - rect.left,
-        y: ev.clientY - rect.top,
+        x: ev.clientX - rect.left + this.props.activeArea.x,
+        y: ev.clientY - rect.top + this.props.activeArea.y,
       }
     });
   }
