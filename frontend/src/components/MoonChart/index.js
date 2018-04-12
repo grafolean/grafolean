@@ -358,13 +358,81 @@ class Grid extends React.Component {
   }
 }
 
-class ChartView extends React.Component {
+class TooltipIndicator extends React.Component {
+  render() {
+    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.yAxisHeight);
+    const ts2x = (ts) => ( ts * this.props.scale );
+    const { v, t } = this.props.closest.point;
+    const x = ts2x(t);
+    const y = v2y(v);
+    return (
+      <circle cx={x} cy={y} r={3} style={{
+        fill: '#ff6600',
+      }}/>
+    )
+  }
+}
+
+export class ChartView extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.yAxisHeight = this.props.height - this.props.xAxisHeight;
+  }
+
+  dy2dv = (dy) => (dy * (this.props.maxYValue - this.props.minYValue) / this.yAxisHeight)
+  dv2dy = (dv) => (dv * this.yAxisHeight / (this.props.maxYValue - this.props.minYValue))
+  dx2dt = (dx) => (dx / this.props.scale)
+  dt2dx = (dt) => (dt * this.props.scale)
+  x2t = (x) => (this.props.fromTs + x / this.props.scale);
+  t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
+  y2v = (y) => ((this.props.maxYValue - this.props.minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.minYValue);
+  v2y = (v) => (this.yAxisHeight - (v - this.props.minYValue) * this.yAxisHeight / (this.props.maxYValue - this.props.minYValue));
 
   getYTicks() {
     if ((this.props.minYValue === null) || (this.props.maxYValue === null)) {
       return null;
     };
     return [0, 100, 200, 300, 400, 500, 600, 700];
+  }
+
+  getClosestValue(ts, y) {
+    const MAX_DIST_PX = 10;
+    const maxDistTs = this.dx2dt(MAX_DIST_PX);
+    const maxDistV = this.dy2dv(MAX_DIST_PX);
+    const v = this.y2v(y);
+
+    // brute-force search:
+    const applicableIntervals = this.props.fetchedIntervalsData
+      .filter(fid => !( fid.toTs < ts - maxDistTs || fid.fromTs > ts + maxDistTs ));  // only intervals which are close enough to our ts
+
+    let closest = null;
+    for (let interval of applicableIntervals) {
+        for (let path in interval.pathsData) {
+          if (!this.props.drawnPaths.includes(path)) {  // make sure the path is visible on chart
+            continue;
+          };
+          for (let point of interval.pathsData[path]) {
+            const distV = Math.abs(point.v - v);
+            const distTs = Math.abs(point.t - ts);
+            if ((distTs > maxDistTs) || (distV > maxDistV))
+              continue;
+              // when we are searching for closest match, we want it to be in x/y space, not ts/v:
+            const distX = this.dt2dx(distTs);
+            const distY = this.dv2dy(distV);
+            const dist = Math.sqrt(distX * distX + distY * distY);
+
+            if (closest === null || dist < closest.dist) {
+              closest = {
+                path,
+                point,
+                dist,
+              }
+            }
+          }
+        }
+    }
+    return closest;
   }
 
   render() {
@@ -404,6 +472,11 @@ class ChartView extends React.Component {
         ]
     */
 
+    let closest;
+    if (this.props.pointerPosition) {
+      closest = this.getClosestValue(this.props.pointerPosition.x, this.props.pointerPosition.yArea, 3600*24, 100);
+    }
+
     return (
       <div
         style={{
@@ -419,17 +492,6 @@ class ChartView extends React.Component {
             float: 'left',
           }}
         >
-
-          {this.props.pointerPosition && (
-            <div style={{
-              width: 10,
-              height: 10,
-              position: 'absolute',
-              left: this.props.pointerPosition.x - 5,
-              top: this.props.pointerPosition.y - 5,
-              backgroundColor: '#ff6600',
-            }}></div>
-          )}
 
           {(this.props.fetching || this.props.errorMsg) && (
             <div style={{
@@ -485,6 +547,14 @@ class ChartView extends React.Component {
                   />
                 ))
               }
+              {(this.props.pointerPosition && closest) && (
+                <TooltipIndicator
+                  closest={closest}
+                  scale={this.props.scale}
+                  maxYValue={this.props.maxYValue}
+                  yAxisHeight={yAxisHeight}
+                />
+              )}
             </g>
 
             <rect x={0} y={xAxisTop} width={this.props.yAxisWidth} height={this.props.xAxisHeight} fill="white" stroke="none" />

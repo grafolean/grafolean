@@ -2,7 +2,7 @@ import seedrandom from 'seedrandom';
 
 export const MAX_AGGR_LEVEL = 6;
 
-export const getSuggestedAggrLevel = (fromTs, toTs, maxPoints=100) => {
+export const getSuggestedAggrLevel = (fromTs, toTs, maxPoints=50) => {
   // returns -1 for no aggregation, aggr. level otherwise
   let nHours = Math.ceil((toTs - fromTs) / 3600.0);
   for (let l=-1; l<MAX_AGGR_LEVEL; l++) {

@@ -382,10 +382,15 @@ export default class RePinchy extends React.Component {
     };
 
     let rect = ev.currentTarget.getBoundingClientRect();
+    const activeAreaPosX = ev.clientX - rect.left;
+    const activeAreaPosY = ev.clientY - rect.top;
+    // convert position to coordinates in the space, known to child: (use scale, pan x + y)
     this.setState({
       pointerPosition: {
-        x: ev.clientX - rect.left + this.props.activeArea.x,
-        y: ev.clientY - rect.top + this.props.activeArea.y,
+        xArea: activeAreaPosX + this.props.activeArea.x,  // position of pointer over active area (in pixels)
+        yArea: activeAreaPosY + this.props.activeArea.y,
+        x: -this.x/this.scale + activeAreaPosX / this.scale,  // position of pointer relative to child coordinate system
+        y: -this.y/this.scale + activeAreaPosY / this.scale,
       }
     });
   }

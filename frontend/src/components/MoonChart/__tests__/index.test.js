@@ -1,6 +1,6 @@
 import React from 'react';
 import { shallow } from 'enzyme';
-import MoonChartContainer from '../index';
+import MoonChartContainer, { ChartView } from '../index';
 
 test('MoonChartContainer merging of intervals - add before', () => {
   const moonChart = shallow(
@@ -216,5 +216,121 @@ test('MoonChartContainer merging of intervals - add between', () => {
       },
     ],
   });
+});
+
+test('ChartView coordinate system transformations - dx', () => {
+  const comp = shallow(
+    <ChartView
+      minYValue={200}
+      maxYValue={800}
+      height={650}
+      xAxisHeight={50}
+      scale={0.5}
+      fetchedIntervalsData={[]}
+    />
+  );
+  const inst = comp.instance();
+  const yAxisHeight=600;
+
+  const params = [
+    { dx: 0, dt: 0 },
+    { dx: 200, dt: 400 },
+    { dx: 300, dt: 600 },
+    { dx: 400, dt: 800 },
+    { dx: 600, dt: 1200 },
+  ];
+  for (let param of params) {
+    const { dx, dt } = param;
+    expect(inst.dx2dt(dx)).toEqual(dt);
+    expect(inst.dt2dx(dt)).toEqual(dx);
+  }
+});
+
+test('ChartView coordinate system transformations - dy', () => {
+  const comp = shallow(
+    <ChartView
+      minYValue={200}
+      maxYValue={800}
+      height={650}
+      xAxisHeight={50}
+      scale={0.5}
+      fetchedIntervalsData={[]}
+    />
+  );
+  const inst = comp.instance();
+  const yAxisHeight=600;
+
+  const params = [
+    { dv: 0, dy: 0 },
+    { dv: 200, dy: yAxisHeight / 3 },
+    { dv: 300, dy: yAxisHeight / 2 },
+    { dv: 400, dy: 2 * yAxisHeight / 3 },
+    { dv: 600, dy: yAxisHeight },
+  ];
+  for (let param of params) {
+    const { dv, dy } = param;
+    expect(inst.dv2dy(dv)).toEqual(dy);
+    expect(inst.dy2dv(dy)).toEqual(dv);
+  }
+})
+
+test('ChartView coordinate system transformations - x', () => {
+  const comp = shallow(
+    <ChartView
+      minYValue={200}
+      maxYValue={800}
+      height={650}
+      xAxisHeight={50}
+      scale={0.5}
+      fromTs={1000}
+      fetchedIntervalsData={[]}
+    />
+  );
+  const inst = comp.instance();
+  const yAxisHeight=600;
+
+  const params = [
+    { x: 0, t: 1000 },
+    { x: 200, t: 1400 },
+    { x: 300, t: 1600 },
+    { x: 400, t: 1800 },
+    { x: 600, t: 2200 },
+  ];
+  for (let param of params) {
+    const { x, t } = param;
+    expect(inst.x2t(x)).toEqual(t);
+    expect(inst.t2x(t)).toEqual(x);
+  }
+});
+
+test('ChartView coordinate system transformations - y', () => {
+  const comp = shallow(
+    <ChartView
+      minYValue={200}
+      maxYValue={800}
+      height={650}
+      xAxisHeight={50}
+      scale={0.5}
+      fromTs={1000}
+      fetchedIntervalsData={[]}
+    />
+  );
+  const inst = comp.instance();
+  const yAxisHeight=600;
+
+  const params = [
+    { y: 0, v: 800 },
+    { y: 100, v: 700 },
+    { y: 200, v: 600 },
+    { y: 300, v: 500 },
+    { y: 400, v: 400 },
+    { y: 500, v: 300 },
+    { y: 600, v: 200 },
+  ];
+  for (let param of params) {
+    const { y, v } = param;
+    expect(inst.y2v(y)).toEqual(v);
+    expect(inst.v2y(v)).toEqual(y);
+  }
 });
 
