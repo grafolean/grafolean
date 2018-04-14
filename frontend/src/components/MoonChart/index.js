@@ -363,12 +363,14 @@ class TooltipIndicator extends React.Component {
     const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.yAxisHeight);
     const ts2x = (ts) => ( ts * this.props.scale );
     const { v, t } = this.props.closest.point;
-    const x = ts2x(t);
-    const y = v2y(v);
+    const x = Math.round(ts2x(t));
+    const y = Math.round(v2y(v));
+    const serieColor = generateSerieColor(this.props.closest.path);
     return (
-      <circle cx={x} cy={y} r={3} style={{
-        fill: '#ff6600',
-      }}/>
+      <g>
+        <line x1={x} y1={0} x2={x} y2={this.props.yAxisHeight} shapeRendering="crispEdges" stroke="#e3e3e3" strokeWidth="1"/>
+        <circle cx={x} cy={y} r={4} fill={serieColor}/>
+      </g>
     )
   }
 }
