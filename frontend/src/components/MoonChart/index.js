@@ -350,7 +350,7 @@ class Grid extends React.Component {
         {this.props.yTicks !== null && this.props.yTicks.map(v => {
           const y = v2y(v);
           return (
-            <line key={v} x1={0} y1={y} x2={this.props.width + 300} y2={y} shapeRendering="crispEdges" stroke="#f3f3f3" strokeWidth="1"/>
+            <line key={v} x1={0} y1={y} x2={this.props.width} y2={y} shapeRendering="crispEdges" stroke="#f3f3f3" strokeWidth="1"/>
           )
         })}
       </g>
