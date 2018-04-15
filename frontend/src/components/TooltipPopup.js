@@ -15,12 +15,14 @@ export default class TooltipPopup extends React.Component {
     }
     render() {
       return (
-        <div style={{
-          // "fixed" takes the tooltip out of flow; translate makes it positioned relative to parent container: (yeah, I know...)
-          position: 'fixed',
-          transform: `translate(-${this.props.arrowPercentFromCorner}%, -100%)`,
-          zIndex: this.props.zIndex,
-        }}>
+        <div
+          style={{
+            // "fixed" takes the tooltip out of flow; translate makes it positioned relative to parent container: (yeah, I know...)
+            position: 'fixed',
+            transform: `translate(-${this.props.arrowPercentFromCorner}%, -100%)`,
+            zIndex: this.props.zIndex,
+          }}
+        >
           <div style={{
               backgroundColor: this.props.backgroundColor,
               borderRadius: this.props.borderRadius,
