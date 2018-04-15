@@ -9,6 +9,7 @@ import TimestampXAxis from './TimestampXAxis';
 import YAxis from './yaxis';
 import Legend from './legend';
 import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
+import TooltipPopup from '../TooltipPopup';
 
 import './index.css';
 
@@ -373,6 +374,9 @@ class TooltipIndicator extends React.Component {
 }
 
 export class ChartView extends React.Component {
+  static defaultProps = {
+    nDecimals: 2,
+  }
 
   constructor(props) {
     super(props);
@@ -580,6 +584,28 @@ export class ChartView extends React.Component {
               />
             </g>
           </svg>
+
+          {(closest) && (
+            <div style={{
+              position: 'absolute',
+              left: this.t2x(closest.point.t) + this.props.yAxisWidth + 3,
+              top: this.v2y(closest.point.v) - 5,
+            }}>
+              <TooltipPopup>
+                {(closest.point.minv) ? (
+                  <div>
+                    <p>{closest.point.minv.toFixed(this.props.nDecimals)} - {closest.point.maxv.toFixed(this.props.nDecimals)} (Ø {closest.point.v.toFixed(this.props.nDecimals)})</p>
+                    <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p>Value: {closest.point.v.toFixed(this.props.nDecimals)}</p>
+                    <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
+                  </div>
+                )}
+              </TooltipPopup>
+            </div>
+          )}
         </div>
       </div>
     );
