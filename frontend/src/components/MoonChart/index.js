@@ -374,6 +374,8 @@ class TooltipIndicator extends React.Component {
 }
 
 export class ChartView extends React.Component {
+  overrideClosestPoint = null
+
   static defaultProps = {
     nDecimals: 2,
   }
@@ -475,8 +477,8 @@ export class ChartView extends React.Component {
         ]
     */
 
-    let closest = null;
-    if (this.props.pointerPosition) {
+    let closest = this.overrideClosestPoint;
+    if (!closest && this.props.pointerPosition) {
       closest = this.getClosestValue(this.props.pointerPosition.x, this.props.pointerPosition.yArea, 3600*24, 100);
     }
 
@@ -586,11 +588,16 @@ export class ChartView extends React.Component {
           </svg>
 
           {(closest) && (
-            <div style={{
-              position: 'absolute',
-              left: this.t2x(closest.point.t) + this.props.yAxisWidth + 3,
-              top: this.v2y(closest.point.v) - 5,
-            }}>
+            <div
+              style={{
+                position: 'absolute',
+                left: this.t2x(closest.point.t) + this.props.yAxisWidth + 3,
+                top: this.v2y(closest.point.v) - 5,
+              }}
+              // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
+              onMouseEnter={() => { this.overrideClosestPoint = closest; }}
+              onMouseLeave={() => { this.overrideClosestPoint = null; }}
+            >
               <TooltipPopup>
                 {(closest.point.minv) ? (
                   <div>
