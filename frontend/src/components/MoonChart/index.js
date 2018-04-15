@@ -360,12 +360,9 @@ class Grid extends React.Component {
 
 class TooltipIndicator extends React.Component {
   render() {
-    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.yAxisHeight);
-    const ts2x = (ts) => ( ts * this.props.scale );
-    const { v, t } = this.props.closest.point;
-    const x = Math.round(ts2x(t));
-    const y = Math.round(v2y(v));
-    const serieColor = generateSerieColor(this.props.closest.path);
+    const x = Math.round(this.props.x);
+    const y = Math.round(this.props.y);
+    const serieColor = generateSerieColor(this.props.path);
     return (
       <g>
         <line x1={x} y1={0} x2={x} y2={this.props.yAxisHeight} shapeRendering="crispEdges" stroke="#e3e3e3" strokeWidth="1"/>
@@ -474,7 +471,7 @@ export class ChartView extends React.Component {
         ]
     */
 
-    let closest;
+    let closest = null;
     if (this.props.pointerPosition) {
       closest = this.getClosestValue(this.props.pointerPosition.x, this.props.pointerPosition.yArea, 3600*24, 100);
     }
@@ -549,11 +546,11 @@ export class ChartView extends React.Component {
                   />
                 ))
               }
-              {(this.props.pointerPosition && closest) && (
+              {(closest) && (
                 <TooltipIndicator
-                  closest={closest}
-                  scale={this.props.scale}
-                  maxYValue={this.props.maxYValue}
+                  {...closest}
+                  x={this.dt2dx(closest.point.t)}
+                  y={this.v2y(closest.point.v)}
                   yAxisHeight={yAxisHeight}
                 />
               )}
