@@ -592,8 +592,8 @@ export class ChartView extends React.Component {
             <div
               style={{
                 position: 'absolute',
-                left: this.t2x(closest.point.t) + this.props.yAxisWidth + 3,
-                top: this.v2y(closest.point.v) - 5,
+                left: this.t2x(closest.point.t) + this.props.yAxisWidth,
+                top: this.v2y(closest.point.v),
               }}
               // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
               onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}

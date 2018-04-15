@@ -10,16 +10,20 @@ export default class TooltipPopup extends React.Component {
       borderColor: '#aaaaaa',
       borderWidth: 1,
       borderRadius: 7,
-      arrowPercentFromCorner: 5,
+      arrowPercentFromLeft: 5,
       zIndex: 9999999,  // I guess every component thinks it should always be on top :-D
+      arrowSpacingHorizontal: 3,
+      arrowSpacingVertical: 5,
     }
     render() {
+      const isArrowOnRight = this.props.arrowPercentFromLeft > 50;
+      const arrowWidth = 10;
       return (
         <div
           style={{
             // "fixed" takes the tooltip out of flow; translate makes it positioned relative to parent container: (yeah, I know...)
             position: 'fixed',
-            transform: `translate(-${this.props.arrowPercentFromCorner}%, -100%)`,
+            transform: `translate(-${this.props.arrowPercentFromLeft}%, -100%)`,
             zIndex: this.props.zIndex,
           }}
         >
@@ -36,28 +40,30 @@ export default class TooltipPopup extends React.Component {
           {/* Arrow is actually 2 triangles (borders), one for border and another one for bg color: */}
           <div style={{
             position: 'relative',
-            marginLeft: `${this.props.arrowPercentFromCorner}%`,
+            marginLeft: `${this.props.arrowPercentFromLeft}%`,
+            paddingBottom: this.props.arrowSpacingVertical,
+            paddingLeft: this.props.arrowSpacingHorizontal,
           }}>
             <div
               style={{
                 border: '0 solid transparent',
-                borderWidth: '8px 10px 0 0px',
+                borderWidth: isArrowOnRight ? `8px 0 0 ${arrowWidth}px` : `8px ${arrowWidth}px 0 0`,
                 borderTopColor: this.props.borderColor,
                 width: 0,
+                marginLeft: isArrowOnRight ? (-arrowWidth - 2*this.props.arrowSpacingHorizontal) : (0),
                 // we must not position this absolute, because we need the height of this element
               }}
             />
             <div
               style={{
                 border: '0 solid transparent',
-                borderWidth: '8px 10px 0 0px',
+                borderWidth: isArrowOnRight ? '8px 0px 0 10px' : '8px 10px 0 0px',
                 borderTopColor: this.props.backgroundColor,
                 width: 0,
-                marginLeft: this.props.borderWidth,
-                marginTop: - 2 * this.props.borderWidth,
+                marginLeft: isArrowOnRight ? (-this.props.borderWidth - arrowWidth) : (this.props.borderWidth),
                 position: 'absolute',
-                left: 0,
-                top: 0,
+                left: isArrowOnRight ? (-this.props.arrowSpacingHorizontal) : (this.props.arrowSpacingHorizontal),
+                bottom: this.props.arrowSpacingVertical + 2 * this.props.borderWidth,
               }}
             />
           </div>
