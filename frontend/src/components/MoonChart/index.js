@@ -2,7 +2,8 @@ import React from 'react';
 import moment from 'moment';
 import { stringify } from 'qs';
 
-import { ROOT_URL, handleFetchErrors } from '../../store/actions';
+import store from '../../store';
+import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
 
 import RePinchy from '../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
@@ -13,20 +14,44 @@ import TooltipPopup from '../TooltipPopup';
 
 import './index.css';
 
-const WidgetTitle = (props) => (
-  <div className="widget-title">
-    <h1>{props.title}</h1>
-    <a>
-      <i className="fa fa-edit" />
-    </a>
-    <a>
-      <i className="fa fa-trash" />
-    </a>
-    <a>
-      <i className="fa fa-arrows-alt" />
-    </a>
-  </div>
-)
+class  WidgetTitle extends React.Component {
+
+  deleteChart = (ev) => {
+
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, {
+      method: 'DELETE',
+    })
+    .then(handleFetchErrors)
+    .then(
+      () => store.dispatch(onSuccess('Chart successfully removed.')),
+    )
+    .catch(
+      errorMsg => store.dispatch(onFailure(errorMsg.toString()))
+    )
+    .then(
+      () => this.props.onDeleteChart()
+    )
+
+    ev.preventDefault();
+  }
+
+  render() {
+    return (
+      <div className="widget-title">
+        <h1>{this.props.title}</h1>
+        <a>
+          <i className="fa fa-edit" />
+        </a>
+        <a onClick={this.deleteChart}>
+          <i className="fa fa-trash" />
+        </a>
+        <a>
+          <i className="fa fa-arrows-alt" />
+        </a>
+      </div>
+    )
+  }
+}
 
 export default class MoonChartWidget extends React.Component {
 
@@ -53,6 +78,9 @@ export default class MoonChartWidget extends React.Component {
       <div className="moonchart-widget widget">
         <WidgetTitle
           title={this.props.title}
+          dashboardSlug={this.props.dashboardSlug}
+          chartId={this.props.chartId}
+          onDeleteChart={() => { console.log("we should refresh dashboard's chart list here, or hide ourselves...") }}
         />
         <div className="widget-content">
           <RePinchy

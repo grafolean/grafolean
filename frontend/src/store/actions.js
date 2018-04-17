@@ -161,6 +161,22 @@ export function onSubmitNewChartFailure(dashboardSlug, errMsg) {
   }
 }
 
+export const ON_FAILURE = 'ON_FAILURE'
+export function onFailure(msg) {
+  return {
+    type: ON_FAILURE,
+    msg,
+  }
+}
+
+export const ON_SUCCESS = 'ON_SUCCESS'
+export function onSuccess(msg) {
+  return {
+    type: ON_SUCCESS,
+    msg,
+  }
+}
+
 export const REMOVE_NOTIFICATION = 'REMOVE_NOTIFICATION'
 export function removeNotification(notificationId) {
   return {

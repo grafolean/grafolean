@@ -17,6 +17,8 @@ import {
   ON_SUBMIT_DELETE_DASHBOARD,
   ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
   ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
+  ON_FAILURE,
+  ON_SUCCESS,
   REMOVE_NOTIFICATION,
 } from './actions'
 
@@ -157,6 +159,11 @@ function notifications(state=[],action) {
       return [{type: 'error', message: action.errMsg, id: uniqueId('notif-')}, ...state]
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
       return [{type: 'info', message: "Successfully removed dashboard", id: uniqueId('notif-')}, ...state]
+
+    case ON_FAILURE:
+      return [{type: 'error', message: action.msg, id: uniqueId('notif-')}, ...state]
+    case ON_SUCCESS:
+      return [{type: 'info', message: action.msg, id: uniqueId('notif-')}, ...state]
     case REMOVE_NOTIFICATION:
       return state.filter(n => n.id !== action.notificationId);
     default:

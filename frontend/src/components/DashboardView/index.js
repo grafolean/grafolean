@@ -40,6 +40,7 @@ export default class DashboardView extends React.Component {
               width={700}
               height={300}
               chartId={chart.id}
+              dashboardSlug={this.props.match.params.slug}
               title={chart.name}
               paths={chart.paths}
             />
