@@ -19,19 +19,13 @@ class  WidgetTitle extends React.Component {
   deleteChart = (ev) => {
     ev.preventDefault();
 
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, {
-      method: 'DELETE',
-    })
-    .then(handleFetchErrors)
-    .then(
-      () => {
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, { method: 'DELETE' })
+      .then(handleFetchErrors)
+      .then(() => {
         store.dispatch(onSuccess('Chart successfully removed.'));
         this.props.onDeleteChart();
-      }
-    )
-    .catch(
-      errorMsg => store.dispatch(onFailure(errorMsg.toString()))
-    )
+      })
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
   }
 
   render() {
@@ -41,7 +35,7 @@ class  WidgetTitle extends React.Component {
         <a>
           <i className="fa fa-edit" />
         </a>
-        <a onClick={this.deleteChart}>
+        <a onClick={(ev) => { if (window.confirm("Are you sure you want to delete this chart? This can't be undone!")) this.deleteChart(ev); }}>
           <i className="fa fa-trash" />
         </a>
         <a>
