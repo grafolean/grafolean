@@ -136,21 +136,26 @@ export default class Main extends Component {
             <Button onClick={this.onBurgerClick}>burger</Button>
           ):('')}
 
-        <Flex>
-
-          <NotificationsContainer />
-
-          <Content>
-            <Switch>
-              <Route exact path='/' component={Home}/>
-              <Route exact path='/dashboards' component={DashboardsListContainer}/>
-              <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
-              <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-              <Route exact path='/about' component={About}/>
-            </Switch>
-          </Content>
-
-        </Flex>
+        <div>
+          <div>
+            <Flex>
+              <NotificationsContainer />
+            </Flex>
+          </div>
+          <div>
+            <Flex>
+              <Content>
+                <Switch>
+                  <Route exact path='/' component={Home}/>
+                  <Route exact path='/dashboards' component={DashboardsListContainer}/>
+                  <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
+                  <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+                  <Route exact path='/about' component={About}/>
+                </Switch>
+              </Content>
+            </Flex>
+          </div>
+        </div>
 
         {/* <ChartContainer paths={["test.path.1", "test.path.2"]}/>
         <input type="button" value="Refresh" onClick={() => { store.dispatch(fetchChartData("test.kaggle.execute_values", 1325317920, 1327897860)) }} /> */}
