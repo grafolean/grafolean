@@ -602,11 +602,13 @@ export class ChartView extends React.Component {
               <TooltipPopup>
                 {(closest.point.minv) ? (
                   <div>
+                    <p>{closest.path}</p>
                     <p>{closest.point.minv.toFixed(this.props.nDecimals)} - {closest.point.maxv.toFixed(this.props.nDecimals)} (Ø {closest.point.v.toFixed(this.props.nDecimals)})</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
                   </div>
                 ) : (
                   <div>
+                    <p>{closest.path}</p>
                     <p>Value: {closest.point.v.toFixed(this.props.nDecimals)}</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
                   </div>
