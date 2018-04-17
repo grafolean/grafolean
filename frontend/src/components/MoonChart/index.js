@@ -17,22 +17,21 @@ import './index.css';
 class  WidgetTitle extends React.Component {
 
   deleteChart = (ev) => {
+    ev.preventDefault();
 
     fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, {
       method: 'DELETE',
     })
     .then(handleFetchErrors)
     .then(
-      () => store.dispatch(onSuccess('Chart successfully removed.')),
+      () => {
+        store.dispatch(onSuccess('Chart successfully removed.'));
+        this.props.onDeleteChart();
+      }
     )
     .catch(
       errorMsg => store.dispatch(onFailure(errorMsg.toString()))
     )
-    .then(
-      () => this.props.onDeleteChart()
-    )
-
-    ev.preventDefault();
   }
 
   render() {
@@ -80,7 +79,7 @@ export default class MoonChartWidget extends React.Component {
           title={this.props.title}
           dashboardSlug={this.props.dashboardSlug}
           chartId={this.props.chartId}
-          onDeleteChart={() => { console.log("we should refresh dashboard's chart list here, or hide ourselves...") }}
+          onDeleteChart={this.props.refreshParent}
         />
         <div className="widget-content">
           <RePinchy

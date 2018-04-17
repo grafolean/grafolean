@@ -27,8 +27,17 @@ export default class DashboardView extends React.Component {
     }
 
     return (
-      <div>
+      <div
+        style={{
+          position: 'relative',
+        }}
+      >
         Dashboard:
+        {this.props.fetching && (
+          <Loading
+            overlayParent={true}
+          />
+        )}
         <hr />
 
         {this.props.data.name}
@@ -43,6 +52,7 @@ export default class DashboardView extends React.Component {
               dashboardSlug={this.props.match.params.slug}
               title={chart.name}
               paths={chart.paths}
+              refreshParent={() => store.dispatch(fetchDashboardDetails(this.props.match.params.slug))}
             />
           ))}
         </div>
