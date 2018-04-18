@@ -17,13 +17,22 @@ import {
   ON_SUBMIT_DELETE_DASHBOARD,
   ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
   ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
+  ON_FAILURE,
+  ON_SUCCESS,
   REMOVE_NOTIFICATION,
 } from './actions'
 
-function chartdata(state={}, action) {
+function chartData(state={}, action) {
+  let newState = {...state}
   switch (action.type) {
     case ON_REQUEST_CHART_DATA:
-      return state;
+      // for each of the requested paths, mark them as `fetching: true`
+      for (let path of action.paths) {
+        newState[path] = {
+          fetching: true,
+        };
+      };
+      return newState;
 
     //   return {...state, loading: true}
     case ON_RECEIVE_CHART_DATA_SUCCESS:
@@ -46,13 +55,20 @@ function chartdata(state={}, action) {
               }
           }
         */
-      let newState = {...state}
-      for (var path in action.json.data) {
-        newState[path][`${action.json.aggregation_level}`] = action.json.data[path];  // actually, data should probably be merged or some better caching strategy should be devised... but it's good enough for now
-      }
+      for (let path of action.paths) {
+        newState[path] = {
+          data: action.json.paths[path].data,  // actually, data should probably be merged or some better caching strategy should be devised... but it's good enough for now
+          fetching: false,
+        }
+      };
       return newState;
     case ON_RECEIVE_CHART_DATA_FAILURE:
-      return state;
+      for (let path of action.paths) {
+        newState[path] = {
+          fetching: false,
+        }
+      };
+      return newState;
     default:
       return state;
   }
@@ -143,15 +159,20 @@ function notifications(state=[],action) {
       return [{type: 'error', message: action.errMsg, id: uniqueId('notif-')}, ...state]
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
       return [{type: 'info', message: "Successfully removed dashboard", id: uniqueId('notif-')}, ...state]
+
+    case ON_FAILURE:
+      return [{type: 'error', message: action.msg, id: uniqueId('notif-')}, ...state]
+    case ON_SUCCESS:
+      return [{type: 'info', message: action.msg, id: uniqueId('notif-')}, ...state]
     case REMOVE_NOTIFICATION:
-      return state.filter(n => n.id != action.notificationId);
+      return state.filter(n => n.id !== action.notificationId);
     default:
       return state;
   }
 }
 
 const moonthorApp = combineReducers({
-  chartdata,
+  chartData,
   dashboards: combineReducers({
     list: dashboardsList,
     details: dashboardDetails,

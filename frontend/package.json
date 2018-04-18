@@ -4,6 +4,9 @@
   "private": true,
   "dependencies": {
     "cross-fetch": "^1.1.1",
+    "enzyme": "^3.3.0",
+    "enzyme-adapter-react-16": "^1.1.1",
+    "font-awesome": "^4.7.0",
     "lodash": "^4.17.4",
     "moment": "^2.19.3",
     "qs": "^6.5.1",
@@ -16,8 +19,8 @@
     "react-thunk": "^1.0.0",
     "redux": "^3.7.2",
     "redux-thunk": "^2.2.0",
-    "styled-components": "^2.2.4",
-    "victory": "^0.24.5"
+    "seedrandom": "^2.4.3",
+    "styled-components": "^2.2.4"
   },
   "scripts": {
     "start": "react-scripts start",

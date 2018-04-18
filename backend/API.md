@@ -63,7 +63,7 @@ curl \
 ```
 curl \
     -X DELETE \
-    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom>&t1=<TimestampTo>'
+    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom|TimestampsFrom>&t1=<TimestampTo>'
 ```
 
 Parameters:
@@ -81,31 +81,31 @@ curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t
 Parameters:
 
     PathN: path that the data was connected to
-    TimestampFrom: start timestamp (included) - optional
-    TimestampTo: end timestamp (included) - optional
+    TimestampFrom/TimestampsFrom: start timestamp/s (inclusive) - optional; either a single timestamp (with up to 6 digits) or a comma separated list of timestamps, one for each path
+    TimestampTo: end timestamp (exclusive) - optional
     AggregationLevel: values from 0 to 6 or string "no" are allowed. Aggregation level 0 returns one data point (average, min and max value) per hour. Every
         higher aggr. level returns one data point per 3-times as much time. In other words, level 1 returns one data point per 3 hours, level 2 per 9 hours,... and
         level 6 one data point per 3 ^ 6 hours or roughly 30 days. Special value "no" will return raw data (non-aggregated).
         Parameter is mandatory - if absent, server will respond with a 301 redirect to URL which includes default aggregation level for selected time interval (by default
         there will be fewer than 100 data points returned in almost all cases).
 
-    Note that number of returned data points will never exceed 500. If requested time interval and aggr. level would return more than 500 results, incomplete response with only
-    first 500 data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
+    Note that number of returned data points will never exceed 100000. If requested time interval and aggr. level would return more than 100k results, incomplete response with only
+    first 100k data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
     updated time interval.
 
 JSON response:
 
 {
-    paths: [
+    paths: {
         <Path0>: {
             next_data_point: null|<Timestamp>,  // if not null, use Timestamp as TimestampFrom to fetch another batch of data
             data: [
-                { t: <Timestamp>, v: [<AvgValue>, <MinValue>, <MaxValue>] }  // if data was aggregated
+                { t: <Timestamp>, v: <AvgValue>, minv: <MinValue>, maxv: <MaxValue> }  // if data was aggregated
                 { t: <Timestamp>, v: <Value> }  // if raw data was requested
             ]
         },
         ...
-    ]
+    }
 }
 
 # Paths
@@ -170,14 +170,14 @@ curl 'https://moonthor.com/api/dashboards/'
 curl \
     -X POST \
     -H 'Content-Type: application/json' \
-    -d '{
-        "name": <ChartTitle>,
-        "content": [
-            { path_filter: <PathFilter0> },
-            { path_filter: <PathFilter1> },
-            ...
-        ],
-    ]' \
+    -d '{ \
+        "name": <ChartTitle>, \
+        "content": [ \
+            { path_filter: <PathFilter0> }, \
+            { path_filter: <PathFilter1> }, \
+            ... \
+        ], \
+    }' \
     'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
 ```
 
@@ -190,7 +190,7 @@ Parameters:
 JSON response:
 
 {
-    slug: <DashboardSlug>
+    slug: <ChartId>
 }
 
 ## Reading

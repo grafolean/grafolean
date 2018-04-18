@@ -6,12 +6,9 @@ import uniqueId from 'lodash/uniqueId';
 
 import './Main.css';
 // import Chart from '../Chart'
-import ChartContainer from '../../containers/ChartContainer'
-import store from '../../store'
-import { fetchChartData } from '../../store/actions';
+import Button from '../Button'
 import Home from '../Home'
 import About from '../About'
-import DashboardsList from '../DashboardsList'
 import DashboardsListContainer from '../../containers/DashboardsListContainer'
 import DashboardViewContainer from '../../containers/DashboardViewContainer'
 import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'
@@ -104,7 +101,7 @@ export default class Main extends Component {
     let sidebarContent = (
       <Navigation>
         {(!this.state.sidebarDocked)?(
-          <a href="#" onClick={this.onSidebarXClick}>X</a>
+          <Button onClick={this.onSidebarXClick}>X</Button>
         ):('')}
         <Header>
           <h1 className="App-title">MoonThor</h1>
@@ -136,24 +133,29 @@ export default class Main extends Component {
                 },
               }}>
           {(!this.state.sidebarDocked)?(
-            <a href="#" onClick={this.onBurgerClick}>burger</a>
+            <Button onClick={this.onBurgerClick}>burger</Button>
           ):('')}
 
-        <Flex>
-
-          <NotificationsContainer />
-
-          <Content>
-            <Switch>
-              <Route exact path='/' component={Home}/>
-              <Route exact path='/dashboards' component={DashboardsListContainer}/>
-              <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
-              <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-              <Route exact path='/about' component={About}/>
-            </Switch>
-          </Content>
-
-        </Flex>
+        <div>
+          <div>
+            <Flex>
+              <NotificationsContainer />
+            </Flex>
+          </div>
+          <div>
+            <Flex>
+              <Content>
+                <Switch>
+                  <Route exact path='/' component={Home}/>
+                  <Route exact path='/dashboards' component={DashboardsListContainer}/>
+                  <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
+                  <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+                  <Route exact path='/about' component={About}/>
+                </Switch>
+              </Content>
+            </Flex>
+          </div>
+        </div>
 
         {/* <ChartContainer paths={["test.path.1", "test.path.2"]}/>
         <input type="button" value="Refresh" onClick={() => { store.dispatch(fetchChartData("test.kaggle.execute_values", 1325317920, 1327897860)) }} /> */}

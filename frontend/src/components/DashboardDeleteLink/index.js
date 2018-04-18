@@ -1,10 +1,10 @@
-import React, { Component } from 'react';
-import { Redirect } from 'react-router-dom';
+import React from 'react';
 
 import store from '../../store';
 import { submitDeleteDashboard } from '../../store/actions';
 
 import Loading from '../Loading';
+import Button from '../Button'
 
 export default class DashboardDeleteLink extends React.Component {
   constructor(props) {
@@ -28,7 +28,7 @@ export default class DashboardDeleteLink extends React.Component {
     }
 
     return (
-      <a href="#" onClick={this.handleClick}>delete</a>
+      <Button onClick={this.handleClick}>delete</Button>
     )
   }
 }

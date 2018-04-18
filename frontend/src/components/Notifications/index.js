@@ -4,6 +4,8 @@ import styled from 'styled-components';
 import store from '../../store';
 import { removeNotification } from '../../store/actions';
 
+import Button from '../Button';
+
 const NotificationsList = styled.ul`
   list-style-type: none;
 `
@@ -42,7 +44,7 @@ class Notifications extends Component {
         {this.props.notifications.map((v) => {
           return(
             <NotificationOuter className={v.type} key={v.id}>
-              {v.message} <a href="#" onClick={(event) => this.handleClickRemove(event, v.id)}>x</a>
+              {v.message} <Button onClick={(event) => this.handleClickRemove(event, v.id)}>x</Button>
             </NotificationOuter>
           )
         })}

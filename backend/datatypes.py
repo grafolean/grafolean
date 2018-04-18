@@ -171,7 +171,7 @@ class Aggregation(object):
 
 class Measurement(object):
 
-    MAX_DATAPOINTS_RETURNED = 500
+    MAX_DATAPOINTS_RETURNED = 100000
 
     def __init__(self, path, ts, value):
         self.path = Path(path)
@@ -218,23 +218,24 @@ class Measurement(object):
         return Aggregation.MAX_AGGR_LEVEL
 
     @classmethod
-    def fetch_data(cls, paths, aggr_level, t_from, t_to):
+    def fetch_data(cls, paths, aggr_level, t_froms, t_to):
+        # t_froms: an array of t_from, one for each path (because the subsequent fetchings usually request a different t_from for each path)
         paths_data = {}
         with db.cursor() as c:
-            for p in paths:
+            for p, t_from in zip(paths, t_froms):
                 str_p = str(p)
                 path_data = []
                 path_id = Path._get_path_id_from_db(str_p)
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
-                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s LIMIT %s;', (path_id, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s LIMIT %s;', (path_id, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
                     for ts, value in c:
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
-                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed <= %s LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
                     for ts, vavg, vmin, vmax in c:
-                        path_data.append({'t': float(ts), 'v': [float(vavg), float(vmin), float(vmax)]})
+                        path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
                 if len(path_data) > Measurement.MAX_DATAPOINTS_RETURNED:

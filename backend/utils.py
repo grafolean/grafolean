@@ -69,4 +69,4 @@ def migration_step_2():
         c.execute('CREATE UNIQUE INDEX dashboards_slug ON dashboards (slug);')
         # yes, I know Postgres has arrays - but there is no advantage in using them (instead of comma-separated text) for path_filters, and it makes
         # code more understandable and portable:
-        c.execute('CREATE TABLE charts (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id), name TEXT NOT NULL, path_filters TEXT);')
+        c.execute('CREATE TABLE charts (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, name TEXT NOT NULL, path_filters TEXT);')

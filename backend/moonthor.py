@@ -97,9 +97,16 @@ def values_get():
 
     t_from_input = flask.request.args.get('t0')
     if t_from_input:
-        t_from = Timestamp(t_from_input)
+        t_froms = [Timestamp(t) for t in t_from_input.split(',')]
+        if len(t_froms) == 1:
+            t_froms = [t_froms[0] for _ in paths]
+        elif len(t_froms) == len(paths):
+            pass
+        else:
+            return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
     else:
         t_from = Measurement.get_oldest_measurement_time(paths)
+        t_froms = [t_from for _ in paths]
 
     t_to_input = flask.request.args.get('t1')
     if t_to_input:
@@ -110,7 +117,7 @@ def values_get():
     aggr_level_input = flask.request.args.get('a')
     if not aggr_level_input:
         # suggest the aggr. level based on paths and time interval and redirect to it:
-        suggested_aggr_level = Measurement.get_suggested_aggr_level(t_from, t_to)
+        suggested_aggr_level = Measurement.get_suggested_aggr_level(min(t_froms), t_to)
         if suggested_aggr_level is None:
             str_aggr_level = 'no'
         else:
@@ -128,7 +135,7 @@ def values_get():
             return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
 
     # finally, return the data:
-    paths_data = Measurement.fetch_data(paths, aggr_level, t_from, t_to)
+    paths_data = Measurement.fetch_data(paths, aggr_level, t_froms, t_to)
     return json.dumps({
         'paths': paths_data,
     }), 200
