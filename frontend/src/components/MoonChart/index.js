@@ -14,7 +14,7 @@ import TooltipPopup from '../TooltipPopup';
 
 import './index.css';
 
-class  WidgetTitle extends React.Component {
+class ChartWidgetTitle extends React.Component {
 
   deleteChart = (ev) => {
     ev.preventDefault();
@@ -41,6 +41,44 @@ class  WidgetTitle extends React.Component {
         <a>
           <i className="fa fa-arrows-alt" />
         </a>
+      </div>
+    )
+  }
+}
+
+class WidgetDialog extends React.Component {
+  static defaultProps = {
+    width: 100,
+    height: 100,
+    padding: 20,
+    onCloseAttempt: () => {},
+  }
+
+  render() {
+    return (
+      <div>
+        <div
+          className="widget-dialog-overlay"
+          style={{
+            width: this.props.width + 2*this.props.padding,
+            height: this.props.opened ? this.props.height + 2*this.props.padding : 0,
+            opacity: this.props.opened ? 0.2 : 0,
+          }}
+          onClick={this.props.onCloseAttempt}
+        >
+        </div>
+
+        <div
+          className="widget-dialog"
+          style={{
+            width: this.props.width + 0*this.props.padding,
+            left: this.props.padding,
+            height: this.props.opened ? this.props.height - 2*this.props.padding : 0,
+            opacity: this.props.opened ? 1 : 0,
+          }}
+        >
+          {this.props.children}
+        </div>
       </div>
     )
   }
@@ -77,7 +115,7 @@ export default class MoonChartWidget extends React.Component {
     const initialPanX = - fromTs * initialScale;
     return (
       <div className="moonchart-widget widget">
-        <WidgetTitle
+        <ChartWidgetTitle
           title={this.props.title}
           dashboardSlug={this.props.dashboardSlug}
           chartId={this.props.chartId}
@@ -150,29 +188,15 @@ export default class MoonChartWidget extends React.Component {
             </RePinchy>
           </div>
 
-          {/* overlay: */}
-          <div
-            className="widget-dialog-overlay"
-            style={{
-              width: widgetWidth + 2*padding,
-              height: this.state.showChartSettings ? chartHeight + 2*padding : 0,
-              opacity: this.state.showChartSettings ? 0.2 : 0,
-            }}
-            onClick={this.toggleChartSettings}
-          >
-          </div>
-
-          <div
-            className="widget-dialog"
-            style={{
-              width: widgetWidth + 0*padding,
-              left: padding,
-              height: this.state.showChartSettings ? chartHeight - 2*padding : 0,
-              opacity: this.state.showChartSettings ? 1 : 0,
-            }}
+          <WidgetDialog
+            opened={this.state.showChartSettings}
+            width={widgetWidth}
+            height={chartHeight}
+            padding={padding}
+            onCloseAttempt={this.toggleChartSettings}
           >
             ...chart edit form...
-          </div>
+          </WidgetDialog>
 
         </div>
       </div>
