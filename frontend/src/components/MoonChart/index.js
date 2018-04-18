@@ -32,7 +32,7 @@ class  WidgetTitle extends React.Component {
     return (
       <div className="widget-title">
         <h1>{this.props.title}</h1>
-        <a>
+        <a onClick={this.props.onEditChart}>
           <i className="fa fa-edit" />
         </a>
         <a onClick={(ev) => { if (window.confirm("Are you sure you want to delete this chart? This can't be undone!")) this.deleteChart(ev); }}>
@@ -52,7 +52,14 @@ export default class MoonChartWidget extends React.Component {
     super(props);
     this.state = {
       drawnPaths: [ ...props.paths ],
+      showChartSettings: false,
     }
+  }
+
+  toggleChartSettings = () => {
+    this.setState(oldState => ({
+      showChartSettings: !oldState.showChartSettings,
+    }))
   }
 
   render() {
@@ -62,6 +69,7 @@ export default class MoonChartWidget extends React.Component {
     const legendWidth = widgetWidth * 0.3;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), 100);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
+    const padding = 20;
 
     const toTs = moment().unix();
     const fromTs = moment().subtract(1, 'month').unix();
@@ -73,61 +81,100 @@ export default class MoonChartWidget extends React.Component {
           title={this.props.title}
           dashboardSlug={this.props.dashboardSlug}
           chartId={this.props.chartId}
+          onEditChart={this.toggleChartSettings}
           onDeleteChart={this.props.refreshParent}
         />
-        <div className="widget-content">
-          <RePinchy
-            width={widgetWidth}
-            height={chartHeight}
-            activeArea={{
-              x: yAxisWidth,
-              y: 0,
-              w: chartWidth - yAxisWidth,
-              h: chartHeight - xAxisHeight,
+
+        <div
+          className="widget-dialog-container"
+          style={{
+            position: 'relative',
+            height: chartHeight + 2*padding,
+            width: widgetWidth + 2*padding,
+          }}
+        >
+
+          <div
+            style={{ padding: padding, }}
+            className="widget-content"
+          >
+            <RePinchy
+              width={widgetWidth}
+              height={chartHeight}
+              activeArea={{
+                x: yAxisWidth,
+                y: 0,
+                w: chartWidth - yAxisWidth,
+                h: chartHeight - xAxisHeight,
+              }}
+              initialState={{
+                x: initialPanX,
+                y: 0.0,
+                scale: initialScale,
+              }}
+            >
+              {(x, y, scale, zoomInProgress, pointerPosition) => (
+                <div className="repinchy-content">
+                  <ChartContainer
+                    paths={this.props.paths}
+                    drawnPaths={this.state.drawnPaths}
+                    width={chartWidth}
+                    height={chartHeight}
+                    fromTs={Math.round(-x/scale)}
+                    toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
+                    scale={scale}
+                    zoomInProgress={zoomInProgress}
+                    xAxisHeight={xAxisHeight}
+                    yAxisWidth={yAxisWidth}
+                    pointerPosition={pointerPosition}
+                  />
+                  <div
+                    className="legend"
+                    style={{
+                      width: legendWidth,
+                      height: chartHeight,
+                      float: 'right',
+                    }}
+                  >
+                    <Legend
+                      paths={this.props.paths}
+                      onDrawnPathsChange={(drawnPaths) => {
+                        this.setState({
+                          drawnPaths,
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </RePinchy>
+          </div>
+
+          {/* overlay: */}
+          <div
+            className="widget-dialog-overlay"
+            style={{
+              width: widgetWidth + 2*padding,
+              height: this.state.showChartSettings ? chartHeight + 2*padding : 0,
+              opacity: this.state.showChartSettings ? 0.2 : 0,
             }}
-            initialState={{
-              x: initialPanX,
-              y: 0.0,
-              scale: initialScale,
+            onClick={this.toggleChartSettings}
+          >
+          </div>
+
+          <div
+            className="widget-dialog"
+            style={{
+              width: widgetWidth + 0*padding,
+              left: padding,
+              height: this.state.showChartSettings ? chartHeight - 2*padding : 0,
+              opacity: this.state.showChartSettings ? 1 : 0,
             }}
           >
-            {(x, y, scale, zoomInProgress, pointerPosition) => (
-              <div className="repinchy-content">
-                <ChartContainer
-                  paths={this.props.paths}
-                  drawnPaths={this.state.drawnPaths}
-                  width={chartWidth}
-                  height={chartHeight}
-                  fromTs={Math.round(-x/scale)}
-                  toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
-                  scale={scale}
-                  zoomInProgress={zoomInProgress}
-                  xAxisHeight={xAxisHeight}
-                  yAxisWidth={yAxisWidth}
-                  pointerPosition={pointerPosition}
-                />
-                <div
-                  className="legend"
-                  style={{
-                    width: legendWidth,
-                    height: chartHeight,
-                    float: 'right',
-                  }}
-                >
-                  <Legend
-                    paths={this.props.paths}
-                    onDrawnPathsChange={(drawnPaths) => {
-                      this.setState({
-                        drawnPaths,
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-          </RePinchy>
-        </div>
+            ...chart edit form...
+          </div>
 
+        </div>
       </div>
     )
   }
@@ -546,7 +593,7 @@ export class ChartView extends React.Component {
           )}
 
           <svg width={this.props.width} height={this.props.height}>
-          
+
             <g transform={`translate(${this.props.yAxisWidth} 0)`}>
               <Grid
                 width={this.props.width - this.props.yAxisWidth}
