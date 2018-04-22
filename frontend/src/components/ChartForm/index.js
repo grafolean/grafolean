@@ -63,12 +63,12 @@ export default class ChartForm extends React.Component {
     return (
       <div>
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
-          <label>
-            Chart title:
+          <div>
+            <label>Chart title:</label>
             <input type="text" name="name" value={this.state.name} onChange={this.handleFormFieldChange} />
-          </label>
-          <label>
-            Path filters:
+          </div>
+          <div>
+            <label>Path filters:</label>
             <ul>
               {this.state.pathFilters.map((item) =>
                   <li key={`pf-${item.id}`}>
@@ -77,7 +77,7 @@ export default class ChartForm extends React.Component {
                   </li>
               )}
             </ul>
-          </label>
+          </div>
           {(this.props.loading)?(
             <Loading />
           ):(

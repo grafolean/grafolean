@@ -11,6 +11,7 @@ import YAxis from './yaxis';
 import Legend from './legend';
 import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
 import TooltipPopup from '../TooltipPopup';
+import ChartForm from '../ChartForm';
 
 import './index.css';
 
@@ -75,6 +76,7 @@ class WidgetDialog extends React.Component {
             left: this.props.padding,
             height: this.props.opened ? this.props.height - 2*this.props.padding : 0,
             opacity: this.props.opened ? 1 : 0,
+            zIndex: this.props.opened ? 'auto' : -1,  // you need to send it to back, otherwise it floats before our chart
           }}
         >
           {this.props.children}
@@ -195,7 +197,7 @@ export default class MoonChartWidget extends React.Component {
             padding={padding}
             onCloseAttempt={this.toggleChartSettings}
           >
-            ...chart edit form...
+            <ChartForm />
           </WidgetDialog>
 
         </div>
