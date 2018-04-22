@@ -6,12 +6,11 @@ import { submitNewChart } from '../../store/actions';
 import Loading from '../Loading';
 import Button from '../Button';
 
-export default class ChartAddForm extends React.Component {
+export default class ChartForm extends React.Component {
 
   constructor(props) {
     super(props);
     this.state = {
-      formOpened: false,
       name: '',
       // it is important that we add an empty field to the bottom right away - otherwise we have
       // problems with losing focus when adding a new empty input at the bottom:
@@ -22,17 +21,9 @@ export default class ChartAddForm extends React.Component {
       pathFiltersNextId: 1,
     };
 
-    this.handleShowHideForm = this.handleShowHideForm.bind(this);
     this.handleFormFieldChange = this.handleFormFieldChange.bind(this);
     this.handleFormFieldPathFilterChange = this.handleFormFieldPathFilterChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
-  }
-
-  handleShowHideForm(event, show) {
-    this.setState({
-      formOpened: show,
-    })
-    event.preventDefault();
   }
 
   handleFormFieldChange(event) {
@@ -70,18 +61,8 @@ export default class ChartAddForm extends React.Component {
   }
 
   render() {
-    if (!this.state.formOpened) {
-      return (
-        <div>
-            <Button onClick={(event) => this.handleShowHideForm(event, true)}>+ add chart</Button>
-
-        </div>
-      )
-    }
-
     return (
       <div>
-        <Button onClick={(event) => this.handleShowHideForm(event, false)}>- cancel</Button>
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
           <label>
             Chart title:
@@ -105,7 +86,7 @@ export default class ChartAddForm extends React.Component {
           )}
 
         </form>
-    </div>
+      </div>
     )
   }
 };

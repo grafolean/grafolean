@@ -3,14 +3,36 @@ import React from 'react';
 import store from '../../store'
 import { fetchDashboardDetails } from '../../store/actions';
 
+import Button from '../Button';
 import Loading from '../Loading';
 import ChartForm from '../ChartForm';
 import MoonChartWidget from '../MoonChart';
 
 export default class DashboardView extends React.Component {
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      newChartFormOpened: false,
+    };
+  }
+
   componentWillMount() {
     store.dispatch(fetchDashboardDetails(this.props.match.params.slug))
+  }
+
+  handleShowNewChartForm = (ev) => {
+    ev.preventDefault();
+    this.setState({
+      newChartFormOpened: true,
+    })
+  }
+
+  handleHideNewChartForm = (ev) => {
+    ev.preventDefault();
+    this.setState({
+      newChartFormOpened: true,
+    })
   }
 
   render() {
@@ -57,7 +79,17 @@ export default class DashboardView extends React.Component {
           ))}
         </div>
 
-        <ChartForm dashboardSlug={this.props.match.params.slug}/>
+        {(!this.state.newChartFormOpened) ? (
+            <div>
+                <Button onClick={this.handleShowNewChartForm}>+ add chart</Button>
+            </div>
+          ) : (
+            <div>
+              <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
+              <ChartForm dashboardSlug={this.props.match.params.slug}/>
+            </div>
+          )
+        }
       </div>
     )
   }
