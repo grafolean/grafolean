@@ -4,7 +4,7 @@ import store from '../../store'
 import { fetchDashboardDetails } from '../../store/actions';
 
 import Loading from '../Loading';
-import ChartAddForm from '../ChartAddForm';
+import ChartForm from '../ChartForm';
 import MoonChartWidget from '../MoonChart';
 
 export default class DashboardView extends React.Component {
@@ -57,7 +57,7 @@ export default class DashboardView extends React.Component {
           ))}
         </div>
 
-        <ChartAddForm dashboardSlug={this.props.match.params.slug}/>
+        <ChartForm dashboardSlug={this.props.match.params.slug}/>
       </div>
     )
   }
