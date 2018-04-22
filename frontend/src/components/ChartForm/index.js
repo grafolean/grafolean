@@ -4,7 +4,6 @@ import store from '../../store';
 import { submitNewChart } from '../../store/actions';
 
 import Loading from '../Loading';
-import Button from '../Button';
 
 export default class ChartForm extends React.Component {
 
