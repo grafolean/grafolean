@@ -115,7 +115,7 @@ JSON response:
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/paths/?filter=<PartialFilter>&max_results=<MaxResults>'
+    'https://moonthor.com/api/paths/?filter=<PartialFilter>&limit=<MaxResults>'
 ```
 
 Parameters:
@@ -126,9 +126,12 @@ Parameters:
 
 JSON response:
 
-[
-    <Path0>,
-    ...
+{
+    paths: [
+      <Path0>,
+      ...
+    ],
+    limit_reached: false
 ]
 
 # Dashboards

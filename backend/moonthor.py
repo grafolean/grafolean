@@ -143,15 +143,15 @@ def values_get():
 
 @app.route("/api/paths", methods=['GET'])
 def paths_get():
-    max_results_input = flask.request.args.get('max_results')
+    max_results_input = flask.request.args.get('limit')
     if not max_results_input:
         max_results = 10
     else:
         max_results = max(0, int(max_results_input))
     partial_filter_input = flask.request.args.get('filter')
     pf = UnfinishedPathFilter(partial_filter_input)
-    matching_paths = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=True)
-    return json.dumps(list(matching_paths)), 200
+    matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=True)
+    return json.dumps({'paths': list(matching_paths), 'limit_reached': limit_reached}), 200
 
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])

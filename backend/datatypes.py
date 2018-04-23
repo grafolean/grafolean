@@ -81,10 +81,10 @@ class PathFilter(_RegexValidatedInputValue):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
             c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, total_limit + 1,))
-            for path in c:
+            for res in c:
                 if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
                     return found_paths, True
-                found_paths.add(path)
+                found_paths.add(res[0])
         return found_paths, False
 
     @staticmethod
