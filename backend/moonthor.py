@@ -7,7 +7,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Dashboard, Chart, Path, Timestamp, ValidationError
+from datatypes import Measurement, Dashboard, Chart, Path, UnfinishedPathFilter, Timestamp, ValidationError
 import utils
 
 
@@ -143,7 +143,15 @@ def values_get():
 
 @app.route("/api/paths", methods=['GET'])
 def paths_get():
-    return json.dumps(list(Path.get_all_paths())), 200
+    max_results_input = flask.request.args.get('max_results')
+    if not max_results_input:
+        max_results = 10
+    else:
+        max_results = max(0, int(max_results_input))
+    partial_filter_input = flask.request.args.get('filter')
+    pf = UnfinishedPathFilter(partial_filter_input)
+    matching_paths = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=True)
+    return json.dumps(list(matching_paths)), 200
 
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])

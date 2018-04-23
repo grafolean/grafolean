@@ -59,14 +59,14 @@ class Path(_RegexValidatedInputValue):
 
 
 class PathFilter(_RegexValidatedInputValue):
-    _regex = re.compile(r'^(([a-zA-Z0-9_-]+)|([*?]))([.](([a-zA-Z0-9_-]+)|([*?])))*$')
+    _regex = re.compile(r'^([a-zA-Z0-9_-]+|[*?])([.]([a-zA-Z0-9_-]+|[*?]))*$')
 
     @staticmethod
-    def find_matching_paths(path_filters, limit=200):
+    def find_matching_paths(path_filters, limit=200, allow_trailing_chars=False):
         all_found_paths = set()
         was_limit_reached = False
         for pf in path_filters:
-            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(pf, limit)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
+            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(pf, limit, allow_trailing_chars)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
             all_found_paths |= found_paths
             if was_limit_reached or len(all_found_paths) > limit:
                 # always return only up to a limit elements:
@@ -76,13 +76,9 @@ class PathFilter(_RegexValidatedInputValue):
 
     @staticmethod
     @lru_cache(maxsize=1024)
-    def _find_matching_paths_for_filter(path_filter, total_limit):
-        # if path filter is just a path (no wildcards in it), we just return it:
-        if '*' not in path_filter and '?' not in path_filter:
-            return set((path_filter,)), False
-
+    def _find_matching_paths_for_filter(path_filter, total_limit, allow_trailing_chars=False):
         found_paths = set()
-        pf_regex = PathFilter._regex_from_filter(path_filter)
+        pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
             c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, total_limit + 1,))
             for path in c:
@@ -92,17 +88,24 @@ class PathFilter(_RegexValidatedInputValue):
         return found_paths, False
 
     @staticmethod
-    def _regex_from_filter(path_filter_str):
+    def _regex_from_filter(path_filter_str, allow_trailing_chars=False):
         """ Prepares regex for asking Postgres from supplied path filter string. """
         # - replace all "." with "[.]"
         # - replace all "*" with ".*"
         # - replace all "?" with "[^.]+"
         # - add ^ and $
         path_filter_str = path_filter_str.replace(".", "[.]")
-        path_filter_str = path_filter_str.replace("*", ".+")
+        path_filter_str = path_filter_str.replace("*", "[^.]+([.][^.]+)*")
         path_filter_str = path_filter_str.replace("?", "[^.]+")
+        if allow_trailing_chars:
+            path_filter_str += '.*'
         path_filter_str = "^{}$".format(path_filter_str)
         return path_filter_str
+
+
+# when user is entering a path filter, it is not finished yet - but we must validate it to display the matches:
+class UnfinishedPathFilter(PathFilter):
+    _regex = re.compile(r'^(([a-zA-Z0-9_-]+|[*?])[.])*([a-zA-Z0-9_-]*|[*?])$')
 
 
 class Timestamp(_RegexValidatedInputValue):

@@ -113,8 +113,16 @@ JSON response:
 ## Reading paths (GET)
 
 ```
-curl 'https://moonthor.com/api/paths/'
+curl \
+    -X GET \
+    'https://moonthor.com/api/paths/?filter=<PartialFilter>&max_results=<MaxResults>'
 ```
+
+Parameters:
+
+    PartialFilter: either explicit path or a filter (or start of them) which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
+        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Optional.
+    MaxResults: maximum number of paths returned for each chart (optional; 10 by default).
 
 JSON response:
 
