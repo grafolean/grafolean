@@ -81,7 +81,7 @@ export default class DashboardView extends React.Component {
 
         {(!this.state.newChartFormOpened) ? (
             <div>
-                <Button onClick={this.handleShowNewChartForm}>+ add chart</Button>
+              <Button onClick={this.handleShowNewChartForm}>+ add chart</Button>
             </div>
           ) : (
             <div>

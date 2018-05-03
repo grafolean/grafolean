@@ -1,9 +1,33 @@
 import React from 'react';
+import Select, { Creatable } from 'react-select';
+import 'react-select/dist/react-select.css';
 
 import store from '../../store';
 import { submitNewChart } from '../../store/actions';
 
+import Button from '../Button';
 import Loading from '../Loading';
+import './index.css';
+
+const METRIC_PREFIXES = [
+  { value: 'P', label: 'P (peta - 10^15)' },
+  { value: 'T', label: 'T (tera - 10^12)' },
+  { value: 'G', label: 'G (giga - 10^9)' },
+  { value: 'M', label: 'M (mega - 10^6)' },
+  { value: 'k', label: 'k (kilo - 10^3)' },
+  { value: 'm', label: 'm (milli - 10^-3)' },
+  { value: 'µ', label: 'µ (micro - 10^-6)' },
+  { value: 'n', label: 'n (nano - 10^-9)' },
+  { value: 'p', label: 'p (pico - 10^-12)' },
+];
+const KNOWN_UNITS = [
+  { value: '%', label: '%' },
+  { value: 's', label: 's (second)' },
+  { value: 'b', label: 'b (bit)' },
+  { value: 'B', label: 'B (byte)' },
+  { value: 'ETH', label: 'Ξ (ETH)' },
+  { value: 'BTC', label: 'BTC' },
+];
 
 export default class ChartForm extends React.Component {
 
@@ -11,50 +35,64 @@ export default class ChartForm extends React.Component {
     super(props);
     this.state = {
       name: '',
-      // it is important that we add an empty field to the bottom right away - otherwise we have
-      // problems with losing focus when adding a new empty input at the bottom:
-      pathFilters: [{
-        id: 0,
-        value: '',
-      }],
+      series: [
+        {
+          pathFilter: '',
+          metricPrefix: '',
+          unit: '',
+        },
+      ],
       pathFiltersNextId: 1,
     };
-
-    this.handleFormFieldChange = this.handleFormFieldChange.bind(this);
-    this.handleFormFieldPathFilterChange = this.handleFormFieldPathFilterChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
   }
 
-  handleFormFieldChange(event) {
-    this.setState({[event.target.name]: event.target.value});
+  handleNameChange = (event) => {
+    this.setState({
+      name: event.target.value,
+    });
   }
 
-  handleFormFieldPathFilterChange(event) {
-    let filterId = parseInt(event.target.name.substr(3), 10);  // we use event.target.name to pass filter id to this function ("pf-<id>")
-    let value = event.target.value;
-
+  setMetricPrefix = (serieIndex, metricPrefix) => {
     this.setState((prevState) => {
-      let pathFiltersNew = prevState.pathFilters.map((item) => {
-        if (item.id === filterId)
-          return {...item, value: value}
-        else
-          return item;
-      })
-
-      let newState = {...prevState, pathFilters: pathFiltersNew}
-
-      if (prevState.pathFilters[prevState.pathFilters.length - 1].id === filterId) {
-        // we were changing the last input, so let's add another one:
-        newState.pathFilters.push({id: prevState.pathFiltersNextId, value: ""})
-        newState.pathFiltersNextId++;
-      }
-
-      return newState;
-    })
-
+      let newSeries = [ ...prevState.series ];
+      newSeries[serieIndex].metricPrefix = metricPrefix;
+      return {
+        series: newSeries,
+      };
+    });
   }
 
-  handleSubmit(event) {
+  setUnit = (serieIndex, unit) => {
+    this.setState((prevState) => {
+      let newSeries = [ ...prevState.series ];
+      newSeries[serieIndex].unit = unit;
+      return {
+        series: newSeries,
+      };
+    });
+  }
+
+  setPathFilter = (serieIndex, newValue) => {
+    this.setState((prevState) => {
+      let newSeries = [ ...prevState.series ];
+      newSeries[serieIndex].pathFilter = newValue;
+      return {
+        series: newSeries,
+      };
+    });
+  }
+
+  handleAddEmptySerie = (ev) => {
+    this.setState(prevState => ({
+      series: [
+        ...prevState.series,
+        {},
+      ],
+    }));
+    ev.preventDefault();
+  }
+
+  handleSubmit = (event) => {
     store.dispatch(submitNewChart(this.props.formid, this.props.dashboardSlug, this.state.name, this.state.pathFilters))
     event.preventDefault();
   }
@@ -65,18 +103,39 @@ export default class ChartForm extends React.Component {
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
           <div>
             <label>Chart title:</label>
-            <input type="text" name="name" value={this.state.name} onChange={this.handleFormFieldChange} />
+            <input type="text" name="name" value={this.state.name} onChange={this.handleNameChange} />
           </div>
           <div>
-            <label>Path filters:</label>
-            <ul>
-              {this.state.pathFilters.map((item) =>
-                  <li key={`pf-${item.id}`}>
-                    {`pf-${item.id}`}:
-                    <input type="text" name={`pf-${item.id}`} value={item.value} onChange={this.handleFormFieldPathFilterChange} />
-                  </li>
-              )}
-            </ul>
+            <label>Series:</label>
+            {this.state.series.map((serie, serieIndex) =>
+              <div className="serie" key={serieIndex}>
+
+                <div class="form-item">
+                  <label>Path filter:</label>
+                  <input type="text" name={`pf-${serie.id}`} value={serie.pathFilter || ''} onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)} />
+                </div>
+
+                <div class="form-item">
+                  <label>Metric prefix:</label>
+                  <Select
+                    value={serie.metricPrefix || ''}
+                    onChange={selectedOption => this.setMetricPrefix(serieIndex, selectedOption)}
+                    options={METRIC_PREFIXES}
+                  />
+                </div>
+
+                <div class="form-item">
+                  <label>Unit:</label>
+                  <Creatable
+                    value={serie.unit || ''}
+                    onChange={selectedOption => this.setUnit(serieIndex, selectedOption)}
+                    options={KNOWN_UNITS}
+                  />
+                </div>
+
+              </div>
+            )}
+            <Button onClick={this.handleAddEmptySerie}>+</Button>
           </div>
           {(this.props.loading)?(
             <Loading />
