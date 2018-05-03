@@ -2,6 +2,7 @@ import fetch from 'cross-fetch'
 import { stringify } from 'qs'
 
 export const ROOT_URL = 'http://192.168.123.11:5000/api'
+//export const ROOT_URL = 'http://127.0.0.1:5000/api'
 
 export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
 export function onRequestChartData(paths, aggrLevel, fromTs, toTs) {
