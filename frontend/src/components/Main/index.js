@@ -40,8 +40,8 @@ export default class Main extends Component {
 
     this.state = {
       mql: mql,
-      sidebarDocked: props.docked,
-      sidebarOpen: props.open,
+      sidebarDocked: false,
+      sidebarOpen: false,
       windowWidth: 0,
       windowHeight: 0,
     }
