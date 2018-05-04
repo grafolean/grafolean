@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Switch, Route, Link } from 'react-router-dom'
 import Sidebar from 'react-sidebar';
 import styled from 'styled-components';
-import uniqueId from 'lodash/uniqueId';
 
 import './Main.css';
 // import Chart from '../Chart'
@@ -148,7 +147,7 @@ export default class Main extends Component {
                 <Switch>
                   <Route exact path='/' component={Home}/>
                   <Route exact path='/dashboards' component={DashboardsListContainer}/>
-                  <Route exact path='/dashboards/new' component={DashboardNewFormContainer} formid={uniqueId("form-")}/>
+                  <Route exact path='/dashboards/new' component={DashboardNewFormContainer}/>
                   <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
                   <Route exact path='/about' component={About}/>
                 </Switch>
