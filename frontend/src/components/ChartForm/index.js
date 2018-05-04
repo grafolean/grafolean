@@ -110,12 +110,12 @@ export default class ChartForm extends React.Component {
             {this.state.series.map((serie, serieIndex) =>
               <div className="serie" key={serieIndex}>
 
-                <div class="form-item">
+                <div className="form-item">
                   <label>Path filter:</label>
                   <input type="text" name={`pf-${serie.id}`} value={serie.pathFilter || ''} onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)} />
                 </div>
 
-                <div class="form-item">
+                <div className="form-item">
                   <label>Metric prefix:</label>
                   <Select
                     value={serie.metricPrefix || ''}
@@ -124,7 +124,7 @@ export default class ChartForm extends React.Component {
                   />
                 </div>
 
-                <div class="form-item">
+                <div className="form-item">
                   <label>Unit:</label>
                   <Creatable
                     value={serie.unit || ''}
