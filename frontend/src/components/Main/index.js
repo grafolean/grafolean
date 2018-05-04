@@ -45,31 +45,24 @@ export default class Main extends Component {
       windowWidth: 0,
       windowHeight: 0,
     }
-
-    this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
-    this.mediaQueryChanged = this.mediaQueryChanged.bind(this);
-    this.onSetSidebarOpen = this.onSetSidebarOpen.bind(this);
-    this.onBurgerClick = this.onBurgerClick.bind(this);
-    this.onSidebarXClick = this.onSidebarXClick.bind(this);
-    this.onSidebarLinkClick = this.onSidebarLinkClick.bind(this);
   }
 
-  onBurgerClick(event) {
+  onBurgerClick = (event) => {
     this.setState({sidebarOpen: true});
     event.preventDefault();
   }
 
-  onSidebarXClick(event) {
+  onSidebarXClick = (event) => {
     this.setState({sidebarOpen: false});
     event.preventDefault();
   }
 
-  onSidebarLinkClick(event) {
+  onSidebarLinkClick = (event) => {
     this.setState({sidebarOpen: false});
     // follow up the link (don't do event.preventDefault())
   }
 
-  onSetSidebarOpen(open) {
+  onSetSidebarOpen = (open) => {
     this.setState({sidebarOpen: open});
   }
 
@@ -88,11 +81,11 @@ export default class Main extends Component {
     window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
-  updateWindowDimensions() {
+  updateWindowDimensions = () => {
     this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
   }
 
-  mediaQueryChanged() {
+  mediaQueryChanged = () => {
     this.setState({sidebarDocked: this.state.mql.matches});
   }
 
