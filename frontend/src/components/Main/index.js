@@ -119,6 +119,11 @@ export default class Main extends Component {
       </Navigation>
     )
 
+    const sidebarWidth = Math.min(300, this.state.windowWidth - 80);  // always leave a bit of place (80px) to the right of menu
+    const contentWidth = this.state.sidebarDocked || this.state.sidebarOpen ? this.state.windowWidth - sidebarWidth: this.state.windowWidth;
+    const WrappedRoute = ({ component: Component, ...rest }) => (
+      <Route {...rest} render={props => <Component {...props} width={contentWidth} />} />
+    );
     return (
       <Sidebar sidebar={sidebarContent}
               open={this.state.sidebarOpen}
@@ -128,7 +133,7 @@ export default class Main extends Component {
               styles={{
                 sidebar: {
                   backgroundColor: (this.state.sidebarDocked)?('#dedede'):('white'),
-                  maxWidth: (this.state.sidebarDocked)?('700px'):((this.state.windowWidth - 80) + 'px'),  // always leave a bit of place to the right of menu
+                  width: sidebarWidth,
                 },
               }}>
           {(!this.state.sidebarDocked)?(
@@ -145,19 +150,17 @@ export default class Main extends Component {
             <Flex>
               <Content>
                 <Switch>
-                  <Route exact path='/' component={Home}/>
-                  <Route exact path='/dashboards' component={DashboardsListContainer}/>
-                  <Route exact path='/dashboards/new' component={DashboardNewFormContainer}/>
-                  <Route exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-                  <Route exact path='/about' component={About}/>
+                  <WrappedRoute exact path='/' component={Home}/>
+                  <WrappedRoute exact path='/dashboards' component={DashboardsListContainer}/>
+                  <WrappedRoute exact path='/dashboards/new' component={DashboardNewFormContainer}/>
+                  <WrappedRoute exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+                  <WrappedRoute exact path='/about' component={About}/>
                 </Switch>
               </Content>
             </Flex>
           </div>
         </div>
 
-        {/* <ChartContainer paths={["test.path.1", "test.path.2"]}/>
-        <input type="button" value="Refresh" onClick={() => { store.dispatch(fetchChartData("test.kaggle.execute_values", 1325317920, 1327897860)) }} /> */}
       </Sidebar>
     );
   }
