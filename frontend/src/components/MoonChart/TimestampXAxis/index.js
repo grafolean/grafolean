@@ -179,6 +179,9 @@ export default class TimestampXAxis extends React.Component {
       isMajorTickCallback = (m) => (m.year() % 8 === 0);
       tickLabelCallback = (m, isMajorTick) => ((isMajorTick) ? (m.format("YYYY")) : (null));
     }
+    else {
+      return [];
+    }
 
     // now that you know how, display the ticks and labels:
     let ret = []
