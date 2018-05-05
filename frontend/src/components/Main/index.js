@@ -27,15 +27,14 @@ const Content = styled.div`
   background-color: #ffffff;
 `
 
-const mql = window.matchMedia(`(min-width: 800px)`);
 
 export default class Main extends Component {
+  mql = window.matchMedia(`(min-width: 800px)`)
 
   constructor(props) {
     super(props);
 
     this.state = {
-      mql: mql,
       sidebarDocked: false,
       sidebarOpen: false,
       windowWidth: 0,
@@ -63,8 +62,8 @@ export default class Main extends Component {
   }
 
   componentWillMount() {
-    this.state.mql.addListener(this.mediaQueryChanged);
-    this.setState({mql: this.state.mql, sidebarDocked: this.state.mql.matches});
+    this.mql.addListener(this.mediaQueryChanged);
+    this.setState({sidebarDocked: this.mql.matches});
   }
 
   componentDidMount() {
@@ -73,7 +72,7 @@ export default class Main extends Component {
   }
 
   componentWillUnmount() {
-    this.state.mql.removeListener(this.mediaQueryChanged);
+    this.mql.removeListener(this.mediaQueryChanged);
     window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
@@ -82,7 +81,7 @@ export default class Main extends Component {
   }
 
   mediaQueryChanged = () => {
-    this.setState({sidebarDocked: this.state.mql.matches});
+    this.setState({sidebarDocked: this.mql.matches});
   }
 
   render() {
