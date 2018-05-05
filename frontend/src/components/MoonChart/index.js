@@ -63,7 +63,7 @@ class WidgetDialog extends React.Component {
           style={{
             width: this.props.width,
             height: this.props.opened ? this.props.height + 2*this.props.padding : 0,
-            opacity: this.props.opened ? 0.2 : 0,
+            opacity: this.props.opened ? 0.1 : 0,
           }}
           onClick={this.props.onCloseAttempt}
         >
@@ -73,8 +73,6 @@ class WidgetDialog extends React.Component {
           className="widget-dialog"
           style={{
             width: this.props.width - 2*this.props.padding,
-            left: 0,
-            height: this.props.opened ? this.props.height - 2*this.props.padding : 0,
             opacity: this.props.opened ? 1 : 0,
             zIndex: this.props.opened ? 'auto' : -1,  // you need to send it to back, otherwise it floats before our chart
           }}
@@ -130,7 +128,7 @@ export default class MoonChartWidget extends React.Component {
           className="widget-dialog-container"
           style={{
             position: 'relative',
-            height: chartHeight + 2*PADDING,
+            minHeight: chartHeight + 2*PADDING,
             width: widgetWidth,
           }}
         >
