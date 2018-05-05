@@ -141,7 +141,6 @@ export default class Main extends Component {
           <div style={{
             display: 'flex',
             width: contentWidth,
-            overflowX: 'hidden',
             padding: `${CONTENT_PADDING_TB}px ${CONTENT_PADDING_LR}px`,
           }}>
             <Content>
