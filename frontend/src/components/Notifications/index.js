@@ -39,6 +39,9 @@ class Notifications extends Component {
   }
 
   render() {
+    if (this.props.notifications.length === 0) {
+      return null;
+    }
     return (
       <NotificationsList>
         {this.props.notifications.map((v) => {

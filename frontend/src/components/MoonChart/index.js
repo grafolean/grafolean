@@ -61,7 +61,7 @@ class WidgetDialog extends React.Component {
         <div
           className="widget-dialog-overlay"
           style={{
-            width: this.props.width + 2*this.props.padding,
+            width: this.props.width,
             height: this.props.opened ? this.props.height + 2*this.props.padding : 0,
             opacity: this.props.opened ? 0.2 : 0,
           }}
@@ -72,8 +72,8 @@ class WidgetDialog extends React.Component {
         <div
           className="widget-dialog"
           style={{
-            width: this.props.width + 0*this.props.padding,
-            left: this.props.padding,
+            width: this.props.width - 2*this.props.padding,
+            left: 0,
             height: this.props.opened ? this.props.height - 2*this.props.padding : 0,
             opacity: this.props.opened ? 1 : 0,
             zIndex: this.props.opened ? 'auto' : -1,  // you need to send it to back, otherwise it floats before our chart
@@ -103,13 +103,14 @@ export default class MoonChartWidget extends React.Component {
   }
 
   render() {
+    const PADDING = 20;
     const widgetWidth = this.props.width;
-    const chartWidth = widgetWidth * 0.7;
+    const usableWidgetWidth = widgetWidth - 2 * PADDING;
+    const chartWidth = usableWidgetWidth * 0.7;
     const chartHeight = this.props.height;
-    const legendWidth = widgetWidth * 0.3;
+    const legendWidth = usableWidgetWidth * 0.3;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), 100);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
-    const padding = 20;
 
     const toTs = moment().unix();
     const fromTs = moment().subtract(1, 'month').unix();
@@ -129,17 +130,17 @@ export default class MoonChartWidget extends React.Component {
           className="widget-dialog-container"
           style={{
             position: 'relative',
-            height: chartHeight + 2*padding,
-            width: widgetWidth + 2*padding,
+            height: chartHeight + 2*PADDING,
+            width: widgetWidth,
           }}
         >
 
           <div
-            style={{ padding: padding, }}
+            style={{ padding: PADDING }}
             className="widget-content"
           >
             <RePinchy
-              width={widgetWidth}
+              width={usableWidgetWidth}
               height={chartHeight}
               activeArea={{
                 x: yAxisWidth,
@@ -194,7 +195,7 @@ export default class MoonChartWidget extends React.Component {
             opened={this.state.showChartSettings}
             width={widgetWidth}
             height={chartHeight}
-            padding={padding}
+            padding={PADDING}
             onCloseAttempt={this.toggleChartSettings}
           >
             <ChartForm />

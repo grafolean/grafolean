@@ -18,10 +18,6 @@ const Navigation = styled.div`
   text-align: left;
 `
 
-const Flex = styled.div`
-  display: flex;
-`
-
 const Header = styled.header`
   background-color: #eeffee;
   padding: 20px;
@@ -112,8 +108,12 @@ export default class Main extends Component {
       </Navigation>
     )
 
-    const sidebarWidth = Math.min(300, this.state.windowWidth - 80);  // always leave a bit of place (80px) to the right of menu
-    const contentWidth = this.state.sidebarDocked || this.state.sidebarOpen ? this.state.windowWidth - sidebarWidth: this.state.windowWidth;
+    const CONTENT_PADDING_LR = 30;
+    const CONTENT_PADDING_TB = 20;
+    const SCROLLBAR_WIDTH = 20;  // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
+    const innerWindowWidth = this.state.windowWidth - 2 * CONTENT_PADDING_LR - SCROLLBAR_WIDTH;
+    const sidebarWidth = Math.min(300, this.state.windowWidth - 40);  // always leave a bit of place (40px) to the right of menu
+    const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth: innerWindowWidth;
     const WrappedRoute = ({ component: Component, ...rest }) => (
       <Route {...rest} render={props => <Component {...props} width={contentWidth} />} />
     );
@@ -134,23 +134,26 @@ export default class Main extends Component {
           ):('')}
 
         <div>
-          <div>
-            <Flex>
-              <NotificationsContainer />
-            </Flex>
+          <div style={{
+            display: 'flex',
+          }}>
+            <NotificationsContainer />
           </div>
-          <div>
-            <Flex>
-              <Content>
-                <Switch>
-                  <WrappedRoute exact path='/' component={Home}/>
-                  <WrappedRoute exact path='/dashboards' component={DashboardsListContainer}/>
-                  <WrappedRoute exact path='/dashboards/new' component={DashboardNewFormContainer}/>
-                  <WrappedRoute exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-                  <WrappedRoute exact path='/about' component={About}/>
-                </Switch>
-              </Content>
-            </Flex>
+          <div style={{
+            display: 'flex',
+            width: contentWidth,
+            overflowX: 'hidden',
+            padding: `${CONTENT_PADDING_TB}px ${CONTENT_PADDING_LR}px`,
+          }}>
+            <Content>
+              <Switch>
+                <WrappedRoute exact path='/' component={Home}/>
+                <WrappedRoute exact path='/dashboards' component={DashboardsListContainer}/>
+                <WrappedRoute exact path='/dashboards/new' component={DashboardNewFormContainer}/>
+                <WrappedRoute exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+                <WrappedRoute exact path='/about' component={About}/>
+              </Switch>
+            </Content>
           </div>
         </div>
 

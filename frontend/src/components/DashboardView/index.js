@@ -68,7 +68,7 @@ export default class DashboardView extends React.Component {
           {this.props.data.charts.map((chart) => (
             <MoonChartWidget
               key={chart.id}
-              width={700}
+              width={this.props.width}
               height={300}
               chartId={chart.id}
               dashboardSlug={this.props.match.params.slug}
