@@ -10,24 +10,29 @@ import Loading from '../Loading';
 import './index.css';
 
 const METRIC_PREFIXES = [
-  { value: 'P', label: 'P (peta - 10^15)' },
-  { value: 'T', label: 'T (tera - 10^12)' },
-  { value: 'G', label: 'G (giga - 10^9)' },
-  { value: 'M', label: 'M (mega - 10^6)' },
-  { value: 'k', label: 'k (kilo - 10^3)' },
-  { value: 'm', label: 'm (milli - 10^-3)' },
-  { value: 'µ', label: 'µ (micro - 10^-6)' },
-  { value: 'n', label: 'n (nano - 10^-9)' },
-  { value: 'p', label: 'p (pico - 10^-12)' },
+  { prefix: 'P', name: 'peta', power: 15 },
+  { prefix: 'T', name: 'tera', power: 12 },
+  { prefix: 'G', name: 'giga', power: 9 },
+  { prefix: 'M', name: 'mega', power: 6 },
+  { prefix: 'k', name: 'kilo', power: 3 },
+  { prefix: 'h', name: 'hecto', power: 2 },
+  { prefix: 'd', name: 'deci', power: 1 },
+  { prefix: 'c', name: 'centi', power: -2 },
+  { prefix: 'm', name: 'milli', power: -3 },
+  { prefix: 'µ', name: 'micro', power: -6 },
+  { prefix: 'n', name: 'nano', power: -9 },
+  { prefix: 'p', name: 'pico', power: -12 },
 ];
-const KNOWN_UNITS = [
-  { value: '%', label: '%' },
-  { value: 's', label: 's (second)' },
-  { value: 'b', label: 'b (bit)' },
-  { value: 'B', label: 'B (byte)' },
-  { value: 'ETH', label: 'Ξ (ETH)' },
-  { value: 'BTC', label: 'BTC' },
-];
+const KNOWN_UNITS = {
+  '%': { name: 'percent', allowedPrefixes: '' },
+  s:   { name: 'second', allowedPrefixes: 'mµnp' },
+  m:   { name: 'meter', allowedPrefixes: 'pnµmcdk' },
+  bps: { name: 'bits per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
+  B:   { name: 'byte', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
+  Bps: { name: 'bytes per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
+  ETH: { name: 'Ether', allowedPrefixes: '' },
+  BTC: { name: 'Bitcoin', allowedPrefixes: '' },
+};
 
 export default class ChartForm extends React.Component {
 
@@ -52,7 +57,8 @@ export default class ChartForm extends React.Component {
     });
   }
 
-  setMetricPrefix = (serieIndex, metricPrefix) => {
+  setMetricPrefix = (serieIndex, selectedOption) => {
+    const metricPrefix = selectedOption.value;
     this.setState((prevState) => {
       let newSeries = [ ...prevState.series ];
       newSeries[serieIndex].metricPrefix = metricPrefix;
@@ -62,7 +68,8 @@ export default class ChartForm extends React.Component {
     });
   }
 
-  setUnit = (serieIndex, unit) => {
+  setUnit = (serieIndex, selectedOption) => {
+    const unit = selectedOption === null ? '' : selectedOption.value;
     this.setState((prevState) => {
       let newSeries = [ ...prevState.series ];
       newSeries[serieIndex].unit = unit;
@@ -70,6 +77,13 @@ export default class ChartForm extends React.Component {
         series: newSeries,
       };
     });
+  }
+
+  userUnitCreator = (option) => {
+    return {
+      value: option.label,
+      label: option.label,
+    };
   }
 
   setPathFilter = (serieIndex, newValue) => {
@@ -81,6 +95,12 @@ export default class ChartForm extends React.Component {
       };
     });
   }
+
+  metricPrefixOptionRenderer = (pOption, unit) => (
+    <span>
+      {pOption.prefix}{unit} [{pOption.name} - 10<sup>{pOption.power}</sup> {unit}]
+    </span>
+  )
 
   handleAddEmptySerie = (ev) => {
     this.setState(prevState => ({
@@ -98,6 +118,24 @@ export default class ChartForm extends React.Component {
   }
 
   render() {
+    let allUnits = Object.keys(KNOWN_UNITS).map(unit => ({
+      value: unit,
+      label: `${unit} (${KNOWN_UNITS[unit].name})`,
+      allowedPrefixes: KNOWN_UNITS[unit].allowedPrefixes,
+    }));
+    // we need to list all possible units, otherwise they won't be visible as selected options:
+    for (let serie of this.state.series) {
+      if (allUnits.find(u => u.value === serie.unit)) {
+        // we already know this unit, skip it
+        continue;
+      }
+      allUnits.push({
+        value: serie.unit,
+        label: serie.unit,
+        allowedPrefixes: null,
+      })
+    }
+
     return (
       <div>
         <form id={this.props.formid} onSubmit={this.handleSubmit}>
@@ -116,22 +154,36 @@ export default class ChartForm extends React.Component {
                 </div>
 
                 <div className="form-item">
-                  <label>Metric prefix:</label>
-                  <Select
-                    value={serie.metricPrefix || ''}
-                    onChange={selectedOption => this.setMetricPrefix(serieIndex, selectedOption)}
-                    options={METRIC_PREFIXES}
-                  />
-                </div>
-
-                <div className="form-item">
                   <label>Unit:</label>
                   <Creatable
                     value={serie.unit || ''}
                     onChange={selectedOption => this.setUnit(serieIndex, selectedOption)}
-                    options={KNOWN_UNITS}
+                    options={allUnits}
+                    promptTextCreator={label => `Use custom unit (${label})`}
+                    newOptionCreator={this.userUnitCreator}
                   />
                 </div>
+
+                {(serie.unit && (!KNOWN_UNITS[serie.unit] || KNOWN_UNITS[serie.unit].allowedPrefixes !== '')) && (
+                  <div className="form-item">
+                    <label>Metric prefix: (optional)</label>
+                    <Select
+                      value={serie.metricPrefix || ''}
+                      placeholder={`-- none [1${serie.unit}] --`}
+                      onChange={selectedOption => this.setMetricPrefix(serieIndex, selectedOption)}
+                      options={METRIC_PREFIXES
+                        .filter(p => KNOWN_UNITS[serie.unit] === null || KNOWN_UNITS[serie.unit].allowedPrefixes.includes(p.prefix))
+                        .map(p => ({
+                          value: p.prefix,
+                          // no need for label because we specify optionRenderer; but we must supply additional info to it:
+                          ...p,
+                        }))
+                      }
+                      optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, serie.unit)}
+                      valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, serie.unit)}
+                      />
+                  </div>
+                )}
 
               </div>
             )}
