@@ -154,7 +154,7 @@ export default class ChartForm extends React.Component {
                 </div>
 
                 <div className="form-item">
-                  <label>Unit:</label>
+                  <label>Base unit:</label>
                   <Creatable
                     value={serie.unit || ''}
                     onChange={selectedOption => this.setUnit(serieIndex, selectedOption)}
@@ -172,7 +172,7 @@ export default class ChartForm extends React.Component {
                       placeholder={`-- none [1${serie.unit}] --`}
                       onChange={selectedOption => this.setMetricPrefix(serieIndex, selectedOption)}
                       options={METRIC_PREFIXES
-                        .filter(p => KNOWN_UNITS[serie.unit] === null || KNOWN_UNITS[serie.unit].allowedPrefixes.includes(p.prefix))
+                        .filter(p => (!(serie.unit in KNOWN_UNITS)) || KNOWN_UNITS[serie.unit].allowedPrefixes.includes(p.prefix))
                         .map(p => ({
                           value: p.prefix,
                           // no need for label because we specify optionRenderer; but we must supply additional info to it:
