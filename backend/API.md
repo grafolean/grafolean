@@ -184,9 +184,12 @@ curl \
     -d '{ \
         "name": <ChartTitle>, \
         "content": [ \
-            { path_filter: <PathFilter0> }, \
-            { path_filter: <PathFilter1> }, \
-            ... \
+            {
+                path_filter: <PathFilter0>, \
+                unit: <BaseUnit0>, \
+                metric_prefix: <MetricPrefix0> \
+            }, \
+            ...
         ], \
     }' \
     'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
@@ -201,10 +204,10 @@ Parameters:
 JSON response:
 
 {
-    slug: <ChartId>
+    id: <ChartId>
 }
 
-## Reading
+## Reading all charts in dashboard
 
 ```
 curl \
@@ -217,7 +220,58 @@ Parameters:
     PathsLimit: maximum number of paths returned for each chart (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
         will be set to `true` if the limit is exceeded.
 
+JSON response:
 
+{
+    list: [
+        {
+            name: <ChartName>,
+            id: <ChartId>,
+            content: [
+                {
+                    path_filter: <PathFilter0>,
+                    unit: <Unit0>,
+                    metric_prefix: <MetricPrefix0>,
+                    paths: [
+                        ... // list of all the paths that match the specified path filter
+                    ],
+                    paths_limit_reached: true/false,
+                },
+            ]
+        }
+    ]
+}
+
+## Reading a chart
+
+```
+curl \
+    -X GET \
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts/<ChartId>?paths_limit=<PathsLimit>'
+```
+
+Parameters:
+
+    PathsLimit: maximum number of paths returned for each chart (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
+        will be set to `true` if the limit is exceeded.
+
+JSON response:
+
+{
+    name: <ChartName>,
+    id: <ChartId>,
+    content: [
+        {
+            path_filter: <PathFilter0>,
+            unit: <Unit0>,
+            metric_prefix: <MetricPrefix0>,
+            paths: [
+                ... // list of all the paths that match the specified path filter
+            ],
+            paths_limit_reached: true/false,
+        },
+    ]
+}
 
 # Events
 

@@ -203,10 +203,10 @@ def charts_crud(dashboard_slug):
     elif flask.request.method == 'POST':
         chart = Chart.forge_from_input(flask.request, dashboard_slug)
         try:
-            chart.insert()
+            chart_id = chart.insert()
         except psycopg2.IntegrityError:
             return "Chart with this slug already exists", 400
-        return "", 201
+        return json.dumps({'id': chart_id}), 201
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>/charts/<string:chart_id>", methods=['GET', 'PUT', 'DELETE'])

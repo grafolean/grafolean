@@ -271,10 +271,10 @@ class Measurement(object):
 
 class Chart(object):
 
-    def __init__(self, dashboard_id, name, path_filters, chart_id):
+    def __init__(self, dashboard_id, name, content, chart_id):
         self.dashboard_id = dashboard_id
         self.name = name
-        self.path_filters = path_filters
+        self.content = content
         self.chart_id = chart_id
 
     @classmethod
@@ -291,7 +291,14 @@ class Chart(object):
         # jsonschema already makes sure that there is exactly one key in each content dict, and
         # that this key is "path_filter", so we must just check it for validity by creating
         # PathFilter() instances:
-        path_filters = [PathFilter(x['path_filter']) for x in data.get('content', [])]
+        content = [
+            (
+                PathFilter(x['path_filter']),
+                str(x['unit']),
+                str(x['metric_prefix']),
+            )
+            for x in data.get('content', [])
+        ]
 
         name = data['name']
         # users reference the dashboards by its slug, but we need to know its ID:
@@ -302,7 +309,7 @@ class Chart(object):
         if chart_id is not None and not Chart._check_exists(chart_id):
             raise ValidationError("Unknown chart id")
 
-        return cls(dashboard_id, name, path_filters, chart_id)
+        return cls(dashboard_id, name, content, chart_id)
 
     @staticmethod
     def _check_exists(chart_id):
@@ -315,14 +322,23 @@ class Chart(object):
 
     def insert(self):
         with db.cursor() as c:
-            path_filters_text = ",".join(map(str, self.path_filters))
-            c.execute("INSERT INTO charts (dashboard, name, path_filters) VALUES (%s, %s, %s);", (self.dashboard_id, self.name, path_filters_text,))
+            c.execute("INSERT INTO charts (dashboard, name) VALUES (%s, %s) RETURNING id;", (self.dashboard_id, self.name,))
+            chart_id = c.fetchone()[0]
+            for pf, unit, metric_prefix in self.content:
+                c.execute("INSERT INTO charts_content (chart, path_filter, unit, metric_prefix) VALUES (%s, %s, %s, %s);", (chart_id, str(pf), unit, metric_prefix,))
+            return chart_id
 
     def update(self):
         with db.cursor() as c:
-            path_filters_text = ",".join(map(str, self.path_filters))
-            c.execute("UPDATE charts SET name = %s, path_filters = %s WHERE id = %s and dashboard = %s;", (self.name, path_filters_text, self.chart_id, self.dashboard_id,))
-            return c.rowcount
+            c.execute("UPDATE charts SET name = %s WHERE id = %s and dashboard = %s;", (self.name, self.chart_id, self.dashboard_id,))
+            rowcount = c.rowcount
+            if not rowcount:
+                return 0
+            # update the chart content too:
+            c.execute("DELETE FROM charts_content WHERE chart = %s;", (self.chart_id,))
+            for pf, unit, metric_prefix in self.content:
+                c.execute("INSERT INTO charts_content (chart, path_filter, unit, metric_prefix) VALUES (%s, %s, %s, %s);", (self.chart_id, str(pf), unit, metric_prefix,))
+            return rowcount
 
     @staticmethod
     def delete(dashboard_slug, chart_id):
@@ -337,18 +353,25 @@ class Chart(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c:
-            c.execute('SELECT id, name, path_filters FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
+        with db.cursor() as c, db.cursor() as c2:
+            c.execute('SELECT id, name FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
-            for chart_id, name, path_filters in c:
-                path_filters = path_filters.split(",") if path_filters else []  # if empty string, return empty list
-                paths, paths_limit_reached = PathFilter.find_matching_paths(path_filters, limit=paths_limit)
+            for chart_id, name in c:
+                c2.execute('SELECT path_filter, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+                content = []
+                for path_filter, unit, metric_prefix in c2:
+                    paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
+                    content.append({
+                        'path_filter': path_filter,
+                        'unit': unit,
+                        'metric_prefix': metric_prefix,
+                        'paths': paths,
+                        'paths_limit_reached': paths_limit_reached,
+                    })
                 ret.append({
                     'id': chart_id,
                     'name': name,
-                    'path_filters': path_filters,
-                    'paths': paths,
-                    'paths_limit_reached': paths_limit_reached,
+                    'content': content,
                 })
             return ret
 
@@ -358,19 +381,27 @@ class Chart(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c:
-            c.execute('SELECT name, path_filters FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
+        with db.cursor() as c, db.cursor() as c2:
+            c.execute('SELECT name FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
-            path_filters = res[1].split(",") if res[1] else []
-            paths, paths_limit_reached = PathFilter.find_matching_paths(path_filters, limit=paths_limit)
+
+            c2.execute('SELECT path_filter, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+            content = []
+            for path_filter, unit, metric_prefix in c2:
+                paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
+                content.append({
+                    'path_filter': path_filter,
+                    'unit': unit,
+                    'metric_prefix': metric_prefix,
+                    'paths': paths,
+                    'paths_limit_reached': paths_limit_reached,
+                })
             return {
                 'id': chart_id,
                 'name': res[0],
-                'path_filters': path_filters,  # if empty string, return empty list
-                'paths': paths,
-                'paths_limit_reached': paths_limit_reached,
+                'content': content,
             }
 
 

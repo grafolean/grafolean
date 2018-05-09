@@ -70,3 +70,18 @@ def migration_step_2():
         # yes, I know Postgres has arrays - but there is no advantage in using them (instead of comma-separated text) for path_filters, and it makes
         # code more understandable and portable:
         c.execute('CREATE TABLE charts (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, name TEXT NOT NULL, path_filters TEXT);')
+
+def migration_step_3():
+    with db.cursor() as c:
+        # reapply 'on delete cascade' part of last sql sentence if needed:
+        c.execute('ALTER TABLE charts DROP CONSTRAINT charts_dashboard_fkey;')
+        c.execute('ALTER TABLE charts ADD CONSTRAINT charts_dashboard_fkey FOREIGN KEY (dashboard) REFERENCES dashboards(id) ON DELETE CASCADE;')
+        # move path_filters to new table:
+        c.execute('CREATE TABLE charts_content (id SERIAL NOT NULL PRIMARY KEY, chart INTEGER NOT NULL REFERENCES charts(id) ON DELETE CASCADE, path_filter TEXT NOT NULL, unit TEXT, metric_prefix TEXT);')
+        c.execute('SELECT id, path_filters FROM charts;')
+        results = list(c)
+        for chart_id, path_filters in results:
+            pfs = path_filters.split(',')
+            for pf in pfs:
+                c.execute("INSERT INTO charts_content (chart, path_filter) VALUES (%s, %s);", (chart_id, pf,))
+        c.execute('ALTER TABLE charts DROP path_filters;')

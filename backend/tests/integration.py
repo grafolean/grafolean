@@ -4,6 +4,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import json
 import pytest
+from pprint import pprint
 
 from moonthor import app
 
@@ -84,3 +85,87 @@ def test_values_put_get_aggr(app_client):
     #pprint.pprint(actual)
     assert expected == actual
 
+def test_dashboards_charts_post_get(app_client):
+    """
+        Create a dashboard, get a dashboard, create a chart, get a chart. Delete the dashboard, get 404.
+    """
+    DASHBOARD = 'dashboard1'
+    try:
+        CHART = 'chart1'
+        data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
+        app_client.post('/api/dashboards/', data=json.dumps(data), content_type='application/json')
+        r = app_client.get('/api/dashboards/{}'.format(DASHBOARD))
+        expected = {
+            'name': DASHBOARD + ' name',
+            'slug': DASHBOARD,
+            'charts': [],
+        }
+        actual = json.loads(r.data.decode('utf-8'))
+        assert expected == actual
+
+        # create chart:
+        chart_post_data = {
+            'name': CHART + ' name',
+            'content': [
+                {
+                    'path_filter': 'do.not.match.*',
+                    'unit': 'µ',
+                    'metric_prefix': 'm',
+                }
+            ]
+        }
+        r = app_client.post('/api/dashboards/{}/charts/'.format(DASHBOARD), data=json.dumps(chart_post_data), content_type='application/json')
+        chart_id = json.loads(r.data.decode('utf-8'))['id']
+
+        r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
+        actual = json.loads(r.data.decode('utf-8'))
+        chart_post_data['id'] = chart_id
+        chart_post_data['content'][0]['paths'] = []
+        chart_post_data['content'][0]['paths_limit_reached'] = False
+        expected = {
+            'list': [
+                chart_post_data,
+            ]
+        }
+        assert expected == actual
+
+        # update chart:
+        chart_post_data = {
+            'name': CHART + ' name2',
+            'content': [
+                {
+                    'path_filter': 'do.not.match2.*',
+                    'unit': 'µ2',
+                    'metric_prefix': 'm2',
+                }
+            ]
+        }
+        app_client.put('/api/dashboards/{}/charts/{}'.format(DASHBOARD, chart_id), data=json.dumps(chart_post_data), content_type='application/json')
+
+        r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
+        actual = json.loads(r.data.decode('utf-8'))
+        chart_post_data['id'] = chart_id
+        chart_post_data['content'][0]['paths'] = []
+        chart_post_data['content'][0]['paths_limit_reached'] = False
+        expected = {
+            'list': [
+                chart_post_data,
+            ]
+        }
+        assert expected == actual
+        # get a single chart:
+        r = app_client.get('/api/dashboards/{}/charts/{}/'.format(DASHBOARD, chart_id))
+        actual = json.loads(r.data.decode('utf-8'))
+        expected = chart_post_data
+        assert expected == actual
+
+        # delete dashboard:
+        app_client.delete('/api/dashboards/{}'.format(DASHBOARD))
+        r = app_client.get('/api/dashboards/{}'.format(DASHBOARD))
+        assert r.status_code == 404
+
+    except:
+        # if something went wrong, delete dashboard so the next run can succeed:
+        app_client.delete('/api/dashboards/{}'.format(DASHBOARD))
+        r = app_client.get('/api/dashboards/{}'.format(DASHBOARD))
+        raise
