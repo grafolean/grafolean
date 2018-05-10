@@ -294,8 +294,8 @@ class Chart(object):
         content = [
             (
                 PathFilter(x['path_filter']),
-                str(x['unit']),
-                str(x['metric_prefix']),
+                str(x.get('unit', '')),
+                str(x.get('metric_prefix', '')),
             )
             for x in data.get('content', [])
         ]
