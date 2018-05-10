@@ -182,7 +182,11 @@ def dashboard_crud(dashboard_slug):
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
-        return "", 204
+
+        # return "", 204  # https://github.com/flask-restful/flask-restful/issues/736
+        resp = flask.make_response('', 204)
+        resp.headers['Content-Length'] = 0
+        return resp
 
     elif flask.request.method == 'DELETE':
         rowcount = Dashboard.delete(dashboard_slug)
@@ -231,7 +235,12 @@ def chart_crud(dashboard_slug, chart_id):
         rowcount = chart.update()
         if not rowcount:
             return "No such chart", 404
-        return "", 204
+
+        # return "", 204  # https://github.com/flask-restful/flask-restful/issues/736
+        resp = flask.make_response('', 204)
+        resp.headers['Content-Length'] = 0
+        return resp
+
 
     elif flask.request.method == 'DELETE':
         rowcount = Chart.delete(dashboard_slug, chart_id)

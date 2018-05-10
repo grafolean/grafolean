@@ -93,7 +93,9 @@ def test_dashboards_charts_post_get(app_client):
     try:
         CHART = 'chart1'
         data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
-        app_client.post('/api/dashboards/', data=json.dumps(data), content_type='application/json')
+        r = app_client.post('/api/dashboards/', data=json.dumps(data), content_type='application/json')
+        assert r.status_code == 201
+
         r = app_client.get('/api/dashboards/{}'.format(DASHBOARD))
         expected = {
             'name': DASHBOARD + ' name',
@@ -115,6 +117,7 @@ def test_dashboards_charts_post_get(app_client):
             ]
         }
         r = app_client.post('/api/dashboards/{}/charts/'.format(DASHBOARD), data=json.dumps(chart_post_data), content_type='application/json')
+        assert r.status_code == 201
         chart_id = json.loads(r.data.decode('utf-8'))['id']
 
         r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
@@ -127,6 +130,7 @@ def test_dashboards_charts_post_get(app_client):
                 chart_post_data,
             ]
         }
+        assert r.status_code == 200
         assert expected == actual
 
         # update chart:
@@ -136,11 +140,12 @@ def test_dashboards_charts_post_get(app_client):
                 {
                     'path_filter': 'do.not.match2.*',
                     'unit': 'µ2',
-                    'metric_prefix': 'm2',
+                    'metric_prefix': '',
                 }
             ]
         }
-        app_client.put('/api/dashboards/{}/charts/{}'.format(DASHBOARD, chart_id), data=json.dumps(chart_post_data), content_type='application/json')
+        r = app_client.put('/api/dashboards/{}/charts/{}'.format(DASHBOARD, chart_id), data=json.dumps(chart_post_data), content_type='application/json')
+        assert r.status_code == 204
 
         r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
         actual = json.loads(r.data.decode('utf-8'))
@@ -152,11 +157,13 @@ def test_dashboards_charts_post_get(app_client):
                 chart_post_data,
             ]
         }
+        assert r.status_code == 200
         assert expected == actual
         # get a single chart:
         r = app_client.get('/api/dashboards/{}/charts/{}/'.format(DASHBOARD, chart_id))
         actual = json.loads(r.data.decode('utf-8'))
         expected = chart_post_data
+        assert r.status_code == 200
         assert expected == actual
 
         # delete dashboard:
