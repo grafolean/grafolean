@@ -88,8 +88,9 @@ export default class MoonChartWidget extends React.Component {
 
   constructor(props) {
     super(props);
+    this.allPaths = [].concat(...this.props.chartContent.map(c => c.paths));
     this.state = {
-      drawnPaths: [ ...props.paths ],
+      drawnPaths: this.allPaths,
       showChartSettings: false,
     }
   }
@@ -155,7 +156,7 @@ export default class MoonChartWidget extends React.Component {
               {(x, y, scale, zoomInProgress, pointerPosition) => (
                 <div className="repinchy-content">
                   <ChartContainer
-                    paths={this.props.paths}
+                    paths={this.allPaths}
                     drawnPaths={this.state.drawnPaths}
                     width={chartWidth}
                     height={chartHeight}
@@ -176,7 +177,7 @@ export default class MoonChartWidget extends React.Component {
                     }}
                   >
                     <Legend
-                      paths={this.props.paths}
+                      paths={this.allPaths}
                       onDrawnPathsChange={(drawnPaths) => {
                         this.setState({
                           drawnPaths,

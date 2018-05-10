@@ -3,7 +3,7 @@ import Select, { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
 
 import store from '../../store';
-import { submitNewChart } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
 
 import Button from '../Button';
 import Loading from '../Loading';
@@ -112,9 +112,31 @@ export default class ChartForm extends React.Component {
     ev.preventDefault();
   }
 
-  handleSubmit = (event) => {
-    store.dispatch(submitNewChart(this.props.formid, this.props.dashboardSlug, this.state.name, this.state.pathFilters))
-    event.preventDefault();
+
+  handleSubmit = (ev) => {
+    ev.preventDefault();
+
+    const params = {
+      name: this.state.name,
+      content: this.state.series.map(serie => ({
+        path_filter: serie.pathFilter,
+        unit: serie.unit,
+        metric_prefix: serie.metricPrefix,
+      })),
+    }
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId || ''}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: this.props.chartId ? 'PUT' : 'POST',
+        body: JSON.stringify(params),
+      })
+      .then(handleFetchErrors)
+      .then(() => {
+        store.dispatch(onSuccess(this.props.chartId ? 'Chart successfully updated.' : 'New chart successfully created.'));
+      })
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
   }
 
   render() {

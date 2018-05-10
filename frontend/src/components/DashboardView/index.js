@@ -73,7 +73,7 @@ export default class DashboardView extends React.Component {
               chartId={chart.id}
               dashboardSlug={this.props.match.params.slug}
               title={chart.name}
-              paths={chart.paths}
+              chartContent={chart.content}
               refreshParent={() => store.dispatch(fetchDashboardDetails(this.props.match.params.slug))}
             />
           ))}

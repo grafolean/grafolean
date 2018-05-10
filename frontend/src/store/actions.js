@@ -135,33 +135,6 @@ export function onSubmitDeleteDashboardFailure(slug, errMsg) {
   }
 }
 
-export const ON_SUBMIT_NEW_CHART = 'ON_SUBMIT_NEW_CHART'
-export function onSubmitNewChart(formid, dashboardSlug) {
-  return {
-    type: ON_SUBMIT_NEW_CHART,
-    formid,
-    dashboardSlug,
-  }
-}
-
-export const ON_SUBMIT_NEW_CHART_SUCCESS = 'ON_SUBMIT_NEW_CHART_SUCCESS'
-export function onSubmitNewChartSuccess(formid, dashboardSlug) {
-  return {
-    type: ON_SUBMIT_NEW_CHART_SUCCESS,
-    formid,
-    dashboardSlug,
-  }
-}
-
-export const ON_SUBMIT_NEW_CHART_FAILURE = 'ON_SUBMIT_NEW_CHART_FAILURE'
-export function onSubmitNewChartFailure(dashboardSlug, errMsg) {
-  return {
-    type: ON_SUBMIT_NEW_CHART_FAILURE,
-    dashboardSlug,
-    errMsg,
-  }
-}
-
 export const ON_FAILURE = 'ON_FAILURE'
 export function onFailure(msg) {
   return {
@@ -284,24 +257,3 @@ export function submitDeleteDashboard(slug) {
   }
 }
 
-export function submitNewChart(formid, dashboardSlug, name, pathFilters) {
-  return function (dispatch) {
-    dispatch(onSubmitNewChart(formid, dashboardSlug));
-    return fetch(`${ROOT_URL}/dashboards/${dashboardSlug}/charts`, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name,
-        content: pathFilters.filter((pathFilterInfo) => (!!pathFilterInfo.value)).map((pathFilterInfo) => ({'path_filter': pathFilterInfo.value})),
-      }),
-    })
-    .then(handleFetchErrors)
-    .then(
-      response => dispatch(onSubmitNewChartSuccess(dashboardSlug)),
-      errorMsg => dispatch(onSubmitNewChartFailure(dashboardSlug, errorMsg.toString()))
-    )
-  }
-}
