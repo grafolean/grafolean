@@ -6,3 +6,4 @@ WTForms==2.1
 python-slugify==1.2.4
 Flask-Sockets==0.2.1
 jsonschema==2.6.0
+Werkzeug==0.13  # workaround for https://github.com/flask-restful/flask-restful/issues/736
