@@ -197,7 +197,12 @@ export default class MoonChartWidget extends React.Component {
             padding={PADDING}
             onCloseAttempt={this.toggleChartSettings}
           >
-            <ChartForm />
+            <ChartForm
+              dashboardSlug={this.props.dashboardSlug}
+              chartId={this.props.chartId}
+              chartName={this.props.title}
+              chartContent={this.props.chartContent}
+            />
           </WidgetDialog>
 
         </div>

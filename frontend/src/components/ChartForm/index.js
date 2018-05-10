@@ -35,19 +35,22 @@ const KNOWN_UNITS = {
 };
 
 export default class ChartForm extends React.Component {
+  static defaultProps = {
+    dashboardSlug: null,
+    chartId: null,
+    chartName: null,
+    chartContent: [],
+  }
 
   constructor(props) {
     super(props);
     this.state = {
-      name: '',
-      series: [
-        {
-          pathFilter: '',
-          metricPrefix: '',
-          unit: '',
-        },
-      ],
-      pathFiltersNextId: 1,
+      name: this.props.chartName,
+      series: this.props.chartContent.map(c => ({
+        pathFilter: c.path_filter,
+        unit: c.unit,
+        metricPrefix: c.metric_prefix,
+      })),
     };
   }
 
