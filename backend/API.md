@@ -207,6 +207,27 @@ JSON response:
     id: <ChartId>
 }
 
+## Updating
+
+```
+curl \
+    -X PUT \
+    -H 'Content-Type: application/json' \
+    -d '{ \
+        "name": <ChartTitle>, \
+        "content": [ \
+            {
+                path_filter: <PathFilter0>, \
+                unit: <BaseUnit0>, \
+                metric_prefix: <MetricPrefix0> \
+            }, \
+            ...
+        ], \
+    }' \
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts/<ChartId>'
+```
+
+
 ## Reading all charts in dashboard
 
 ```
