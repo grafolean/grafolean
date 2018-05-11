@@ -5,6 +5,7 @@ import 'react-select/dist/react-select.css';
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
 
+import MatchingPaths from './MatchingPaths';
 import Button from '../Button';
 import Loading from '../Loading';
 import './index.css';
@@ -40,7 +41,8 @@ export default class ChartForm extends React.Component {
     chartId: null,
     chartName: null,
     chartContent: [],
-  }
+  };
+  pathInputRefs = [];
 
   constructor(props) {
     super(props);
@@ -50,6 +52,7 @@ export default class ChartForm extends React.Component {
         pathFilter: c.path_filter,
         unit: c.unit,
         metricPrefix: c.metric_prefix,
+        initialMatchingPaths: c.paths,
       })),
     };
   }
@@ -175,7 +178,27 @@ export default class ChartForm extends React.Component {
 
                 <div className="form-item">
                   <label>Path filter:</label>
-                  <input type="text" name={`pf-${serie.id}`} value={serie.pathFilter || ''} onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)} />
+                  <div style={{ display: 'flex', direction: 'row' }}>
+                    <input
+                      type="text"
+                      name={`pf-${serie.id}`}
+                      value={serie.pathFilter}
+                      onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)}
+                      style={{
+                        height: 20,
+                        minWidth: 300,
+                      }}
+                      onFocus={ev => this.setState({ serieIndexWithFocus: serieIndex })}
+                      onBlur={ev => this.setState({ serieIndexWithFocus: null })}
+                      ref={r => (this.pathInputRefs.push({ serieIndex: serieIndex, ref: r }))}
+                    />
+                    <MatchingPaths
+                      onClick={ev => { this.pathInputRefs.find(r => r.serieIndex === serieIndex).ref.focus(); }}
+                      pathFilter={serie.pathFilter}
+                      initialMatchingPaths={serie.initialMatchingPaths}
+                      displayPaths={this.state.serieIndexWithFocus === serieIndex}
+                    />
+                  </div>
                 </div>
 
                 <div className="form-item">
