@@ -36,19 +36,27 @@ const KNOWN_UNITS = {
 };
 
 export default class ChartForm extends React.Component {
+  // We use term "series" for chart content and "serie" as singular here, though the terms are
+  // misleading. "Serie" (as used) is a group of data around a single path filter (path filter +
+  // unit + metric prefix + ...) which determines multiple paths (and thus actually multiple
+  // series). However "content" is too generic term and also lacks a singular form. Looking for
+  // a better term.
+
   static defaultProps = {
     dashboardSlug: null,
     chartId: null,
-    chartName: null,
-    chartContent: [],
+    initialFormData: {
+      name: null,
+      content: [],
+    },
   };
   pathInputRefs = [];
 
   constructor(props) {
     super(props);
     this.state = {
-      name: this.props.chartName,
-      series: this.props.chartContent.map(c => ({
+      name: this.props.initialFormData.name,
+      series: this.props.initialFormData.content.map(c => ({
         pathFilter: c.path_filter,
         unit: c.unit,
         metricPrefix: c.metric_prefix,

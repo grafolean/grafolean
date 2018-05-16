@@ -200,8 +200,10 @@ export default class MoonChartWidget extends React.Component {
             <ChartForm
               dashboardSlug={this.props.dashboardSlug}
               chartId={this.props.chartId}
-              chartName={this.props.title}
-              chartContent={this.props.chartContent}
+              initialFormData={{
+                name: this.props.title,
+                content: this.props.chartContent,
+              }}
             />
           </WidgetDialog>
 
