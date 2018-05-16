@@ -46,7 +46,7 @@ export default class ChartForm extends React.Component {
     dashboardSlug: null,
     chartId: null,
     initialFormData: {
-      name: null,
+      name: '',
       content: [],
     },
   };
@@ -120,7 +120,12 @@ export default class ChartForm extends React.Component {
     this.setState(prevState => ({
       series: [
         ...prevState.series,
-        {},
+        {
+          pathFilter: '',
+          unit: '',
+          metricPrefix: '',
+          initialMatchingPaths: [],
+        },
       ],
     }));
     ev.preventDefault();
@@ -189,7 +194,7 @@ export default class ChartForm extends React.Component {
                   <div style={{ display: 'flex', direction: 'row' }}>
                     <input
                       type="text"
-                      name={`pf-${serie.id}`}
+                      name={`pf-${serieIndex}`}
                       value={serie.pathFilter}
                       onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)}
                       style={{
