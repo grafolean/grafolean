@@ -50,7 +50,6 @@ export default class ChartForm extends React.Component {
       content: [],
     },
   };
-  pathInputRefs = [];
 
   constructor(props) {
     super(props);
@@ -58,6 +57,7 @@ export default class ChartForm extends React.Component {
       name: this.props.initialFormData.name,
       series: this.props.initialFormData.content.map(c => ({
         pathFilter: c.path_filter,
+        pathRenamer: c.renaming,
         unit: c.unit,
         metricPrefix: c.metric_prefix,
         initialMatchingPaths: c.paths,
@@ -110,6 +110,26 @@ export default class ChartForm extends React.Component {
     });
   }
 
+  setPathRenamer = (serieIndex, newValue) => {
+    this.setState((prevState) => {
+      let newSeries = [ ...prevState.series ];
+      newSeries[serieIndex].pathRenamer = newValue;
+      return {
+        series: newSeries,
+      };
+    });
+  }
+
+  setSerieValue  = (serieIndex, key, newValue) => {
+    this.setState((prevState) => {
+      let newSeries = [ ...prevState.series ];
+      newSeries[serieIndex][key] = newValue;
+      return {
+        series: newSeries,
+      };
+    });
+  }
+
   metricPrefixOptionRenderer = (pOption, unit) => (
     <span>
       {pOption.prefix}{unit} [{pOption.name} - 10<sup>{pOption.power}</sup> {unit}]
@@ -139,6 +159,7 @@ export default class ChartForm extends React.Component {
       name: this.state.name,
       content: this.state.series.map(serie => ({
         path_filter: serie.pathFilter,
+        renaming: serie.pathRenamer,
         unit: serie.unit,
         metric_prefix: serie.metricPrefix,
       })),
@@ -185,31 +206,53 @@ export default class ChartForm extends React.Component {
             <input type="text" name="name" value={this.state.name} onChange={this.handleNameChange} />
           </div>
           <div>
+
             <label>Series:</label>
             {this.state.series.map((serie, serieIndex) =>
               <div className="serie" key={serieIndex}>
 
                 <div className="form-item">
-                  <label>Path filter:</label>
-                  <div style={{ display: 'flex', direction: 'row' }}>
-                    <input
-                      type="text"
-                      name={`pf-${serieIndex}`}
-                      value={serie.pathFilter}
-                      onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)}
+                  <div style={{ display: 'flex', flexDirection: 'row' }}>
+
+                    <div
                       style={{
-                        height: 20,
-                        minWidth: 300,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        marginRight: 10,
                       }}
-                      onFocus={ev => this.setState({ serieIndexWithFocus: serieIndex })}
-                      onBlur={ev => this.setState({ serieIndexWithFocus: null })}
-                      ref={r => (this.pathInputRefs.push({ serieIndex: serieIndex, ref: r }))}
-                    />
+                    >
+                      <label>Path filter:</label>
+                      <input
+                        type="text"
+                        name={`pf-${serieIndex}`}
+                        value={serie.pathFilter}
+                        onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)}
+                        style={{
+                          height: 20,
+                          minWidth: 300,
+                        }}
+                        onFocus={ev => this.setState({ displayMatchingPathsForSerieIndex: serieIndex })}
+                        onBlur={ev => this.setState({ displayMatchingPathsForSerieIndex: null })}
+                      />
+                      <label>Path renamer:</label>
+                      <input
+                        type="text"
+                        name={`pr-${serieIndex}`}
+                        value={serie.pathRenamer}
+                        onChange={(ev) => this.setSerieValue(serieIndex, 'pathRenamer', ev.target.value)}
+                        style={{
+                          height: 20,
+                          minWidth: 300,
+                        }}
+                        onFocus={ev => this.setState({ displayMatchingPathsForSerieIndex: serieIndex })}
+                        onBlur={ev => this.setState({ displayMatchingPathsForSerieIndex: null })}
+                      />
+                    </div>
+
                     <MatchingPaths
-                      onClick={ev => { this.pathInputRefs.find(r => r.serieIndex === serieIndex).ref.focus(); }}
                       pathFilter={serie.pathFilter}
                       initialMatchingPaths={serie.initialMatchingPaths}
-                      displayPaths={this.state.serieIndexWithFocus === serieIndex}
+                      displayPaths={this.state.displayMatchingPathsForSerieIndex === serieIndex}
                     />
                   </div>
                 </div>
