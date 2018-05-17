@@ -85,3 +85,7 @@ def migration_step_3():
             for pf in pfs:
                 c.execute("INSERT INTO charts_content (chart, path_filter) VALUES (%s, %s);", (chart_id, pf,))
         c.execute('ALTER TABLE charts DROP path_filters;')
+
+def migration_step_4():
+    with db.cursor() as c:
+        c.execute("ALTER TABLE charts_content ADD COLUMN renaming TEXT NOT NULL default '';")

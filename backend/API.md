@@ -218,6 +218,7 @@ curl \
         "content": [ \
             {
                 path_filter: <PathFilter0>, \
+                renaming: <Renaming0>, \
                 unit: <BaseUnit0>, \
                 metric_prefix: <MetricPrefix0> \
             }, \

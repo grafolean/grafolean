@@ -294,6 +294,7 @@ class Chart(object):
         content = [
             (
                 PathFilter(x['path_filter']),
+                str(x.get('renaming', '')),
                 str(x.get('unit', '')),
                 str(x.get('metric_prefix', '')),
             )
@@ -324,8 +325,8 @@ class Chart(object):
         with db.cursor() as c:
             c.execute("INSERT INTO charts (dashboard, name) VALUES (%s, %s) RETURNING id;", (self.dashboard_id, self.name,))
             chart_id = c.fetchone()[0]
-            for pf, unit, metric_prefix in self.content:
-                c.execute("INSERT INTO charts_content (chart, path_filter, unit, metric_prefix) VALUES (%s, %s, %s, %s);", (chart_id, str(pf), unit, metric_prefix,))
+            for pf, renaming, unit, metric_prefix in self.content:
+                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (chart_id, str(pf), renaming, unit, metric_prefix,))
             return chart_id
 
     def update(self):
@@ -336,8 +337,8 @@ class Chart(object):
                 return 0
             # update the chart content too:
             c.execute("DELETE FROM charts_content WHERE chart = %s;", (self.chart_id,))
-            for pf, unit, metric_prefix in self.content:
-                c.execute("INSERT INTO charts_content (chart, path_filter, unit, metric_prefix) VALUES (%s, %s, %s, %s);", (self.chart_id, str(pf), unit, metric_prefix,))
+            for pf, renaming, unit, metric_prefix in self.content:
+                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (self.chart_id, str(pf), renaming, unit, metric_prefix,))
             return rowcount
 
     @staticmethod
@@ -357,12 +358,13 @@ class Chart(object):
             c.execute('SELECT id, name FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
             for chart_id, name in c:
-                c2.execute('SELECT path_filter, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+                c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
                 content = []
-                for path_filter, unit, metric_prefix in c2:
+                for path_filter, renaming, unit, metric_prefix in c2:
                     paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
                     content.append({
                         'path_filter': path_filter,
+                        'renaming': renaming,
                         'unit': unit,
                         'metric_prefix': metric_prefix,
                         'paths': paths,
@@ -387,12 +389,13 @@ class Chart(object):
             if not res:
                 return None
 
-            c2.execute('SELECT path_filter, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+            c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
             content = []
-            for path_filter, unit, metric_prefix in c2:
+            for path_filter, renaming, unit, metric_prefix in c2:
                 paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
                 content.append({
                     'path_filter': path_filter,
+                    'renaming': renaming,
                     'unit': unit,
                     'metric_prefix': metric_prefix,
                     'paths': paths,

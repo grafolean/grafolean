@@ -111,6 +111,7 @@ def test_dashboards_charts_post_get(app_client):
             'content': [
                 {
                     'path_filter': 'do.not.match.*',
+                    'renaming': 'to.rename',
                     'unit': 'µ',
                     'metric_prefix': 'm',
                 }
@@ -139,6 +140,7 @@ def test_dashboards_charts_post_get(app_client):
             'content': [
                 {
                     'path_filter': 'do.not.match2.*',
+                    'renaming': 'to.rename2',
                     'unit': 'µ2',
                     'metric_prefix': '',
                 }

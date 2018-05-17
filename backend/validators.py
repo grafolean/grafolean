@@ -40,6 +40,7 @@ class ChartSchemaInputs(Inputs):
                     'additionalProperties': False,
                     'properties': {
                         'path_filter': {'type': 'string'},
+                        'renaming': {'type': 'string'},
                         'unit': {'type': 'string'},
                         'metric_prefix': {'type': 'string'},
                     },
