@@ -5,12 +5,18 @@ import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 export default class MatchingPaths extends React.Component {
+
+  static MATCH_EXACT = 0;
+  static MATCH_WILDCARD = 1;
+  static MATCH_RESIDUAL = 2;
+
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When
     props.pathFilter changes, new fetch request is issued (after some small timeout).
   */
   static defaultProps = {
     pathFilter: '',
+    pathRenamer: '',
     displayPaths: false,
     initialMatchingPaths: [],  // to save on a request and to display data directly, we get the initial set of matchingPaths (from dashboard)
   };
@@ -64,6 +70,29 @@ export default class MatchingPaths extends React.Component {
     }, this.FETCH_DELAY_MS);
   }
 
+  static breakMatchingPath(path, partialPathFilter) {
+    const regex = `^(${partialPathFilter.replace(/[*]/g, ')(.+)(').replace(/[?]/g, ')([^.]+)(')})(.*)$`.replace(/[(][)]/g, '');
+    const regexGroupPatterns = regex.substr(2, regex.length - 4).split(")("); // remove leading and trailing 2 chars and split by parenthesis
+    const matches = path.match(new RegExp(regex)).slice(1)
+    return matches.map((m, i) => ({
+      part: m,
+      match: regexGroupPatterns[i].endsWith('+') ? this.MATCH_WILDCARD : (
+          regexGroupPatterns[i] === '.*' ? this.MATCH_RESIDUAL : this.MATCH_EXACT
+        ),
+    }));
+  }
+
+  // given a path, path filter and path renamer, construct a name:
+  static constructPathName(path, partialPathFilter, pathRenamer) {
+    const parts = this.breakMatchingPath(path, partialPathFilter);
+    const wildcardParts = parts.filter(p => p.match === this.MATCH_WILDCARD);
+    let ret = pathRenamer;
+    for (let i=0; i<wildcardParts.length; i++) {
+      ret = ret.replace(new RegExp(`[$]${i+1}`, 'g'), wildcardParts[i].part);
+    }
+    return ret;
+  }
+
   render() {
     return (
       <div
@@ -83,9 +112,18 @@ export default class MatchingPaths extends React.Component {
           Matching paths: {this.state.matchingPaths.length}
         </div>
         {this.props.displayPaths && (
-          this.state.matchingPaths.map(mp => (
-            <div key={mp}>
-              {mp}
+          this.state.matchingPaths.map(path => (
+            <div key={path}>
+              {path}<br />
+              {this.props.pathRenamer && (
+                <div
+                  style={{
+                    marginLeft: 20,
+                  }}
+                >
+                  ⤷ {MatchingPaths.constructPathName(path, this.props.pathFilter, this.props.pathRenamer)}
+                </div>
+              )}
             </div>
           ))
         )}

@@ -251,6 +251,7 @@ export default class ChartForm extends React.Component {
 
                     <MatchingPaths
                       pathFilter={serie.pathFilter}
+                      pathRenamer={serie.pathRenamer}
                       initialMatchingPaths={serie.initialMatchingPaths}
                       displayPaths={this.state.displayMatchingPathsForSerieIndex === serieIndex}
                     />
