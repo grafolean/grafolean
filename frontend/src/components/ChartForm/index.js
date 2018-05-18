@@ -231,8 +231,6 @@ export default class ChartForm extends React.Component {
                           height: 20,
                           minWidth: 300,
                         }}
-                        onFocus={ev => this.setState({ displayMatchingPathsForSerieIndex: serieIndex })}
-                        onBlur={ev => this.setState({ displayMatchingPathsForSerieIndex: null })}
                       />
                       <label>Path renamer:</label>
                       <input
@@ -244,8 +242,6 @@ export default class ChartForm extends React.Component {
                           height: 20,
                           minWidth: 300,
                         }}
-                        onFocus={ev => this.setState({ displayMatchingPathsForSerieIndex: serieIndex })}
-                        onBlur={ev => this.setState({ displayMatchingPathsForSerieIndex: null })}
                       />
                     </div>
 
@@ -253,7 +249,7 @@ export default class ChartForm extends React.Component {
                       pathFilter={serie.pathFilter}
                       pathRenamer={serie.pathRenamer}
                       initialMatchingPaths={serie.initialMatchingPaths}
-                      displayPaths={this.state.displayMatchingPathsForSerieIndex === serieIndex}
+                      displayPaths={true}
                     />
                   </div>
                 </div>
