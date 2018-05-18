@@ -74,7 +74,7 @@ class WidgetDialog extends React.Component {
           style={{
             width: this.props.width - 2*this.props.padding,
             opacity: this.props.opened ? 1 : 0,
-            zIndex: this.props.opened ? 'auto' : -1,  // you need to send it to back, otherwise it floats before our chart
+            zIndex: this.props.opened ? 9999 : -1,  // you need to send it to back, otherwise it floats before our chart
           }}
         >
           {this.props.children}
