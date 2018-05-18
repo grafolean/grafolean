@@ -71,7 +71,11 @@ export default class MatchingPaths extends React.Component {
   }
 
   static breakMatchingPath(path, partialPathFilter) {
-    const regex = `^(${partialPathFilter.replace(/[*]/g, ')(.+)(').replace(/[?]/g, ')([^.]+)(')})(.*)$`.replace(/[(][)]/g, '');
+    const regex = `^(${partialPathFilter
+      .replace(/[.]/g, '[.]')     // escape '.'
+      .replace(/[*]/g, ')(.+)(')  // escape '*'
+      .replace(/[?]/g, ')([^.]+)(')})(.*)$`    // escape '?'
+      .replace(/[(][)]/g, '');    // get rid of empty parenthesis, if any
     const regexGroupPatterns = regex.substr(2, regex.length - 4).split(")("); // remove leading and trailing 2 chars and split by parenthesis
     const matches = path.match(new RegExp(regex)).slice(1)
     return matches.map((m, i) => ({

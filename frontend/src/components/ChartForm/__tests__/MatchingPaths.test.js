@@ -72,6 +72,18 @@ test('MatchingPaths constructPathName', () => {
       pathRenamer: "Test $1 $2 $1",
       expectedResult: "Test qwer aaaa qwer",
     },
+    {
+      path: "asdf.1234.qwer.aaaa.zxcv",
+      partialPathFilter: "asdf.?.?.*.?",
+      pathRenamer: "Test $1 $2 $3 $4",
+      expectedResult: "Test 1234 qwer aaaa zxcv",
+    },
+    {
+      path: "asdf.1234.qwer.aaaa.zxcv",
+      partialPathFilter: "asdf.?.*.?",
+      pathRenamer: "Test $1 $2 $3",
+      expectedResult: "Test 1234 qwer.aaaa zxcv",
+    },
   ];
 
   for (let param of params) {
