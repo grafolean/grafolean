@@ -16,8 +16,6 @@ export default class MatchingPaths extends React.Component {
   static defaultProps = {
     pathFilter: '',
     pathRenamer: '',
-    displayPaths: false,
-    initialMatchingPaths: [],  // to save on a request and to display data directly, we get the initial set of matchingPaths (from dashboard)
   };
   static FETCH_DELAY_MS = 100;
 
@@ -25,10 +23,12 @@ export default class MatchingPaths extends React.Component {
     super(props);
     this.state = {
       fetched: {
-        matchingPaths: this.props.initialMatchingPaths,
+        paths: [],
+        pathsWithTrailing: [],
         pathFilter: this.props.pathFilter,
       }
     };
+    this.onPathFilterChange(this.props.pathFilter);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -54,6 +54,7 @@ export default class MatchingPaths extends React.Component {
       const query_params = {
         filter: newPathFilter,
         limit: 101,
+        failover_trailing: 'true',
       }
       fetch(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
         .then(handleFetchErrors)
@@ -61,7 +62,8 @@ export default class MatchingPaths extends React.Component {
         .then(json => {
           this.setState({
             fetched: {
-              matchingPaths: json.paths,
+              paths: json.paths,
+              pathsWithTrailing: json.paths_with_trailing || [],
               pathFilter: newPathFilter,
             }
           })
@@ -108,6 +110,7 @@ export default class MatchingPaths extends React.Component {
   }
 
   render() {
+    const pathsToDisplay = this.state.fetched.paths.length > 0 ? this.state.fetched.paths : this.state.fetched.pathsWithTrailing;
     return (
       <div
         style={{
@@ -129,24 +132,22 @@ export default class MatchingPaths extends React.Component {
             <div style={{
               fontStyle: 'italic',
             }}>
-              Matching paths: {this.state.fetched.matchingPaths.length}
+              Matching paths: {this.state.fetched.paths.length}, partial match: {this.state.fetched.pathsWithTrailing.length}
             </div>
-            {this.props.displayPaths && (
-              this.state.fetched.matchingPaths.map(path => (
-                <div key={path}>
-                  {path}<br />
-                  {this.props.pathRenamer && (
-                    <div
-                      style={{
-                        marginLeft: 20,
-                      }}
-                    >
-                      ⤷ {MatchingPaths.constructPathName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
+            {pathsToDisplay.map(path => (
+              <div key={path}>
+                {path}<br />
+                {this.props.pathRenamer && (
+                  <div
+                    style={{
+                      marginLeft: 20,
+                    }}
+                  >
+                    ⤷ {MatchingPaths.constructPathName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -60,7 +60,6 @@ export default class ChartForm extends React.Component {
         pathRenamer: c.renaming,
         unit: c.unit,
         metricPrefix: c.metric_prefix,
-        initialMatchingPaths: c.paths,
       })),
     };
   }
@@ -144,7 +143,6 @@ export default class ChartForm extends React.Component {
           pathFilter: '',
           unit: '',
           metricPrefix: '',
-          initialMatchingPaths: [],
         },
       ],
     }));
@@ -248,7 +246,6 @@ export default class ChartForm extends React.Component {
                     <MatchingPaths
                       pathFilter={serie.pathFilter}
                       pathRenamer={serie.pathRenamer}
-                      initialMatchingPaths={serie.initialMatchingPaths}
                       displayPaths={true}
                     />
                   </div>
