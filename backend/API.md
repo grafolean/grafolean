@@ -115,14 +115,17 @@ JSON response:
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/paths/?filter=<PartialFilter>&limit=<MaxResults>'
+    'https://moonthor.com/api/paths/?filter=<PathFilter>&limit=<MaxResults>&trailing=<AllowTrailingChars>'
 ```
 
 Parameters:
 
-    PartialFilter: either explicit path or a filter (or start of them) which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
-        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Optional.
+    PathFilter: either explicit path or a filter (or start of them) which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
+        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Mandatory, should not be empty.
     MaxResults: maximum number of paths returned for each chart (optional; 10 by default).
+    AllowTrailingChars: "true" or "false" (default). Changes the way PathFilter is used. If true, system will treat PathFilter as partial input (not finished yet) and
+        will find the paths that this filter could possibly catch. If false, PathFilter is treated as complete filter and must be valid (not end in '.' for instance), while
+        the paths returned must be matched completely (no trailing chars are allowed).
 
 JSON response:
 

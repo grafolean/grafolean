@@ -7,7 +7,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Dashboard, Chart, Path, UnfinishedPathFilter, Timestamp, ValidationError
+from datatypes import Measurement, Dashboard, Chart, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
 import utils
 
 
@@ -148,9 +148,10 @@ def paths_get():
         max_results = 10
     else:
         max_results = max(0, int(max_results_input))
-    partial_filter_input = flask.request.args.get('filter')
-    pf = UnfinishedPathFilter(partial_filter_input)
-    matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=True)
+    path_filter_input = flask.request.args.get('filter')
+    allow_trailing = flask.request.args.get('trailing', 'false').lower() == 'true'
+    pf = UnfinishedPathFilter(path_filter_input) if allow_trailing else PathFilter(path_filter_input)
+    matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=allow_trailing)
     return json.dumps({'paths': list(matching_paths), 'limit_reached': limit_reached}), 200
 
 

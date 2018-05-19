@@ -178,3 +178,36 @@ def test_dashboards_charts_post_get(app_client):
         app_client.delete('/api/dashboards/{}'.format(DASHBOARD))
         r = app_client.get('/api/dashboards/{}'.format(DASHBOARD))
         raise
+
+def test_values_put_paths_get(app_client):
+    """
+        Put values, get paths.
+    """
+    PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
+    data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
+    app_client.put('/api/values/', data=json.dumps(data), content_type='application/json')
+
+    r = app_client.get('/api/paths/?filter=test.values.put.paths.get.*')
+    expected = {
+        'paths': [
+            PATH,
+        ],
+        'limit_reached': False,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    r = app_client.get('/api/paths/?filter=test.*&trailing=false')
+    actual = json.loads(r.data.decode('utf-8'))
+    assert PATH in actual['paths']
+
+    r = app_client.get('/api/paths/?filter=test.&trailing=false')
+    assert r.status_code == 400
+    r = app_client.get('/api/paths/?filter=test.')  # same - trailing=false is default option
+    assert r.status_code == 400
+
+    r = app_client.get('/api/paths/?filter=test.&trailing=true')
+    actual = json.loads(r.data.decode('utf-8'))
+    assert PATH in actual['paths']
+    for path in actual['paths']:
+        assert path[:5] == 'test.'
