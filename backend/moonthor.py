@@ -149,10 +149,29 @@ def paths_get():
     else:
         max_results = max(0, int(max_results_input))
     path_filter_input = flask.request.args.get('filter')
-    allow_trailing = flask.request.args.get('trailing', 'false').lower() == 'true'
-    pf = UnfinishedPathFilter(path_filter_input) if allow_trailing else PathFilter(path_filter_input)
-    matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(pf)], limit=max_results, allow_trailing_chars=allow_trailing)
-    return json.dumps({'paths': list(matching_paths), 'limit_reached': limit_reached}), 200
+    failover_trailing = flask.request.args.get('failover_trailing', 'false').lower() == 'true'
+
+    try:
+        pf = PathFilter(path_filter_input)
+        matching_paths, limit_reached = PathFilter.find_matching_paths([str(pf)], limit=max_results)
+    except ValidationError:
+        if not failover_trailing:
+            raise
+        # looks like we don't have a valid filter, but that's ok - we allow trailing chars so it might fare better there
+        matching_paths, limit_reached = [], False
+
+    ret = {
+        'paths': list(matching_paths),
+        'limit_reached': limit_reached,
+    }
+
+    if not matching_paths and failover_trailing:
+        upf = UnfinishedPathFilter(path_filter_input)
+        trailing_matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(upf)], limit=max_results, allow_trailing_chars=True)
+        ret['paths_with_trailing'] = list(trailing_matching_paths)
+        ret['limit_reached'] = limit_reached
+
+    return json.dumps(ret), 200
 
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])

@@ -115,7 +115,7 @@ JSON response:
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/paths/?filter=<PathFilter>&limit=<MaxResults>&trailing=<AllowTrailingChars>'
+    'https://moonthor.com/api/paths/?filter=<PathFilter>&limit=<MaxResults>&failover_trailing=<FailoverTrailing>'
 ```
 
 Parameters:
@@ -123,18 +123,21 @@ Parameters:
     PathFilter: either explicit path or a filter (or start of them) which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
         string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Mandatory, should not be empty.
     MaxResults: maximum number of paths returned for each chart (optional; 10 by default).
-    AllowTrailingChars: "true" or "false" (default). Changes the way PathFilter is used. If true, system will treat PathFilter as partial input (not finished yet) and
-        will find the paths that this filter could possibly catch. If false, PathFilter is treated as complete filter and must be valid (not end in '.' for instance), while
-        the paths returned must be matched completely (no trailing chars are allowed).
+    FailoverTrailing: "true" or "false" (default). System will first attempt to determine matching paths as if the filter is complete. If no paths are found and
+        this parameter is set to "true", system will repeat matching process as if the PathFilter is only partially entered and will try to match paths with possible
+        trailing chars. These paths will then be returned in "paths_with_trailing" list. This is useful for auto-complete when user is entering a path filter in a form.
 
 JSON response:
 
 {
     paths: [
-      <Path0>,
-      ...
+        <Path0>,
+        ...
     ],
-    limit_reached: false
+    limit_reached: false,
+    paths_with_trailing: [
+        // only available if 'paths' is empty and parameter "failover_trailing" is set to "true"
+    ]
 ]
 
 # Dashboards

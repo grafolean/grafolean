@@ -197,17 +197,18 @@ def test_values_put_paths_get(app_client):
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    r = app_client.get('/api/paths/?filter=test.*&trailing=false')
+    r = app_client.get('/api/paths/?filter=test.*&failover_trailing=false')
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']
 
-    r = app_client.get('/api/paths/?filter=test.&trailing=false')
+    r = app_client.get('/api/paths/?filter=test.&failover_trailing=false')
     assert r.status_code == 400
-    r = app_client.get('/api/paths/?filter=test.')  # same - trailing=false is default option
+    r = app_client.get('/api/paths/?filter=test.')  # same - failover_trailing=false is default option
     assert r.status_code == 400
 
-    r = app_client.get('/api/paths/?filter=test.&trailing=true')
+    r = app_client.get('/api/paths/?filter=test.&failover_trailing=true')
     actual = json.loads(r.data.decode('utf-8'))
-    assert PATH in actual['paths']
-    for path in actual['paths']:
+    assert actual['paths'] == []
+    assert PATH in actual['paths_with_trailing']
+    for path in actual['paths_with_trailing']:
         assert path[:5] == 'test.'
