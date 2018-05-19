@@ -1,8 +1,7 @@
 import React from 'react';
 import { stringify } from 'qs';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
 export default class MatchingPaths extends React.Component {
 
@@ -25,8 +24,10 @@ export default class MatchingPaths extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      loading: true,
-      matchingPaths: this.props.initialMatchingPaths,
+      fetched: {
+        matchingPaths: this.props.initialMatchingPaths,
+        pathFilter: this.props.pathFilter,
+      }
     };
   }
 
@@ -59,10 +60,19 @@ export default class MatchingPaths extends React.Component {
         .then(response => response.json())
         .then(json => {
           this.setState({
-            matchingPaths: json.paths,
+            fetched: {
+              matchingPaths: json.paths,
+              pathFilter: newPathFilter,
+            }
           })
         })
-        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
+        .catch(errorMsg => {
+          this.setState({
+            fetched: {
+              error: true,
+            },
+          });
+        })
         .then(() => {
           this.fetchInProgressAbortController = undefined;
         });
@@ -110,26 +120,34 @@ export default class MatchingPaths extends React.Component {
         }}
         onClick={this.props.onClick}
       >
-        <div style={{
-          fontStyle: 'italic',
-        }}>
-          Matching paths: {this.state.matchingPaths.length}
-        </div>
-        {this.props.displayPaths && (
-          this.state.matchingPaths.map(path => (
-            <div key={path}>
-              {path}<br />
-              {this.props.pathRenamer && (
-                <div
-                  style={{
-                    marginLeft: 20,
-                  }}
-                >
-                  ⤷ {MatchingPaths.constructPathName(path, this.props.pathFilter, this.props.pathRenamer)}
-                </div>
-              )}
+        {this.state.fetched.error ? (
+          <div>
+            Invalid path filter
+          </div>
+        ) : (
+          <div>
+            <div style={{
+              fontStyle: 'italic',
+            }}>
+              Matching paths: {this.state.fetched.matchingPaths.length}
             </div>
-          ))
+            {this.props.displayPaths && (
+              this.state.fetched.matchingPaths.map(path => (
+                <div key={path}>
+                  {path}<br />
+                  {this.props.pathRenamer && (
+                    <div
+                      style={{
+                        marginLeft: 20,
+                      }}
+                    >
+                      ⤷ {MatchingPaths.constructPathName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         )}
       </div>
     )
