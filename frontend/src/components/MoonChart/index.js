@@ -170,8 +170,8 @@ export default class MoonChartWidget extends React.Component {
               {(x, y, scale, zoomInProgress, pointerPosition) => (
                 <div className="repinchy-content">
                   <ChartContainer
-                    paths={this.allPaths}
-                    drawnPaths={this.state.drawnChartSeries.map(cs => cs.path)}
+                    chartSeries={this.state.allChartSeries}
+                    drawnChartSeries={this.state.drawnChartSeries}
                     width={chartWidth}
                     height={chartHeight}
                     fromTs={Math.round(-x/scale)}
@@ -264,7 +264,7 @@ class ChartContainer extends React.Component {
     }
     // make sure paths never change - if they do, there should be no effect:
     // (because data fetching logic can't deal with changing paths)
-    this.paths = props.paths;
+    this.paths = props.chartSeries.map(cs => cs.path);
   }
 
   componentDidMount() {
@@ -410,10 +410,13 @@ class IntervalLineChart extends React.PureComponent {
     return (
       <g>
         {/* draw every path: */}
-        {Object.keys(this.props.interval.pathsData)
-          .filter(path => this.props.drawnPaths.includes(path))
-          .map((path, pathIndex) => {
-            const pathPoints = this.props.interval.pathsData[path].map((p) => ({
+        {this.props.drawnChartSeries
+          .map((cs) => {
+            if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
+              return null;
+            };
+            const path = cs.path;
+            const pathPoints = this.props.interval.pathsData[cs.path].map(p => ({
               x: ts2x(p.t),
               y: v2y(p.v),
               minY: v2y(p.minv),
@@ -423,9 +426,9 @@ class IntervalLineChart extends React.PureComponent {
             const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
             const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
             const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
-            const serieColor = generateSerieColor(path);
+            const serieColor = generateSerieColor(cs.path, cs.index);
             return (
-              <g key={`g-${pathIndex}`}>
+              <g key={`g-${cs.index}`}>
                 <path
                   d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
                   style={{
@@ -444,15 +447,15 @@ class IntervalLineChart extends React.PureComponent {
                 {(!this.props.isAggr) ? (
                   pathPoints.map((p, pi) => (
                     // points:
-                    <circle key={`p-${pathIndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
+                    <circle key={`p-${cs.ndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
                       fill: serieColor,
                     }} />
                   ))
                 ) : (null)}
               </g>
             );
-          })
-        }
+          })}
+
       </g>
     );
   }
@@ -478,7 +481,7 @@ class TooltipIndicator extends React.Component {
   render() {
     const x = Math.round(this.props.x);
     const y = Math.round(this.props.y);
-    const serieColor = generateSerieColor(this.props.path);
+    const serieColor = generateSerieColor(this.props.cs.path, this.props.cs.index);
     return (
       <g>
         <line x1={x} y1={0} x2={x} y2={this.props.yAxisHeight} shapeRendering="crispEdges" stroke="#e3e3e3" strokeWidth="1"/>
@@ -529,29 +532,29 @@ export class ChartView extends React.Component {
 
     let closest = null;
     for (let interval of applicableIntervals) {
-        for (let path in interval.pathsData) {
-          if (!this.props.drawnPaths.includes(path)) {  // make sure the path is visible on chart
+      for (let cs of this.props.drawnChartSeries) {
+        if (!interval.pathsData.hasOwnProperty(cs.path)) {  // do we have fetched data for this cs?
+          continue;
+        };
+        for (let point of interval.pathsData[cs.path]) {
+          const distV = Math.abs(point.v - v);
+          const distTs = Math.abs(point.t - ts);
+          if ((distTs > maxDistTs) || (distV > maxDistV))
             continue;
-          };
-          for (let point of interval.pathsData[path]) {
-            const distV = Math.abs(point.v - v);
-            const distTs = Math.abs(point.t - ts);
-            if ((distTs > maxDistTs) || (distV > maxDistV))
-              continue;
-              // when we are searching for closest match, we want it to be in x/y space, not ts/v:
-            const distX = this.dt2dx(distTs);
-            const distY = this.dv2dy(distV);
-            const dist = Math.sqrt(distX * distX + distY * distY);
+            // when we are searching for closest match, we want it to be in x/y space, not ts/v:
+          const distX = this.dt2dx(distTs);
+          const distY = this.dv2dy(distV);
+          const dist = Math.sqrt(distX * distX + distY * distY);
 
-            if (closest === null || dist < closest.dist) {
-              closest = {
-                path,
-                point,
-                dist,
-              }
+          if (closest === null || dist < closest.dist) {
+            closest = {
+              cs,
+              point,
+              dist,
             }
           }
         }
+      }
     }
     return closest;
   }
@@ -664,7 +667,7 @@ export class ChartView extends React.Component {
                     maxYValue={this.props.maxYValue}
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
-                    drawnPaths={this.props.drawnPaths}
+                    drawnChartSeries={this.props.drawnChartSeries}
                   />
                 ))
               }
@@ -717,13 +720,15 @@ export class ChartView extends React.Component {
               <TooltipPopup>
                 {(closest.point.minv) ? (
                   <div>
-                    <p>{closest.path}</p>
+                    <p>{closest.cs.serieName}</p>
+                    <p>{closest.cs.path}</p>
                     <p>{closest.point.minv.toFixed(this.props.nDecimals)} - {closest.point.maxv.toFixed(this.props.nDecimals)} (Ø {closest.point.v.toFixed(this.props.nDecimals)})</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
                   </div>
                 ) : (
                   <div>
-                    <p>{closest.path}</p>
+                    <p>{closest.cs.serieName}</p>
+                    <p>{closest.cs.path}</p>
                     <p>Value: {closest.point.v.toFixed(this.props.nDecimals)}</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
                   </div>
