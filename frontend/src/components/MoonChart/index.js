@@ -681,7 +681,7 @@ export class ChartView extends React.Component {
               )}
             </g>
 
-            <rect x={0} y={xAxisTop} width={this.props.yAxisWidth} height={this.props.xAxisHeight} fill="white" stroke="none" />
+            <rect x={0} y={xAxisTop} width={this.props.yAxisWidth} height={this.props.xAxisHeight} fill="white" stroke="white" />
             <g transform={`translate(0 0)`}>
               <YAxis
                 width={this.props.yAxisWidth}
