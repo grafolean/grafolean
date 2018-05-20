@@ -52,7 +52,7 @@ test('MatchingPaths breakMatchingPath', () => {
   };
 });
 
-test('MatchingPaths constructPathName', () => {
+test('MatchingPaths constructChartSerieName', () => {
   const params = [
     {
       path: "asdf.1234.qwer.aaaa",
@@ -88,7 +88,7 @@ test('MatchingPaths constructPathName', () => {
 
   for (let param of params) {
     const { path, partialPathFilter, pathRenamer, expectedResult } = param;
-    expect(MatchingPaths.constructPathName(path, partialPathFilter, pathRenamer)).toEqual(expectedResult);
+    expect(MatchingPaths.constructChartSerieName(path, partialPathFilter, pathRenamer)).toEqual(expectedResult);
   };
 });
 

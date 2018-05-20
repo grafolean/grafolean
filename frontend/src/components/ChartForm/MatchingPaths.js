@@ -100,7 +100,7 @@ export default class MatchingPaths extends React.Component {
   }
 
   // given a path, path filter and path renamer, construct a name:
-  static constructPathName(path, partialPathFilter, pathRenamer) {
+  static constructChartSerieName(path, partialPathFilter, pathRenamer) {
     if (!pathRenamer) {
       return path;
     }
@@ -147,7 +147,7 @@ export default class MatchingPaths extends React.Component {
                       marginLeft: 20,
                     }}
                   >
-                    ⤷ {MatchingPaths.constructPathName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
+                    ⤷ {MatchingPaths.constructChartSerieName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
                   </div>
                 )}
               </div>

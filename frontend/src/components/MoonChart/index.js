@@ -96,13 +96,13 @@ export default class MoonChartWidget extends React.Component {
       return result.concat(c.paths.map(path => ({
         chartSeriesId: `${contentIndex}-${path}`,
         path: path,
-        pathName: MatchingPaths.constructPathName(path, c.path_filter, c.renaming),
+        serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
         unit: c.unit,
       })));
     }, []);
 
     this.state = {
-      drawnPaths: this.allPaths,
+      drawnChartSeries: allChartSeries,
       showChartSettings: false,
       allChartSeries: allChartSeries,
     }
@@ -170,7 +170,7 @@ export default class MoonChartWidget extends React.Component {
                 <div className="repinchy-content">
                   <ChartContainer
                     paths={this.allPaths}
-                    drawnPaths={this.state.drawnPaths}
+                    drawnPaths={this.state.drawnChartSeries.map(cs => cs.path)}
                     width={chartWidth}
                     height={chartHeight}
                     fromTs={Math.round(-x/scale)}
@@ -191,9 +191,9 @@ export default class MoonChartWidget extends React.Component {
                   >
                     <Legend
                       chartSeries={this.state.allChartSeries}
-                      onDrawnPathsChange={(drawnPaths) => {
+                      onDrawnChartSeriesChange={(drawnChartSeries) => {
                         this.setState({
-                          drawnPaths,
+                          drawnChartSeries: drawnChartSeries,
                         });
                       }}
                     />
