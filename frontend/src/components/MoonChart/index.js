@@ -14,6 +14,7 @@ import TooltipPopup from '../TooltipPopup';
 import ChartForm from '../ChartForm';
 
 import './index.css';
+import MatchingPaths from '../ChartForm/MatchingPaths';
 
 class ChartWidgetTitle extends React.Component {
 
@@ -89,9 +90,21 @@ export default class MoonChartWidget extends React.Component {
   constructor(props) {
     super(props);
     this.allPaths = [].concat(...this.props.chartContent.map(c => c.paths));
+
+    // construct a better representation of the data for display in the chart:
+    const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
+      return result.concat(c.paths.map(path => ({
+        chartSeriesId: `${contentIndex}-${path}`,
+        path: path,
+        pathName: MatchingPaths.constructPathName(path, c.path_filter, c.renaming),
+        unit: c.unit,
+      })));
+    }, []);
+
     this.state = {
       drawnPaths: this.allPaths,
       showChartSettings: false,
+      allChartSeries: allChartSeries,
     }
   }
 
@@ -177,7 +190,7 @@ export default class MoonChartWidget extends React.Component {
                     }}
                   >
                     <Legend
-                      paths={this.allPaths}
+                      chartSeries={this.state.allChartSeries}
                       onDrawnPathsChange={(drawnPaths) => {
                         this.setState({
                           drawnPaths,

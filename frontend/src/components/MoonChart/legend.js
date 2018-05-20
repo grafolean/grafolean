@@ -12,7 +12,7 @@ export default class Legend extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedPaths: new Set(this.props.paths),
+      selectedPaths: new Set(this.props.chartSeries.map(cs => cs.path)),
       filter: "",
     }
   }
@@ -54,7 +54,7 @@ export default class Legend extends React.Component {
   }
 
   render() {
-    const filteredPaths = this.props.paths.filter(path => (this.state.filter === "" || path.includes(this.state.filter)));
+    const filteredChartSeries = this.props.chartSeries.filter(cs => (this.state.filter === "" || cs.path.includes(this.state.filter)));
     return (
       <div>
         <div className="path-filter">
@@ -66,27 +66,27 @@ export default class Legend extends React.Component {
           <i className="fa fa-filter" />
         </div>
 
-        {(filteredPaths.length === 0) ? (
+        {(filteredChartSeries.length === 0) ? (
           <div className="path-filter-noresults">
             No paths match the filter "{this.state.filter}"
           </div>
         ) : (
-          filteredPaths.map(path => (
+          filteredChartSeries.map(cs => (
             <div
-              key={path}
+              key={cs.chartSeriesId}
               style={{
                 position: 'relative',
               }}
-              onClick={() => this.togglePathSelected(path)}
+              onClick={() => this.togglePathSelected(cs.path)}
             >
               <div className="path-checkbox"
                 style={{
-                  borderColor: generateSerieColor(path),
+                  borderColor: generateSerieColor(cs.path),
                 }}
               >
                 <div
                   style={{
-                    backgroundColor: (this.state.selectedPaths.has(path)) ? (generateSerieColor(path)) : ('#fff'),
+                    backgroundColor: (this.state.selectedPaths.has(cs.path)) ? (generateSerieColor(cs.path)) : ('#fff'),
                   }}
                 />
               </div>
@@ -95,7 +95,7 @@ export default class Legend extends React.Component {
                   marginBottom: 5,
                 }}
               >
-                <span className="legend-label">{path}</span>
+                <span className="legend-label">{cs.pathName}</span>
               </div>
             </div>
           ))
