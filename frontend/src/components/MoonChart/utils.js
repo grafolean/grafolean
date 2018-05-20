@@ -35,7 +35,34 @@ export const getMissingIntervals = (existingIntervals, wantedInterval) => {
   return wantedIntervals;
 }
 
-export const generateSerieColor = (path) => {
-  var rng = seedrandom(path);
-  return `hsl(${rng() * 255}, 100%, 50%)`;
+const GOOGLE_CHART_COLOR_LIST = [
+  '#3366CC',
+  '#DC3912',
+  '#FF9900',
+  '#109618',
+  '#990099',
+  '#3B3EAC',
+  '#0099C6',
+  '#DD4477',
+  '#66AA00',
+  '#B82E2E',
+  '#316395',
+  '#994499',
+  '#22AA99',
+  '#AAAA11',
+  '#6633CC',
+  '#E67300',
+  '#8B0707',
+  '#329262',
+  '#5574A6',
+  '#3B3EAC',
+]
+export const generateSerieColor = (path, index=null) => {
+  // if index is not defined, use the random generator - which doesn't work quite as well as curated lists
+  if (index === null) {
+    var rng = seedrandom(path);
+    return `hsl(${rng() * 255}, 100%, 50%)`;
+  }
+
+  return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };

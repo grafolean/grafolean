@@ -82,12 +82,12 @@ export default class Legend extends React.Component {
             >
               <div className="path-checkbox"
                 style={{
-                  borderColor: generateSerieColor(cs.path),
+                  borderColor: generateSerieColor(cs.path, cs.index),
                 }}
               >
                 <div
                   style={{
-                    backgroundColor: (this.state.selectedChartSeries.has(cs)) ? (generateSerieColor(cs.path)) : ('#fff'),
+                    backgroundColor: (this.state.selectedChartSeries.has(cs)) ? (generateSerieColor(cs.path, cs.index)) : ('#fff'),
                   }}
                 />
               </div>

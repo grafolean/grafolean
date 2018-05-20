@@ -100,11 +100,12 @@ export default class MoonChartWidget extends React.Component {
         unit: c.unit,
       })));
     }, []);
+    const indexedAllChartSeries = allChartSeries.map((cs, i) => ({...cs, index: i }));
 
     this.state = {
-      drawnChartSeries: allChartSeries,
+      drawnChartSeries: indexedAllChartSeries,
       showChartSettings: false,
-      allChartSeries: allChartSeries,
+      allChartSeries: indexedAllChartSeries,
     }
   }
 
