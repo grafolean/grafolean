@@ -101,6 +101,9 @@ export default class MatchingPaths extends React.Component {
 
   // given a path, path filter and path renamer, construct a name:
   static constructPathName(path, partialPathFilter, pathRenamer) {
+    if (!pathRenamer) {
+      return path;
+    }
     const parts = this.breakMatchingPath(path, partialPathFilter);
     const wildcardParts = parts.filter(p => p.match === this.MATCH_WILDCARD);
     let ret = pathRenamer;
