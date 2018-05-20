@@ -56,6 +56,9 @@ export default class MatchingPaths extends React.Component {
         limit: 101,
         failover_trailing: 'true',
       }
+      this.setState({
+        fetchingError: false,
+      });
       fetch(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
         .then(handleFetchErrors)
         .then(response => response.json())
@@ -70,9 +73,7 @@ export default class MatchingPaths extends React.Component {
         })
         .catch(errorMsg => {
           this.setState({
-            fetched: {
-              error: true,
-            },
+            fetchingError: true,
           });
         })
         .then(() => {
@@ -123,9 +124,9 @@ export default class MatchingPaths extends React.Component {
         }}
         onClick={this.props.onClick}
       >
-        {this.state.fetched.error ? (
+        {this.state.fetchingError ? (
           <div>
-            Invalid path filter
+            Error validating filter
           </div>
         ) : (
           <div>
