@@ -41,6 +41,10 @@ export default class ChartForm extends React.Component {
   // unit + metric prefix + ...) which determines multiple paths (and thus actually multiple
   // series). However "content" is too generic term and also lacks a singular form. Looking for
   // a better term.
+  // Found one: SeriesGroup and SeriesGroups. I have replaced the names in this file, but left
+  // this comment as a warning if there is some other place where the terms are misused. Note
+  // that the correct terms are now "SeriesGroup(s)" and "ChartSerie(s)". Term "Serie(s)" should
+  // be avoided.
 
   static defaultProps = {
     dashboardSlug: null,
@@ -55,7 +59,7 @@ export default class ChartForm extends React.Component {
     super(props);
     this.state = {
       name: this.props.initialFormData.name,
-      series: this.props.initialFormData.content.map(c => ({
+      seriesGroups: this.props.initialFormData.content.map(c => ({
         pathFilter: c.path_filter,
         pathRenamer: c.renaming,
         unit: c.unit,
@@ -70,24 +74,12 @@ export default class ChartForm extends React.Component {
     });
   }
 
-  setMetricPrefix = (serieIndex, selectedOption) => {
-    const metricPrefix = selectedOption.value;
+  setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
     this.setState((prevState) => {
-      let newSeries = [ ...prevState.series ];
-      newSeries[serieIndex].metricPrefix = metricPrefix;
+      let newSeriesGroups = [ ...prevState.seriesGroups ];
+      newSeriesGroups[seriesGroupIndex][whichProperty] = newValue;
       return {
-        series: newSeries,
-      };
-    });
-  }
-
-  setUnit = (serieIndex, selectedOption) => {
-    const unit = selectedOption === null ? '' : selectedOption.value;
-    this.setState((prevState) => {
-      let newSeries = [ ...prevState.series ];
-      newSeries[serieIndex].unit = unit;
-      return {
-        series: newSeries,
+        seriesGroups: newSeriesGroups,
       };
     });
   }
@@ -99,36 +91,6 @@ export default class ChartForm extends React.Component {
     };
   }
 
-  setPathFilter = (serieIndex, newValue) => {
-    this.setState((prevState) => {
-      let newSeries = [ ...prevState.series ];
-      newSeries[serieIndex].pathFilter = newValue;
-      return {
-        series: newSeries,
-      };
-    });
-  }
-
-  setPathRenamer = (serieIndex, newValue) => {
-    this.setState((prevState) => {
-      let newSeries = [ ...prevState.series ];
-      newSeries[serieIndex].pathRenamer = newValue;
-      return {
-        series: newSeries,
-      };
-    });
-  }
-
-  setSerieValue  = (serieIndex, key, newValue) => {
-    this.setState((prevState) => {
-      let newSeries = [ ...prevState.series ];
-      newSeries[serieIndex][key] = newValue;
-      return {
-        series: newSeries,
-      };
-    });
-  }
-
   metricPrefixOptionRenderer = (pOption, unit) => (
     <span>
       {pOption.prefix}{unit} [{pOption.name} - 10<sup>{pOption.power}</sup> {unit}]
@@ -137,10 +99,11 @@ export default class ChartForm extends React.Component {
 
   handleAddEmptySerie = (ev) => {
     this.setState(prevState => ({
-      series: [
-        ...prevState.series,
+      seriesGroups: [
+        ...prevState.seriesGroups,
         {
           pathFilter: '',
+          pathRenamer: '',
           unit: '',
           metricPrefix: '',
         },
@@ -155,11 +118,11 @@ export default class ChartForm extends React.Component {
 
     const params = {
       name: this.state.name,
-      content: this.state.series.map(serie => ({
-        path_filter: serie.pathFilter,
-        renaming: serie.pathRenamer,
-        unit: serie.unit,
-        metric_prefix: serie.metricPrefix,
+      content: this.state.seriesGroups.map(sg => ({
+        path_filter: sg.pathFilter,
+        renaming: sg.pathRenamer,
+        unit: sg.unit,
+        metric_prefix: sg.metricPrefix,
       })),
     }
     fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId || ''}`, {
@@ -184,14 +147,14 @@ export default class ChartForm extends React.Component {
       allowedPrefixes: KNOWN_UNITS[unit].allowedPrefixes,
     }));
     // we need to list all possible units, otherwise they won't be visible as selected options:
-    for (let serie of this.state.series) {
-      if (allUnits.find(u => u.value === serie.unit)) {
+    for (let sg of this.state.seriesGroups) {
+      if (allUnits.find(u => u.value === sg.unit)) {
         // we already know this unit, skip it
         continue;
       }
       allUnits.push({
-        value: serie.unit,
-        label: serie.unit,
+        value: sg.unit,
+        label: sg.unit,
         allowedPrefixes: null,
       })
     }
@@ -205,9 +168,9 @@ export default class ChartForm extends React.Component {
           </div>
           <div>
 
-            <label>Series:</label>
-            {this.state.series.map((serie, serieIndex) =>
-              <div className="serie" key={serieIndex}>
+            <label>Series definitions:</label>
+            {this.state.seriesGroups.map((sg, sgIndex) =>
+              <div className="serie" key={sgIndex}>
 
                 <div className="form-item">
                   <div style={{ display: 'flex', flexDirection: 'row' }}>
@@ -222,9 +185,9 @@ export default class ChartForm extends React.Component {
                       <label>Path filter:</label>
                       <input
                         type="text"
-                        name={`pf-${serieIndex}`}
-                        value={serie.pathFilter}
-                        onChange={(ev) => this.setPathFilter(serieIndex, ev.target.value)}
+                        name={`pf-${sgIndex}`}
+                        value={sg.pathFilter}
+                        onChange={(ev) => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
                         style={{
                           height: 20,
                           minWidth: 300,
@@ -233,9 +196,9 @@ export default class ChartForm extends React.Component {
                       <label>Path renamer:</label>
                       <input
                         type="text"
-                        name={`pr-${serieIndex}`}
-                        value={serie.pathRenamer}
-                        onChange={(ev) => this.setSerieValue(serieIndex, 'pathRenamer', ev.target.value)}
+                        name={`pr-${sgIndex}`}
+                        value={sg.pathRenamer}
+                        onChange={(ev) => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
                         style={{
                           height: 20,
                           minWidth: 300,
@@ -244,8 +207,8 @@ export default class ChartForm extends React.Component {
                     </div>
 
                     <MatchingPaths
-                      pathFilter={serie.pathFilter}
-                      pathRenamer={serie.pathRenamer}
+                      pathFilter={sg.pathFilter}
+                      pathRenamer={sg.pathRenamer}
                       displayPaths={true}
                     />
                   </div>
@@ -254,31 +217,31 @@ export default class ChartForm extends React.Component {
                 <div className="form-item">
                   <label>Base unit:</label>
                   <Creatable
-                    value={serie.unit || ''}
-                    onChange={selectedOption => this.setUnit(serieIndex, selectedOption)}
+                    value={sg.unit || ''}
+                    onChange={selectedOption => this.setSeriesGroupProperty(sgIndex, 'unit', selectedOption === null ? '' : selectedOption.value)}
                     options={allUnits}
                     promptTextCreator={label => `Use custom unit (${label})`}
                     newOptionCreator={this.userUnitCreator}
                   />
                 </div>
 
-                {(serie.unit && (!KNOWN_UNITS[serie.unit] || KNOWN_UNITS[serie.unit].allowedPrefixes !== '')) && (
+                {(sg.unit && (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '')) && (
                   <div className="form-item">
                     <label>Metric prefix: (optional)</label>
                     <Select
-                      value={serie.metricPrefix || ''}
-                      placeholder={`-- none [1${serie.unit}] --`}
-                      onChange={selectedOption => this.setMetricPrefix(serieIndex, selectedOption)}
+                      value={sg.metricPrefix || ''}
+                      placeholder={`-- none [1${sg.unit}] --`}
+                      onChange={selectedOption => this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)}
                       options={METRIC_PREFIXES
-                        .filter(p => (!(serie.unit in KNOWN_UNITS)) || KNOWN_UNITS[serie.unit].allowedPrefixes.includes(p.prefix))
+                        .filter(p => (!(sg.unit in KNOWN_UNITS)) || KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix))
                         .map(p => ({
                           value: p.prefix,
                           // no need for label because we specify optionRenderer; but we must supply additional info to it:
                           ...p,
                         }))
                       }
-                      optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, serie.unit)}
-                      valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, serie.unit)}
+                      optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
+                      valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
                       />
                   </div>
                 )}
