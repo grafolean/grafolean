@@ -106,6 +106,7 @@ export default class MoonChartWidget extends React.Component {
       drawnChartSeries: indexedAllChartSeries,
       showChartSettings: false,
       allChartSeries: indexedAllChartSeries,
+      yAxesCount: 1,
     }
   }
 
@@ -117,13 +118,15 @@ export default class MoonChartWidget extends React.Component {
 
   render() {
     const PADDING = 20;
+    const MAX_YAXIS_WIDTH = 70;
     const widgetWidth = this.props.width;
     const usableWidgetWidth = widgetWidth - 2 * PADDING;
     const chartWidth = usableWidgetWidth * 0.7;
     const chartHeight = this.props.height;
     const legendWidth = usableWidgetWidth * 0.3;
-    const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), 100);  // 10% of chart width, max. 100px
+    const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
+    const yAxesWidth = this.state.yAxesCount * yAxisWidth;
 
     const toTs = moment().unix();
     const fromTs = moment().subtract(1, 'month').unix();
@@ -156,9 +159,9 @@ export default class MoonChartWidget extends React.Component {
               width={usableWidgetWidth}
               height={chartHeight}
               activeArea={{
-                x: yAxisWidth,
+                x: yAxesWidth,
                 y: 0,
-                w: chartWidth - yAxisWidth,
+                w: chartWidth - yAxesWidth,
                 h: chartHeight - xAxisHeight,
               }}
               initialState={{
@@ -181,6 +184,7 @@ export default class MoonChartWidget extends React.Component {
                     xAxisHeight={xAxisHeight}
                     yAxisWidth={yAxisWidth}
                     pointerPosition={pointerPosition}
+                    onYAxesCountChange={(newCount) => this.setState({ yAxesCount: newCount })}
                   />
                   <div
                     className="legend"
@@ -261,6 +265,7 @@ class ChartContainer extends React.Component {
       errorMsg: null,
       minYValue: null,
       maxYValue: null,
+      yAxesProperties: {},
     }
     // make sure paths never change - if they do, there should be no effect:
     // (because data fetching logic can't deal with changing paths)
@@ -331,22 +336,29 @@ class ChartContainer extends React.Component {
     ];
 
     // while you are saving data, update min/max value:
-    let minYValue = 0;
-    let maxYValue = Number.NEGATIVE_INFINITY;
-    for (let path of this.paths) {
-      minYValue = json.paths[path].data.reduce((prevValue, d) => (
+    let yAxesProperties = {};
+    for (let cs of this.props.chartSeries) {
+      if (!yAxesProperties.hasOwnProperty(cs.unit)) {
+        yAxesProperties[cs.unit] = {
+          minYValue: 0,
+          maxYValue: Number.NEGATIVE_INFINITY,
+        }
+      }
+      yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
         Math.min(prevValue, (aggrLevel < 0) ? (d.v) : (d.minv))
-      ), minYValue);
-      maxYValue = json.paths[path].data.reduce((prevValue, d) => (
+      ), yAxesProperties[cs.unit].minYValue);
+      yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
         Math.max(prevValue, (aggrLevel < 0) ? (d.v) : (d.maxv))
-      ), maxYValue);
+      ), yAxesProperties[cs.unit].maxYValue);
     }
 
     this.setState(oldState => ({
+      yAxesProperties: yAxesProperties,
       fetchedIntervalsData: this.fetchedData[aggrLevel],
-      minYValue: (oldState.minYValue === null) ? (minYValue) : Math.floor(Math.min(oldState.minYValue, minYValue)),
-      maxYValue: (oldState.maxYValue === null) ? (maxYValue) : Math.ceil(Math.max(oldState.maxYValue, maxYValue)),
     }));
+
+    const yAxesCount = Object.keys(yAxesProperties).length;
+    this.props.onYAxesCountChange(yAxesCount);
   }
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -396,8 +408,9 @@ class ChartContainer extends React.Component {
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
         aggrLevel={this.state.aggrLevel}
-        minYValue={this.state.minYValue}
-        maxYValue={this.state.maxYValue}
+        minYValue={0}
+        maxYValue={900}
+        yAxesProperties={this.state.yAxesProperties}
       />
     )
   }
@@ -601,6 +614,9 @@ export class ChartView extends React.Component {
       closest = this.getClosestValue(this.props.pointerPosition.x, this.props.pointerPosition.yArea, 3600*24, 100);
     }
 
+    const yAxesCount = Object.keys(this.props.yAxesProperties).length;
+    const yAxesWidth = this.props.yAxisWidth * yAxesCount;
+
     return (
       <div
         style={{
@@ -644,9 +660,9 @@ export class ChartView extends React.Component {
 
           <svg width={this.props.width} height={this.props.height}>
 
-            <g transform={`translate(${this.props.yAxisWidth} 0)`}>
+            <g transform={`translate(${yAxesWidth} 0)`}>
               <Grid
-                width={this.props.width - this.props.yAxisWidth}
+                width={this.props.width - yAxesWidth}
                 height={yAxisHeight}
                 maxYValue={this.props.maxYValue}
                 yTicks={yTicks}
@@ -656,7 +672,7 @@ export class ChartView extends React.Component {
               Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
               only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
             */}
-            <g transform={`translate(${this.props.yAxisWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
+            <g transform={`translate(${yAxesWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
               {this.props.fetchedIntervalsData
                 .map((interval, intervalIndex) => (
                   <IntervalLineChart
@@ -681,20 +697,24 @@ export class ChartView extends React.Component {
               )}
             </g>
 
-            <rect x={0} y={xAxisTop} width={this.props.yAxisWidth} height={this.props.xAxisHeight} fill="white" stroke="white" />
-            <g transform={`translate(0 0)`}>
-              <YAxis
-                width={this.props.yAxisWidth}
-                height={yAxisHeight}
-                minYValue={this.props.minYValue}
-                maxYValue={this.props.maxYValue}
-                yTicks={yTicks}
-                color="#999999"
-              />
-            </g>
-            <g transform={`translate(${this.props.yAxisWidth - 1} ${xAxisTop})`}>
+            <rect x={0} y={xAxisTop} width={yAxesWidth} height={this.props.xAxisHeight} fill="white" stroke="white" />
+
+            {Object.keys(this.props.yAxesProperties).map((unit, i) => (
+              <g key={`${i}`} transform={`translate(${i * this.props.yAxisWidth} 0)`}>
+                <YAxis
+                  width={this.props.yAxisWidth}
+                  height={yAxisHeight}
+                  minYValue={this.props.yAxesProperties[unit].minYValue}
+                  maxYValue={this.props.yAxesProperties[unit].maxYValue}
+                  yTicks={yTicks}
+                  color="#999999"
+                />
+              </g>
+            ))}
+
+            <g transform={`translate(${yAxesWidth - 1} ${xAxisTop})`}>
               <TimestampXAxis
-                width={this.props.width - this.props.yAxisWidth}
+                width={this.props.width - yAxesWidth}
                 height={this.props.xAxisHeight}
                 color="#999999"
 
@@ -710,7 +730,7 @@ export class ChartView extends React.Component {
             <div
               style={{
                 position: 'absolute',
-                left: this.t2x(closest.point.t) + this.props.yAxisWidth,
+                left: this.t2x(closest.point.t) + yAxesWidth,
                 top: this.v2y(closest.point.v),
               }}
               // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
