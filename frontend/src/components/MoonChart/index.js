@@ -514,8 +514,8 @@ export class ChartView extends React.Component {
     }
   }
 
-  dy2dv = (dy, minYValue, maxYValue) => (dy * (maxYValue - minYValue) / this.yAxisHeight)
-  dv2dy = (dv, minYValue, maxYValue) => (dv * this.yAxisHeight / (maxYValue - minYValue))
+  dy2dv = (dy, unit) => (dy * (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) / this.yAxisHeight)
+  dv2dy = (dv, unit) => (dv * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue))
   dx2dt = (dx) => (dx / this.props.scale)
   dt2dx = (dt) => (dt * this.props.scale)
   x2t = (x) => (this.props.fromTs + x / this.props.scale);
@@ -533,7 +533,6 @@ export class ChartView extends React.Component {
   getClosestValue(ts, y) {
     const MAX_DIST_PX = 10;
     const maxDistTs = this.dx2dt(MAX_DIST_PX);
-    const maxDistV = this.dy2dv(MAX_DIST_PX, this.props.minYValue, this.props.maxYValue);
 
     // brute-force search:
     const applicableIntervals = this.props.fetchedIntervalsData
@@ -546,6 +545,7 @@ export class ChartView extends React.Component {
           continue;
         };
         const v = this.y2v(y, cs.unit);
+        const maxDistV = this.dy2dv(MAX_DIST_PX, cs.unit);
         for (let point of interval.pathsData[cs.path]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
@@ -553,7 +553,7 @@ export class ChartView extends React.Component {
             continue;
             // when we are searching for closest match, we want it to be in x/y space, not ts/v:
           const distX = this.dt2dx(distTs);
-          const distY = this.dv2dy(distV, this.props.minYValue, this.props.maxYValue);
+          const distY = this.dv2dy(distV, cs.unit);
           const dist = Math.sqrt(distX * distX + distY * distY);
 
           if (closest === null || dist < closest.dist) {
