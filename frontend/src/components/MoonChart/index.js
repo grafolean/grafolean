@@ -184,7 +184,7 @@ export default class MoonChartWidget extends React.Component {
                     xAxisHeight={xAxisHeight}
                     yAxisWidth={yAxisWidth}
                     pointerPosition={pointerPosition}
-                    onYAxesCountChange={(newCount) => this.setState({ yAxesCount: newCount })}
+                    onYAxesCountUpdate={(newCount) => this.setState({ yAxesCount: newCount })}
                   />
                   <div
                     className="legend"
@@ -257,6 +257,7 @@ class ChartContainer extends React.Component {
     */
   };
   paths = null;
+  yAxesProperties = {};
 
   constructor(props) {
     super(props);
@@ -265,7 +266,6 @@ class ChartContainer extends React.Component {
       errorMsg: null,
       minYValue: null,
       maxYValue: null,
-      yAxesProperties: {},
     }
     // make sure paths never change - if they do, there should be no effect:
     // (because data fetching logic can't deal with changing paths)
@@ -336,29 +336,27 @@ class ChartContainer extends React.Component {
     ];
 
     // while you are saving data, update min/max value:
-    let yAxesProperties = {};
     for (let cs of this.props.chartSeries) {
-      if (!yAxesProperties.hasOwnProperty(cs.unit)) {
-        yAxesProperties[cs.unit] = {
+      if (!this.yAxesProperties.hasOwnProperty(cs.unit)) {
+        this.yAxesProperties[cs.unit] = {
           minYValue: 0,
           maxYValue: Number.NEGATIVE_INFINITY,
         }
       }
-      yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
+      this.yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
         Math.min(prevValue, (aggrLevel < 0) ? (d.v) : (d.minv))
-      ), yAxesProperties[cs.unit].minYValue);
-      yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
+      ), this.yAxesProperties[cs.unit].minYValue);
+      this.yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
         Math.max(prevValue, (aggrLevel < 0) ? (d.v) : (d.maxv))
-      ), yAxesProperties[cs.unit].maxYValue);
+      ), this.yAxesProperties[cs.unit].maxYValue);
     }
 
     this.setState(oldState => ({
-      yAxesProperties: yAxesProperties,
       fetchedIntervalsData: this.fetchedData[aggrLevel],
     }));
 
-    const yAxesCount = Object.keys(yAxesProperties).length;
-    this.props.onYAxesCountChange(yAxesCount);
+    const yAxesCount = Object.keys(this.yAxesProperties).length;
+    this.props.onYAxesCountUpdate(yAxesCount);
   }
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -410,7 +408,7 @@ class ChartContainer extends React.Component {
         aggrLevel={this.state.aggrLevel}
         minYValue={0}
         maxYValue={900}
-        yAxesProperties={this.state.yAxesProperties}
+        yAxesProperties={this.yAxesProperties}
       />
     )
   }
@@ -706,6 +704,7 @@ export class ChartView extends React.Component {
                   height={yAxisHeight}
                   minYValue={this.props.yAxesProperties[unit].minYValue}
                   maxYValue={this.props.yAxesProperties[unit].maxYValue}
+                  unit={unit}
                   yTicks={yTicks}
                   color="#999999"
                 />
