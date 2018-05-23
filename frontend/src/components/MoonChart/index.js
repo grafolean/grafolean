@@ -416,7 +416,6 @@ class ChartContainer extends React.Component {
 
 class IntervalLineChart extends React.PureComponent {
   render() {
-    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.yAxisHeight);
     const ts2x = (ts) => ( ts * this.props.scale );
     return (
       <g>
@@ -429,9 +428,9 @@ class IntervalLineChart extends React.PureComponent {
             const path = cs.path;
             const pathPoints = this.props.interval.pathsData[cs.path].map(p => ({
               x: ts2x(p.t),
-              y: v2y(p.v),
-              minY: v2y(p.minv),
-              maxY: v2y(p.maxv),
+              y: this.props.v2y(p.v, cs.unit),
+              minY: this.props.v2y(p.minv, cs.unit),
+              maxY: this.props.v2y(p.maxv, cs.unit),
             }));
             pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
             const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
@@ -515,14 +514,14 @@ export class ChartView extends React.Component {
     }
   }
 
-  dy2dv = (dy) => (dy * (this.props.maxYValue - this.props.minYValue) / this.yAxisHeight)
-  dv2dy = (dv) => (dv * this.yAxisHeight / (this.props.maxYValue - this.props.minYValue))
+  dy2dv = (dy, minYValue, maxYValue) => (dy * (maxYValue - minYValue) / this.yAxisHeight)
+  dv2dy = (dv, minYValue, maxYValue) => (dv * this.yAxisHeight / (maxYValue - minYValue))
   dx2dt = (dx) => (dx / this.props.scale)
   dt2dx = (dt) => (dt * this.props.scale)
   x2t = (x) => (this.props.fromTs + x / this.props.scale);
   t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
-  y2v = (y) => ((this.props.maxYValue - this.props.minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.minYValue);
-  v2y = (v) => (this.yAxisHeight - (v - this.props.minYValue) * this.yAxisHeight / (this.props.maxYValue - this.props.minYValue));
+  y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
+  v2y = (v, unit) => (this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
 
   getYTicks() {
     if ((this.props.minYValue === null) || (this.props.maxYValue === null)) {
@@ -534,8 +533,7 @@ export class ChartView extends React.Component {
   getClosestValue(ts, y) {
     const MAX_DIST_PX = 10;
     const maxDistTs = this.dx2dt(MAX_DIST_PX);
-    const maxDistV = this.dy2dv(MAX_DIST_PX);
-    const v = this.y2v(y);
+    const maxDistV = this.dy2dv(MAX_DIST_PX, this.props.minYValue, this.props.maxYValue);
 
     // brute-force search:
     const applicableIntervals = this.props.fetchedIntervalsData
@@ -547,6 +545,7 @@ export class ChartView extends React.Component {
         if (!interval.pathsData.hasOwnProperty(cs.path)) {  // do we have fetched data for this cs?
           continue;
         };
+        const v = this.y2v(y, cs.unit);
         for (let point of interval.pathsData[cs.path]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
@@ -554,7 +553,7 @@ export class ChartView extends React.Component {
             continue;
             // when we are searching for closest match, we want it to be in x/y space, not ts/v:
           const distX = this.dt2dx(distTs);
-          const distY = this.dv2dy(distV);
+          const distY = this.dv2dy(distV, this.props.minYValue, this.props.maxYValue);
           const dist = Math.sqrt(distX * distX + distY * distY);
 
           if (closest === null || dist < closest.dist) {
@@ -682,6 +681,7 @@ export class ChartView extends React.Component {
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
                     drawnChartSeries={this.props.drawnChartSeries}
+                    v2y={(v, unit) => this.v2y(v, unit)}
                   />
                 ))
               }
@@ -689,7 +689,7 @@ export class ChartView extends React.Component {
                 <TooltipIndicator
                   {...closest}
                   x={this.dt2dx(closest.point.t)}
-                  y={this.v2y(closest.point.v)}
+                  y={this.v2y(closest.point.v, closest.cs.unit)}
                   yAxisHeight={yAxisHeight}
                 />
               )}
@@ -730,7 +730,7 @@ export class ChartView extends React.Component {
               style={{
                 position: 'absolute',
                 left: this.t2x(closest.point.t) + yAxesWidth,
-                top: this.v2y(closest.point.v),
+                top: this.v2y(closest.point.v, closest.cs.unit),
               }}
               // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
               onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
