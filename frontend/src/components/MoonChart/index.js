@@ -741,14 +741,14 @@ export class ChartView extends React.Component {
                   <div>
                     <p>{closest.cs.serieName}</p>
                     <p>{closest.cs.path}</p>
-                    <p>{closest.point.minv.toFixed(this.props.nDecimals)} - {closest.point.maxv.toFixed(this.props.nDecimals)} (Ø {closest.point.v.toFixed(this.props.nDecimals)})</p>
+                    <p>{closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} - {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
                   </div>
                 ) : (
                   <div>
                     <p>{closest.cs.serieName}</p>
                     <p>{closest.cs.path}</p>
-                    <p>Value: {closest.point.v.toFixed(this.props.nDecimals)}</p>
+                    <p>Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}</p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
                   </div>
                 )}
