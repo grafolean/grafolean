@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import MoonChartContainer, { ChartView } from '../index';
 
-test('MoonChartContainer merging of intervals - add before', () => {
+test.skip('MoonChartContainer merging of intervals - add before', () => {
   const moonChart = shallow(
     <MoonChartContainer
       chartId={123}
@@ -96,7 +96,7 @@ test('MoonChartContainer merging of intervals - add before', () => {
   });
 });
 
-test('MoonChartContainer merging of intervals - add between', () => {
+test.skip('MoonChartContainer merging of intervals - add between', () => {
   const moonChart = shallow(
     <MoonChartContainer
       chartId={123}
@@ -218,7 +218,7 @@ test('MoonChartContainer merging of intervals - add between', () => {
   });
 });
 
-test('ChartView coordinate system transformations - dx', () => {
+test.skip('ChartView coordinate system transformations - dx', () => {
   const comp = shallow(
     <ChartView
       minYValue={200}
@@ -246,7 +246,7 @@ test('ChartView coordinate system transformations - dx', () => {
   }
 });
 
-test('ChartView coordinate system transformations - dy', () => {
+test.skip('ChartView coordinate system transformations - dy', () => {
   const comp = shallow(
     <ChartView
       minYValue={200}
@@ -274,7 +274,7 @@ test('ChartView coordinate system transformations - dy', () => {
   }
 })
 
-test('ChartView coordinate system transformations - x', () => {
+test.skip('ChartView coordinate system transformations - x', () => {
   const comp = shallow(
     <ChartView
       minYValue={200}
@@ -303,7 +303,7 @@ test('ChartView coordinate system transformations - x', () => {
   }
 });
 
-test('ChartView coordinate system transformations - y', () => {
+test.skip('ChartView coordinate system transformations - y', () => {
   const comp = shallow(
     <ChartView
       minYValue={200}
