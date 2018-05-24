@@ -523,11 +523,36 @@ export class ChartView extends React.Component {
   y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
   v2y = (v, unit) => (this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
 
-  getYTicks() {
-    if ((this.props.minYValue === null) || (this.props.maxYValue === null)) {
+  static getYTicks(minYValue, maxYValue) {
+    if ((minYValue === null) || (maxYValue === null)) {
       return null;
     };
-    return [0, 100, 200, 300, 400, 500, 600, 700];
+    // - normalize values to interval 10.0 - 99.9
+    // - determine the appropriate interval I (10, 20 or 50)
+    // - return the smallest list of ticks so that ticks[0] <= minYValue, ticks[n+1] = ticks[n] + 1, ticks[last] >= maxYValue
+
+    // interval:
+    const diffValue = maxYValue - minYValue;
+    const power10 = Math.floor(Math.log10(diffValue)) - 1;
+    const normalizedDiff = Math.floor(diffValue / Math.pow(10, power10));
+    let normalizedInterval;
+    if (normalizedDiff >= 50) {
+      normalizedInterval = 10;
+    } else if (normalizedDiff >= 20) {
+      normalizedInterval = 5;
+    } else {
+      normalizedInterval = 2;
+    };
+
+    const interval = normalizedInterval * Math.pow(10, power10);
+    const minValueLimit = Math.floor(minYValue / interval) * interval;
+    let ret = [];
+    let i;
+    for (i = minValueLimit; i < maxYValue; i += interval) {
+      ret.push(i);
+    }
+    ret.push(i);
+    return ret;
   }
 
   getClosestValue(ts, y) {
@@ -573,7 +598,7 @@ export class ChartView extends React.Component {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
-    const yTicks = this.getYTicks();
+    const yTicks = ChartView.getYTicks(0, 700);  // temporary
 
     /*
       this.props.fetchedIntervalsData:
@@ -705,7 +730,7 @@ export class ChartView extends React.Component {
                   minYValue={this.props.yAxesProperties[unit].minYValue}
                   maxYValue={this.props.yAxesProperties[unit].maxYValue}
                   unit={unit}
-                  yTicks={yTicks}
+                  yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
                   color="#999999"
                 />
               </g>

@@ -334,3 +334,98 @@ test.skip('ChartView coordinate system transformations - y', () => {
   }
 });
 
+test('ChartView getYTicks', () => {
+  const params = [
+    {
+      minYValue: 0,
+      maxYValue: 999,
+      expectedResult: [ 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 599,
+      expectedResult: [ 0, 100, 200, 300, 400, 500, 600 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 500,
+      expectedResult: [ 0, 100, 200, 300, 400, 500 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 499,
+      expectedResult: [ 0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 200,
+      expectedResult: [ 0, 50, 100, 150, 200 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 199,
+      expectedResult: [ 0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 100,
+      expectedResult: [ 0, 20, 40, 60, 80, 100 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 99,
+      expectedResult: [ 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 9.99,
+      expectedResult: [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 0.99,
+      expectedResult: [ 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 ],
+    },
+    {
+      minYValue: 0,
+      maxYValue: 0.099,
+      expectedResult: [ 0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ],
+    },
+
+    {
+      minYValue: 10,
+      maxYValue: 100,
+      expectedResult: [ 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 ],
+    },
+    {
+      minYValue: 50,
+      maxYValue: 100,
+      expectedResult: [ 50, 60, 70, 80, 90, 100 ],
+    },
+    {
+      minYValue: -50,
+      maxYValue: 100,
+      expectedResult: [ -60, -40, -20, 0, 20, 40, 60, 80, 100 ],
+    },
+    {
+      minYValue: -50,
+      maxYValue: -11,
+      expectedResult: [ -50, -45, -40, -35, -30, -25, -20, -15, -10 ],
+    },
+    {
+      minYValue: -50,
+      maxYValue: -9,
+      expectedResult: [ -50, -45, -40, -35, -30, -25, -20, -15, -10, -5 ],
+    },
+  ]
+
+  for (let param of params) {
+    const { minYValue, maxYValue, expectedResult } = param;
+    //ChartView.getYTicks(minYValue, maxYValue);
+    const result = ChartView.getYTicks(minYValue, maxYValue);
+    result.map((r, i) => {
+      expect(r).toBeCloseTo(expectedResult[i]);
+    })
+  };
+})
+
