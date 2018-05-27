@@ -473,11 +473,10 @@ class IntervalLineChart extends React.PureComponent {
 
 class Grid extends React.Component {
   render() {
-    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.height);
     return (
       <g>
         {this.props.yTicks !== null && this.props.yTicks.map(v => {
-          const y = v2y(v);
+          const y = this.props.v2y(v);
           return (
             <line key={v} x1={0} y1={y} x2={this.props.width} y2={y} shapeRendering="crispEdges" stroke="#f3f3f3" strokeWidth="1"/>
           )
@@ -600,7 +599,6 @@ export class ChartView extends React.Component {
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
-    const yTicks = ChartView.getYTicks(0, 700);  // temporary
 
     /*
       this.props.fetchedIntervalsData:
@@ -684,48 +682,66 @@ export class ChartView extends React.Component {
 
           <svg width={this.props.width} height={this.props.height}>
 
-            <g transform={`translate(${yAxesWidth} 0)`}>
-              <Grid
-                width={this.props.width - yAxesWidth}
-                height={yAxisHeight}
-                maxYValue={this.props.maxYValue}
-                yTicks={yTicks}
-              />
-            </g>
-            {/*
-              Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
-              only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
-            */}
-            <g transform={`translate(${yAxesWidth - 1 - this.props.fromTs * this.props.scale} 0)`}>
-              {this.props.fetchedIntervalsData
-                .map((interval, intervalIndex) => (
-                  <IntervalLineChart
-                    key={`i-${this.props.aggrLevel}-${intervalIndex}`}
-                    interval={interval}
-                    yAxisHeight={yAxisHeight}
-                    minYValue={this.props.minYValue}
-                    maxYValue={this.props.maxYValue}
-                    scale={this.props.scale}
-                    isAggr={this.props.aggrLevel >= 0}
-                    drawnChartSeries={this.props.drawnChartSeries}
-                    v2y={this.v2y}
-                  />
-                ))
-              }
-              {(closest) && (
-                <TooltipIndicator
-                  {...closest}
-                  x={this.dt2dx(closest.point.t)}
-                  y={this.v2y(closest.point.v, closest.cs.unit)}
-                  yAxisHeight={yAxisHeight}
-                />
-              )}
-            </g>
-
-            <rect x={0} y={xAxisTop} width={yAxesWidth} height={this.props.xAxisHeight} fill="white" stroke="white" />
+            <defs>
+              <clipPath id="chartContentArea">
+                <rect x={yAxesWidth} y="0" width={this.props.width - yAxesWidth} height={yAxisHeight}/>
+              </clipPath>
+            </defs>
 
             {Object.keys(this.props.yAxesProperties).map((unit, i) => (
-              <g key={`${i}`} transform={`translate(${i * this.props.yAxisWidth} 0)`}>
+              <g
+                key={i}
+                transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}
+              >
+                <Grid
+                  width={this.props.width - this.props.yAxisWidth * (i + 1)}
+                  height={yAxisHeight}
+                  minYValue={this.props.yAxesProperties[unit].minYValue}
+                  maxYValue={this.props.yAxesProperties[unit].maxYValue}
+                  v2y={(v) => this.v2y(v, unit)}
+                  yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
+                />
+              </g>
+            ))}
+
+            <g
+              clipPath="url(#chartContentArea)"
+            >
+              {/*
+                Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
+                only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
+              */}
+              <g
+                transform={`translate(${yAxesWidth - 1 - this.props.fromTs * this.props.scale} 0)`}
+              >
+                {this.props.fetchedIntervalsData
+                  .map((interval, intervalIndex) => (
+                    <IntervalLineChart
+                      key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                      interval={interval}
+                      yAxisHeight={yAxisHeight}
+                      minYValue={this.props.minYValue}
+                      maxYValue={this.props.maxYValue}
+                      scale={this.props.scale}
+                      isAggr={this.props.aggrLevel >= 0}
+                      drawnChartSeries={this.props.drawnChartSeries}
+                      v2y={this.v2y}
+                    />
+                  ))
+                }
+                {(closest) && (
+                  <TooltipIndicator
+                    {...closest}
+                    x={this.dt2dx(closest.point.t)}
+                    y={this.v2y(closest.point.v, closest.cs.unit)}
+                    yAxisHeight={yAxisHeight}
+                  />
+                )}
+              </g>
+            </g>
+
+            {Object.keys(this.props.yAxesProperties).map((unit, i) => (
+              <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
                 <YAxis
                   width={this.props.yAxisWidth}
                   height={yAxisHeight}

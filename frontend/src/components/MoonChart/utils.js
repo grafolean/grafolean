@@ -63,6 +63,5 @@ export const generateSerieColor = (path, index=null) => {
     var rng = seedrandom(path);
     return `hsl(${rng() * 255}, 100%, 50%)`;
   }
-
   return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };
