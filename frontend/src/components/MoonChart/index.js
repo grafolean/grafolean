@@ -524,11 +524,12 @@ export class ChartView extends React.Component {
   v2y = (v, unit) => (this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
 
   static getYTicks(minYValue, maxYValue) {
+    // returns an array of strings - values of Y ticks
     if ((minYValue === null) || (maxYValue === null)) {
       return null;
     };
     // - normalize values to interval 10.0 - 99.9
-    // - determine the appropriate interval I (10, 20 or 50)
+    // - determine the appropriate interval I (10, 5 or 2)
     // - return the smallest list of ticks so that ticks[0] <= minYValue, ticks[n+1] = ticks[n] + 1, ticks[last] >= maxYValue
 
     // interval:
@@ -548,10 +549,11 @@ export class ChartView extends React.Component {
     const minValueLimit = Math.floor(minYValue / interval) * interval;
     let ret = [];
     let i;
+    const numberOfDecimals = Math.max(0, - power10 - 1)
     for (i = minValueLimit; i < maxYValue; i += interval) {
-      ret.push(i);
+      ret.push(i.toFixed(numberOfDecimals));
     }
-    ret.push(i);
+    ret.push(i.toFixed(numberOfDecimals));
     return ret;
   }
 
@@ -706,7 +708,7 @@ export class ChartView extends React.Component {
                     scale={this.props.scale}
                     isAggr={this.props.aggrLevel >= 0}
                     drawnChartSeries={this.props.drawnChartSeries}
-                    v2y={(v, unit) => this.v2y(v, unit)}
+                    v2y={this.v2y}
                   />
                 ))
               }
@@ -730,6 +732,7 @@ export class ChartView extends React.Component {
                   minYValue={this.props.yAxesProperties[unit].minYValue}
                   maxYValue={this.props.yAxesProperties[unit].maxYValue}
                   unit={unit}
+                  v2y={(v) => this.v2y(v, unit)}
                   yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
                   color="#999999"
                 />

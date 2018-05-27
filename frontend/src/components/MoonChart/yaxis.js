@@ -13,14 +13,13 @@ YAxisLabel.displayName = 'YAxisLabel'
 export default class YAxis extends React.Component {
 
   render() {
-    const v2y = (v) => ((1 - v / this.props.maxYValue) * this.props.height);
     return (
       <g>
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
         <line x1={this.props.width - 1} y1={0} x2={this.props.width - 1} y2={this.props.height} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
 
         {this.props.yTicks !== null && this.props.yTicks.map(v => {
-          const y = v2y(v);
+          const y = this.props.v2y(v);
           return (
             <g key={v}>
               <YAxisLabel x={this.props.width - 7} y={y + 5}>{v}</YAxisLabel>

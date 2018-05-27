@@ -385,11 +385,13 @@ test('ChartView getYTicks', () => {
       minYValue: 0,
       maxYValue: 0.99,
       expectedResult: [ 0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0 ],
+      expectedDecimals: 1,
     },
     {
       minYValue: 0,
       maxYValue: 0.099,
       expectedResult: [ 0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1 ],
+      expectedDecimals: 2,
     },
 
     {
@@ -420,11 +422,12 @@ test('ChartView getYTicks', () => {
   ]
 
   for (let param of params) {
-    const { minYValue, maxYValue, expectedResult } = param;
+    const { minYValue, maxYValue, expectedResult, expectedDecimals } = param;
     //ChartView.getYTicks(minYValue, maxYValue);
     const result = ChartView.getYTicks(minYValue, maxYValue);
     result.map((r, i) => {
-      expect(r).toBeCloseTo(expectedResult[i]);
+      const expectedString = expectedResult[i].toFixed(expectedDecimals || 0);
+      expect(r).toEqual(expectedString);
     })
   };
 })
