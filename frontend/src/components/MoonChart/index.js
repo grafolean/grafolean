@@ -549,7 +549,7 @@ export class ChartView extends React.Component {
     const minValueLimit = Math.floor(minYValue / interval) * interval;
     let ret = [];
     let i;
-    const numberOfDecimals = Math.max(0, - power10 - 1)
+    const numberOfDecimals = Math.max(0, - power10 - ((normalizedInterval === 10) ? 1 : 0) )
     for (i = minValueLimit; i < maxYValue; i += interval) {
       ret.push(i.toFixed(numberOfDecimals));
     }
