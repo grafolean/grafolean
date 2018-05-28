@@ -86,6 +86,7 @@ class WidgetDialog extends React.Component {
 }
 
 export default class MoonChartWidget extends React.Component {
+  repinchyMouseMoveHandler = null;
 
   constructor(props) {
     super(props);
@@ -114,6 +115,30 @@ export default class MoonChartWidget extends React.Component {
     this.setState(oldState => ({
       showChartSettings: !oldState.showChartSettings,
     }))
+  }
+
+  onYAxesCountUpdate = (newCount) => {
+    this.setState({ yAxesCount: newCount });
+  }
+
+  // We need to do this weird dance around mousemove events because of performance
+  // issues. RePinchy handles all of mouse events (because it needs them for its
+  // own purposes too). If it doesn't need them, they are passed below to the
+  // child(/ren) components. But if we would pass the mousemove values through props, we
+  // would cause React rerendeings. Even with shouldComponentUpdate this is too
+  // intensive.
+  // So our solution is for the child component to register its mousemove handler
+  // via call to `MoonChartWidget.registerRepinchyMouseMoveHandler()`. On the other
+  // hand, RePinchy gets our handler as its prop (and calls it), and we pass the
+  // events to registered event handler. Easy, right? :)
+  registerRePinchyMouseMoveHandler = (handler) => {
+    this.repinchyMouseMoveHandler = handler;
+  }
+  handleRePinchyMouseMove = (ev) => {
+    if (this.repinchyMouseMoveHandler === null) {
+      return;
+    }
+    this.repinchyMouseMoveHandler(ev);
   }
 
   render() {
@@ -169,6 +194,7 @@ export default class MoonChartWidget extends React.Component {
                 y: 0.0,
                 scale: initialScale,
               }}
+              handleMouseMove={this.handleRePinchyMouseMove}
             >
               {(x, y, scale, zoomInProgress, pointerPosition) => (
                 <div className="repinchy-content">
@@ -183,8 +209,8 @@ export default class MoonChartWidget extends React.Component {
                     zoomInProgress={zoomInProgress}
                     xAxisHeight={xAxisHeight}
                     yAxisWidth={yAxisWidth}
-                    pointerPosition={pointerPosition}
-                    onYAxesCountUpdate={(newCount) => this.setState({ yAxesCount: newCount })}
+                    registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
+                    onYAxesCountUpdate={this.onYAxesCountUpdate}
                   />
                   <div
                     className="legend"
@@ -504,13 +530,16 @@ export class ChartView extends React.Component {
   static defaultProps = {
     nDecimals: 2,
   }
+  oldClosest = null;
 
   constructor(props) {
     super(props);
     this.yAxisHeight = this.props.height - this.props.xAxisHeight;
     this.state = {
-      overrideClosestPoint: null,
+      closestPoint: null,
     }
+    // we want to receive mousemove events from RePinchy:
+    this.props.registerMouseMoveHandler(this.handleMouseMove);
   }
 
   dy2dv = (dy, unit) => (dy * (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) / this.yAxisHeight)
@@ -521,6 +550,34 @@ export class ChartView extends React.Component {
   t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
   y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
   v2y = (v, unit) => (this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
+
+  handleMouseMove = (ev) => {
+    // this will get called from RePinchy when there is a mousemove event:
+    let rect = ev.currentTarget.getBoundingClientRect();
+    const ts = this.x2t(ev.clientX - rect.left);
+    const y = ev.clientY - rect.top;
+    const newClosest = this.getClosestValue(ts, y);
+    if (
+      (
+        this.oldClosest === null &&
+        newClosest === null
+      ) || (
+        this.oldClosest !== null &&
+        newClosest !== null &&
+        this.oldClosest.cs === newClosest.cs &&
+        this.oldClosest.point.t === newClosest.point.t &&
+        this.oldClosest.point.v === newClosest.point.v
+      )
+    ) {
+      return;
+    }
+
+    // closestPoint has changed, save to both state (to rerender) and to this: (for comparison)
+    this.oldClosest = newClosest;
+    this.setState({
+      closestPoint: newClosest,
+    })
+  }
 
   static getYTicks(minYValue, maxYValue) {
     // returns an array of strings - values of Y ticks
@@ -631,10 +688,7 @@ export class ChartView extends React.Component {
         ]
     */
 
-    let closest = this.state.overrideClosestPoint;
-    if (!closest && this.props.pointerPosition) {
-      closest = this.getClosestValue(this.props.pointerPosition.x, this.props.pointerPosition.yArea, 3600*24, 100);
-    }
+    const closest = this.state.closestPoint;
 
     const yAxesCount = Object.keys(this.props.yAxesProperties).length;
     const yAxesWidth = this.props.yAxisWidth * yAxesCount;
@@ -777,8 +831,8 @@ export class ChartView extends React.Component {
                 top: this.v2y(closest.point.v, closest.cs.unit),
               }}
               // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
-              onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
-              onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
+              onMouseEnter={() => { this.setState({ closestPoint: closest }); }}
+              onMouseLeave={() => { this.setState({ closestPoint: null }); }}
             >
               <TooltipPopup>
                 {(closest.point.minv) ? (

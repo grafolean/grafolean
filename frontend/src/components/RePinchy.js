@@ -381,18 +381,9 @@ export default class RePinchy extends React.Component {
       return;  // if we are dragging, we shouldn't care about pointer position
     };
 
-    let rect = ev.currentTarget.getBoundingClientRect();
-    const activeAreaPosX = ev.clientX - rect.left;
-    const activeAreaPosY = ev.clientY - rect.top;
-    // convert position to coordinates in the space, known to child: (use scale, pan x + y)
-    this.setState({
-      pointerPosition: {
-        xArea: activeAreaPosX + this.props.activeArea.x,  // position of pointer over active area (in pixels)
-        yArea: activeAreaPosY + this.props.activeArea.y,
-        x: -this.x/this.scale + activeAreaPosX / this.scale,  // position of pointer relative to child coordinate system
-        y: -this.y/this.scale + activeAreaPosY / this.scale,
-      }
-    });
+    if (this.props.handleMouseMove) {
+      this.props.handleMouseMove(ev);
+    }
   }
 
   handleMouseLeave = (ev) => {
