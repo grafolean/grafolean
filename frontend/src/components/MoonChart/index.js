@@ -537,6 +537,7 @@ export class ChartView extends React.Component {
     this.yAxisHeight = this.props.height - this.props.xAxisHeight;
     this.state = {
       closestPoint: null,
+      overrideClosestPoint: null,  // when tooltip is open, this is set
     }
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
@@ -688,7 +689,7 @@ export class ChartView extends React.Component {
         ]
     */
 
-    const closest = this.state.closestPoint;
+    const closest = this.state.overrideClosestPoint || this.state.closestPoint;
 
     const yAxesCount = Object.keys(this.props.yAxesProperties).length;
     const yAxesWidth = this.props.yAxisWidth * yAxesCount;
@@ -831,8 +832,8 @@ export class ChartView extends React.Component {
                 top: this.v2y(closest.point.v, closest.cs.unit),
               }}
               // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
-              onMouseEnter={() => { this.setState({ closestPoint: closest }); }}
-              onMouseLeave={() => { this.setState({ closestPoint: null }); }}
+              onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
+              onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
             >
               <TooltipPopup>
                 {(closest.point.minv) ? (
