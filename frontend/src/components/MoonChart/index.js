@@ -691,7 +691,10 @@ export class ChartView extends React.Component {
 
     const closest = this.state.overrideClosestPoint || this.state.closestPoint;
 
-    const yAxesCount = Object.keys(this.props.yAxesProperties).length;
+    const drawnUnits = Object.keys(this.props.yAxesProperties)
+      .filter(unit => !!this.props.drawnChartSeries.find(cs => cs.unit === unit));
+
+    const yAxesCount = drawnUnits.length;
     const yAxesWidth = this.props.yAxisWidth * yAxesCount;
 
     return (
@@ -743,7 +746,7 @@ export class ChartView extends React.Component {
               </clipPath>
             </defs>
 
-            {Object.keys(this.props.yAxesProperties).map((unit, i) => (
+            {drawnUnits.map((unit, i) => (
               <g
                 key={i}
                 transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}
@@ -796,7 +799,7 @@ export class ChartView extends React.Component {
               </g>
             </g>
 
-            {Object.keys(this.props.yAxesProperties).map((unit, i) => (
+            {drawnUnits.map((unit, i) => (
               <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
                 <YAxis
                   width={this.props.yAxisWidth}
