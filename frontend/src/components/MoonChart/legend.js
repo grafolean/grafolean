@@ -24,7 +24,7 @@ export default class Legend extends React.Component {
   }
 
   setStateCallbackOnDrawnPathsChange() {
-    const drawnChartSeries = [ ...this.state.selectedChartSeries ].filter(cs => (this.state.filter === "" || cs.serieName.includes(this.state.filter)));
+    const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeries], this.state.filter);
     this.props.onDrawnChartSeriesChange(drawnChartSeries);
   }
 
@@ -54,8 +54,20 @@ export default class Legend extends React.Component {
     );
   }
 
+  static getFilteredChartSeries(originalChartSeries, filter) {
+    if (filter === "") {
+      return originalChartSeries;
+    }
+    const filterLowerCase = filter.toLowerCase()
+    const filteredChartSeries = originalChartSeries.filter(cs => (
+      cs.serieName.toLowerCase().includes(filterLowerCase) ||
+      cs.unit.toLowerCase().includes(filterLowerCase)
+    ));
+    return filteredChartSeries;
+  }
+
   render() {
-    const filteredChartSeries = this.props.chartSeries.filter(cs => (this.state.filter === "" || cs.serieName.includes(this.state.filter)));
+    const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, this.state.filter);
     return (
       <div>
         <div className="path-filter">
