@@ -16,6 +16,7 @@ export default class TooltipPopup extends React.Component {
       arrowSpacingHorizontal: 3,
       arrowSpacingVertical: 5,
     }
+
     render() {
       const isArrowOnRight = this.props.arrowPercentFromLeft > 50;
       const arrowWidth = 10;

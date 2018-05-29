@@ -835,7 +835,7 @@ export class ChartView extends React.Component {
             >
               <TooltipPopup
                 // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
-                onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
+                onMouseEnter={() => { this.setState({ closestPoint: null, overrideClosestPoint: closest }); }}
                 onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
               >
                 {(closest.point.minv) ? (
