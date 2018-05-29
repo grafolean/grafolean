@@ -452,7 +452,7 @@ export default class RePinchy extends React.Component {
             top: 0,
             width: this.props.width,
             height: this.props.height,
-            overflow: 'hidden',
+            overflow: 'visible',
             touchAction: 'auto',
           }}
           >

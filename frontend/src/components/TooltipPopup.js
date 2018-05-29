@@ -29,8 +29,9 @@ export default class TooltipPopup extends React.Component {
       return (
         <div
           style={{
-            // "fixed" takes the tooltip out of flow; translate makes it positioned relative to parent container: (yeah, I know...)
-            position: 'fixed',
+            // we can't use "fixed" to take the tooltip out of flow, because then we would have to update its coordinates.
+            // translate makes it positioned relative to parent container:
+            position: 'relative',
             transform: `translate(-${this.props.arrowPercentFromLeft}%, ${this.props.isArrowOnTop ? 0 : -100}%)`,
             zIndex: this.props.zIndex,
           }}
