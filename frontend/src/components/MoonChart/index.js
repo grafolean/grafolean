@@ -531,7 +531,7 @@ export class ChartView extends React.Component {
     nDecimals: 2,
   }
   oldClosest = null;
-  YAXIS_TOP_PADDING = 50;
+  YAXIS_TOP_PADDING = 55;
 
   constructor(props) {
     super(props);
