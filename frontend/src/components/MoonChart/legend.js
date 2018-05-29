@@ -96,7 +96,7 @@ export default class Legend extends React.Component {
                   marginBottom: 5,
                 }}
               >
-                <span className="legend-label">{cs.serieName}</span>
+                <span className="legend-label">{cs.serieName} [{cs.unit}]</span>
               </div>
             </div>
           ))
