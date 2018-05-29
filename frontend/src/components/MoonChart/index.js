@@ -479,10 +479,10 @@ class IntervalLineChart extends React.PureComponent {
                     stroke: serieColor,
                   }}
                 />
-                {(!this.props.isAggr) ? (
+                {(true) ? (
                   pathPoints.map((p, pi) => (
                     // points:
-                    <circle key={`p-${cs.ndex}-${pi}`} cx={p.x} cy={p.y} r={2} style={{
+                    <circle key={`p-${cs.ndex}-${pi}`} cx={p.x} cy={p.y} r={1} style={{
                       fill: serieColor,
                     }} />
                   ))
