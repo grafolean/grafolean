@@ -9,7 +9,7 @@ import RePinchy from '../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './yaxis';
 import Legend from './legend';
-import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor } from './utils';
+import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor, generateGridColor } from './utils';
 import TooltipPopup from '../TooltipPopup';
 import ChartForm from '../ChartForm';
 
@@ -504,7 +504,7 @@ class Grid extends React.Component {
         {this.props.yTicks !== null && this.props.yTicks.map(v => {
           const y = this.props.v2y(v);
           return (
-            <line key={v} x1={0} y1={y} x2={this.props.width} y2={y} shapeRendering="crispEdges" stroke="#f3f3f3" strokeWidth="1"/>
+            <line key={v} x1={0} y1={y} x2={this.props.width} y2={y} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
           )
         })}
       </g>
@@ -755,6 +755,7 @@ export class ChartView extends React.Component {
                   maxYValue={this.props.yAxesProperties[unit].maxYValue}
                   v2y={(v) => this.v2y(v, unit)}
                   yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
+                  color={generateGridColor(i)}
                 />
               </g>
             ))}

@@ -65,3 +65,11 @@ export const generateSerieColor = (path, index=null) => {
   }
   return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };
+
+const GRID_COLORS = [
+  '#f0f0f0',
+  '#e7e7e7',
+]
+export const generateGridColor = (index) => {
+  return GRID_COLORS[index % GRID_COLORS.length];
+};
