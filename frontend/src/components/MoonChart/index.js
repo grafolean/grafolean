@@ -531,10 +531,11 @@ export class ChartView extends React.Component {
     nDecimals: 2,
   }
   oldClosest = null;
+  YAXIS_TOP_PADDING = 50;
 
   constructor(props) {
     super(props);
-    this.yAxisHeight = this.props.height - this.props.xAxisHeight;
+    this.yAxisHeight = this.props.height - this.props.xAxisHeight - this.YAXIS_TOP_PADDING;
     this.state = {
       closestPoint: null,
       overrideClosestPoint: null,  // when tooltip is open, this is set
@@ -549,8 +550,8 @@ export class ChartView extends React.Component {
   dt2dx = (dt) => (dt * this.props.scale)
   x2t = (x) => (this.props.fromTs + x / this.props.scale);
   t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
-  y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
-  v2y = (v, unit) => (this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
+  y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y + this.YAXIS_TOP_PADDING) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
+  v2y = (v, unit) => (this.YAXIS_TOP_PADDING + this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
 
   handleMouseMove = (ev) => {
     // this will get called from RePinchy when there is a mousemove event:
