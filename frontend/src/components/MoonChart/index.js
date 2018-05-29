@@ -177,7 +177,6 @@ export default class MoonChartWidget extends React.Component {
         >
 
           <div
-            style={{ padding: PADDING }}
             className="widget-content"
           >
             <RePinchy
