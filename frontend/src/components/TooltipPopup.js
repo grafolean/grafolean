@@ -33,6 +33,8 @@ export default class TooltipPopup extends React.Component {
             transform: `translate(-${this.props.arrowPercentFromLeft}%, ${this.props.isArrowOnTop ? 0 : -100}%)`,
             zIndex: this.props.zIndex,
           }}
+          onMouseEnter={this.props.onMouseEnter}
+          onMouseLeave={this.props.onMouseLeave}
         >
           {/* Container which holds the content, but has enough padding on all sides for the arrow: */}
           <div

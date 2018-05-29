@@ -831,11 +831,12 @@ export class ChartView extends React.Component {
                 left: this.t2x(closest.point.t) + yAxesWidth,
                 top: this.v2y(closest.point.v, closest.cs.unit),
               }}
-              // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
-              onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
-              onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
             >
-              <TooltipPopup>
+              <TooltipPopup
+                // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
+                onMouseEnter={() => { this.setState({ overrideClosestPoint: closest }); }}
+                onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
+              >
                 {(closest.point.minv) ? (
                   <div>
                     <p>{closest.cs.serieName}</p>
