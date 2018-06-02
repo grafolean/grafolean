@@ -15,38 +15,8 @@ import ChartForm from '../ChartForm';
 
 import './index.css';
 import MatchingPaths from '../ChartForm/MatchingPaths';
+import isWidget from '../Widget/isWidget';
 
-class ChartWidgetTitle extends React.Component {
-
-  deleteChart = (ev) => {
-    ev.preventDefault();
-
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, { method: 'DELETE' })
-      .then(handleFetchErrors)
-      .then(() => {
-        store.dispatch(onSuccess('Chart successfully removed.'));
-        this.props.onDeleteChart();
-      })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
-  }
-
-  render() {
-    return (
-      <div className="widget-title">
-        <h1>{this.props.title}</h1>
-        <a onClick={this.props.onEditChart}>
-          <i className="fa fa-edit" />
-        </a>
-        <a onClick={(ev) => { if (window.confirm("Are you sure you want to delete this chart? This can't be undone!")) this.deleteChart(ev); }}>
-          <i className="fa fa-trash" />
-        </a>
-        <a>
-          <i className="fa fa-arrows-alt" />
-        </a>
-      </div>
-    )
-  }
-}
 
 class WidgetDialog extends React.Component {
   static defaultProps = {
@@ -85,7 +55,7 @@ class WidgetDialog extends React.Component {
   }
 }
 
-export default class MoonChartWidget extends React.Component {
+class MoonChart extends React.Component {
   repinchyMouseMoveHandler = null;
 
   constructor(props) {
@@ -109,6 +79,48 @@ export default class MoonChartWidget extends React.Component {
       allChartSeries: indexedAllChartSeries,
       yAxesCount: 1,
     }
+
+    this.addChartWidgetButtons();
+  }
+
+  addChartWidgetButtons = () => {
+    const editButton = (
+      <a onClick={this.toggleChartSettings}>
+        <i className="fa fa-edit" />
+      </a>
+    );
+    const deleteButton = (
+      <a onClick={(ev) => {
+        if (window.confirm("Are you sure you want to delete this chart? This can't be undone!")) {
+          this.deleteChart(ev);
+        }
+      }}>
+        <i className="fa fa-trash" />
+      </a>
+    );
+    const fullscreenButton = (
+      <a>
+        <i className="fa fa-arrows-alt" />
+      </a>
+    );
+
+    this.props.widgetSetButtons([
+      editButton,
+      deleteButton,
+      fullscreenButton,
+    ]);
+  }
+
+  deleteChart = (ev) => {
+    ev.preventDefault();
+
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, { method: 'DELETE' })
+      .then(handleFetchErrors)
+      .then(() => {
+        store.dispatch(onSuccess('Chart successfully removed.'));
+        this.props.refreshParent();
+      })
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
   }
 
   toggleChartSettings = () => {
@@ -158,99 +170,89 @@ export default class MoonChartWidget extends React.Component {
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = - fromTs * initialScale;
     return (
-      <div className="moonchart-widget widget">
-        <ChartWidgetTitle
-          title={this.props.title}
-          dashboardSlug={this.props.dashboardSlug}
-          chartId={this.props.chartId}
-          onEditChart={this.toggleChartSettings}
-          onDeleteChart={this.props.refreshParent}
-        />
+      <div
+        className="widget-dialog-container"
+        style={{
+          position: 'relative',
+          minHeight: chartHeight + 2*PADDING,
+          width: widgetWidth,
+        }}
+      >
 
         <div
-          className="widget-dialog-container"
-          style={{
-            position: 'relative',
-            minHeight: chartHeight + 2*PADDING,
-            width: widgetWidth,
-          }}
+          className="widget-content"
         >
-
-          <div
-            className="widget-content"
-          >
-            <RePinchy
-              width={usableWidgetWidth}
-              height={chartHeight}
-              activeArea={{
-                x: yAxesWidth,
-                y: 0,
-                w: chartWidth - yAxesWidth,
-                h: chartHeight - xAxisHeight,
-              }}
-              initialState={{
-                x: initialPanX,
-                y: 0.0,
-                scale: initialScale,
-              }}
-              handleMouseMove={this.handleRePinchyMouseMove}
-            >
-              {(x, y, scale, zoomInProgress, pointerPosition) => (
-                <div className="repinchy-content">
-                  <ChartContainer
-                    chartSeries={this.state.allChartSeries}
-                    drawnChartSeries={this.state.drawnChartSeries}
-                    width={chartWidth}
-                    height={chartHeight}
-                    fromTs={Math.round(-x/scale)}
-                    toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
-                    scale={scale}
-                    zoomInProgress={zoomInProgress}
-                    xAxisHeight={xAxisHeight}
-                    yAxisWidth={yAxisWidth}
-                    registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
-                    onYAxesCountUpdate={this.onYAxesCountUpdate}
-                  />
-                  <div
-                    className="legend"
-                    style={{
-                      width: legendWidth,
-                      height: chartHeight,
-                      float: 'right',
-                    }}
-                  >
-                    <Legend
-                      chartSeries={this.state.allChartSeries}
-                      onDrawnChartSeriesChange={(drawnChartSeries) => {
-                        this.setState({
-                          drawnChartSeries: drawnChartSeries,
-                        });
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-            </RePinchy>
-          </div>
-
-          <WidgetDialog
-            opened={this.state.showChartSettings}
-            width={widgetWidth}
+          <RePinchy
+            width={usableWidgetWidth}
             height={chartHeight}
-            padding={PADDING}
-            onCloseAttempt={this.toggleChartSettings}
+            activeArea={{
+              x: yAxesWidth,
+              y: 0,
+              w: chartWidth - yAxesWidth,
+              h: chartHeight - xAxisHeight,
+            }}
+            initialState={{
+              x: initialPanX,
+              y: 0.0,
+              scale: initialScale,
+            }}
+            handleMouseMove={this.handleRePinchyMouseMove}
           >
-            <ChartForm
-              dashboardSlug={this.props.dashboardSlug}
-              chartId={this.props.chartId}
-              initialFormData={{
-                name: this.props.title,
-                content: this.props.chartContent,
-              }}
-            />
-          </WidgetDialog>
-
+            {(x, y, scale, zoomInProgress, pointerPosition) => (
+              <div className="repinchy-content">
+                <ChartContainer
+                  chartSeries={this.state.allChartSeries}
+                  drawnChartSeries={this.state.drawnChartSeries}
+                  width={chartWidth}
+                  height={chartHeight}
+                  fromTs={Math.round(-x/scale)}
+                  toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
+                  scale={scale}
+                  zoomInProgress={zoomInProgress}
+                  xAxisHeight={xAxisHeight}
+                  yAxisWidth={yAxisWidth}
+                  registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
+                  onYAxesCountUpdate={this.onYAxesCountUpdate}
+                />
+                <div
+                  className="legend"
+                  style={{
+                    width: legendWidth,
+                    height: chartHeight,
+                    float: 'right',
+                  }}
+                >
+                  <Legend
+                    chartSeries={this.state.allChartSeries}
+                    onDrawnChartSeriesChange={(drawnChartSeries) => {
+                      this.setState({
+                        drawnChartSeries: drawnChartSeries,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </RePinchy>
         </div>
+
+        <WidgetDialog
+          opened={this.state.showChartSettings}
+          width={widgetWidth}
+          height={chartHeight}
+          padding={PADDING}
+          onCloseAttempt={this.toggleChartSettings}
+        >
+          <ChartForm
+            dashboardSlug={this.props.dashboardSlug}
+            chartId={this.props.chartId}
+            initialFormData={{
+              name: this.props.title,
+              content: this.props.chartContent,
+            }}
+          />
+        </WidgetDialog>
+
       </div>
     )
   }
@@ -865,3 +867,5 @@ export class ChartView extends React.Component {
   }
 }
 
+const MoonChartWidget = isWidget(MoonChart);
+export default MoonChartWidget;
