@@ -1,16 +1,5 @@
 h1 { font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif; font-size: 14px; color: #333; margin: 0; }
 
-.widget { border: 1px solid #eeeeee; }
-  .widget .widget-title { border-bottom: 1px solid #eeeeee; padding: 5px 20px; background-color: #ffffee; display: flex; font-size: 14px; }
-    .widget .widget-title h1 { flex-grow: 1; }
-      .widget .widget-title h1 i { font-size: 12px; color: hsl(215, 80%, 30%); margin-left: 5px; }
-    .widget .widget-title a { display: block; flex-grow: 0; margin-left: 10px; }
-      .widget .widget-title a i.fa-trash { color: hsl(0, 80%, 30%); }
-      .widget .widget-title a i.fa-edit { margin-top: 3px; color: hsl(215, 80%, 30%); }
-      .widget .widget-title a i.fa-arrows-alt { margin-left: 10px; font-size: 12px; padding-top: 2px; color: hsl(215, 80%, 30%); }
-
-  .widget-content { padding: 15px 20px 20px; }
-
   .widget-dialog-container { position: relative; }
     .widget-dialog-container .widget-dialog-overlay { position: absolute; left: 0; top: 0; background-color: #000000; }
     .widget-dialog-container .widget-dialog { position: absolute; left: 20px; top: 0; box-sizing: border-box; padding: 20px; background-color: #ffffff; box-shadow: 10px 20px 20px #cccccc; border: 1px solid #eeeeee; border-top: none; }

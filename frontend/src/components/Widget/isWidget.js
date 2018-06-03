@@ -1,5 +1,7 @@
 import React from 'react';
 
+import './index.css';
+
 import WidgetTitleBar from './WidgetTitleBar';
 
 const isWidget = WrappedComponent => {
