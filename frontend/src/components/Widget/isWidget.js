@@ -33,7 +33,6 @@ const isWidget = WrappedComponent => {
       const contentHeight = this.state.isFullscreen ? window.innerHeight : height - 37;
       return (
         <div
-          key={this.state.isFullscreen ? 'fs' : 'nofs'}
           className={`moonchart-widget widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}
         >
           <WidgetTitleBar

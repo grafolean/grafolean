@@ -151,10 +151,10 @@ class MoonChart extends React.Component {
     const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
     const chartWidth = this.props.width * 0.7;
-    const chartHeight = this.props.height;
     const legendWidth = this.props.width - chartWidth;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
-    const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
+    const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
+    const chartHeight = this.props.height - xAxisHeight;
     const yAxesWidth = this.state.yAxesCount * yAxisWidth;
 
     const toTs = moment().unix();
@@ -526,13 +526,16 @@ export class ChartView extends React.Component {
 
   constructor(props) {
     super(props);
-    this.yAxisHeight = this.props.height - this.props.xAxisHeight - this.YAXIS_TOP_PADDING;
     this.state = {
       closestPoint: null,
       overrideClosestPoint: null,  // when tooltip is open, this is set
     }
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
+  }
+
+  get yAxisHeight() {
+    return this.props.height - this.props.xAxisHeight - this.YAXIS_TOP_PADDING;
   }
 
   dy2dv = (dy, unit) => (dy * (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) / this.yAxisHeight)
