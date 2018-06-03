@@ -98,16 +98,10 @@ class MoonChart extends React.Component {
         <i className="fa fa-trash" />
       </a>
     );
-    const fullscreenButton = (
-      <a>
-        <i className="fa fa-arrows-alt" />
-      </a>
-    );
 
     this.props.widgetSetButtons([
       editButton,
       deleteButton,
-      fullscreenButton,
     ]);
   }
 

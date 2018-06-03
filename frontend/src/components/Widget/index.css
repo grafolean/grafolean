@@ -5,6 +5,6 @@
     .widget .widget-title a { display: block; flex-grow: 0; margin-left: 10px; }
       .widget .widget-title a i.fa-trash { color: hsl(0, 80%, 30%); }
       .widget .widget-title a i.fa-edit { margin-top: 3px; color: hsl(215, 80%, 30%); }
-      .widget .widget-title a i.fa-arrows-alt { margin-left: 10px; font-size: 12px; padding-top: 2px; color: hsl(215, 80%, 30%); }
+      .widget .widget-title a i.fullscreen { margin-left: 10px; font-size: 12px; padding-top: 2px; color: hsl(215, 80%, 30%); }
 
   .widget-content { padding: 15px 20px 20px; }

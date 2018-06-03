@@ -11,12 +11,19 @@ const isWidget = WrappedComponent => {
       super(props);
       this.state = {
         buttonRenders: [],
+        isFullscreen: false,
       }
     }
 
     widgetSetButtons = (renders) => {
       this.setState({
         buttonRenders: renders,
+      })
+    }
+
+    toggleFullscreen = (shouldBeFullscreen) => {
+      this.setState({
+        isFullscreen: shouldBeFullscreen,
       })
     }
 
@@ -27,6 +34,8 @@ const isWidget = WrappedComponent => {
           <WidgetTitleBar
             title={title}
             buttonRenders={this.state.buttonRenders}
+            isFullscreen={this.state.isFullscreen}
+            handleToggleFullscreen={this.toggleFullscreen}
           />
 
           <WrappedComponent
