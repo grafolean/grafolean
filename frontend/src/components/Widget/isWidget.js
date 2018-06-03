@@ -28,9 +28,14 @@ const isWidget = WrappedComponent => {
     }
 
     render() {
-      const { title, ...passThroughProps } = this.props;
+      const { title, width, height, ...passThroughProps } = this.props;
+      const contentWidth = this.state.isFullscreen ? window.innerWidth : width - 42;
+      const contentHeight = this.state.isFullscreen ? window.innerHeight : height - 37;
       return (
-        <div className="moonchart-widget widget">
+        <div
+          key={this.state.isFullscreen ? 'fs' : 'nofs'}
+          className={`moonchart-widget widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}
+        >
           <WidgetTitleBar
             title={title}
             buttonRenders={this.state.buttonRenders}
@@ -38,11 +43,15 @@ const isWidget = WrappedComponent => {
             handleToggleFullscreen={this.toggleFullscreen}
           />
 
-          <WrappedComponent
-            widgetSetButtons={renders => this.widgetSetButtons(renders)}
-            title={this.props.title}
-            {...passThroughProps}
-          />
+          <div className="widget-content">
+            <WrappedComponent
+              widgetSetButtons={renders => this.widgetSetButtons(renders)}
+              title={this.props.title}
+              width={contentWidth}
+              height={contentHeight}
+              {...passThroughProps}
+            />
+          </div>
         </div>
       )
     }

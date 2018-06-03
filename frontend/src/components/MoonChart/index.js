@@ -150,11 +150,9 @@ class MoonChart extends React.Component {
   render() {
     const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
-    const widgetWidth = this.props.width;
-    const usableWidgetWidth = widgetWidth - 2 * PADDING;
-    const chartWidth = usableWidgetWidth * 0.7;
+    const chartWidth = this.props.width * 0.7;
     const chartHeight = this.props.height;
-    const legendWidth = usableWidgetWidth * 0.3;
+    const legendWidth = this.props.width - chartWidth;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(chartHeight * 0.10), 50);  // 10% of chart height, max. 50px
     const yAxesWidth = this.state.yAxesCount * yAxisWidth;
@@ -168,16 +166,14 @@ class MoonChart extends React.Component {
         className="widget-dialog-container"
         style={{
           position: 'relative',
-          minHeight: chartHeight + 2*PADDING,
-          width: widgetWidth,
+          minHeight: this.props.height,
+          width: this.props.width,
         }}
       >
 
-        <div
-          className="widget-content"
-        >
+        <div>
           <RePinchy
-            width={usableWidgetWidth}
+            width={this.props.width}
             height={chartHeight}
             activeArea={{
               x: yAxesWidth,
@@ -232,8 +228,8 @@ class MoonChart extends React.Component {
 
         <WidgetDialog
           opened={this.state.showChartSettings}
-          width={widgetWidth}
-          height={chartHeight}
+          width={this.props.width}
+          height={this.props.height}
           padding={PADDING}
           onCloseAttempt={this.toggleChartSettings}
         >
