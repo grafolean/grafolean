@@ -29,8 +29,10 @@ const isWidget = WrappedComponent => {
 
     render() {
       const { title, width, height, ...passThroughProps } = this.props;
-      const contentWidth = this.state.isFullscreen ? window.innerWidth : width - 42;
-      const contentHeight = this.state.isFullscreen ? window.innerHeight : height - 37;
+      const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
+      const outerHeight = this.state.isFullscreen ? window.innerHeight : height;
+      const contentWidth = outerWidth - 42;  // minus padding & border
+      const contentHeight = outerHeight - 37 - 31;  // minus padding, border & title bar height
       return (
         <div
           className={`moonchart-widget widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}

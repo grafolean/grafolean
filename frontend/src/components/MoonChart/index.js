@@ -154,7 +154,6 @@ class MoonChart extends React.Component {
     const legendWidth = this.props.width - chartWidth;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
-    const chartHeight = this.props.height - xAxisHeight;
     const yAxesWidth = this.state.yAxesCount * yAxisWidth;
 
     const toTs = moment().unix();
@@ -174,12 +173,12 @@ class MoonChart extends React.Component {
         <div>
           <RePinchy
             width={this.props.width}
-            height={chartHeight}
+            height={this.props.height}
             activeArea={{
               x: yAxesWidth,
               y: 0,
               w: chartWidth - yAxesWidth,
-              h: chartHeight - xAxisHeight,
+              h: this.props.height - xAxisHeight,
             }}
             initialState={{
               x: initialPanX,
@@ -194,7 +193,7 @@ class MoonChart extends React.Component {
                   chartSeries={this.state.allChartSeries}
                   drawnChartSeries={this.state.drawnChartSeries}
                   width={chartWidth}
-                  height={chartHeight}
+                  height={this.props.height}
                   fromTs={Math.round(-x/scale)}
                   toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
                   scale={scale}
@@ -208,7 +207,7 @@ class MoonChart extends React.Component {
                   className="legend"
                   style={{
                     width: legendWidth,
-                    height: chartHeight,
+                    height: this.props.height,
                     float: 'right',
                   }}
                 >
@@ -522,7 +521,7 @@ export class ChartView extends React.Component {
     nDecimals: 2,
   }
   oldClosest = null;
-  YAXIS_TOP_PADDING = 55;
+  YAXIS_TOP_PADDING = 80;
 
   constructor(props) {
     super(props);
