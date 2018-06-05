@@ -274,6 +274,7 @@ class ChartContainer extends React.Component {
   };
   paths = null;
   yAxesProperties = {};
+  YAXIS_TOP_PADDING = 40;
 
   constructor(props) {
     super(props);
@@ -292,6 +293,7 @@ class ChartContainer extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     this.ensureData(nextProps.fromTs, nextProps.toTs);
+    this.updateYAxisDerivedValues(nextProps);
   }
 
   ensureData(fromTs, toTs) {
@@ -365,12 +367,34 @@ class ChartContainer extends React.Component {
       ), this.yAxesProperties[cs.unit].maxYValue);
     }
 
+    // now that you have updated minYValue and maxYValue for each unit, prepare some of the data that you
+    // will need often in cache - minY, maxY, ticks, v2y() and y2v():
+    this.updateYAxisDerivedValues(this.props);
+
     this.setState(oldState => ({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
     }));
 
     const yAxesCount = Object.keys(this.yAxesProperties).length;
     this.props.onYAxesCountUpdate(yAxesCount);
+  }
+
+  updateYAxisDerivedValues = (props) => {
+    const yAxisHeight = props.height - props.xAxisHeight - this.YAXIS_TOP_PADDING;
+    for (let unit in this.yAxesProperties) {
+      const ticks = ChartView.getYTicks(this.yAxesProperties[unit].minYValue, this.yAxesProperties[unit].maxYValue);
+      const minY = parseFloat(ticks[0]);
+      const maxY = parseFloat(ticks[ticks.length - 1]);
+      this.yAxesProperties[unit].derived = {
+        minY: minY,
+        maxY: maxY,
+        ticks: ticks,
+        v2y: (v) => (this.YAXIS_TOP_PADDING + yAxisHeight - (v - minY) * yAxisHeight / (maxY - minY)),
+        y2v: (y) => ((maxY - minY) * (yAxisHeight - y + this.YAXIS_TOP_PADDING) / yAxisHeight + minY),
+        dy2dv: (dy) => (dy * (maxY - minY) / yAxisHeight),
+        dv2dy: (dv) => (dv * yAxisHeight / (maxY - minY)),
+      };
+    }
   }
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -438,11 +462,12 @@ class IntervalLineChart extends React.PureComponent {
               return null;
             };
             const path = cs.path;
+            const v2y = this.props.v2y[cs.unit];
             const pathPoints = this.props.interval.pathsData[cs.path].map(p => ({
               x: ts2x(p.t),
-              y: this.props.v2y(p.v, cs.unit),
-              minY: this.props.v2y(p.minv, cs.unit),
-              maxY: this.props.v2y(p.maxv, cs.unit),
+              y: v2y(p.v),
+              minY: v2y(p.minv),
+              maxY: v2y(p.maxv),
             }));
             pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
             const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
@@ -517,7 +542,6 @@ export class ChartView extends React.Component {
     nDecimals: 2,
   }
   oldClosest = null;
-  YAXIS_TOP_PADDING = 80;
 
   constructor(props) {
     super(props);
@@ -529,18 +553,11 @@ export class ChartView extends React.Component {
     this.props.registerMouseMoveHandler(this.handleMouseMove);
   }
 
-  get yAxisHeight() {
-    return this.props.height - this.props.xAxisHeight - this.YAXIS_TOP_PADDING;
-  }
-
-  dy2dv = (dy, unit) => (dy * (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) / this.yAxisHeight)
-  dv2dy = (dv, unit) => (dv * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue))
+  // functions for converting x <-> t:
   dx2dt = (dx) => (dx / this.props.scale)
   dt2dx = (dt) => (dt * this.props.scale)
   x2t = (x) => (this.props.fromTs + x / this.props.scale);
   t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
-  y2v = (y, unit) => ((this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue) * (this.yAxisHeight - y + this.YAXIS_TOP_PADDING) / this.yAxisHeight + this.props.yAxesProperties[unit].minYValue);
-  v2y = (v, unit) => (this.YAXIS_TOP_PADDING + this.yAxisHeight - (v - this.props.yAxesProperties[unit].minYValue) * this.yAxisHeight / (this.props.yAxesProperties[unit].maxYValue - this.props.yAxesProperties[unit].minYValue));
 
   handleMouseMove = (ev) => {
     // this will get called from RePinchy when there is a mousemove event:
@@ -550,9 +567,11 @@ export class ChartView extends React.Component {
     const newClosest = this.getClosestValue(ts, y);
     if (
       (
+        // no closest point found:
         this.oldClosest === null &&
         newClosest === null
       ) || (
+        // new closest point is the same as old one:
         this.oldClosest !== null &&
         newClosest !== null &&
         this.oldClosest.cs === newClosest.cs &&
@@ -618,8 +637,9 @@ export class ChartView extends React.Component {
         if (!interval.pathsData.hasOwnProperty(cs.path)) {  // do we have fetched data for this cs?
           continue;
         };
-        const v = this.y2v(y, cs.unit);
-        const maxDistV = this.dy2dv(MAX_DIST_PX, cs.unit);
+        const helpers = this.props.yAxesProperties[cs.unit].derived;
+        const v = helpers.y2v(y);
+        const maxDistV = helpers.dy2dv(MAX_DIST_PX);
         for (let point of interval.pathsData[cs.path]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
@@ -627,7 +647,7 @@ export class ChartView extends React.Component {
             continue;
             // when we are searching for closest match, we want it to be in x/y space, not ts/v:
           const distX = this.dt2dx(distTs);
-          const distY = this.dv2dy(distV, cs.unit);
+          const distY = helpers.dv2dy(distV);
           const dist = Math.sqrt(distX * distX + distY * distY);
 
           if (closest === null || dist < closest.dist) {
@@ -746,8 +766,8 @@ export class ChartView extends React.Component {
                   height={yAxisHeight}
                   minYValue={this.props.yAxesProperties[unit].minYValue}
                   maxYValue={this.props.yAxesProperties[unit].maxYValue}
-                  v2y={(v) => this.v2y(v, unit)}
-                  yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
+                  v2y={this.props.yAxesProperties[unit].derived.v2y}
+                  yTicks={this.props.yAxesProperties[unit].derived.ticks}
                   color={generateGridColor(i)}
                 />
               </g>
@@ -772,7 +792,11 @@ export class ChartView extends React.Component {
                       scale={this.props.scale}
                       isAggr={this.props.aggrLevel >= 0}
                       drawnChartSeries={this.props.drawnChartSeries}
-                      v2y={this.v2y}
+                      // dict of v2y() functions per unit:
+                      v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
+                        result[unit] = this.props.yAxesProperties[unit].derived.v2y;
+                        return result;
+                      }, {})}
                     />
                   ))
                 }
@@ -780,7 +804,7 @@ export class ChartView extends React.Component {
                   <TooltipIndicator
                     {...closest}
                     x={this.dt2dx(closest.point.t)}
-                    y={this.v2y(closest.point.v, closest.cs.unit)}
+                    y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
                     yAxisHeight={yAxisHeight}
                   />
                 )}
@@ -792,11 +816,9 @@ export class ChartView extends React.Component {
                 <YAxis
                   width={this.props.yAxisWidth}
                   height={yAxisHeight}
-                  minYValue={this.props.yAxesProperties[unit].minYValue}
-                  maxYValue={this.props.yAxesProperties[unit].maxYValue}
                   unit={unit}
-                  v2y={(v) => this.v2y(v, unit)}
-                  yTicks={ChartView.getYTicks(this.props.yAxesProperties[unit].minYValue, this.props.yAxesProperties[unit].maxYValue)}
+                  v2y={this.props.yAxesProperties[unit].derived.v2y}
+                  yTicks={this.props.yAxesProperties[unit].derived.ticks}
                   color="#999999"
                 />
               </g>
@@ -821,7 +843,7 @@ export class ChartView extends React.Component {
               style={{
                 position: 'absolute',
                 left: this.t2x(closest.point.t) + yAxesWidth,
-                top: this.v2y(closest.point.v, closest.cs.unit),
+                top: this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v),
               }}
             >
               <TooltipPopup
