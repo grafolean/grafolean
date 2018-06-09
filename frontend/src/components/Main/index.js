@@ -27,6 +27,9 @@ const Content = styled.div`
   background-color: #ffffff;
 `
 
+const WrappedRoute = ({ component: Component, contentWidth, ...rest }) => (
+  <Route {...rest} render={props => <Component {...props} width={contentWidth} />} />
+);
 
 export default class Main extends Component {
   mql = window.matchMedia(`(min-width: 800px)`)
@@ -113,9 +116,6 @@ export default class Main extends Component {
     const innerWindowWidth = this.state.windowWidth - 2 * CONTENT_PADDING_LR - SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(300, this.state.windowWidth - 40);  // always leave a bit of place (40px) to the right of menu
     const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth: innerWindowWidth;
-    const WrappedRoute = ({ component: Component, ...rest }) => (
-      <Route {...rest} render={props => <Component {...props} width={contentWidth} />} />
-    );
     return (
       <Sidebar sidebar={sidebarContent}
               open={this.state.sidebarOpen}
@@ -145,11 +145,11 @@ export default class Main extends Component {
           }}>
             <Content>
               <Switch>
-                <WrappedRoute exact path='/' component={Home}/>
-                <WrappedRoute exact path='/dashboards' component={DashboardsListContainer}/>
-                <WrappedRoute exact path='/dashboards/new' component={DashboardNewFormContainer}/>
-                <WrappedRoute exact path='/dashboards/view/:slug' component={DashboardViewContainer}/>
-                <WrappedRoute exact path='/about' component={About}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/' component={Home}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsListContainer}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewFormContainer}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/about' component={About}/>
               </Switch>
             </Content>
           </div>
