@@ -77,7 +77,6 @@ class MoonChart extends React.Component {
       drawnChartSeries: indexedAllChartSeries,
       showChartSettings: false,
       allChartSeries: indexedAllChartSeries,
-      yAxesCount: 1,
     }
 
     this.addChartWidgetButtons();
@@ -123,10 +122,6 @@ class MoonChart extends React.Component {
     }))
   }
 
-  onYAxesCountUpdate = (newCount) => {
-    this.setState({ yAxesCount: newCount });
-  }
-
   // We need to do this weird dance around mousemove events because of performance
   // issues. RePinchy handles all of mouse events (because it needs them for its
   // own purposes too). If it doesn't need them, they are passed below to the
@@ -154,7 +149,8 @@ class MoonChart extends React.Component {
     const legendWidth = this.props.width - chartWidth;
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
-    const yAxesWidth = this.state.yAxesCount * yAxisWidth;
+    const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
+    const yAxesWidth = yAxesCount * yAxisWidth;
 
     const toTs = moment().unix();
     const fromTs = moment().subtract(1, 'month').unix();
@@ -201,7 +197,6 @@ class MoonChart extends React.Component {
                   xAxisHeight={xAxisHeight}
                   yAxisWidth={yAxisWidth}
                   registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
-                  onYAxesCountUpdate={this.onYAxesCountUpdate}
                 />
                 <div
                   className="legend"
@@ -374,9 +369,6 @@ class ChartContainer extends React.Component {
     this.setState(oldState => ({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
     }));
-
-    const yAxesCount = Object.keys(this.yAxesProperties).length;
-    this.props.onYAxesCountUpdate(yAxesCount);
   }
 
   updateYAxisDerivedValues = (props) => {
