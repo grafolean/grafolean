@@ -75,11 +75,9 @@ export const getMissingIntervals = (existingIntervals, wantedInterval) => {
 }
 
 export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel) => {
-  console.log(fromTs, toTs, useAggrLevel, pathsData)
-  const interval = Math.round(3600 / (3 ** useAggrLevel));
+  const interval = Math.round(3600 * (3 ** useAggrLevel));
   const fromTsAligned = Math.floor(fromTs / interval) * interval;
   const toTsAligned = Math.ceil(toTs / interval) * interval;
-  console.log(interval, fromTsAligned, toTsAligned)
 
   // initialize result array:
   const numberOfBuckets = Math.round((toTsAligned - fromTsAligned) / interval);
