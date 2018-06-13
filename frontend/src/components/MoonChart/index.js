@@ -4,56 +4,23 @@ import { stringify } from 'qs';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor, aggregateIntervalOnTheFly } from './utils';
 
 import RePinchy from '../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
-import YAxis from './yaxis';
-import Legend from './legend';
-import { getSuggestedAggrLevel, getMissingIntervals, generateSerieColor, generateGridColor } from './utils';
+import YAxis from './YAxis';
+import IntervalLineChart from './IntervalLineChart';
+import Legend from './Legend';
+import Grid from './Grid';
+import TooltipIndicator from './TooltipIndicator';
 import TooltipPopup from '../TooltipPopup';
 import ChartForm from '../ChartForm';
 
 import './index.css';
 import MatchingPaths from '../ChartForm/MatchingPaths';
+import WidgetDialog from '../Widget/WidgetDialog';
 import isWidget from '../Widget/isWidget';
 
-
-class WidgetDialog extends React.Component {
-  static defaultProps = {
-    width: 100,
-    height: 100,
-    padding: 20,
-    onCloseAttempt: () => {},
-  }
-
-  render() {
-    return (
-      <div>
-        <div
-          className="widget-dialog-overlay"
-          style={{
-            width: this.props.width,
-            height: this.props.opened ? this.props.height + 2*this.props.padding : 0,
-            opacity: this.props.opened ? 0.1 : 0,
-          }}
-          onClick={this.props.onCloseAttempt}
-        >
-        </div>
-
-        <div
-          className="widget-dialog"
-          style={{
-            width: this.props.width - 2*this.props.padding,
-            opacity: this.props.opened ? 1 : 0,
-            zIndex: this.props.opened ? 9999 : -1,  // you need to send it to back, otherwise it floats before our chart
-          }}
-        >
-          {this.props.children}
-        </div>
-      </div>
-    )
-  }
-}
 
 class MoonChart extends React.Component {
   repinchyMouseMoveHandler = null;
@@ -242,7 +209,7 @@ class MoonChart extends React.Component {
   }
 }
 
-class ChartContainer extends React.Component {
+export class ChartContainer extends React.Component {
   requestsInProgress = [
     // {
     //   aggrLevel: ...
@@ -270,6 +237,7 @@ class ChartContainer extends React.Component {
   paths = null;
   yAxesProperties = {};
   YAXIS_TOP_PADDING = 40;
+  MAX_POINTS = 50
 
   constructor(props) {
     super(props);
@@ -288,11 +256,11 @@ class ChartContainer extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     this.ensureData(nextProps.fromTs, nextProps.toTs);
-    this.updateYAxisDerivedValues(nextProps);
+    this.updateYAxisDerivedProperties(nextProps);
   }
 
   ensureData(fromTs, toTs) {
-    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs);  // -1 for no aggregation
+    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, this.MAX_POINTS, -1);  // -1 for no aggregation
     this.setState((oldState) => ({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
@@ -364,14 +332,14 @@ class ChartContainer extends React.Component {
 
     // now that you have updated minYValue and maxYValue for each unit, prepare some of the data that you
     // will need often in cache - minY, maxY, ticks, v2y() and y2v():
-    this.updateYAxisDerivedValues(this.props);
+    this.updateYAxisDerivedProperties(this.props);
 
     this.setState(oldState => ({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
     }));
   }
 
-  updateYAxisDerivedValues = (props) => {
+  updateYAxisDerivedProperties = (props) => {
     const yAxisHeight = props.height - props.xAxisHeight - this.YAXIS_TOP_PADDING;
     for (let unit in this.yAxesProperties) {
       const ticks = ChartView.getYTicks(this.yAxesProperties[unit].minYValue, this.yAxesProperties[unit].maxYValue);
@@ -442,96 +410,22 @@ class ChartContainer extends React.Component {
   }
 }
 
-class IntervalLineChart extends React.PureComponent {
-  render() {
-    const ts2x = (ts) => ( ts * this.props.scale );
-    return (
-      <g>
-        {/* draw every path: */}
-        {this.props.drawnChartSeries
-          .map((cs) => {
-            if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
-              return null;
-            };
-            const path = cs.path;
-            const v2y = this.props.v2y[cs.unit];
-            const pathPoints = this.props.interval.pathsData[cs.path].map(p => ({
-              x: ts2x(p.t),
-              y: v2y(p.v),
-              minY: v2y(p.minv),
-              maxY: v2y(p.maxv),
-            }));
-            pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
-            const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
-            const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
-            const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
-            const serieColor = generateSerieColor(cs.path, cs.index);
-            return (
-              <g key={`g-${cs.index}`}>
-                <path
-                  d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
-                  style={{
-                    fill: serieColor,
-                    opacity: 0.2,
-                    stroke: 'none',
-                  }}
-                />
-                <path
-                  d={`M${linePoints.join("L")}`}
-                  style={{
-                    fill: 'none',
-                    stroke: serieColor,
-                  }}
-                />
-                {(true) ? (
-                  pathPoints.map((p, pi) => (
-                    // points:
-                    <circle key={`p-${cs.ndex}-${pi}`} cx={p.x} cy={p.y} r={1} style={{
-                      fill: serieColor,
-                    }} />
-                  ))
-                ) : (null)}
-              </g>
-            );
-          })}
-
-      </g>
-    );
-  }
-}
-
-class Grid extends React.Component {
-  render() {
-    return (
-      <g>
-        {this.props.yTicks !== null && this.props.yTicks.map(v => {
-          const y = this.props.v2y(v);
-          return (
-            <line key={v} x1={0} y1={y} x2={this.props.width} y2={y} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
-          )
-        })}
-      </g>
-    );
-  }
-}
-
-class TooltipIndicator extends React.Component {
-  render() {
-    const x = Math.round(this.props.x);
-    const y = Math.round(this.props.y);
-    const serieColor = generateSerieColor(this.props.cs.path, this.props.cs.index);
-    return (
-      <g>
-        <line x1={x} y1={0} x2={x} y2={this.props.yAxisHeight} shapeRendering="crispEdges" stroke="#e3e3e3" strokeWidth="1"/>
-        <circle cx={x} cy={y} r={4} fill={serieColor}/>
-      </g>
-    )
-  }
-}
-
 export class ChartView extends React.Component {
   static defaultProps = {
+    width: 500,
+    height: 300,
+    fromTs: 0,
+    toTs: 0,
+    yAxisWidth: 50,
+    xAxisHeight: 50,
     nDecimals: 2,
+    scale: 1,
+    zoomInProgress: false,
+    aggrLevel: null,
+    registerMouseMoveHandler: (handler) => {},
+    fetchedIntervalsData: [],
+    drawnChartSeries: [],
+    yAxesProperties: {},
   }
   oldClosest = null;
 
@@ -862,6 +756,7 @@ export class ChartView extends React.Component {
             </div>
           )}
         </div>
+        <div>{this.props.aggrLevel}</div>
       </div>
     );
   }

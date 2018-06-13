@@ -1,0 +1,61 @@
+import React from 'react';
+
+import { generateSerieColor } from './utils';
+
+export default class IntervalLineChart extends React.PureComponent {
+  render() {
+    const ts2x = (ts) => ( ts * this.props.scale );
+    return (
+      <g>
+        {/* draw every path: */}
+        {this.props.drawnChartSeries
+          .map((cs) => {
+            if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
+              return null;
+            };
+            const path = cs.path;
+            const v2y = this.props.v2y[cs.unit];
+            const pathPoints = this.props.interval.pathsData[cs.path].map(p => ({
+              x: ts2x(p.t),
+              y: v2y(p.v),
+              minY: v2y(p.minv),
+              maxY: v2y(p.maxv),
+            }));
+            pathPoints.sort((a, b) => (a.x < b.x) ? (-1) : (1));  // seems like the points weren't sorted by now... we should fix this properly
+            const linePoints = pathPoints.map((p) => (`${p.x},${p.y}`));
+            const areaMinPoints = pathPoints.map((p) => (`${p.x},${p.minY}`));
+            const areaMaxPointsReversed = pathPoints.map((p) => (`${p.x},${p.maxY}`)).reverse();
+            const serieColor = generateSerieColor(cs.path, cs.index);
+            return (
+              <g key={`g-${cs.index}`}>
+                <path
+                  d={`M${areaMinPoints.join("L")}L${areaMaxPointsReversed}`}
+                  style={{
+                    fill: serieColor,
+                    opacity: 0.2,
+                    stroke: 'none',
+                  }}
+                />
+                <path
+                  d={`M${linePoints.join("L")}`}
+                  style={{
+                    fill: 'none',
+                    stroke: serieColor,
+                  }}
+                />
+                {(true) ? (
+                  pathPoints.map((p, pi) => (
+                    // points:
+                    <circle key={`p-${cs.ndex}-${pi}`} cx={p.x} cy={p.y} r={1} style={{
+                      fill: serieColor,
+                    }} />
+                  ))
+                ) : (null)}
+              </g>
+            );
+          })}
+
+      </g>
+    );
+  }
+}

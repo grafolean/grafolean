@@ -22,7 +22,6 @@ export default class YAxis extends React.Component {
         <line x1={this.props.width - 1} y1={15} x2={this.props.width - 1} y2={this.props.height} shapeRendering="crispEdges" stroke={this.props.color} strokeWidth="1"/>
         <YAxisLabel className="bold" x={this.props.width - 7} y={10}>{this.props.unit}</YAxisLabel>
 
-
         {this.props.yTicks !== null && this.props.yTicks.map(v => {
           const y = this.props.v2y(v);
           return (
