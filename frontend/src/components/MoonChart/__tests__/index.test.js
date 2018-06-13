@@ -1,26 +1,47 @@
 import React from 'react';
 import { shallow } from 'enzyme';
-import MoonChartContainer, { ChartView } from '../index';
+import { ChartContainer, ChartView } from '../index';
 
-test.skip('MoonChartContainer merging of intervals - add before', () => {
-  const moonChart = shallow(
-    <MoonChartContainer
-      chartId={123}
-      paths={["asdf.123", "asdf.234"]}
-      portWidth={100}
-      portHeight={100}
+
+const chartSeries = [
+  {
+    chartSeriesId: `0-asdf.123`,
+    path: 'asdf.123',
+    serieName: 'asdf.123',
+    unit: 's',
+  },
+  {
+    chartSeriesId: `1-asdf.234`,
+    path: 'asdf.234',
+    serieName: 'asdf.234',
+    unit: 's',
+  },
+];
+
+
+test('ChartContainer merging of intervals - add before', () => {
+  const chartContainer = shallow(
+    <ChartContainer
+      chartSeries={chartSeries}
+      drawnChartSeries={chartSeries}
+      width={500}
+      height={200}
       fromTs={500}
       toTs={600}
       scale={1}
       zoomInProgress={false}
+      xAxisHeight={50}
+      yAxisWidth={50}
+      registerMouseMoveHandler={(handler) => {}}
     />
   );
-  const moonChartInstance = moonChart.instance();
+  const chartContainerInstance = chartContainer.instance();
 
-  expect(moonChartInstance.fetchedData).toEqual({});
-  moonChart.instance().saveResponseData(400, 700, 2, {
+  expect(chartContainerInstance.fetchedData).toEqual({});
+  chartContainer.instance().saveResponseData(400, 700, 2, {
     paths: {
       "asdf.123": {
+        next_data_point: null,
         data: [
           {t: 444, v: 100.1},
           {t: 555, v: 200.2},
@@ -28,6 +49,7 @@ test.skip('MoonChartContainer merging of intervals - add before', () => {
         ],
       },
       "asdf.234": {
+        next_data_point: null,
         data: [
           {t: 449, v: 109.1},
           {t: 559, v: 209.2},
@@ -38,7 +60,7 @@ test.skip('MoonChartContainer merging of intervals - add before', () => {
   });
   // console.log(moonChartInstance.fetchedData)
   // console.log(moonChartInstance.fetchedData['2'][0].pathsData)
-  expect(moonChartInstance.fetchedData).toEqual({
+  expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {
         fromTs: 400,
@@ -58,7 +80,7 @@ test.skip('MoonChartContainer merging of intervals - add before', () => {
       },
     ],
   });
-  moonChart.instance().saveResponseData(300, 400, 2, {
+  chartContainer.instance().saveResponseData(300, 400, 2, {
     paths: {
       "asdf.123": {
         data: [
@@ -72,7 +94,7 @@ test.skip('MoonChartContainer merging of intervals - add before', () => {
       },
     },
   });
-  expect(moonChartInstance.fetchedData).toEqual({
+  expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {
         fromTs: 300,
@@ -96,23 +118,26 @@ test.skip('MoonChartContainer merging of intervals - add before', () => {
   });
 });
 
-test.skip('MoonChartContainer merging of intervals - add between', () => {
-  const moonChart = shallow(
-    <MoonChartContainer
-      chartId={123}
-      paths={["asdf.123", "asdf.234"]}
-      portWidth={100}
-      portHeight={100}
+test('ChartContainer merging of intervals - add between', () => {
+  const chartContainer = shallow(
+    <ChartContainer
+      chartSeries={chartSeries}
+      drawnChartSeries={chartSeries}
+      width={500}
+      height={200}
       fromTs={500}
       toTs={600}
       scale={1}
       zoomInProgress={false}
+      xAxisHeight={50}
+      yAxisWidth={50}
+      registerMouseMoveHandler={(handler) => {}}
     />
   );
-  const moonChartInstance = moonChart.instance();
+  const chartContainerInstance = chartContainer.instance();
 
-  expect(moonChartInstance.fetchedData).toEqual({});
-  moonChart.instance().saveResponseData(400, 700, 2, {
+  expect(chartContainerInstance.fetchedData).toEqual({});
+  chartContainer.instance().saveResponseData(400, 700, 2, {
     paths: {
       "asdf.123": {
         data: [
@@ -130,7 +155,7 @@ test.skip('MoonChartContainer merging of intervals - add between', () => {
       },
     },
   });
-  moonChart.instance().saveResponseData(200, 300, 2, {
+  chartContainer.instance().saveResponseData(200, 300, 2, {
     paths: {
       "asdf.123": {
         data: [
@@ -146,7 +171,7 @@ test.skip('MoonChartContainer merging of intervals - add between', () => {
   });
   // console.log(moonChartInstance.fetchedData)
   // console.log(moonChartInstance.fetchedData['2'][0].pathsData)
-  expect(moonChartInstance.fetchedData).toEqual({
+  expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {
         fromTs: 200,
@@ -178,7 +203,7 @@ test.skip('MoonChartContainer merging of intervals - add between', () => {
       },
     ],
   });
-  moonChart.instance().saveResponseData(300, 400, 2, {
+  chartContainer.instance().saveResponseData(300, 400, 2, {
     paths: {
       "asdf.123": {
         data: [
@@ -192,7 +217,7 @@ test.skip('MoonChartContainer merging of intervals - add between', () => {
       },
     },
   });
-  expect(moonChartInstance.fetchedData).toEqual({
+  expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {
         fromTs: 200,
@@ -218,19 +243,13 @@ test.skip('MoonChartContainer merging of intervals - add between', () => {
   });
 });
 
-test.skip('ChartView coordinate system transformations - dx', () => {
+test('ChartView coordinate system transformations - dx', () => {
   const comp = shallow(
     <ChartView
-      minYValue={200}
-      maxYValue={800}
-      height={650}
-      xAxisHeight={50}
       scale={0.5}
-      fetchedIntervalsData={[]}
     />
   );
   const inst = comp.instance();
-  const yAxisHeight=600;
 
   const params = [
     { dx: 0, dt: 0 },
@@ -246,19 +265,32 @@ test.skip('ChartView coordinate system transformations - dx', () => {
   }
 });
 
-test.skip('ChartView coordinate system transformations - dy', () => {
-  const comp = shallow(
-    <ChartView
-      minYValue={200}
-      maxYValue={800}
-      height={650}
+test('ChartView coordinate system transformations - dy', () => {
+  const chartContainer = shallow(
+    <ChartContainer
+      chartSeries={chartSeries}
+      drawnChartSeries={chartSeries}
+      width={500}
+      fromTs={500}
+      toTs={600}
+      scale={1}
+      zoomInProgress={false}
       xAxisHeight={50}
-      scale={0.5}
-      fetchedIntervalsData={[]}
+      yAxisWidth={50}
+      height={650}
     />
   );
-  const inst = comp.instance();
-  const yAxisHeight=600;
+  const chartContainerInstance = chartContainer.instance();
+
+  const yAxisHeight=600 - 40;
+
+  chartContainerInstance.yAxesProperties={
+    's': {
+      minYValue: 200,
+      maxYValue: 800,
+    }
+  };
+  chartContainerInstance.updateYAxisDerivedProperties(chartContainerInstance.props)
 
   const params = [
     { dv: 0, dy: 0 },
@@ -269,12 +301,12 @@ test.skip('ChartView coordinate system transformations - dy', () => {
   ];
   for (let param of params) {
     const { dv, dy } = param;
-    expect(inst.dv2dy(dv)).toEqual(dy);
-    expect(inst.dy2dv(dy)).toEqual(dv);
+    expect(chartContainerInstance.yAxesProperties['s'].derived.dv2dy(dv)).toEqual(dy);
+    expect(chartContainerInstance.yAxesProperties['s'].derived.dy2dv(dy)).toEqual(dv);
   }
 })
 
-test.skip('ChartView coordinate system transformations - x', () => {
+test('ChartView coordinate system transformations - x', () => {
   const comp = shallow(
     <ChartView
       minYValue={200}
@@ -303,20 +335,30 @@ test.skip('ChartView coordinate system transformations - x', () => {
   }
 });
 
-test.skip('ChartView coordinate system transformations - y', () => {
-  const comp = shallow(
-    <ChartView
-      minYValue={200}
-      maxYValue={800}
-      height={650}
+test('ChartView coordinate system transformations - y', () => {
+  const chartContainer = shallow(
+    <ChartContainer
+      chartSeries={chartSeries}
+      drawnChartSeries={chartSeries}
+      width={500}
+      fromTs={500}
+      toTs={600}
+      scale={1}
+      zoomInProgress={false}
       xAxisHeight={50}
-      scale={0.5}
-      fromTs={1000}
-      fetchedIntervalsData={[]}
+      yAxisWidth={50}
+      height={650 + 40}
     />
   );
-  const inst = comp.instance();
-  const yAxisHeight=600;
+  const chartContainerInstance = chartContainer.instance();
+
+  chartContainerInstance.yAxesProperties={
+    's': {
+      minYValue: 200,
+      maxYValue: 800,
+    }
+  };
+  chartContainerInstance.updateYAxisDerivedProperties(chartContainerInstance.props)
 
   const params = [
     { y: 0, v: 800 },
@@ -329,8 +371,8 @@ test.skip('ChartView coordinate system transformations - y', () => {
   ];
   for (let param of params) {
     const { y, v } = param;
-    expect(inst.y2v(y)).toEqual(v);
-    expect(inst.v2y(v)).toEqual(y);
+    expect(chartContainerInstance.yAxesProperties['s'].derived.v2y(v)).toEqual(y + 40);
+    expect(chartContainerInstance.yAxesProperties['s'].derived.y2v(y + 40)).toEqual(v);
   }
 });
 
@@ -447,7 +489,6 @@ test('ChartView getYTicks', () => {
 
   for (let param of params) {
     const { minYValue, maxYValue, expectedResult, expectedDecimals } = param;
-    //ChartView.getYTicks(minYValue, maxYValue);
     const result = ChartView.getYTicks(minYValue, maxYValue);
     result.map((r, i) => {
       const expectedString = expectedResult[i].toFixed(expectedDecimals || 0);

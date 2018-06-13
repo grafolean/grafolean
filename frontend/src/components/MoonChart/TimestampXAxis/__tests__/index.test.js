@@ -2,7 +2,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import TimestampXAxis from '../index';
 
-test('TimestampXAxis creates horizontal line', () => {
+test.skip('TimestampXAxis creates horizontal line', () => {
   const xaxis = shallow(
     <TimestampXAxis
       width={1000}
@@ -22,7 +22,7 @@ test('TimestampXAxis creates horizontal line', () => {
   expect(xaxis.find('g > Line').length).toEqual(1);
 });
 
-test('TimestampXAxis yearly ticks', () => {
+test.skip('TimestampXAxis yearly ticks', () => {
   const xaxis = shallow(<TimestampXAxis />);
 
   console.log(xaxis.instance()._getXLabels(0, 100, 1.0))
