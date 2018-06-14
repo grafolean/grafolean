@@ -125,7 +125,7 @@ class MoonChart extends React.Component {
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
     const yAxesWidth = yAxesCount * yAxisWidth;
 
-    const toTs = moment().unix();
+    const toTs = moment().add(1, 'day').unix();
     const fromTs = moment().subtract(1, 'month').unix();
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = - fromTs * initialScale;
