@@ -109,6 +109,12 @@ class MoonChart extends React.Component {
     this.repinchyMouseMoveHandler(ev);
   }
 
+  handleDrawnChartSeriesChange = (drawnChartSeries) => {
+    this.setState({
+      drawnChartSeries: drawnChartSeries,
+    });
+  }
+
   render() {
     const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
@@ -175,11 +181,7 @@ class MoonChart extends React.Component {
                 >
                   <Legend
                     chartSeries={this.state.allChartSeries}
-                    onDrawnChartSeriesChange={(drawnChartSeries) => {
-                      this.setState({
-                        drawnChartSeries: drawnChartSeries,
-                      });
-                    }}
+                    onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                   />
                 </div>
               </div>
