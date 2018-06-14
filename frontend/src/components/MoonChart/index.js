@@ -163,8 +163,8 @@ class MoonChart extends React.Component {
                   drawnChartSeries={this.state.drawnChartSeries}
                   width={chartWidth}
                   height={this.props.height}
-                  fromTs={Math.round(-x/scale)}
-                  toTs={Math.round(-x/scale) + Math.round(chartWidth / scale)}
+                  fromTs={Math.round(-(x - yAxesWidth)/scale)}
+                  toTs={Math.round(-(x - yAxesWidth)/scale) + Math.round(chartWidth / scale)}
                   scale={scale}
                   zoomInProgress={zoomInProgress}
                   xAxisHeight={xAxisHeight}
