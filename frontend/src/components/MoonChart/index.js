@@ -256,9 +256,11 @@ export class ChartContainer extends React.Component {
     this.ensureData(this.props.fromTs, this.props.toTs);
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.ensureData(nextProps.fromTs, nextProps.toTs);
-    this.updateYAxisDerivedProperties(nextProps);
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    if (prevProps.fromTs !== this.props.fromTs || prevProps.toTs !== this.props.toTs) {
+      this.ensureData(this.props.fromTs, this.props.toTs);
+    };
+    this.updateYAxisDerivedProperties(this.props);
   }
 
   ensureData(fromTs, toTs) {
