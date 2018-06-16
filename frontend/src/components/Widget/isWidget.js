@@ -24,7 +24,18 @@ const isWidget = WrappedComponent => {
     toggleFullscreen = (shouldBeFullscreen) => {
       this.setState({
         isFullscreen: shouldBeFullscreen,
-      })
+      });
+      if (shouldBeFullscreen) {
+        window.addEventListener("keyup", this.handleEscKey, true);
+      } else {
+        window.removeEventListener("keyup", this.handleEscKey, true);
+      }
+    }
+
+    handleEscKey = (ev) => {
+      if (ev.keyCode === 27) {
+        this.toggleFullscreen(false);
+      };
     }
 
     render() {
