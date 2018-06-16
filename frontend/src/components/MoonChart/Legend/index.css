@@ -1,8 +1,8 @@
 input { border: 1px solid #ccc; background-color: #fff; padding: 1px 5px; }
 
-div.path-filter { margin-bottom: 10px; }
+div.path-filter { margin-bottom: 3px; }
   div.path-filter input { margin: 0 5px 0 15px; width: 130px; }
-  div.path-filter i.fa { color: #55b412; }
+  div.path-filter i.fa.fa-close { color: #444; font-size: 14px; padding: 3px;}
 div.legend div.path-checkbox-parent { position: relative; min-height: 18px; }
   div.legend div.path-checkbox-parent.all { margin-bottom: 10px; }
     div.legend div.path-checkbox-parent.all i.fa.fa-check { color: #009900; font-size: 10px; }

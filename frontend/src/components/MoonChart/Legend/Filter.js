@@ -22,15 +22,28 @@ export default class Filter extends React.Component {
     );
   }
 
+  clearInput = () => {
+    this.setState(
+      {
+        filter: '',
+      },
+      () => this.props.onChange('')
+    )
+  }
+
   render() {
     return (
       <div className="path-filter">
         <input
           type="text"
           name="pathFilter"
+          value={this.state.filter}
           onChange={this.handleInputChange}
         />
-        <i className="fa fa-filter" />
+        <i
+          className="fa fa-close"
+          onClick={this.clearInput}
+        />
       </div>
     )
   }
