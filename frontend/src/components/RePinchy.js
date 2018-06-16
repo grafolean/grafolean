@@ -10,8 +10,8 @@ export default class RePinchy extends React.Component {
     Twin fingers:
       Multitouch with >2 fingers is ignored. Multitouch with 2 fingers allows user to set pan and zoom.
     Wheel:
-      Scrolling the page should not be affected, so wheel is ignored unless Ctrl is pressed. If detected, helpful overlay
-      should be displayed ("Use Ctrl + mousewheel to zoom").
+      If kidnapScroll is set to false, scrolling the page should not be affected, so wheel is ignored unless Ctrl is pressed.
+      Instead a helpful overlay is displayed ("Use Ctrl + mousewheel to zoom").
     Mouse click, double click:
       Should be let through to the underlying components. Optionally, double click can be used to zoom in (or is that up to
         underlying component to call zoom in function?)
@@ -28,6 +28,7 @@ export default class RePinchy extends React.Component {
       w: 200,
       h: 200,
     },
+    kidnapScroll: true,
     initialState: {
       x: 0,
       y: 0,
@@ -221,8 +222,7 @@ export default class RePinchy extends React.Component {
 
 
   handleWheel = event => {
-    if (!event.ctrlKey) {
-      this.log("Wheel", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
+    if (!this.props.kidnapScroll && !event.ctrlKey) {
       this.ensureOverlayShown("Use CTRL + mouse wheel to zoom");
       return;
     }
