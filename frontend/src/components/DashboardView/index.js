@@ -50,6 +50,7 @@ export default class DashboardView extends React.Component {
           this.setState({
             name: json.name,
             widgets: json.widgets.map(w => ({
+              id: w.id,
               type: w.type,
               title: w.title,
               content: JSON.parse(w.content),

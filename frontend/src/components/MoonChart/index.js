@@ -24,29 +24,70 @@ import isWidget from '../Widget/isWidget';
 
 class MoonChart extends React.Component {
   repinchyMouseMoveHandler = null;
+  fetchPathsAbortController = null;
 
   constructor(props) {
     super(props);
-    this.allPaths = [].concat(...this.props.chartContent.map(c => c.paths));
-
-    // construct a better representation of the data for display in the chart:
-    const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
-      return result.concat(c.paths.map(path => ({
-        chartSeriesId: `${contentIndex}-${path}`,
-        path: path,
-        serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
-        unit: c.unit,
-      })));
-    }, []);
-    const indexedAllChartSeries = allChartSeries.map((cs, i) => ({...cs, index: i }));
-
     this.state = {
-      drawnChartSeries: indexedAllChartSeries,
+      loading: true,
+      drawnChartSeries: [],
       showChartSettings: false,
-      allChartSeries: indexedAllChartSeries,
+      allChartSeries: [],
     }
-
+    this.fetchPaths();
+    // add our own buttons to the widget title bar:
     this.addChartWidgetButtons();
+  }
+
+  componentWillUnmount() {
+    if (this.fetchPathsAbortController !== null) {
+      this.fetchPathsAbortController.abort();
+      this.fetchPathsAbortController = null;
+    }
+  }
+
+  fetchPaths = () => {
+    if (this.fetchPathsAbortController !== null) {
+      return;  // fetch is already in progress
+    }
+    this.fetchPathsAbortController = new window.AbortController();
+    const query_params = {
+      filter: this.props.chartContent.map(cc => cc.path_filter).join(","),
+      limit: 1001,
+      failover_trailing: 'false',
+    };
+    fetch(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
+      .then(handleFetchErrors)
+      .then(response => response.json())
+      .then(json => {
+        // construct a better representation of the data for display in the chart:
+        const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
+          return result.concat(json.paths[c.path_filter].map(path => ({
+            chartSeriesId: `${contentIndex}-${path}`,
+            path: path,
+            serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
+            unit: c.unit,
+          })));
+        }, []);
+        const indexedAllChartSeries = allChartSeries.map((cs, i) => ({...cs, index: i }));
+
+        this.setState({
+          drawnChartSeries: indexedAllChartSeries,
+          showChartSettings: false,
+          allChartSeries: indexedAllChartSeries,
+        });
+
+      })
+      .catch(errorMsg => {
+        this.setState({
+          fetchingError: true,
+        });
+      })
+      .then(() => {
+        this.fetchPathsAbortController = null;
+      });
+
+
   }
 
   addChartWidgetButtons = () => {
@@ -248,9 +289,6 @@ export class ChartContainer extends React.Component {
       fetchedIntervalsData: [],
       errorMsg: null,
     }
-    // make sure paths never change - if they do, there should be no effect:
-    // (because data fetching logic can't deal with changing paths)
-    this.paths = props.chartSeries.map(cs => cs.path);
   }
 
   componentDidMount() {
@@ -258,13 +296,20 @@ export class ChartContainer extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevProps.fromTs !== this.props.fromTs || prevProps.toTs !== this.props.toTs) {
+    if (prevProps.chartSeries !== this.props.chartSeries
+      || prevProps.fromTs !== this.props.fromTs
+      || prevProps.toTs !== this.props.toTs
+    ) {
+      this.paths = this.props.chartSeries.map(cs => cs.path);
       this.ensureData(this.props.fromTs, this.props.toTs);
     };
     this.updateYAxisDerivedProperties(this.props);
   }
 
   ensureData(fromTs, toTs) {
+    if (this.paths === null) {
+      return;  // we didn't receive the list of paths yet, we only have path filters
+    }
     const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, this.MAX_POINTS, -1);  // -1 for no aggregation
     this.setState((oldState) => ({
       aggrLevel: aggrLevel,
