@@ -37,6 +37,13 @@ export default class MatchingPaths extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    if (this.fetchInProgressAbortController !== undefined) {
+      this.fetchInProgressAbortController.abort();
+      this.fetchInProgressAbortController = undefined;
+    }
+  }
+
   onPathFilterChange(newPathFilter) {
     // if fetch is being scheduled, cancel it:
     if (this.fetchTimeoutHandle !== null) {
@@ -46,7 +53,7 @@ export default class MatchingPaths extends React.Component {
     // if fetch is in progress, abort it:
     if (this.fetchInProgressAbortController !== undefined) {
       this.fetchInProgressAbortController.abort();
-      this.fetchInProgressAbortController = null;
+      this.fetchInProgressAbortController = undefined;
     }
     // now start a new one after a short timeout:
     this.fetchTimeoutHandle = setTimeout(() => {
