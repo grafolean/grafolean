@@ -1,8 +1,9 @@
 import React from 'react';
 
-import './Legend.css';
+import './index.css';
 
-import { generateSerieColor } from './utils';
+import { generateSerieColor } from '../utils';
+import Filter from './Filter';
 
 export default class Legend extends React.Component {
   static defaultProps = {
@@ -18,26 +19,15 @@ export default class Legend extends React.Component {
     }
   }
 
-  componentDidMount() {
-    this.onPathFilterChange = this.onPathFilterChange.bind(this);
-    this.setStateCallbackOnDrawnPathsChange = this.setStateCallbackOnDrawnPathsChange.bind(this);
-  }
-
-  setStateCallbackOnDrawnPathsChange() {
-    const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeries], this.state.filter);
+  handleDrawnPathsChange = (filter) => {
+    const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeries], filter);
     this.props.onDrawnChartSeriesChange(drawnChartSeries);
+    this.setState({
+      filter: filter,
+    })
   }
 
-  onPathFilterChange(ev) {
-    this.setState(
-      {
-        filter: ev.target.value,
-      },
-      this.setStateCallbackOnDrawnPathsChange
-    );
-  }
-
-  toggleChartSerieSelected(cs) {
+  toggleChartSerieSelected(cs, filter) {
     this.setState(
       oldState => {
         const newSelectedChartSeries = new Set(oldState.selectedChartSeries);
@@ -50,7 +40,7 @@ export default class Legend extends React.Component {
           selectedChartSeries: newSelectedChartSeries,
         }
       },
-      this.setStateCallbackOnDrawnPathsChange
+      () => this.handleDrawnPathsChange(filter)
     );
   }
 
@@ -70,14 +60,9 @@ export default class Legend extends React.Component {
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, this.state.filter);
     return (
       <div>
-        <div className="path-filter">
-          <input
-            type="text"
-            name="pathFilter"
-            onChange={ev => this.onPathFilterChange(ev)}
-          />
-          <i className="fa fa-filter" />
-        </div>
+        <Filter
+          onChange={this.handleDrawnPathsChange}
+        />
 
         {(filteredChartSeries.length === 0) ? (
           <div className="path-filter-noresults">
@@ -90,7 +75,7 @@ export default class Legend extends React.Component {
               style={{
                 position: 'relative',
               }}
-              onClick={() => this.toggleChartSerieSelected(cs)}
+              onClick={() => this.toggleChartSerieSelected(cs, this.state.filter)}
             >
               <div className="path-checkbox"
                 style={{
