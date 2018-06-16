@@ -5,6 +5,20 @@ import './index.css';
 import { generateSerieColor } from '../utils';
 import Filter from './Filter';
 
+const Checkbox = (props) => (
+  <div className="path-checkbox"
+    style={{
+      borderColor: props.color,
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: props.checked ? props.color : '#fff',
+      }}
+    />
+  </div>
+)
+
 export default class Legend extends React.Component {
   static defaultProps = {
     chartSeries: [],
@@ -77,17 +91,10 @@ export default class Legend extends React.Component {
               }}
               onClick={() => this.toggleChartSerieSelected(cs, this.state.filter)}
             >
-              <div className="path-checkbox"
-                style={{
-                  borderColor: generateSerieColor(cs.path, cs.index),
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: (this.state.selectedChartSeries.has(cs)) ? (generateSerieColor(cs.path, cs.index)) : ('#fff'),
-                  }}
-                />
-              </div>
+              <Checkbox
+                color={generateSerieColor(cs.path, cs.index)}
+                checked={this.state.selectedChartSeries.has(cs)}
+              />
               <div style={{
                   paddingLeft: 35,
                   marginBottom: 5,
