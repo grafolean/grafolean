@@ -1,7 +1,7 @@
 import React from 'react';
 
 import store from '../../store'
-import { fetchDashboardDetails } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 import Button from '../Button';
 import Loading from '../Loading';
@@ -13,12 +13,43 @@ export default class DashboardView extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      loading: false,
+      valid: true,
+      widgets: [],
       newChartFormOpened: false,
     };
   }
 
-  componentWillMount() {
-    store.dispatch(fetchDashboardDetails(this.props.match.params.slug))
+  componentDidMount() {
+    this.fetchDashboardDetails();
+  }
+
+  fetchDashboardDetails = () => {
+    this.setState({
+      loading: true,
+    });
+    fetch(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`)
+      .then(handleFetchErrors)
+      .then(response => response.json()
+        .then(json => {
+          this.setState({
+            name: json.name,
+            widgets: json.widgets.map(w => ({
+              type: w.type,
+              title: w.title,
+              content: JSON.parse(w.content),
+            })),
+            loading: false,
+          })
+        }),
+      )
+      .catch(errorMsg => {
+        store.dispatch(onFailure(errorMsg.toString()));
+        this.setState({
+          valid: false,
+          loading: false,
+        })
+      });
   }
 
   handleShowNewChartForm = (ev) => {
@@ -37,8 +68,8 @@ export default class DashboardView extends React.Component {
 
   render() {
 
-    if (!this.props.valid) {
-      if (this.props.fetching)
+    if (!this.state.valid) {
+      if (this.state.loading)
         return <Loading />
       else
         return (
@@ -55,33 +86,33 @@ export default class DashboardView extends React.Component {
         }}
       >
         Dashboard:
-        {this.props.fetching && (
+        {this.state.loading && (
           <Loading
             overlayParent={true}
           />
         )}
         <hr />
 
-        {this.props.data.name}
+        {this.state.name}
 
         <div>
-          {this.props.data.charts.map((chart) => (
+          {this.state.widgets.map((widget) => (
             <MoonChartWidget
-              key={chart.id}
+              key={widget.id}
               width={this.props.width}
               height={500}
-              chartId={chart.id}
+              chartId={widget.id}
               dashboardSlug={this.props.match.params.slug}
-              title={chart.name}
-              chartContent={chart.content}
-              refreshParent={() => store.dispatch(fetchDashboardDetails(this.props.match.params.slug))}
+              title={widget.title}
+              chartContent={widget.content}
+              refreshParent={this.fetchDashboardDetails}
             />
           ))}
         </div>
 
         {(!this.state.newChartFormOpened) ? (
             <div>
-              <Button onClick={this.handleShowNewChartForm}>+ add chart</Button>
+              <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
             </div>
           ) : (
             <div>

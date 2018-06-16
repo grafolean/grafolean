@@ -8,9 +8,6 @@ import {
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
-  ON_REQUEST_DASHBOARD_DETAILS,
-  ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS,
-  ON_RECEIVE_DASHBOARD_DETAILS_FAILURE,
   ON_SUBMIT_DASHBOARD,
   ON_SUBMIT_DASHBOARD_SUCCESS,
   ON_SUBMIT_DASHBOARD_FAILURE,
@@ -118,13 +115,6 @@ function dashboardDetailsPerSlug(slugState={
   }, action) {
 
   switch (action.type) {
-    case ON_REQUEST_DASHBOARD_DETAILS:
-      return {...slugState, fetching: true};
-    case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
-      return {...slugState, fetching: false, valid: false};
-    case ON_RECEIVE_DASHBOARD_DETAILS_SUCCESS:
-      return {...slugState, fetching: false, data: action.json, valid: true};
-
     case ON_SUBMIT_DELETE_DASHBOARD:
       return {...slugState, deleting: true, valid: false};
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
@@ -153,7 +143,6 @@ function notifications(state=[],action) {
   switch (action.type) {
     case ON_RECEIVE_CHART_DATA_FAILURE:
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
-    case ON_RECEIVE_DASHBOARD_DETAILS_FAILURE:
     case ON_SUBMIT_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
       return [{type: 'error', message: action.errMsg, id: uniqueId('notif-')}, ...state]
