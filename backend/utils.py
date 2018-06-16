@@ -89,3 +89,7 @@ def migration_step_3():
 def migration_step_4():
     with db.cursor() as c:
         c.execute("ALTER TABLE charts_content ADD COLUMN renaming TEXT NOT NULL default '';")
+
+def migration_step_5():
+    with db.cursor() as c:
+        c.execute('CREATE TABLE widgets (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, type VARCHAR(50), title TEXT NOT NULL, content TEXT NOT NULL);')

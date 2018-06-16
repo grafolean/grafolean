@@ -188,24 +188,34 @@ curl \
     -X POST \
     -H 'Content-Type: application/json' \
     -d '{ \
-        "name": <WidgetTitle>, \
-        "content": [ \
-            {
-                path_filter: <PathFilter0>, \
-                unit: <BaseUnit0>, \
-                metric_prefix: <MetricPrefix0> \
-            }, \
-            ...
-        ], \
+        "type": <WidgetType>, \
+        "title": <WidgetTitle>, \
+        "content": <WidgetContent>, \
     }' \
     'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets'
 ```
 
 Parameters:
 
-    PathFilterN: either explicit path that should be included or a filter which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
-        string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Maximum of 50 filters per
-        chart are allowed.
+    WidgetType: string - type of the widget. Note that server does *NOT* check this variable against any list. 50 chars max.
+
+    WidgetTitle: string - title of the widget.
+
+    WidgetContent: a JSON encoded string which specifies the contents of the widget. Note that server does *NOT* check either validity or contents of this variable,
+        except that it is a valid UTF-8 string. However frontend expects specific schema for each widget type.
+
+        With a chart widget, the content would be a JSON encoded array:
+            [ \
+                {
+                    path_filter: <PathFilter0>, \
+                    unit: <BaseUnit0>, \
+                    metric_prefix: <MetricPrefix0> \
+                }, \
+                ...
+            ]
+        Where PathFilterN is either explicit path that should be included or a filter which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
+            string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Maximum of 50 filters per
+            chart are allowed.
 
 JSON response:
 

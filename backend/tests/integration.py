@@ -107,15 +107,16 @@ def test_dashboards_widgets_post_get(app_client):
 
         # create widget:
         widget_post_data = {
-            'name': WIDGET + ' name',
-            'content': [
+            'type': 'chart',
+            'title': WIDGET + ' name',
+            'content': json.dumps([
                 {
                     'path_filter': 'do.not.match.*',
                     'renaming': 'to.rename',
                     'unit': 'µ',
                     'metric_prefix': 'm',
                 }
-            ]
+            ])
         }
         r = app_client.post('/api/dashboards/{}/widgets/'.format(DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json')
         assert r.status_code == 201
@@ -124,8 +125,6 @@ def test_dashboards_widgets_post_get(app_client):
         r = app_client.get('/api/dashboards/{}/widgets/'.format(DASHBOARD))
         actual = json.loads(r.data.decode('utf-8'))
         widget_post_data['id'] = widget_id
-        widget_post_data['content'][0]['paths'] = []
-        widget_post_data['content'][0]['paths_limit_reached'] = False
         expected = {
             'list': [
                 widget_post_data,
@@ -136,24 +135,24 @@ def test_dashboards_widgets_post_get(app_client):
 
         # update widget:
         widget_post_data = {
-            'name': WIDGET + ' name2',
-            'content': [
+            'type': 'chart',
+            'title': WIDGET + ' name2',
+            'content': json.dumps([
                 {
                     'path_filter': 'do.not.match2.*',
                     'renaming': 'to.rename2',
                     'unit': 'µ2',
                     'metric_prefix': '',
                 }
-            ]
+            ])
         }
         r = app_client.put('/api/dashboards/{}/widgets/{}'.format(DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json')
         assert r.status_code == 204
 
+        # make sure it was updated:
         r = app_client.get('/api/dashboards/{}/widgets/'.format(DASHBOARD))
         actual = json.loads(r.data.decode('utf-8'))
         widget_post_data['id'] = widget_id
-        widget_post_data['content'][0]['paths'] = []
-        widget_post_data['content'][0]['paths_limit_reached'] = False
         expected = {
             'list': [
                 widget_post_data,
@@ -161,6 +160,7 @@ def test_dashboards_widgets_post_get(app_client):
         }
         assert r.status_code == 200
         assert expected == actual
+
         # get a single widget:
         r = app_client.get('/api/dashboards/{}/widgets/{}/'.format(DASHBOARD, widget_id))
         actual = json.loads(r.data.decode('utf-8'))

@@ -32,22 +32,9 @@ class WidgetSchemaInputs(Inputs):
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema
         'properties': {
-            'name': {'type': 'string'},
-            'content': {
-                'type': 'array',
-                'items': {
-                    'type': 'object',
-                    'additionalProperties': False,
-                    'properties': {
-                        'path_filter': {'type': 'string'},
-                        'renaming': {'type': 'string'},
-                        'unit': {'type': 'string'},
-                        'metric_prefix': {'type': 'string'},
-                    },
-                    'required': ['path_filter'],
-                },
-                'maxItems': 50,
-            },
+            'type': {'type': 'string'},
+            'title': {'type': 'string'},
+            'content': {'type': 'string'},
         },
-        'required': ['name'],
+        'required': ['type', 'title', 'content'],
     })]
