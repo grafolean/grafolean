@@ -13,7 +13,8 @@ const Checkbox = (props) => (
   >
     <div
       style={{
-        backgroundColor: props.checked ? props.color : '#fff',
+        backgroundColor: props.checked !== false ? props.color : '#fff',
+        backgroundImage: props.checked === null ? `repeating-linear-gradient(135deg, #fff, #fff 7px, ${props.color} 7px, ${props.color} 15px)` : null,
       }}
     />
   </div>
@@ -58,6 +59,25 @@ export default class Legend extends React.Component {
     );
   }
 
+  toggleAll(enable, filter) {
+    // remove from / add to state.selectedChartSeries all series which correspond to filter
+    const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, filter);
+    this.setState(
+      oldState => {
+        const newSelectedChartSeries = new Set(oldState.selectedChartSeries);
+        if (enable) {
+          filteredChartSeries.forEach(cs => newSelectedChartSeries.add(cs));
+        } else {
+          filteredChartSeries.forEach(cs => newSelectedChartSeries.delete(cs));
+        };
+        return {
+          selectedChartSeries: newSelectedChartSeries,
+        }
+      },
+      () => this.handleDrawnPathsChange(filter)
+    );
+  }
+
   static getFilteredChartSeries(originalChartSeries, filter) {
     if (filter === "") {
       return originalChartSeries;
@@ -72,11 +92,27 @@ export default class Legend extends React.Component {
 
   render() {
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, this.state.filter);
+    // are all filteredChartSeries in selectedChartSeries?
+    const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeries.has(cs));
+    const noneChecked = filteredChartSeries.every(cs => !this.state.selectedChartSeries.has(cs));
     return (
       <div>
         <Filter
           onChange={this.handleDrawnPathsChange}
         />
+
+        <div
+          className="path-checkbox-parent all"
+          onClick={() => this.toggleAll(allChecked ? false : true, this.state.filter)}
+        >
+          <Checkbox
+            color="#666"
+            checked={allChecked ? true : (noneChecked ? false : null) }
+          />
+          <div className="checkbox-label">
+            <i className="fa fa-check" />
+          </div>
+        </div>
 
         {(filteredChartSeries.length === 0) ? (
           <div className="path-filter-noresults">
@@ -86,20 +122,14 @@ export default class Legend extends React.Component {
           filteredChartSeries.map(cs => (
             <div
               key={cs.chartSeriesId}
-              style={{
-                position: 'relative',
-              }}
+              className="path-checkbox-parent"
               onClick={() => this.toggleChartSerieSelected(cs, this.state.filter)}
             >
               <Checkbox
                 color={generateSerieColor(cs.path, cs.index)}
                 checked={this.state.selectedChartSeries.has(cs)}
               />
-              <div style={{
-                  paddingLeft: 35,
-                  marginBottom: 5,
-                }}
-              >
+              <div className="checkbox-label">
                 <span className="legend-label">{cs.serieName} [{cs.unit}]</span>
               </div>
             </div>
