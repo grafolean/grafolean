@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log
-from validators import DashboardInputs, DashboardSchemaInputs, ChartSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, ValuesInputs
 
 
 class ValidationError(Exception):
@@ -269,20 +269,20 @@ class Measurement(object):
             c.execute('INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s);', (str(self.path), str(self.ts), str(self.value)))
 
 
-class Chart(object):
+class Widget(object):
 
-    def __init__(self, dashboard_id, name, content, chart_id):
+    def __init__(self, dashboard_id, name, content, widget_id):
         self.dashboard_id = dashboard_id
         self.name = name
         self.content = content
-        self.chart_id = chart_id
+        self.widget_id = widget_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, dashboard_slug, chart_id=None):
+    def forge_from_input(cls, flask_request, dashboard_slug, widget_id=None):
         # It turns out that validating lists is not trivial with flask-inputs and WTForms. Also, this
         # validation is getting to be a nuisance, so we need to replace it in future. But for now let's
         # check only schema and we'll validate data types below:
-        inputs = ChartSchemaInputs(flask_request)
+        inputs = WidgetSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
 
@@ -307,15 +307,15 @@ class Chart(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        if chart_id is not None and not Chart._check_exists(chart_id):
-            raise ValidationError("Unknown chart id")
+        if widget_id is not None and not Widget._check_exists(widget_id):
+            raise ValidationError("Unknown widget id")
 
-        return cls(dashboard_id, name, content, chart_id)
+        return cls(dashboard_id, name, content, widget_id)
 
     @staticmethod
-    def _check_exists(chart_id):
+    def _check_exists(widget_id):
         with db.cursor() as c:
-            c.execute('SELECT id FROM charts WHERE id = %s;', (chart_id,))
+            c.execute('SELECT id FROM charts WHERE id = %s;', (widget_id,))
             res = c.fetchone()
             if res:
                 return True
@@ -324,28 +324,28 @@ class Chart(object):
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO charts (dashboard, name) VALUES (%s, %s) RETURNING id;", (self.dashboard_id, self.name,))
-            chart_id = c.fetchone()[0]
+            widget_id = c.fetchone()[0]
             for pf, renaming, unit, metric_prefix in self.content:
-                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (chart_id, str(pf), renaming, unit, metric_prefix,))
-            return chart_id
+                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (widget_id, str(pf), renaming, unit, metric_prefix,))
+            return widget_id
 
     def update(self):
         with db.cursor() as c:
-            c.execute("UPDATE charts SET name = %s WHERE id = %s and dashboard = %s;", (self.name, self.chart_id, self.dashboard_id,))
+            c.execute("UPDATE charts SET name = %s WHERE id = %s and dashboard = %s;", (self.name, self.widget_id, self.dashboard_id,))
             rowcount = c.rowcount
             if not rowcount:
                 return 0
-            # update the chart content too:
-            c.execute("DELETE FROM charts_content WHERE chart = %s;", (self.chart_id,))
+            # update the widget content too:
+            c.execute("DELETE FROM charts_content WHERE chart = %s;", (self.widget_id,))
             for pf, renaming, unit, metric_prefix in self.content:
-                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (self.chart_id, str(pf), renaming, unit, metric_prefix,))
+                c.execute("INSERT INTO charts_content (chart, path_filter, renaming, unit, metric_prefix) VALUES (%s, %s, %s, %s, %s);", (self.widget_id, str(pf), renaming, unit, metric_prefix,))
             return rowcount
 
     @staticmethod
-    def delete(dashboard_slug, chart_id):
+    def delete(dashboard_slug, widget_id):
         dashboard_id = Dashboard.get_id(dashboard_slug)
         with db.cursor() as c:
-            c.execute("DELETE FROM charts WHERE id = %s and dashboard = %s;", (chart_id, dashboard_id,))
+            c.execute("DELETE FROM charts WHERE id = %s and dashboard = %s;", (widget_id, dashboard_id,))
             return c.rowcount
 
     @staticmethod
@@ -357,8 +357,8 @@ class Chart(object):
         with db.cursor() as c, db.cursor() as c2:
             c.execute('SELECT id, name FROM charts WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
-            for chart_id, name in c:
-                c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+            for widget_id, name in c:
+                c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
                 content = []
                 for path_filter, renaming, unit, metric_prefix in c2:
                     paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
@@ -371,25 +371,25 @@ class Chart(object):
                         'paths_limit_reached': paths_limit_reached,
                     })
                 ret.append({
-                    'id': chart_id,
+                    'id': widget_id,
                     'name': name,
                     'content': content,
                 })
             return ret
 
     @staticmethod
-    def get(dashboard_slug, chart_id, paths_limit=200):
+    def get(dashboard_slug, widget_id, paths_limit=200):
         dashboard_id = Dashboard.get_id(dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c, db.cursor() as c2:
-            c.execute('SELECT name FROM charts WHERE id = %s and dashboard = %s;', (chart_id, dashboard_id,))
+            c.execute('SELECT name FROM charts WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
 
-            c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (chart_id,))
+            c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
             content = []
             for path_filter, renaming, unit, metric_prefix in c2:
                 paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
@@ -402,7 +402,7 @@ class Chart(object):
                     'paths_limit_reached': paths_limit_reached,
                 })
             return {
-                'id': chart_id,
+                'id': widget_id,
                 'name': res[0],
                 'content': content,
             }
@@ -483,11 +483,11 @@ class Dashboard(object):
                 return None
             name = res[0]
 
-        charts = Chart.get_list(slug)
+        widgets = Widget.get_list(slug)
         return {
             'name': name,
             'slug': slug,
-            'charts': charts,
+            'widgets': widgets,
         }
 
     @staticmethod

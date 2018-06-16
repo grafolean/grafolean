@@ -7,7 +7,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Dashboard, Chart, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
+from datatypes import Measurement, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
 import utils
 
 
@@ -211,53 +211,53 @@ def dashboard_crud(dashboard_slug):
         return "", 200
 
 
-@app.route("/api/dashboards/<string:dashboard_slug>/charts", methods=['GET', 'POST'])
-def charts_crud(dashboard_slug):
+@app.route("/api/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
+def widgets_crud(dashboard_slug):
     if flask.request.method == 'GET':
         try:
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:
             return "Invalid parameter: paths_limit\n\n", 400
-        rec = Chart.get_list(dashboard_slug, paths_limit=paths_limit)
+        rec = Widget.get_list(dashboard_slug, paths_limit=paths_limit)
         return json.dumps({'list': rec}), 200
     elif flask.request.method == 'POST':
-        chart = Chart.forge_from_input(flask.request, dashboard_slug)
+        widget = Widget.forge_from_input(flask.request, dashboard_slug)
         try:
-            chart_id = chart.insert()
+            widget_id = widget.insert()
         except psycopg2.IntegrityError:
-            return "Chart with this slug already exists", 400
-        return json.dumps({'id': chart_id}), 201
+            return "Widget with this slug already exists", 400
+        return json.dumps({'id': widget_id}), 201
 
 
-@app.route("/api/dashboards/<string:dashboard_slug>/charts/<string:chart_id>", methods=['GET', 'PUT', 'DELETE'])
-def chart_crud(dashboard_slug, chart_id):
+@app.route("/api/dashboards/<string:dashboard_slug>/widgets/<string:widget_id>", methods=['GET', 'PUT', 'DELETE'])
+def widget_crud(dashboard_slug, widget_id):
     try:
-        chart_id = int(chart_id)
+        widget_id = int(widget_id)
     except:
-        raise ValidationError("Invalid chart id")
+        raise ValidationError("Invalid widget id")
 
     if flask.request.method == 'GET':
         try:
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:
             return "Invalid parameter: paths_limit\n\n", 400
-        rec = Chart.get(dashboard_slug, chart_id, paths_limit=paths_limit)
+        rec = Widget.get(dashboard_slug, widget_id, paths_limit=paths_limit)
         if not rec:
-            return "No such chart", 404
+            return "No such widget", 404
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        chart = Chart.forge_from_input(flask.request, dashboard_slug, chart_id=chart_id)
-        rowcount = chart.update()
+        widget = Widget.forge_from_input(flask.request, dashboard_slug, widget_id=widget_id)
+        rowcount = widget.update()
         if not rowcount:
-            return "No such chart", 404
+            return "No such widget", 404
         return "", 204
 
 
     elif flask.request.method == 'DELETE':
-        rowcount = Chart.delete(dashboard_slug, chart_id)
+        rowcount = Widget.delete(dashboard_slug, widget_id)
         if not rowcount:
-            return "No such chart", 404
+            return "No such widget", 404
         return "", 200
 
 

@@ -85,13 +85,13 @@ def test_values_put_get_aggr(app_client):
     #pprint.pprint(actual)
     assert expected == actual
 
-def test_dashboards_charts_post_get(app_client):
+def test_dashboards_widgets_post_get(app_client):
     """
-        Create a dashboard, get a dashboard, create a chart, get a chart. Delete the dashboard, get 404.
+        Create a dashboard, get a dashboard, create a widget, get a widget. Delete the dashboard, get 404.
     """
     DASHBOARD = 'dashboard1'
     try:
-        CHART = 'chart1'
+        WIDGET = 'chart1'
         data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
         r = app_client.post('/api/dashboards/', data=json.dumps(data), content_type='application/json')
         assert r.status_code == 201
@@ -100,14 +100,14 @@ def test_dashboards_charts_post_get(app_client):
         expected = {
             'name': DASHBOARD + ' name',
             'slug': DASHBOARD,
-            'charts': [],
+            'widgets': [],
         }
         actual = json.loads(r.data.decode('utf-8'))
         assert expected == actual
 
-        # create chart:
-        chart_post_data = {
-            'name': CHART + ' name',
+        # create widget:
+        widget_post_data = {
+            'name': WIDGET + ' name',
             'content': [
                 {
                     'path_filter': 'do.not.match.*',
@@ -117,26 +117,26 @@ def test_dashboards_charts_post_get(app_client):
                 }
             ]
         }
-        r = app_client.post('/api/dashboards/{}/charts/'.format(DASHBOARD), data=json.dumps(chart_post_data), content_type='application/json')
+        r = app_client.post('/api/dashboards/{}/widgets/'.format(DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json')
         assert r.status_code == 201
-        chart_id = json.loads(r.data.decode('utf-8'))['id']
+        widget_id = json.loads(r.data.decode('utf-8'))['id']
 
-        r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
+        r = app_client.get('/api/dashboards/{}/widgets/'.format(DASHBOARD))
         actual = json.loads(r.data.decode('utf-8'))
-        chart_post_data['id'] = chart_id
-        chart_post_data['content'][0]['paths'] = []
-        chart_post_data['content'][0]['paths_limit_reached'] = False
+        widget_post_data['id'] = widget_id
+        widget_post_data['content'][0]['paths'] = []
+        widget_post_data['content'][0]['paths_limit_reached'] = False
         expected = {
             'list': [
-                chart_post_data,
+                widget_post_data,
             ]
         }
         assert r.status_code == 200
         assert expected == actual
 
-        # update chart:
-        chart_post_data = {
-            'name': CHART + ' name2',
+        # update widget:
+        widget_post_data = {
+            'name': WIDGET + ' name2',
             'content': [
                 {
                     'path_filter': 'do.not.match2.*',
@@ -146,25 +146,25 @@ def test_dashboards_charts_post_get(app_client):
                 }
             ]
         }
-        r = app_client.put('/api/dashboards/{}/charts/{}'.format(DASHBOARD, chart_id), data=json.dumps(chart_post_data), content_type='application/json')
+        r = app_client.put('/api/dashboards/{}/widgets/{}'.format(DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json')
         assert r.status_code == 204
 
-        r = app_client.get('/api/dashboards/{}/charts/'.format(DASHBOARD))
+        r = app_client.get('/api/dashboards/{}/widgets/'.format(DASHBOARD))
         actual = json.loads(r.data.decode('utf-8'))
-        chart_post_data['id'] = chart_id
-        chart_post_data['content'][0]['paths'] = []
-        chart_post_data['content'][0]['paths_limit_reached'] = False
+        widget_post_data['id'] = widget_id
+        widget_post_data['content'][0]['paths'] = []
+        widget_post_data['content'][0]['paths_limit_reached'] = False
         expected = {
             'list': [
-                chart_post_data,
+                widget_post_data,
             ]
         }
         assert r.status_code == 200
         assert expected == actual
-        # get a single chart:
-        r = app_client.get('/api/dashboards/{}/charts/{}/'.format(DASHBOARD, chart_id))
+        # get a single widget:
+        r = app_client.get('/api/dashboards/{}/widgets/{}/'.format(DASHBOARD, widget_id))
         actual = json.loads(r.data.decode('utf-8'))
-        expected = chart_post_data
+        expected = widget_post_data
         assert r.status_code == 200
         assert expected == actual
 

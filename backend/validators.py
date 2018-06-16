@@ -27,7 +27,7 @@ class DashboardSchemaInputs(Inputs):
         'required': ['name'],
     })]
 
-class ChartSchemaInputs(Inputs):
+class WidgetSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema

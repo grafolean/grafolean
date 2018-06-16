@@ -179,7 +179,7 @@ curl 'https://moonthor.com/api/dashboards/'
 ## Deleting
 
 
-# Charts
+# Widgets
 
 ## Creating
 
@@ -188,7 +188,7 @@ curl \
     -X POST \
     -H 'Content-Type: application/json' \
     -d '{ \
-        "name": <ChartTitle>, \
+        "name": <WidgetTitle>, \
         "content": [ \
             {
                 path_filter: <PathFilter0>, \
@@ -198,7 +198,7 @@ curl \
             ...
         ], \
     }' \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts'
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets'
 ```
 
 Parameters:
@@ -210,7 +210,7 @@ Parameters:
 JSON response:
 
 {
-    id: <ChartId>
+    id: <WidgetId>
 }
 
 ## Updating
@@ -220,7 +220,7 @@ curl \
     -X PUT \
     -H 'Content-Type: application/json' \
     -d '{ \
-        "name": <ChartTitle>, \
+        "name": <WidgetTitle>, \
         "content": [ \
             {
                 path_filter: <PathFilter0>, \
@@ -231,21 +231,21 @@ curl \
             ...
         ], \
     }' \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts/<ChartId>'
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets/<WidgetId>'
 ```
 
 
-## Reading all charts in dashboard
+## Reading all widgets in dashboard
 
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts?paths_limit=<PathsLimit>'
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets?paths_limit=<PathsLimit>'
 ```
 
 Parameters:
 
-    PathsLimit: maximum number of paths returned for each chart (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
+    PathsLimit: maximum number of paths returned for each widget (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
         will be set to `true` if the limit is exceeded.
 
 JSON response:
@@ -253,8 +253,8 @@ JSON response:
 {
     list: [
         {
-            name: <ChartName>,
-            id: <ChartId>,
+            name: <WidgetTitle>,
+            id: <WidgetId>,
             content: [
                 {
                     path_filter: <PathFilter0>,
@@ -270,24 +270,24 @@ JSON response:
     ]
 }
 
-## Reading a chart
+## Reading a widget
 
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/charts/<ChartId>?paths_limit=<PathsLimit>'
+    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets/<WidgetId>?paths_limit=<PathsLimit>'
 ```
 
 Parameters:
 
-    PathsLimit: maximum number of paths returned for each chart (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
+    PathsLimit: maximum number of paths returned for each widget (optional; 200 by default). This is a safeguard against too broad path filters. Field 'paths_limit_reached'
         will be set to `true` if the limit is exceeded.
 
 JSON response:
 
 {
-    name: <ChartName>,
-    id: <ChartId>,
+    name: <WidgetTitle>,
+    id: <WidgetId>,
     content: [
         {
             path_filter: <PathFilter0>,
