@@ -120,8 +120,9 @@ curl \
 
 Parameters:
 
-    PathFilter: either explicit path or a filter (or start of them) which matches multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
+    PathFilters: either explicit paths or filters (or start of them) which can try to match multiple paths by using wildcards. Wildcard '?' marks a single level arbitrary
         string (single level meaning: no dot). Wildcard '*' matches multiple levels. Examples: '*.cpu.load', 'zone1.dev12.port.?.traffic-in'. Mandatory, should not be empty.
+        Multiple filters should be separated by comma (',').
     MaxResults: maximum number of paths returned for each chart (optional; 10 by default).
     FailoverTrailing: "true" or "false" (default). System will first attempt to determine matching paths as if the filter is complete. If no paths are found and
         this parameter is set to "true", system will repeat matching process as if the PathFilter is only partially entered and will try to match paths with possible
@@ -130,14 +131,17 @@ Parameters:
 JSON response:
 
 {
-    paths: [
-        <Path0>,
+    paths: {
+        <Filter0>: [
+            <Path0>,
+            ...
+        ],
         ...
-    ],
+    }
     limit_reached: false,
-    paths_with_trailing: [
-        // only available if 'paths' is empty and parameter "failover_trailing" is set to "true"
-    ]
+    paths_with_trailing: {
+        // only available if 'paths' is empty and parameter "failover_trailing" is set to "true"; same format as with 'paths'
+    }
 ]
 
 # Dashboards

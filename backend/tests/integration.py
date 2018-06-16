@@ -189,9 +189,11 @@ def test_values_put_paths_get(app_client):
 
     r = app_client.get('/api/paths/?filter=test.values.put.paths.get.*')
     expected = {
-        'paths': [
-            PATH,
-        ],
+        'paths': {
+            'test.values.put.paths.get.*': [
+                PATH,
+            ],
+        },
         'limit_reached': False,
     }
     actual = json.loads(r.data.decode('utf-8'))
@@ -199,7 +201,7 @@ def test_values_put_paths_get(app_client):
 
     r = app_client.get('/api/paths/?filter=test.*&failover_trailing=false')
     actual = json.loads(r.data.decode('utf-8'))
-    assert PATH in actual['paths']
+    assert PATH in actual['paths']['test.*']
 
     r = app_client.get('/api/paths/?filter=test.&failover_trailing=false')
     assert r.status_code == 400
@@ -208,7 +210,13 @@ def test_values_put_paths_get(app_client):
 
     r = app_client.get('/api/paths/?filter=test.&failover_trailing=true')
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual['paths'] == []
-    assert PATH in actual['paths_with_trailing']
-    for path in actual['paths_with_trailing']:
+    assert actual['paths'] == {}
+    assert PATH in actual['paths_with_trailing']['test.']
+    for path in actual['paths_with_trailing']['test.']:
         assert path[:5] == 'test.'
+
+    r = app_client.get('/api/paths/?filter=test.*,test.values.*')
+    actual = json.loads(r.data.decode('utf-8'))
+    assert PATH in actual['paths']['test.*']
+    assert PATH in actual['paths']['test.values.*']
+

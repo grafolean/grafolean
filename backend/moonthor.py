@@ -148,28 +148,33 @@ def paths_get():
         max_results = 10
     else:
         max_results = max(0, int(max_results_input))
-    path_filter_input = flask.request.args.get('filter')
+    path_filters_input = flask.request.args.get('filter')
     failover_trailing = flask.request.args.get('failover_trailing', 'false').lower() == 'true'
 
     try:
-        pf = PathFilter(path_filter_input)
-        matching_paths, limit_reached = PathFilter.find_matching_paths([str(pf)], limit=max_results)
+        matching_paths = {}
+        any_limit_reached = False
+        for path_filter_input in str(path_filters_input).split(','):
+            pf = str(PathFilter(path_filter_input))
+            matching_paths[pf], limit_reached = PathFilter.find_matching_paths([pf], limit=max_results)
+            any_limit_reached = any_limit_reached or limit_reached
     except ValidationError:
         if not failover_trailing:
             raise
         # looks like we don't have a valid filter, but that's ok - we allow trailing chars so it might fare better there
-        matching_paths, limit_reached = [], False
+        matching_paths, any_limit_reached = {}, False
 
     ret = {
-        'paths': list(matching_paths),
-        'limit_reached': limit_reached,
+        'paths': matching_paths,
+        'limit_reached': any_limit_reached,
     }
 
     if not matching_paths and failover_trailing:
-        upf = UnfinishedPathFilter(path_filter_input)
-        trailing_matching_paths, limit_reached = UnfinishedPathFilter.find_matching_paths([str(upf)], limit=max_results, allow_trailing_chars=True)
-        ret['paths_with_trailing'] = list(trailing_matching_paths)
-        ret['limit_reached'] = limit_reached
+        ret['paths_with_trailing'] = {}
+        for path_filter_input in str(path_filters_input).split(','):
+            upf = str(UnfinishedPathFilter(path_filter_input))
+            ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths([upf], limit=max_results, allow_trailing_chars=True)
+            ret['limit_reached'] = ret['limit_reached'] or limit_reached
 
     return json.dumps(ret), 200
 
