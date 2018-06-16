@@ -50,6 +50,7 @@ const isWidget = WrappedComponent => {
               title={this.props.title}
               width={contentWidth}
               height={contentHeight}
+              isFullscreen={this.state.isFullscreen}
               {...passThroughProps}
             />
           </div>

@@ -149,6 +149,7 @@ class MoonChart extends React.Component {
               w: chartWidth - yAxesWidth,
               h: this.props.height - xAxisHeight,
             }}
+            kidnapScroll={this.props.isFullscreen}
             initialState={{
               x: initialPanX,
               y: 0.0,
