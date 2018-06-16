@@ -4,7 +4,7 @@ import { stringify } from 'qs';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
-import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor, aggregateIntervalOnTheFly } from './utils';
+import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
 
 import RePinchy from '../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
