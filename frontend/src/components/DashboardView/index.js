@@ -5,7 +5,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 import Button from '../Button';
 import Loading from '../Loading';
-import ChartForm from '../ChartForm';
+import WidgetForm from '../WidgetForm';
 import MoonChartWidget from '../MoonChart';
 
 export default class DashboardView extends React.Component {
@@ -137,7 +137,7 @@ export default class DashboardView extends React.Component {
           ) : (
             <div>
               <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-              <ChartForm dashboardSlug={this.props.match.params.slug}/>
+              <WidgetForm dashboardSlug={this.props.match.params.slug}/>
             </div>
           )
         }

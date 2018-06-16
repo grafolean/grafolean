@@ -36,6 +36,7 @@ const KNOWN_UNITS = {
 };
 
 export default class ChartForm extends React.Component {
+  // Old warning:
   // We use term "series" for chart content and "serie" as singular here, though the terms are
   // misleading. "Serie" (as used) is a group of data around a single path filter (path filter +
   // unit + metric prefix + ...) which determines multiple paths (and thus actually multiple
@@ -117,15 +118,18 @@ export default class ChartForm extends React.Component {
     ev.preventDefault();
 
     const params = {
-      name: this.state.name,
-      content: this.state.seriesGroups.map(sg => ({
-        path_filter: sg.pathFilter,
-        renaming: sg.pathRenamer,
-        unit: sg.unit,
-        metric_prefix: sg.metricPrefix,
-      })),
+      type: 'chart',
+      title: this.state.name,
+      content: JSON.stringify(
+        this.state.seriesGroups.map(sg => ({
+          path_filter: sg.pathFilter,
+          renaming: sg.pathRenamer,
+          unit: sg.unit,
+          metric_prefix: sg.metricPrefix,
+        }))
+      ),
     }
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId || ''}`, {
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.chartId || ''}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
