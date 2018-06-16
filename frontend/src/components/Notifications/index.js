@@ -28,12 +28,7 @@ const NotificationOuter = styled.li`
 
 class Notifications extends Component {
 
-  constructor(props) {
-    super(props);
-    this.handleClickRemove = this.handleClickRemove.bind(this);
-  }
-
-  handleClickRemove(event, notificationId) {
+  handleClickRemove = (event, notificationId) => {
     store.dispatch(removeNotification(notificationId));
     event.preventDefault();
   }

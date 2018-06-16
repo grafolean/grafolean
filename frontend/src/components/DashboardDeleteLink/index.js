@@ -7,12 +7,8 @@ import Loading from '../Loading';
 import Button from '../Button'
 
 export default class DashboardDeleteLink extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleClick = this.handleClick.bind(this);
-  }
 
-  handleClick(event) {
+  handleClick = event => {
     store.dispatch(submitDeleteDashboard(this.props.slug))
     event.preventDefault();
   }

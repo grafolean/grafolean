@@ -9,17 +9,16 @@ import Loading from '../Loading';
 export default class DashboardNewForm extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {name: ''};
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this.state = {
+      name: '',
+    };
   }
 
-  handleChange(event) {
+  handleChange = event => {
     this.setState({[event.target.name]: event.target.value});
   }
 
-  handleSubmit(event) {
+  handleSubmit = event => {
     store.dispatch(submitNewDashboard(this.props.formid, this.state.name))
     event.preventDefault();
   }

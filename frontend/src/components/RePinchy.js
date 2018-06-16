@@ -67,21 +67,6 @@ export default class RePinchy extends React.Component {
         {id: 0, msg: "Init"},
       ],
     }
-
-    this.handleTouchStart = this.handleTouchStart.bind(this);
-    this.handleTouchMove = this.handleTouchMove.bind(this);
-    this.updateTwinTouchMoveCoords = this.updateTwinTouchMoveCoords.bind(this);
-    this.handleTouchEnd = this.handleTouchEnd.bind(this);
-    this.maybeKillDefaultTouchHandler = this.maybeKillDefaultTouchHandler.bind(this);
-    this.handleMouseDownDrag = this.handleMouseDownDrag.bind(this);
-    this.handleMouseUpDrag = this.handleMouseUpDrag.bind(this);
-    this.handleMouseMoveDrag = this.handleMouseMoveDrag.bind(this);
-    this.handleMouseMoveCheckCtrl = this.handleMouseMoveCheckCtrl.bind(this);
-    this.updateMouseMoveCoords = this.updateMouseMoveCoords.bind(this);
-    this.handleClickCapture = this.handleClickCapture.bind(this);
-    this.handleWheel = this.handleWheel.bind(this);
-    this.handleCtrlKeyUp = this.handleCtrlKeyUp.bind(this);
-    this.clearOverlay = this.clearOverlay.bind(this);
   }
 
   componentDidMount(){
@@ -96,7 +81,7 @@ export default class RePinchy extends React.Component {
     window.removeEventListener("touchmove", this.maybeKillDefaultTouchHandler, { passive: false });
   }
 
-  maybeKillDefaultTouchHandler(event) {
+  maybeKillDefaultTouchHandler = event => {
     if (!this.twinTouch) {
       return;  // do nothing - we are not in the middle of double touch
     }
@@ -109,7 +94,7 @@ export default class RePinchy extends React.Component {
   }
 
   // https://reactjs.org/docs/events.html
-  handleTouchStart(event) {
+  handleTouchStart = event => {
     // if not double touch, just ignore it. You have no idea if a twin touch will follow or not.
     if (event.touches.length === 2) {
       if (!this.twinTouch) {  // just in case this gets called twice... not sure if it can happen, better safe than sorry
@@ -119,7 +104,7 @@ export default class RePinchy extends React.Component {
     }
   }
 
-  handleTouchMove(event) {
+  handleTouchMove = event => {
     // https://blog.mobiscroll.com/working-with-touch-events/
     // " In Firefox Mobile the native scroll can be killed only if preventDefault() is called on the
     //   touchstart event. Unfortunately at touchstart we don’t really know if we want scroll or not."
@@ -144,7 +129,7 @@ export default class RePinchy extends React.Component {
     }
   }
 
-  handleTouchEnd(event) {
+  handleTouchEnd = event => {
     // when touch ends, it ends - it doesn't matter with how many fingers:
     this.handleTwinTouchEnd(event);
   }
@@ -180,7 +165,7 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  updateTwinTouchMoveCoords() {
+  updateTwinTouchMoveCoords = () => {
     /*
       We have 2 actions user can perform with multitouch / twin touch:
       - zoom in/out (pinch)
@@ -235,7 +220,7 @@ export default class RePinchy extends React.Component {
   }
 
 
-  handleWheel(event) {
+  handleWheel = event => {
     if (!event.ctrlKey) {
       this.log("Wheel", event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
       this.ensureOverlayShown("Use CTRL + mouse wheel to zoom");
@@ -287,14 +272,14 @@ export default class RePinchy extends React.Component {
     event.preventDefault();
   }
 
-  handleCtrlKeyUp(event) {
+  handleCtrlKeyUp = event => {
     if (event.keyCode === 17) {
       this.onCtrlKeyUp();
     }
   }
 
   // safeguard because sometimes handleCtrlKeyUp() is not called :
-  handleMouseMoveCheckCtrl(event) {
+  handleMouseMoveCheckCtrl = event => {
     // https://stackoverflow.com/a/8875522/593487
     if (event.ctrlKey) {
       return;  // it seems all is ok (Ctrl is still pressed)
@@ -311,7 +296,7 @@ export default class RePinchy extends React.Component {
     window.removeEventListener('mousemove', this.handleMouseMoveCheckCtrl, true);  // no need for the workaround anymore
   }
 
-  handleMouseDownDrag(event) {
+  handleMouseDownDrag = event => {
     // mouse drag started, let's remember everything we need to know to follow it:
     this.mouseDrag = {
       startState: {
@@ -338,7 +323,7 @@ export default class RePinchy extends React.Component {
     event.preventDefault();
   }
 
-  updateMouseMoveCoords() {
+  updateMouseMoveCoords = () => {
     // remember that we have updated state so it can be scheduled next time again:
     this.mouseDrag.animationId = null;
 
@@ -350,7 +335,7 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  handleMouseMoveDrag(event) {
+  handleMouseMoveDrag = event => {
     if (!this.mouseDrag) {
       return;
     };
@@ -364,7 +349,7 @@ export default class RePinchy extends React.Component {
     };
   }
 
-  handleMouseUpDrag(event) {
+  handleMouseUpDrag = event => {
     // event listener did its work, now unregister it:
     window.removeEventListener('mouseup', this.handleMouseUpDrag, true);
     window.removeEventListener('mousemove', this.handleMouseMoveDrag, true);
@@ -392,7 +377,7 @@ export default class RePinchy extends React.Component {
     })
   }
 
-  handleClickCapture(event) {
+  handleClickCapture = event => {
     // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
     //console.log("mouse click");
     //event.stopPropagation();
@@ -427,7 +412,7 @@ export default class RePinchy extends React.Component {
     });
   }
 
-  clearOverlay() {
+  clearOverlay = () => {
     if (!this.clearOverlayTimeoutHandle) {
       return;
     };
