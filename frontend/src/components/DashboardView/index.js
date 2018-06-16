@@ -10,6 +10,8 @@ import MoonChartWidget from '../MoonChart';
 
 export default class DashboardView extends React.Component {
 
+  abortController = null;
+
   constructor(props) {
     super(props);
     this.state = {
@@ -24,11 +26,24 @@ export default class DashboardView extends React.Component {
     this.fetchDashboardDetails();
   }
 
+  componentWillUnmount() {
+    if (this.abortController !== null) {
+      this.abortController.abort();
+    }
+  }
+
   fetchDashboardDetails = () => {
+    if (this.abortController !== null) {
+      return;  // fetching already in progress, abort
+    };
+
     this.setState({
       loading: true,
     });
-    fetch(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`)
+    this.abortController = new window.AbortController()
+    fetch(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`, {
+      signal: this.abortController.signal,
+    })
       .then(handleFetchErrors)
       .then(response => response.json()
         .then(json => {
@@ -39,17 +54,22 @@ export default class DashboardView extends React.Component {
               title: w.title,
               content: JSON.parse(w.content),
             })),
+            valid: true,
             loading: false,
-          })
+          });
+          this.abortController = null;
         }),
       )
       .catch(errorMsg => {
-        store.dispatch(onFailure(errorMsg.toString()));
-        this.setState({
-          valid: false,
-          loading: false,
-        })
-      });
+        if (!errorMsg.name || errorMsg.name !== 'AbortError') {
+          store.dispatch(onFailure(errorMsg.toString()));
+          this.setState({
+            valid: false,
+            loading: false,
+          });
+          this.abortController = null;
+        }
+      })
   }
 
   handleShowNewChartForm = (ev) => {
