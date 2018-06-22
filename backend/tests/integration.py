@@ -50,23 +50,22 @@ def test_values_put_get_noaggrparam_redirect(app_client):
             redirect_location = value
     assert redirect_location[-len(url)-5:] == url + '&a=no'
 
-@pytest.mark.skip(reason="for some reason, maxv is not 210 as it should be")
-def test_values_put_get_aggr(app_client):
+def test_values_put_few_get_aggr(app_client):
     """
-        Put many values, get aggregated value.
+        Put a few values, get aggregated value.
     """
-    TEST_PATH = 'test.values.put.get.aggr'
-    data = [{'p': TEST_PATH, 't': 1330000000 + i*15*60, 'v': 111 + i} for i in range(0, 100)]
-    #import pprint
-    #pprint.pprint(data)
-    # expected = {'aggregation_level': 1, 'data': {'aaaa.bbbb': [
-    #     {'t': 1234567890.123456, 'v': 111.22}
-    # ]}}
+    TEST_PATH = 'test.values.put.few.get.aggr'
+    data = [
+        {'p': TEST_PATH, 't': 1330002000 + 160, 'v': 100},
+        {'p': TEST_PATH, 't': 1330002000 + 360, 'v': 120},
+        {'p': TEST_PATH, 't': 1330002000 + 560, 'v': 140},
+        {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
+    ]
 
     app_client.put('/api/values/', data=json.dumps(data), content_type='application/json')
-    t_from = 1330000000 - 1330000000 % (3*3600)  # aggr level 3 - every 3 hours
-    t_to = t_from + 10 * 3 * 3600
-    url = '/api/values/?p={}&t0={}&t1={}&max=10&a=3'.format(TEST_PATH, t_from, t_to)
+    t_from = 1330002000  # aggr level 0 - every 1 hour
+    t_to = t_from + 1*3600
+    url = '/api/values/?p={}&t0={}&t1={}&a=0'.format(TEST_PATH, t_from, t_to)
     r = app_client.get(url)
 
     expected = {
@@ -74,16 +73,57 @@ def test_values_put_get_aggr(app_client):
             TEST_PATH: {
                 'next_data_point': None,
                 'data': [
-                    {'t': 1330036200.0, 'v': 111.22, 'minv': 111., 'maxv': 111. + 99. }
-                ]
-            }
-        }
+                    {'t': 1330002000.0 + 1800.0, 'v': 130.0, 'minv': 100., 'maxv': 160. },
+                ],
+            },
+        },
     }
 
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    #pprint.pprint(actual)
+    # pprint(actual)
     assert expected == actual
+
+#@pytest.mark.skip(reason="removing aggregated data is not implemented, so this test fails when repeated! Otherwise it works with fresh DB.")
+def test_values_put_many_get_aggr(app_client):
+    """
+        Put many values, get aggregated value. Delete path and values.
+    """
+    try:
+        TEST_PATH = 'test.values.put.many.get.aggr'
+        t_from = 1330000000 - 1330000000 % (27*3600)  # aggr level 3 - every 3 hours
+        t_to = t_from + 27 * 3600
+        data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
+        #pprint(data)
+        #import pprint
+        #pprint.pprint(data)
+        # expected = {'aggregation_level': 1, 'data': {'aaaa.bbbb': [
+        #     {'t': 1234567890.123456, 'v': 111.22}
+        # ]}}
+
+        app_client.put('/api/values/', data=json.dumps(data), content_type='application/json')
+        #print(t_from, t_to)
+        url = '/api/values/?p={}&t0={}&t1={}&max=10&a=3'.format(TEST_PATH, t_from, t_to)
+        r = app_client.get(url)
+
+        expected = {
+            'paths': {
+                TEST_PATH: {
+                    'next_data_point': None,
+                    'data': [
+                        {'t': t_from + 27 * 3600. / 2., 'v': 111. + (99. / 2.), 'minv': 111., 'maxv': 111. + 99. }
+                    ]
+                }
+            }
+        }
+
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        #pprint(actual)
+        assert expected == actual
+    finally:
+        app_client.delete('/api/paths/?p={}'.format(TEST_PATH))
+        assert r.status_code == 200
 
 def test_dashboards_widgets_post_get(app_client):
     """

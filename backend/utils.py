@@ -93,3 +93,11 @@ def migration_step_4():
 def migration_step_5():
     with db.cursor() as c:
         c.execute('CREATE TABLE widgets (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, type VARCHAR(50), title TEXT NOT NULL, content TEXT NOT NULL);')
+
+def migration_step_6():
+    with db.cursor() as c:
+        # reapply 'on delete cascade' part of last sql sentence if needed:
+        c.execute('ALTER TABLE measurements DROP CONSTRAINT IF EXISTS measurements_path_fkey;')
+        c.execute('ALTER TABLE measurements ADD CONSTRAINT measurements_path_fkey FOREIGN KEY (path) REFERENCES paths(id) ON DELETE CASCADE;')
+        c.execute('ALTER TABLE aggregations DROP CONSTRAINT IF EXISTS aggregations_path_fkey;')
+        c.execute('ALTER TABLE aggregations ADD CONSTRAINT aggregations_path_fkey FOREIGN KEY (path) REFERENCES paths(id) ON DELETE CASCADE;')

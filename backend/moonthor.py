@@ -178,6 +178,21 @@ def paths_get():
 
     return json.dumps(ret), 200
 
+@app.route("/api/paths", methods=['DELETE'])
+def path_delete():
+    path_input = flask.request.args.get('p')
+    if path_input is None:
+        return "Missing parameter: p\n\n", 400
+
+    try:
+        path = Path(path_input)
+    except:
+        return "Invalid parameter: p\n\n", 400
+
+    rowcount = Path.delete(str(path))
+    if not rowcount:
+        return "No such path", 404
+    return "", 200
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])
 def dashboards_crud():

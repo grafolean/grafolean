@@ -57,6 +57,13 @@ class Path(_RegexValidatedInputValue):
             for path, in c:
                 yield(path)
 
+    @classmethod
+    def delete(cls, path):
+        with db.cursor() as c:
+            # delete just the path, "ON DELETE CASCADE" takes care of removing values and aggregations:
+            c.execute('DELETE FROM paths WHERE path = %s;', (str(path),))
+            return c.rowcount
+
 
 class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-zA-Z0-9_-]+|[*?])([.]([a-zA-Z0-9_-]+|[*?]))*$')

@@ -144,6 +144,14 @@ JSON response:
     }
 ]
 
+## Deleting paths (DELETE)
+
+```
+curl -X DELETE 'https://moonthor.com/api/paths/?p=<Path>'
+```
+
+CAREFUL! This will also delete the measurements and aggregations.
+
 # Dashboards
 
 ## Creating
