@@ -328,10 +328,23 @@ export class ChartContainer extends React.Component {
       return;
     }
 
-    const intervalsToFeFetched = getMissingIntervals(existingIntervals, { fromTs: fromTs - diffTs, toTs: toTs + diffTs });  // fetch a bit more than we checked for, we don't want to fetch too often
+    // fetch a bit more than we checked for, so that we don't fetch too often (and make
+    // sure that the timestamps are aligned according to aggr. level)
+    const alignedFromTs = this.alignTs(fromTs - diffTs, aggrLevel, Math.floor);
+    const alignedToTs = this.alignTs(toTs + diffTs, aggrLevel, Math.ceil);
+    const intervalsToFeFetched = getMissingIntervals(existingIntervals, { fromTs: alignedFromTs, toTs: alignedToTs });
     for (let intervalToBeFetched of intervalsToFeFetched) {
       this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel);  // take exactly what is needed, so you'll be able to merge intervals easily
     };
+  }
+
+  // API requests the timestamps to be aligned to correct times according to aggr. level:
+  alignTs(originalTs, aggrLevel, floorCeilFunc) {
+    if (aggrLevel === -1) {
+      return originalTs;  // no aggregation -> no alignment
+    };
+    const interval = 3600 * (3 ** aggrLevel);
+    return floorCeilFunc(originalTs / interval) * interval;
   }
 
   saveResponseData(fromTs, toTs, aggrLevel, json) {
