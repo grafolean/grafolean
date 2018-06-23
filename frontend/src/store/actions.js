@@ -1,8 +1,7 @@
 import fetch from 'cross-fetch'
-import { stringify } from 'qs'
 
-export const ROOT_URL = 'http://192.168.123.11:5000/api'
-//export const ROOT_URL = 'http://127.0.0.1:5000/api'
+//export const ROOT_URL = 'http://192.168.123.11:5000/api'
+export const ROOT_URL = 'http://127.0.0.1:5000/api'
 
 export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
 export function onRequestChartData(paths, aggrLevel, fromTs, toTs) {
@@ -145,27 +144,6 @@ export function handleFetchErrors(response) {
       throw Error(response.statusText);
   }
   return response;
-}
-
-export function fetchChartData(paths, aggrLevel,  fromTs, toTs) {
-  // react-thunk - return function instead of object:
-  return function (dispatch) {
-    // update state:
-    dispatch(onRequestChartData(paths, aggrLevel, fromTs, toTs));
-    // return function that will start the request from server:
-    let query_params = {
-      p: paths.join(","),
-      t0: fromTs,
-      t1: toTs,
-      a: aggrLevel,
-    }
-    return fetch(`${ROOT_URL}/values?${stringify(query_params)}`)
-      .then(handleFetchErrors)
-      .then(
-        response => response.json().then(json => dispatch(onReceiveChartDataSuccess(paths, aggrLevel, fromTs, toTs, json))),
-        errorMsg => dispatch(onReceiveChartDataFailure(paths, errorMsg.toString()))
-      )
-  }
 }
 
 export function fetchDashboardsList() {
