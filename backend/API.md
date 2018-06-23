@@ -66,6 +66,8 @@ curl \
     'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom|TimestampsFrom>&t1=<TimestampTo>'
 ```
 
+Note: not implemented yet.
+
 Parameters:
 
     TimestampFrom: start timestamp (included)
@@ -89,7 +91,10 @@ Parameters:
         Parameter is mandatory - if absent, server will respond with a 301 redirect to URL which includes default aggregation level for selected time interval (by default
         there will be fewer than 100 data points returned in almost all cases).
 
-    Note that number of returned data points will never exceed 100000. If requested time interval and aggr. level would return more than 100k results, incomplete response with only
+    Note that timestamps (from, to) must be aligned depending on aggregation level, otherwise server will respond with status 400. For example, if using aggr.
+    level 2, TimestampFrom must be evenly divisible by `3600 * (3 ^ 2)`.
+
+    Number of returned data points will never exceed 100000. If requested time interval and aggr. level would return more than 100k results, incomplete response with only
     first 100k data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
     updated time interval.
 

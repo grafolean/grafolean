@@ -7,7 +7,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
 import utils
 
 
@@ -133,6 +133,11 @@ def values_get():
             return "Invalid parameter: a\n\n", 400
         if not (0 <= aggr_level <= 6):
             return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
+
+    if not Aggregation.times_aligned_to_aggr(t_froms, aggr_level):
+        return "Starting date(s) is/are not aligned to aggregation level\n\n", 400
+    if not Aggregation.times_aligned_to_aggr([t_to], aggr_level):
+        return "End date is not aligned to aggregation level\n\n", 400
 
     # finally, return the data:
     paths_data = Measurement.fetch_data(paths, aggr_level, t_froms, t_to)

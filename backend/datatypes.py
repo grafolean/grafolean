@@ -128,6 +128,9 @@ class Timestamp(_RegexValidatedInputValue):
     def __float__(self):
         return float(self.v)
 
+    def __int__(self):
+        return int(self.v)
+
 
 class MeasuredValue(_RegexValidatedInputValue):
     _regex = re.compile(r'^[0-9]+([.][0-9]+)?$')
@@ -177,6 +180,16 @@ class Aggregation(object):
         finally:
             if self._parent_aggr:
                 self._parent_aggr.fix_aggregations()
+
+    @classmethod
+    def times_aligned_to_aggr(cls, times, aggr_level):
+        if not aggr_level:
+            return True
+        interval_size = 3600 * (cls.FACTOR ** aggr_level)
+        for t in times:
+            if int(t) % interval_size != 0:
+                return False
+        return True
 
 
 class Measurement(object):
