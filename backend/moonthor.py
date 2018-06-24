@@ -158,10 +158,12 @@ def paths_get():
 
     try:
         matching_paths = {}
+        any_found = False
         any_limit_reached = False
         for path_filter_input in str(path_filters_input).split(','):
             pf = str(PathFilter(path_filter_input))
             matching_paths[pf], limit_reached = PathFilter.find_matching_paths([pf], limit=max_results)
+            any_found = len(matching_paths[pf]) > 0 or any_found
             any_limit_reached = any_limit_reached or limit_reached
     except ValidationError:
         if not failover_trailing:
@@ -174,7 +176,7 @@ def paths_get():
         'limit_reached': any_limit_reached,
     }
 
-    if not matching_paths and failover_trailing:
+    if failover_trailing and not any_found:
         ret['paths_with_trailing'] = {}
         for path_filter_input in str(path_filters_input).split(','):
             upf = str(UnfinishedPathFilter(path_filter_input))

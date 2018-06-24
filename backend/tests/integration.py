@@ -255,6 +255,13 @@ def test_values_put_paths_get(app_client):
     for path in actual['paths_with_trailing']['test.']:
         assert path[:5] == 'test.'
 
+    r = app_client.get('/api/paths/?filter=tes&failover_trailing=true')
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['paths'] == {}
+    assert PATH in actual['paths_with_trailing']['tes']
+    for path in actual['paths_with_trailing']['tes']:
+        assert path[:5] == 'tes'
+
     r = app_client.get('/api/paths/?filter=test.*,test.values.*')
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
