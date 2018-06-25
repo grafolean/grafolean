@@ -172,7 +172,7 @@ def paths_get():
         matching_paths, any_limit_reached = {}, False
 
     ret = {
-        'paths': matching_paths,
+        'paths': matching_paths if any_found else {},
         'limit_reached': any_limit_reached,
     }
 

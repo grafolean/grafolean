@@ -248,19 +248,13 @@ def test_values_put_paths_get(app_client):
     r = app_client.get('/api/paths/?filter=test.')  # same - failover_trailing=false is default option
     assert r.status_code == 400
 
-    r = app_client.get('/api/paths/?filter=test.&failover_trailing=true')
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual['paths'] == {}
-    assert PATH in actual['paths_with_trailing']['test.']
-    for path in actual['paths_with_trailing']['test.']:
-        assert path[:5] == 'test.'
-
-    r = app_client.get('/api/paths/?filter=tes&failover_trailing=true')
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual['paths'] == {}
-    assert PATH in actual['paths_with_trailing']['tes']
-    for path in actual['paths_with_trailing']['tes']:
-        assert path[:5] == 'tes'
+    for prefix in ['t', 'te', 'tes', 'test', 'test.', 'test.v']:
+        r = app_client.get('/api/paths/?filter={}&failover_trailing=true'.format(prefix))
+        actual = json.loads(r.data.decode('utf-8'))
+        assert actual['paths'] == {}
+        assert PATH in actual['paths_with_trailing'][prefix]
+        for path in actual['paths_with_trailing'][prefix]:
+           assert path[:len(prefix)] == prefix
 
     r = app_client.get('/api/paths/?filter=test.*,test.values.*')
     actual = json.loads(r.data.decode('utf-8'))
