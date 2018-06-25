@@ -29,9 +29,19 @@ export default class Legend extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      selectedChartSeries: new Set(this.props.chartSeries),
+      selectedChartSeries: null,  // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
       filter: "",
     }
+  }
+
+  static getDerivedStateFromProps(props, state) {
+    // initialize this.state.selectedChartSeries:
+    if (state.selectedChartSeries === null && props.chartSeries.length > 0) {
+      return {
+        selectedChartSeries: new Set(props.chartSeries),
+      }
+    }
+    return null;
   }
 
   handleDrawnPathsChange = (filter) => {
@@ -91,6 +101,9 @@ export default class Legend extends React.Component {
   }
 
   render() {
+    if (!this.props.chartSeries) {
+      return null;
+    }
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, this.state.filter);
     // are all filteredChartSeries in selectedChartSeries?
     const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeries.has(cs));
