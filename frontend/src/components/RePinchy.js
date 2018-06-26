@@ -377,10 +377,13 @@ export default class RePinchy extends React.Component {
     })
   }
 
-  handleClickCapture = event => {
+  handleClickCapture = ev => {
     // we don't intercept click event - except that it tells us that mouseDown & mouseUp should not be used for dragging
     //console.log("mouse click");
     //event.stopPropagation();
+    if (this.props.handleClick) {
+      this.props.handleClick(ev);
+    }
   }
 
   log(...msgs) {
@@ -513,6 +516,7 @@ export default class RePinchy extends React.Component {
             height: this.props.activeArea.h,
             overflow: 'hidden',
             touchAction: 'auto',
+            zIndex: this.props.activeArea.zIndex || 1,
           }}
         >
         </div>

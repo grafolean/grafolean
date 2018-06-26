@@ -24,6 +24,7 @@ import isWidget from '../Widget/isWidget';
 
 class MoonChart extends React.Component {
   repinchyMouseMoveHandler = null;
+  repinchyClickHandler = null;
   fetchPathsAbortController = null;
 
   constructor(props) {
@@ -149,6 +150,16 @@ class MoonChart extends React.Component {
     }
     this.repinchyMouseMoveHandler(ev);
   }
+  // and then we use the same principle with click, just to be consistent:
+  registerRePinchyClickHandler = (handler) => {
+    this.repinchyClickHandler = handler;
+  }
+  handleRePinchyClick = (ev) => {
+    if (this.repinchyClickHandler === null) {
+      return;
+    }
+    this.repinchyClickHandler(ev);
+  }
 
   handleDrawnChartSeriesChange = (drawnChartSeries) => {
     this.setState({
@@ -197,6 +208,7 @@ class MoonChart extends React.Component {
               scale: initialScale,
             }}
             handleMouseMove={this.handleRePinchyMouseMove}
+            handleClick={this.handleRePinchyClick}
           >
             {(x, y, scale, zoomInProgress, pointerPosition) => (
               <div className="repinchy-content">
@@ -212,6 +224,7 @@ class MoonChart extends React.Component {
                   xAxisHeight={xAxisHeight}
                   yAxisWidth={yAxisWidth}
                   registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
+                  registerClickHandler={this.registerRePinchyClickHandler}
                 />
                 <div
                   className="legend"
@@ -500,6 +513,7 @@ export class ChartView extends React.Component {
     }
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
+    this.props.registerClickHandler(this.handleClick);
   }
 
   // functions for converting x <-> t:
@@ -508,29 +522,51 @@ export class ChartView extends React.Component {
   x2t = (x) => (this.props.fromTs + x / this.props.scale);
   t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
 
-  handleMouseMove = (ev) => {
-    // this will get called from RePinchy when there is a mousemove event:
+  _getClosestPointFromEvent = (ev) => {
+      // this will get called from RePinchy when there is a mousemove event:
     let rect = ev.currentTarget.getBoundingClientRect();
     const ts = this.x2t(ev.clientX - rect.left);
     const y = ev.clientY - rect.top;
     const newClosest = this.getClosestValue(ts, y);
+    return newClosest;
+  }
+
+  _hasClosestPointChanged = (newClosest) => {
+    // if both are null, no change:
+    if (this.oldClosest === null && newClosest === null) {
+      return false;
+    };
+    // one is null, there was change:
+    if (this.oldClosest === null || newClosest === null) {
+      return true;
+    };
+    // otherwise compare their content:
     if (
-      (
-        // no closest point found:
-        this.oldClosest === null &&
-        newClosest === null
-      ) || (
-        // new closest point is the same as old one:
-        this.oldClosest !== null &&
-        newClosest !== null &&
         this.oldClosest.cs === newClosest.cs &&
         this.oldClosest.point.t === newClosest.point.t &&
         this.oldClosest.point.v === newClosest.point.v
       )
-    ) {
+    {
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  handleClick = (ev) => {
+    const newClosest = this._getClosestPointFromEvent(ev);
+    this.oldClosest = newClosest;
+    this.setState({
+      closestPoint: newClosest,
+      overrideClosestPoint: newClosest,
+    })
+  }
+
+  handleMouseMove = (ev) => {
+    const newClosest = this._getClosestPointFromEvent(ev);
+    if (!this._hasClosestPointChanged(newClosest)) {
       return;
     }
-
     // closestPoint has changed, save to both state (to rerender) and to this: (for comparison)
     this.oldClosest = newClosest;
     this.setState({
@@ -754,6 +790,7 @@ export class ChartView extends React.Component {
                     {...closest}
                     x={this.dt2dx(closest.point.t)}
                     y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
+                    r={this.state.overrideClosestPoint ? 5 : 4}
                     yAxisHeight={yAxisHeight}
                   />
                 )}
@@ -796,9 +833,8 @@ export class ChartView extends React.Component {
               }}
             >
               <TooltipPopup
-                // when mouse enters tooltip popup, stop looking for closest point and keep the popup open:
-                onMouseEnter={() => { this.setState({ closestPoint: null, overrideClosestPoint: closest }); }}
-                onMouseLeave={() => { this.setState({ overrideClosestPoint: null }); }}
+                // if tooltip was opened by a click, it should be on top so user can select text:
+                zIndex={this.state.overrideClosestPoint ? 999999 : 1}
               >
                 {(closest.point.minv) ? (
                   <div>

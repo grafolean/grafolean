@@ -9,7 +9,7 @@ export default class TooltipIndicator extends React.Component {
     return (
       <g>
         <line x1={x} y1={0} x2={x} y2={this.props.yAxisHeight} shapeRendering="crispEdges" stroke="#e3e3e3" strokeWidth="1"/>
-        <circle cx={x} cy={y} r={4} fill={serieColor}/>
+        <circle cx={x} cy={y} r={this.props.r || 4} fill={serieColor}/>
       </g>
     )
   }

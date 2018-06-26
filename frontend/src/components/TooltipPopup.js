@@ -12,9 +12,11 @@ export default class TooltipPopup extends React.Component {
       borderWidth: 1,
       borderRadius: 7,
       arrowPercentFromLeft: 5,
-      zIndex: 9999999,  // I guess every component thinks it should always be on top :-D
+      zIndex: 1,  // tooltip might be on top if it was displayed with a click, or be below event-sensitive area if it was just a result of mousemove
       arrowSpacingHorizontal: 3,
       arrowSpacingVertical: 5,
+      onMouseEnter: () => {},
+      onMouseLeave: () => {},
     }
 
     render() {
