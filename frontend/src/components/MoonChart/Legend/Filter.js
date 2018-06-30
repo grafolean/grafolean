@@ -39,6 +39,9 @@ export default class Filter extends React.Component {
           name="pathFilter"
           value={this.state.filter}
           onChange={this.handleInputChange}
+          style={{
+            width: this.props.width - 50,
+          }}
         />
         <i
           className="fa fa-close"

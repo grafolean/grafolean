@@ -170,8 +170,16 @@ class MoonChart extends React.Component {
   render() {
     const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
-    const chartWidth = this.props.width * 0.7;
-    const legendWidth = this.props.width - chartWidth;
+    let legendWidth, chartWidth, legendBelowChart;
+    if (this.props.width > 500) {
+      legendWidth = Math.min(this.props.width * 0.3, 200);
+      chartWidth = this.props.width - legendWidth;
+      legendBelowChart = false;
+    } else {
+      legendWidth = this.props.width;
+      chartWidth = this.props.width;
+      legendBelowChart = true;
+    }
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
@@ -227,14 +235,13 @@ class MoonChart extends React.Component {
                   registerClickHandler={this.registerRePinchyClickHandler}
                 />
                 <div
-                  className="legend"
                   style={{
-                    width: legendWidth,
-                    height: this.props.height,
-                    float: 'right',
+                    float: legendBelowChart ? 'initial' : 'right',
                   }}
                 >
                   <Legend
+                    width={legendWidth}
+                    maxHeight={legendBelowChart ? null : this.props.height}
                     chartSeries={this.state.allChartSeries}
                     onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                   />

@@ -22,6 +22,8 @@ const Checkbox = (props) => (
 
 export default class Legend extends React.Component {
   static defaultProps = {
+    width: 200,
+    maxHeight: 300,
     chartSeries: [],
     onDrawnChartSeriesChange: (selectedChartSeries) => {},
   }
@@ -109,8 +111,15 @@ export default class Legend extends React.Component {
     const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeries.has(cs));
     const noneChecked = filteredChartSeries.every(cs => !this.state.selectedChartSeries.has(cs));
     return (
-      <div>
+      <div
+        className="legend"
+        style={{
+          width: this.props.width,
+          maxHeight: this.props.maxHeight ? this.props.maxHeight : 'initial',
+        }}
+      >
         <Filter
+          width={this.props.width}
           onChange={this.handleDrawnPathsChange}
         />
 
