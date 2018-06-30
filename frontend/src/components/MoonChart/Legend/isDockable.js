@@ -79,8 +79,8 @@ const isDockable = WrappedComponent => {
                   transform: `rotate(${this.state.opened ? 180 : 0}deg)`,
                   transition: 'transform ease-in 0.1s',
                   marginRight: this.state.opened ? -1 : 4,
-            }}
-          />
+                }}
+              />
             </a>
           )}
         </div>
