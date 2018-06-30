@@ -4,6 +4,7 @@ import './index.css';
 
 import { generateSerieColor } from '../utils';
 import Filter from './Filter';
+import isDockable from './isDockable';
 
 const Checkbox = (props) => (
   <div className="path-checkbox"
@@ -20,10 +21,10 @@ const Checkbox = (props) => (
   </div>
 )
 
-export default class Legend extends React.Component {
+class Legend extends React.Component {
   static defaultProps = {
     width: 200,
-    maxHeight: 300,
+    height: 300,
     chartSeries: [],
     onDrawnChartSeriesChange: (selectedChartSeries) => {},
   }
@@ -115,7 +116,7 @@ export default class Legend extends React.Component {
         className="legend"
         style={{
           width: this.props.width,
-          maxHeight: this.props.maxHeight ? this.props.maxHeight : 'initial',
+          height: this.props.height ? this.props.height : 'initial',
         }}
       >
         <Filter
@@ -162,3 +163,4 @@ export default class Legend extends React.Component {
   }
 }
 
+export default isDockable(Legend);

@@ -170,15 +170,24 @@ class MoonChart extends React.Component {
   render() {
     const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
-    let legendWidth, chartWidth, legendBelowChart;
+    let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
     if (this.props.width > 500) {
       legendWidth = Math.min(this.props.width * 0.3, 200);
       chartWidth = this.props.width - legendWidth;
-      legendBelowChart = false;
+      legendIsDockable = false;
+      legendPositionStyle = {
+        float: 'right',
+      };
     } else {
-      legendWidth = this.props.width;
+      legendWidth = Math.min(this.props.width, 200);
       chartWidth = this.props.width;
-      legendBelowChart = true;
+      legendIsDockable = true;
+      // if legend is dockable, it should be taken out of flow:
+      legendPositionStyle = {
+        position: 'absolute',
+        right: 0,
+        top: 0,
+      };
     }
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
     const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
@@ -235,13 +244,12 @@ class MoonChart extends React.Component {
                   registerClickHandler={this.registerRePinchyClickHandler}
                 />
                 <div
-                  style={{
-                    float: legendBelowChart ? 'initial' : 'right',
-                  }}
+                  style={legendPositionStyle}
                 >
                   <Legend
+                    dockingEnabled={legendIsDockable}
                     width={legendWidth}
-                    maxHeight={legendBelowChart ? null : this.props.height}
+                    height={this.props.height}
                     chartSeries={this.state.allChartSeries}
                     onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                   />
