@@ -1,5 +1,36 @@
 import React from 'react';
 
+const InputWithClear = (props) => (
+  <div
+    className="input-with-clear"
+  >
+    <input
+      type="text"
+      name="pathFilter"
+      value={props.value}
+      onChange={props.onChange}
+    />
+    <ClearField
+      onClick={props.onClear}
+    />
+  </div >
+)
+
+const ClearField = (props) => (
+  <div
+    className="clear-input"
+  >
+    <span className="triangle" />
+    <a
+      onClick={props.onClick}
+    >
+      <i
+        className="fa fa-close"
+      />
+    </a>
+  </div>
+)
+
 export default class Filter extends React.Component {
   static defaultProps = {
     onChange: () => {},
@@ -34,18 +65,11 @@ export default class Filter extends React.Component {
   render() {
     return (
       <div className="path-filter">
-        <input
-          type="text"
-          name="pathFilter"
+        <InputWithClear
+          width={this.props.width - 50}
           value={this.state.filter}
           onChange={this.handleInputChange}
-          style={{
-            width: this.props.width - 50,
-          }}
-        />
-        <i
-          className="fa fa-close"
-          onClick={this.clearInput}
+          onClear={this.clearInput}
         />
       </div>
     )
