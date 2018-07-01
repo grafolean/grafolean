@@ -309,7 +309,7 @@ export class ChartContainer extends React.Component {
   paths = null;
   yAxesProperties = {};
   YAXIS_TOP_PADDING = 40;
-  MAX_POINTS = 50
+  MAX_POINTS_PER_100PX = 5;
 
   constructor(props) {
     super(props);
@@ -338,7 +338,8 @@ export class ChartContainer extends React.Component {
     if (this.paths === null) {
       return;  // we didn't receive the list of paths yet, we only have path filters
     }
-    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, this.MAX_POINTS, -1);  // -1 for no aggregation
+    const maxPointsOnChart = this.MAX_POINTS_PER_100PX * this.props.width / 100;
+    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1);  // -1 for no aggregation
     this.setState((oldState) => ({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],

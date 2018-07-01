@@ -41,11 +41,11 @@ export const generateGridColor = (index) => {
   return GRID_COLORS[index % GRID_COLORS.length];
 };
 
-export const getSuggestedAggrLevel = (fromTs, toTs, maxPoints=50, minAggrLevel=-1) => {
+export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLevel=-1) => {
   // returns -1 for no aggregation, aggr. level otherwise
   let nHours = Math.ceil((toTs - fromTs) / 3600.0);
   for (let l=minAggrLevel; l<MAX_AGGR_LEVEL; l++) {
-    if (maxPoints >= nHours / (3**l)) {
+    if (maxPointsAllowed >= nHours / (3**l)) {
       return l;
     };
   };
