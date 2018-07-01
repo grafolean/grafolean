@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+.cache/
+
+# flask_input:
+backend/src/*
