@@ -1,0 +1,14 @@
+[Unit]
+Description=Moonthor
+After=network.target
+
+[Service]
+ExecStart=/bin/sh -c '/usr/bin/python3 /data/moonthor/backend/moonthor.py serve >> moonthor.log 2>&1'
+WorkingDirectory=/data/moonthor/backend/
+# with systemd version 236 logging can be made simpler:
+#ExecStart=/usr/bin/python3 /data/rebalancer/rebalancer.py
+#StandardOutput=file:/data/rebalancer/rebalancer.log
+#StandardError=file:/data/rebalancer/rebalancer.log
+
+[Install]
+WantedBy=multi-user.target
