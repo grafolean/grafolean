@@ -4,7 +4,7 @@ import { generateSerieColor } from './utils';
 
 export default class IntervalLineChart extends React.PureComponent {
   render() {
-    const ts2x = (ts) => ( ts * this.props.scale );
+    const ts2x = (ts) => ((ts - this.props.minKnownTs) * this.props.scale);
     return (
       <g>
         {/* draw every path: */}

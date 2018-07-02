@@ -488,6 +488,28 @@ export class ChartContainer extends React.Component {
       )
   }
 
+  getMinKnownTs() {
+    /*
+      Fun fact: did you know the coordinate system in SVG is limited (by implementation)? It turns out that the circle in the
+      folowing SVG will not be displayed: (in Firefox at least)
+
+        <svg width="100" height="100">
+          <g transform="translate(1234567890, 0)">
+            <circle cx="-1234567890" cy="50" r="3" />
+          </g>
+        </svg>
+
+      More details here: https://oreillymedia.github.io/Using_SVG/extras/ch08-precision.html
+
+      How is this important? We were drawing with coordinate system translated by fromTs * scale. That simplified maths but
+      lead to largish numbers being used, so the points weren't being displayed.
+    */
+    if (!this.fetchedData[this.state.aggrLevel] || this.fetchedData[this.state.aggrLevel].length === 0) {
+      return 0;
+    }
+    return this.fetchedData[this.state.aggrLevel][0].fromTs;
+  }
+
   render() {
     return (
       <ChartView
@@ -496,6 +518,7 @@ export class ChartContainer extends React.Component {
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
         aggrLevel={this.state.aggrLevel}
+        minKnownTs={this.getMinKnownTs()}
         yAxesProperties={this.yAxesProperties}
       />
     )
@@ -782,7 +805,7 @@ export class ChartView extends React.Component {
                 only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
               */}
               <g
-                transform={`translate(${yAxesWidth - 1 - this.props.fromTs * this.props.scale} 0)`}
+                transform={`translate(${yAxesWidth - 1 - ((this.props.fromTs - this.props.minKnownTs) * this.props.scale)} 0)`}
               >
                 {this.props.fetchedIntervalsData
                   .map((interval, intervalIndex) => (
@@ -791,6 +814,7 @@ export class ChartView extends React.Component {
                       interval={interval}
                       yAxisHeight={yAxisHeight}
                       scale={this.props.scale}
+                      minKnownTs={this.props.minKnownTs}
                       isAggr={this.props.aggrLevel >= 0}
                       drawnChartSeries={this.props.drawnChartSeries}
                       // dict of v2y() functions per unit:
@@ -804,7 +828,7 @@ export class ChartView extends React.Component {
                 {(closest) && (
                   <TooltipIndicator
                     {...closest}
-                    x={this.dt2dx(closest.point.t)}
+                    x={this.dt2dx(closest.point.t - this.props.minKnownTs)}
                     y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
                     r={this.state.overrideClosestPoint ? 5 : 4}
                     yAxisHeight={yAxisHeight}
