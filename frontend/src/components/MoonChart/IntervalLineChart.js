@@ -2,7 +2,18 @@ import React from 'react';
 
 import { generateSerieColor } from './utils';
 
-export default class IntervalLineChart extends React.PureComponent {
+export default class IntervalLineChart extends React.Component {
+  shouldComponentUpdate(nextProps, nextState) {
+    for (let propName in this.props) {
+      // this.props.v2y is anonymous function and changes every time parent rerenders, so
+      // we ignore it as a signal for update:
+      if (this.props[propName] !== nextProps[propName] && propName !== 'v2y') {
+        return true;
+      };
+    };
+    return false;
+  }
+
   render() {
     const ts2x = (ts) => ((ts - this.props.minKnownTs) * this.props.scale);
     return (
