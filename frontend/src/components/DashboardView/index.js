@@ -7,6 +7,7 @@ import Button from '../Button';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import MoonChartWidget from '../MoonChart';
+import LastValueWidget from '../Widgets/LastValueWidget';
 
 export default class DashboardView extends React.Component {
 
@@ -117,18 +118,32 @@ export default class DashboardView extends React.Component {
         {this.state.name}
 
         <div>
-          {this.state.widgets.map((widget) => (
-            <MoonChartWidget
-              key={widget.id}
-              width={this.props.width}
-              height={500}
-              chartId={widget.id}
-              dashboardSlug={this.props.match.params.slug}
-              title={widget.title}
-              chartContent={widget.content}
-              refreshParent={this.fetchDashboardDetails}
-            />
-          ))}
+          {this.state.widgets.map((widget) => {
+            switch (widget.type) {
+              case 'last':
+                return(
+                  <LastValueWidget
+                    key={widget.id}
+                    width={this.props.width}
+                    height={500}
+                  />
+                );
+              case 'chart':
+              default:
+                return (
+                  <MoonChartWidget
+                    key={widget.id}
+                    width={this.props.width}
+                    height={500}
+                    chartId={widget.id}
+                    dashboardSlug={this.props.match.params.slug}
+                    title={widget.title}
+                    chartContent={widget.content}
+                    refreshParent={this.fetchDashboardDetails}
+                  />
+                );
+            }
+          })}
         </div>
 
         {(!this.state.newChartFormOpened) ? (

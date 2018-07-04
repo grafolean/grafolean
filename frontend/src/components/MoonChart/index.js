@@ -18,8 +18,8 @@ import ChartForm from '../ChartForm';
 
 import './index.css';
 import MatchingPaths from '../ChartForm/MatchingPaths';
-import WidgetDialog from '../Widget/WidgetDialog';
-import isWidget from '../Widget/isWidget';
+import WidgetDialog from '../Widgets/WidgetDialog';
+import isWidget from '../Widgets/isWidget';
 
 
 class MoonChart extends React.Component {
