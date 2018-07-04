@@ -2,24 +2,24 @@ import React from 'react';
 import moment from 'moment';
 import { stringify } from 'qs';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+import store from '../../../store';
+import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../../store/actions';
 import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
 
-import RePinchy from '../RePinchy';
+import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
 import IntervalLineChart from './IntervalLineChart';
 import Legend from './Legend';
 import Grid from './Grid';
 import TooltipIndicator from './TooltipIndicator';
-import TooltipPopup from '../TooltipPopup';
-import ChartForm from '../ChartForm';
+import TooltipPopup from '../../TooltipPopup';
+import ChartForm from '../../ChartForm';
 
 import './index.css';
-import MatchingPaths from '../ChartForm/MatchingPaths';
-import WidgetDialog from '../Widgets/WidgetDialog';
-import isWidget from '../Widgets/isWidget';
+import MatchingPaths from '../../ChartForm/MatchingPaths';
+import WidgetDialog from '../WidgetDialog';
+import isWidget from '../isWidget';
 
 
 class MoonChart extends React.Component {

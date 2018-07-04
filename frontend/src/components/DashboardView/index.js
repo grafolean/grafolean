@@ -6,7 +6,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import Button from '../Button';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
-import MoonChartWidget from '../MoonChart';
+import MoonChartWidget from '../Widgets/MoonChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
 
 export default class DashboardView extends React.Component {
