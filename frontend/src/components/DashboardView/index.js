@@ -135,7 +135,7 @@ export default class DashboardView extends React.Component {
                     key={widget.id}
                     width={this.props.width}
                     height={500}
-                    chartId={widget.id}
+                    widgetId={widget.id}
                     dashboardSlug={this.props.match.params.slug}
                     title={widget.title}
                     chartContent={widget.content}

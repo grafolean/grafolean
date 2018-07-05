@@ -14,6 +14,7 @@ export default class WidgetForm extends React.Component {
   static defaultProps = {
     dashboardSlug: null,
     widgetId: null,
+    lockWidgetType: null,
   }
 
   formValues = {};
@@ -21,7 +22,7 @@ export default class WidgetForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      widget_type: 'chart',
+      widgetType: props.lockWidgetType ? props.lockWidgetType : WIDGET_TYPES[0].type,
     };
   }
 
@@ -64,25 +65,30 @@ export default class WidgetForm extends React.Component {
   render() {
     return (
       <div>
-        <form id={this.props.formid} onSubmit={(ev) => { ev.preventDefault(); this.handleSubmit(this.state.widget_type); }}>
-          <select
-            onChange={(ev) => this.setState({ widget_type: ev.target.value })}
-          >
-            {WIDGET_TYPES.map(wt => (
-              <option
-                key={wt.type}
-                value={wt.type}
-              >
-                {wt.label}
-              </option>
-            ))}
-          </select>
-
-          {this.state.widget_type === 'chart' && (
-            <ChartForm onChange={this.handleFormContentChange} />
+        <form id={this.props.formid} onSubmit={(ev) => { ev.preventDefault(); this.handleSubmit(this.state.widgetType); }}>
+          {!this.props.lockWidgetType && (
+            <select
+              onChange={(ev) => this.setState({ widgetType: ev.target.value })}
+            >
+              {WIDGET_TYPES.map(wt => (
+                <option
+                  key={wt.type}
+                  value={wt.type}
+                >
+                  {wt.label}
+                </option>
+              ))}
+            </select>
           )}
 
-          {this.state.widget_type === 'lastvalue' && (
+          {this.state.widgetType === 'chart' && (
+            <ChartForm
+              onChange={this.handleFormContentChange}
+              initialFormData={this.props.initialFormData}
+            />
+          )}
+
+          {this.state.widgetType === 'lastvalue' && (
             <div>
               Yeah, that.
             </div>

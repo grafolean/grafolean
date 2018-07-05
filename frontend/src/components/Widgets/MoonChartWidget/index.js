@@ -14,7 +14,7 @@ import Legend from './Legend';
 import Grid from './Grid';
 import TooltipIndicator from './TooltipIndicator';
 import TooltipPopup from '../../TooltipPopup';
-import ChartForm from '../../ChartForm';
+import WidgetForm from '../../WidgetForm';
 
 import './index.css';
 import MatchingPaths from '../../ChartForm/MatchingPaths';
@@ -116,7 +116,7 @@ class MoonChart extends React.Component {
   deleteChart = (ev) => {
     ev.preventDefault();
 
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.chartId}`, { method: 'DELETE' })
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.widgetId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .then(() => {
         store.dispatch(onSuccess('Chart successfully removed.'));
@@ -266,9 +266,10 @@ class MoonChart extends React.Component {
           padding={PADDING}
           onCloseAttempt={this.toggleChartSettings}
         >
-          <ChartForm
+          <WidgetForm
             dashboardSlug={this.props.dashboardSlug}
-            chartId={this.props.chartId}
+            widgetId={this.props.widgetId}
+            lockWidgetType="chart"
             initialFormData={{
               name: this.props.title,
               content: this.props.chartContent,
