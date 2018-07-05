@@ -2,12 +2,8 @@ import React from 'react';
 import Select, { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
-
 import MatchingPaths from './MatchingPaths';
 import Button from '../Button';
-import Loading from '../Loading';
 import './index.css';
 
 const METRIC_PREFIXES = [
@@ -48,12 +44,11 @@ export default class ChartForm extends React.Component {
   // be avoided.
 
   static defaultProps = {
-    dashboardSlug: null,
-    chartId: null,
     initialFormData: {
       name: '',
       content: [],
     },
+    handleFormContentChange: () => {},
   };
 
   constructor(props) {
@@ -72,7 +67,18 @@ export default class ChartForm extends React.Component {
   handleNameChange = (event) => {
     this.setState({
       name: event.target.value,
-    });
+    }, this.notifyParentOfChange);
+  }
+
+  notifyParentOfChange = () => {
+    const content = this.state.seriesGroups.map(sg => ({
+      path_filter: sg.pathFilter,
+      renaming: sg.pathRenamer,
+      unit: sg.unit,
+      metric_prefix: sg.metricPrefix,
+    }));
+    const valid = true;
+    this.props.onChange('chart', this.state.name, content, valid);
   }
 
   setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
@@ -82,7 +88,7 @@ export default class ChartForm extends React.Component {
       return {
         seriesGroups: newSeriesGroups,
       };
-    });
+    }, this.notifyParentOfChange);
   }
 
   userUnitCreator = (option) => {
@@ -113,37 +119,6 @@ export default class ChartForm extends React.Component {
     ev.preventDefault();
   }
 
-
-  handleSubmit = (ev) => {
-    ev.preventDefault();
-
-    const params = {
-      type: 'chart',
-      title: this.state.name,
-      content: JSON.stringify(
-        this.state.seriesGroups.map(sg => ({
-          path_filter: sg.pathFilter,
-          renaming: sg.pathRenamer,
-          unit: sg.unit,
-          metric_prefix: sg.metricPrefix,
-        }))
-      ),
-    }
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.chartId || ''}`, {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        method: this.props.chartId ? 'PUT' : 'POST',
-        body: JSON.stringify(params),
-      })
-      .then(handleFetchErrors)
-      .then(() => {
-        store.dispatch(onSuccess(this.props.chartId ? 'Chart successfully updated.' : 'New chart successfully created.'));
-      })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
-  }
-
   render() {
     let allUnits = Object.keys(KNOWN_UNITS).map(unit => ({
       value: unit,
@@ -165,7 +140,6 @@ export default class ChartForm extends React.Component {
 
     return (
       <div>
-        <form id={this.props.formid} onSubmit={this.handleSubmit}>
           <div>
             <label>Chart title:</label>
             <input type="text" name="name" value={this.state.name} onChange={this.handleNameChange} />
@@ -254,13 +228,7 @@ export default class ChartForm extends React.Component {
             )}
             <Button onClick={this.handleAddEmptySerie}>+</Button>
           </div>
-          {(this.props.loading)?(
-            <Loading />
-          ):(
-            <input type="submit" value="Submit" />
-          )}
 
-        </form>
       </div>
     )
   }
