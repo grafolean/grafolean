@@ -144,8 +144,8 @@ export default class ChartForm extends React.Component {
             <label>Chart title:</label>
             <input type="text" name="name" value={this.state.name} onChange={this.handleNameChange} />
           </div>
-          <div>
 
+          <div>
             <label>Series definitions:</label>
             {this.state.seriesGroups.map((sg, sgIndex) =>
               <div className="serie" key={sgIndex}>

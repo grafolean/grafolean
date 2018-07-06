@@ -5,9 +5,11 @@ import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/a
 
 import ChartForm from '../ChartForm';
 import Loading from '../Loading';
+import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 
 const WIDGET_TYPES = [
   { type: 'chart', label: 'chart', form: ChartForm },
+  { type: 'lastvalue', label: 'last value', form: LastValueForm },
 ]
 
 export default class WidgetForm extends React.Component {
@@ -63,6 +65,7 @@ export default class WidgetForm extends React.Component {
 
 
   render() {
+    const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === this.state.widgetType).form;
     return (
       <div>
         <form id={this.props.formid} onSubmit={(ev) => { ev.preventDefault(); this.handleSubmit(this.state.widgetType); }}>
@@ -81,18 +84,10 @@ export default class WidgetForm extends React.Component {
             </select>
           )}
 
-          {this.state.widgetType === 'chart' && (
-            <ChartForm
-              onChange={this.handleFormContentChange}
-              initialFormData={this.props.initialFormData}
-            />
-          )}
-
-          {this.state.widgetType === 'lastvalue' && (
-            <div>
-              Yeah, that.
-            </div>
-          )}
+          <WidgetTypeForm
+            onChange={this.handleFormContentChange}
+            initialFormData={this.props.initialFormData}
+          />
 
           {(this.state.submitting) ? (
             <Loading />

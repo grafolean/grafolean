@@ -120,7 +120,7 @@ export default class DashboardView extends React.Component {
         <div>
           {this.state.widgets.map((widget) => {
             switch (widget.type) {
-              case 'last':
+              case 'lastvalue':
                 return(
                   <LastValueWidget
                     key={widget.id}
@@ -129,7 +129,6 @@ export default class DashboardView extends React.Component {
                   />
                 );
               case 'chart':
-              default:
                 return (
                   <MoonChartWidget
                     key={widget.id}
@@ -142,6 +141,12 @@ export default class DashboardView extends React.Component {
                     refreshParent={this.fetchDashboardDetails}
                   />
                 );
+              default:
+                return (
+                  <div>
+                    Unknown widget type.
+                  </div>
+                )
             }
           })}
         </div>
