@@ -45,7 +45,6 @@ export default class ChartForm extends React.Component {
 
   static defaultProps = {
     initialFormData: {
-      name: '',
       content: [],
     },
     handleFormContentChange: () => {},
@@ -54,7 +53,6 @@ export default class ChartForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      name: this.props.initialFormData.name,
       seriesGroups: this.props.initialFormData.content.map(c => ({
         pathFilter: c.path_filter,
         pathRenamer: c.renaming,
@@ -62,12 +60,6 @@ export default class ChartForm extends React.Component {
         metricPrefix: c.metric_prefix,
       })),
     };
-  }
-
-  handleNameChange = (event) => {
-    this.setState({
-      name: event.target.value,
-    }, this.notifyParentOfChange);
   }
 
   notifyParentOfChange = () => {
@@ -78,7 +70,7 @@ export default class ChartForm extends React.Component {
       metric_prefix: sg.metricPrefix,
     }));
     const valid = true;
-    this.props.onChange('chart', this.state.name, content, valid);
+    this.props.onChange('chart', content, valid);
   }
 
   setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
@@ -140,11 +132,6 @@ export default class ChartForm extends React.Component {
 
     return (
       <div>
-          <div>
-            <label>Chart title:</label>
-            <input type="text" name="name" value={this.state.name} onChange={this.handleNameChange} />
-          </div>
-
           <div>
             <label>Series definitions:</label>
             {this.state.seriesGroups.map((sg, sgIndex) =>

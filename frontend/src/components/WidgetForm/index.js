@@ -28,15 +28,20 @@ export default class WidgetForm extends React.Component {
     };
   }
 
-  handleFormContentChange = (widgetType, title, content, valid) => {
+  handleNameChange = (ev) => {
+    this.setState({
+      widgetName: ev.target.value,
+    });
+  }
+
+  handleFormContentChange = (widgetType, content, valid) => {
     this.formValues[widgetType] = {
-      title,
       content,
       valid,
     }
   }
 
-  handleSubmit = (widgetType) => {
+  handleSubmit = (widgetType, widgetName) => {
     const widgetTypeFormValues = this.formValues[widgetType];
     if (!widgetTypeFormValues.valid) {
       store.dispatch(onFailure("Form contents not valid!"));
@@ -45,7 +50,7 @@ export default class WidgetForm extends React.Component {
 
     const params = {
       type: widgetType,
-      title: widgetTypeFormValues.title,
+      title: widgetName,
       content: JSON.stringify(widgetTypeFormValues.content),
     }
     fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
@@ -68,7 +73,13 @@ export default class WidgetForm extends React.Component {
     const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === this.state.widgetType).form;
     return (
       <div>
-        <form id={this.props.formid} onSubmit={(ev) => { ev.preventDefault(); this.handleSubmit(this.state.widgetType); }}>
+        <form id={this.props.formid} onSubmit={(ev) => { ev.preventDefault(); this.handleSubmit(this.state.widgetType, this.state.widgetName); }}>
+
+          <div>
+            <label>Widget title:</label>
+            <input type="text" name="name" value={this.state.widgetName} onChange={this.handleNameChange} />
+          </div>
+
           {!this.props.lockWidgetType && (
             <select
               onChange={(ev) => this.setState({ widgetType: ev.target.value })}
