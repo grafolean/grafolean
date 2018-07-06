@@ -77,25 +77,28 @@ Parameters:
 ## Reading values (GET)
 
 ```
-curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>'
+curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>&sort=<SortAscDesc>&limit=<MaxResults>'
 ```
 
 Parameters:
 
     PathN: path that the data was connected to
-    TimestampFrom/TimestampsFrom: start timestamp/s (inclusive) - optional; either a single timestamp (with up to 6 digits) or a comma separated list of timestamps, one for each path
-    TimestampTo: end timestamp (exclusive) - optional
+    TimestampFrom/TimestampsFrom: start timestamp/s; either a single timestamp (up to 10 digits) or a comma separated list of timestamps, one for each path
+        (inclusive) (optional)
+    TimestampTo: end timestamp (exclusive) (optional)
     AggregationLevel: values from 0 to 6 or string "no" are allowed. Aggregation level 0 returns one data point (average, min and max value) per hour. Every
         higher aggr. level returns one data point per 3-times as much time. In other words, level 1 returns one data point per 3 hours, level 2 per 9 hours,... and
         level 6 one data point per 3 ^ 6 hours or roughly 30 days. Special value "no" will return raw data (non-aggregated).
         Parameter is mandatory - if absent, server will respond with a 301 redirect to URL which includes default aggregation level for selected time interval (by default
         there will be fewer than 100 data points returned in almost all cases).
+    SortAscDesc: 'asc' (default) / 'desc' (optional)
+    MaxResults: (optional) number of returned results (max. 100000 - default).
 
     Note that timestamps (from, to) must be aligned depending on aggregation level, otherwise server will respond with status 400. For example, if using aggr.
     level 2, TimestampFrom must be evenly divisible by `3600 * (3 ^ 2)`.
 
-    Number of returned data points will never exceed 100000. If requested time interval and aggr. level would return more than 100k results, incomplete response with only
-    first 100k data points will be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
+    If requested time interval and aggr. level would return more than MaxResults results, incomplete response with only first MaxResults data points will
+    be returned. In this case field "next_data_point" will mark the beginning of the next time interval so that client can repeat request with
     updated time interval.
 
 JSON response:

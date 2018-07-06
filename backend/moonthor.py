@@ -134,13 +134,30 @@ def values_get():
         if not (0 <= aggr_level <= 6):
             return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
 
+    sort_order_input = flask.request.args.get('sort', 'asc')
+    try:
+        sort_order = str(sort_order_input)
+        if sort_order not in ['asc', 'desc']:
+            return "Invalid parameter: sort (should be 'asc' or 'desc')\n\n", 400
+        should_sort_asc = True if sort_order == 'asc' else False
+    except:
+        return "Invalid parameter: sort\n\n", 400
+
+    max_records_input = flask.request.args.get('limit', Measurement.MAX_DATAPOINTS_RETURNED)
+    try:
+        max_records = int(max_records_input)
+        if max_records > Measurement.MAX_DATAPOINTS_RETURNED:
+            return "Invalid parameter: limit (max. value is {})\n\n".format(Measurement.MAX_DATAPOINTS_RETURNED), 400
+    except:
+        return "Invalid parameter: limit\n\n", 400
+
     if not Aggregation.times_aligned_to_aggr(t_froms, aggr_level):
         return "Starting date(s) is/are not aligned to aggregation level\n\n", 400
     if not Aggregation.times_aligned_to_aggr([t_to], aggr_level):
         return "End date is not aligned to aggregation level\n\n", 400
 
     # finally, return the data:
-    paths_data = Measurement.fetch_data(paths, aggr_level, t_froms, t_to)
+    paths_data = Measurement.fetch_data(paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
     return json.dumps({
         'paths': paths_data,
     }), 200

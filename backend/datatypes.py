@@ -87,7 +87,7 @@ class PathFilter(_RegexValidatedInputValue):
         found_paths = set()
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
-            c.execute('SELECT path FROM paths WHERE path ~ %s LIMIT %s;', (pf_regex, total_limit + 1,))
+            c.execute('SELECT path FROM paths WHERE path ~ %s ORDER BY path LIMIT %s;', (pf_regex, total_limit + 1,))
             for res in c:
                 if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
                     return found_paths, True
@@ -241,9 +241,10 @@ class Measurement(object):
         return Aggregation.MAX_AGGR_LEVEL
 
     @classmethod
-    def fetch_data(cls, paths, aggr_level, t_froms, t_to):
+    def fetch_data(cls, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records):
         # t_froms: an array of t_from, one for each path (because the subsequent fetchings usually request a different t_from for each path)
         paths_data = {}
+        sort_order = 'ASC' if should_sort_asc else 'DESC'  # PgSQL doesn't allow sort order to be parametrized
         with db.cursor() as c:
             for p, t_from in zip(paths, t_froms):
                 str_p = str(p)
@@ -252,19 +253,19 @@ class Measurement(object):
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
-                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s LIMIT %s;', (path_id, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
                     for ts, value in c:
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
-                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), Measurement.MAX_DATAPOINTS_RETURNED + 1,))
+                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
                     for ts, vavg, vmin, vmax in c:
                         path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
-                if len(path_data) > Measurement.MAX_DATAPOINTS_RETURNED:
+                if len(path_data) > max_records:
                     paths_data[str_p] = {
-                        'next_data_point': path_data[Measurement.MAX_DATAPOINTS_RETURNED]['t'],
-                        'data': path_data[:Measurement.MAX_DATAPOINTS_RETURNED],
+                        'next_data_point': path_data[max_records]['t'],
+                        'data': path_data[:max_records],
                     }
                 else:
                     paths_data[str_p] = {
