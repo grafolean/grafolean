@@ -127,8 +127,11 @@ export default class DashboardView extends React.Component {
                     width={this.props.width}
                     height={500}
                     widgetId={widget.id}
+                    widgetType={widget.type}
+                    dashboardSlug={this.props.match.params.slug}
                     title={widget.title}
                     content={widget.content}
+                    refreshParent={this.fetchDashboardDetails}
                   />
                 );
               case 'chart':
@@ -138,6 +141,7 @@ export default class DashboardView extends React.Component {
                     width={this.props.width}
                     height={500}
                     widgetId={widget.id}
+                    widgetType={widget.type}
                     dashboardSlug={this.props.match.params.slug}
                     title={widget.title}
                     chartContent={widget.content}

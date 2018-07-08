@@ -2,8 +2,7 @@ import React from 'react';
 import moment from 'moment';
 import { stringify } from 'qs';
 
-import store from '../../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../../store/actions';
+import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
 
 import RePinchy from '../../RePinchy';
@@ -97,32 +96,10 @@ class MoonChart extends React.Component {
         <i className="fa fa-edit" />
       </a>
     );
-    const deleteButton = (
-      <a onClick={(ev) => {
-        if (window.confirm("Are you sure you want to delete this chart? This can't be undone!")) {
-          this.deleteChart(ev);
-        }
-      }}>
-        <i className="fa fa-trash" />
-      </a>
-    );
 
     this.props.widgetSetButtons([
       editButton,
-      deleteButton,
     ]);
-  }
-
-  deleteChart = (ev) => {
-    ev.preventDefault();
-
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/charts/${this.props.widgetId}`, { method: 'DELETE' })
-      .then(handleFetchErrors)
-      .then(() => {
-        store.dispatch(onSuccess('Chart successfully removed.'));
-        this.props.refreshParent();
-      })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
   }
 
   toggleChartSettings = () => {

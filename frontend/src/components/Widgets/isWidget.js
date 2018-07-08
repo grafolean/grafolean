@@ -1,5 +1,8 @@
 import React from 'react';
 
+import store from '../../store';
+import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+
 import './index.css';
 
 import WidgetTitleBar from './WidgetTitleBar';
@@ -15,10 +18,38 @@ const isWidget = WrappedComponent => {
       }
     }
 
-    widgetSetButtons = (renders) => {
+    componentDidMount() {
+      this.widgetSetButtons();
+    }
+
+    widgetSetButtons = (customButtonRenders=[]) => {
+      const deleteButton = (
+        <a onClick={(ev) => {
+          ev.preventDefault();
+          if (window.confirm("Are you sure you want to delete this widget? This can't be undone!")) {
+            this.deleteWidget();
+          };
+        }}>
+          <i className="fa fa-trash" />
+        </a>
+      );
+
       this.setState({
-        buttonRenders: renders,
+        buttonRenders: [
+          ...customButtonRenders,
+          deleteButton,
+        ],
       })
+    }
+
+    deleteWidget = () => {
+      fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
+        .then(handleFetchErrors)
+        .then(() => {
+          store.dispatch(onSuccess('Widget successfully removed.'));
+          this.props.refreshParent();
+        })
+        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
     }
 
     toggleFullscreen = (shouldBeFullscreen) => {
@@ -34,6 +65,7 @@ const isWidget = WrappedComponent => {
 
     handleEscKey = (ev) => {
       if (ev.keyCode === 27) {
+        ev.preventDefault();
         this.toggleFullscreen(false);
       };
     }
@@ -46,7 +78,7 @@ const isWidget = WrappedComponent => {
       const contentHeight = outerHeight - 37 - 31;  // minus padding, border & title bar height
       return (
         <div
-          className={`moonchart-widget widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}
+          className={`widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}
         >
           <WidgetTitleBar
             title={title}
