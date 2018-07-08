@@ -126,6 +126,9 @@ export default class DashboardView extends React.Component {
                     key={widget.id}
                     width={this.props.width}
                     height={500}
+                    widgetId={widget.id}
+                    title={widget.title}
+                    content={widget.content}
                   />
                 );
               case 'chart':
