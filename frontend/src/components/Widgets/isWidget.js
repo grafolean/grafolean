@@ -1,4 +1,5 @@
 import React from 'react';
+import { Route } from 'react-router-dom';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
@@ -22,7 +23,7 @@ const isWidget = WrappedComponent => {
       this.widgetSetButtons();
     }
 
-    widgetSetButtons = (customButtonRenders=[]) => {
+    widgetSetButtons = () => {
       const deleteButton = (
         <a onClick={(ev) => {
           ev.preventDefault();
@@ -33,13 +34,25 @@ const isWidget = WrappedComponent => {
           <i className="fa fa-trash" />
         </a>
       );
+      const editButton = (
+        <Route
+          render={({ history }) => (
+            <a onClick={() => history.push(`/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`)}>
+              <i className="fa fa-edit" />
+            </a>
+          )} />
+      );
 
       this.setState({
         buttonRenders: [
-          ...customButtonRenders,
+          editButton,
           deleteButton,
         ],
       })
+    }
+
+    editWidget = () => {
+
     }
 
     deleteWidget = () => {

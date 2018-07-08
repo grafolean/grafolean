@@ -35,8 +35,6 @@ class MoonChart extends React.Component {
       allChartSeries: [],
     }
     this.fetchPaths();
-    // add our own buttons to the widget title bar:
-    this.addChartWidgetButtons();
   }
 
   componentWillUnmount() {
@@ -88,18 +86,6 @@ class MoonChart extends React.Component {
       });
 
 
-  }
-
-  addChartWidgetButtons = () => {
-    const editButton = (
-      <a onClick={this.toggleChartSettings}>
-        <i className="fa fa-edit" />
-      </a>
-    );
-
-    this.props.widgetSetButtons([
-      editButton,
-    ]);
   }
 
   toggleChartSettings = () => {
