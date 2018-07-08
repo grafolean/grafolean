@@ -1,4 +1,5 @@
 import React from 'react';
+import { stringify } from 'qs';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
@@ -16,16 +17,64 @@ export default class WidgetForm extends React.Component {
   static defaultProps = {
     dashboardSlug: null,
     widgetId: null,
-    lockWidgetType: null,
   }
 
-  formValues = {};
+  alteredWidgetData = {};
+  fetchWidgetDataAbortController = null;
 
   constructor(props) {
     super(props);
     this.state = {
-      widgetType: props.lockWidgetType ? props.lockWidgetType : WIDGET_TYPES[0].type,
+      loading: this.props.widgetId ? true : false,
+      errorFetching: false,
+      widgetType: props.widgetId ? null : WIDGET_TYPES[0].type,
+      widgetName: '',
+      widgetContent: null,
     };
+    if (this.props.widgetId) {
+      this.fetchWidgetData();
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.fetchWidgetDataAbortController !== null) {
+      this.fetchWidgetDataAbortController.abort();
+      this.fetchWidgetDataAbortController = null;
+    }
+  }
+
+  fetchWidgetData = () => {
+    this.fetchWidgetDataAbortController = new window.AbortController();
+    const query_params = {
+      paths_limit: 0,
+    };
+    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}?${stringify(query_params)}`, { signal: this.fetchWidgetDataAbortController.signal })
+      .then(handleFetchErrors)
+      .then(response => response.json())
+      .then(json => {
+        const content = JSON.parse(json.content);
+        this.alteredWidgetData[json.type] = {
+          valid: true,
+          content: content,
+        }
+        this.setState({
+          widgetName: json.title,
+          widgetType: json.type,
+          widgetContent: content,
+          loading: false,
+        })
+      })
+      .catch(errorMsg => {
+        console.error(errorMsg);
+        this.setState({
+          fetchingError: true,
+          loading: false,
+        });
+      })
+      .then(() => {
+        this.fetchPathsAbortController = null;
+      });
+
   }
 
   handleNameChange = (ev) => {
@@ -35,15 +84,14 @@ export default class WidgetForm extends React.Component {
   }
 
   handleFormContentChange = (widgetType, content, valid) => {
-    this.formValues[widgetType] = {
+    this.alteredWidgetData[widgetType] = {
       content,
       valid,
     }
   }
 
   handleSubmit = (widgetType, widgetName) => {
-    const widgetTypeFormValues = this.formValues[widgetType];
-    if (!widgetTypeFormValues.valid) {
+    if (!this.alteredWidgetData[widgetType].valid) {
       store.dispatch(onFailure("Form contents not valid!"));
       return;
     };
@@ -51,7 +99,7 @@ export default class WidgetForm extends React.Component {
     const params = {
       type: widgetType,
       title: widgetName,
-      content: JSON.stringify(widgetTypeFormValues.content),
+      content: JSON.stringify(this.alteredWidgetData[widgetType].content),
     }
     fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
       headers: {
@@ -70,6 +118,19 @@ export default class WidgetForm extends React.Component {
 
 
   render() {
+    if (this.state.loading) {
+      return (
+        <Loading />
+      )
+    }
+    if (this.state.errorFetching) {
+      return (
+        <div>
+          Error fetching data.
+        </div>
+      )
+    }
+
     const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === this.state.widgetType).form;
     return (
       <div>
@@ -83,6 +144,7 @@ export default class WidgetForm extends React.Component {
           {!this.props.lockWidgetType && (
             <select
               onChange={(ev) => this.setState({ widgetType: ev.target.value })}
+              value={this.state.widgetType}
             >
               {WIDGET_TYPES.map(wt => (
                 <option
@@ -97,7 +159,7 @@ export default class WidgetForm extends React.Component {
 
           <WidgetTypeForm
             onChange={this.handleFormContentChange}
-            initialFormData={this.props.initialFormData}
+            initialFormContent={this.state.widgetContent}
           />
 
           {(this.state.submitting) ? (

@@ -13,11 +13,9 @@ import Legend from './Legend';
 import Grid from './Grid';
 import TooltipIndicator from './TooltipIndicator';
 import TooltipPopup from '../../TooltipPopup';
-import WidgetForm from '../../WidgetForm';
 
 import './index.css';
 import MatchingPaths from '../../ChartForm/MatchingPaths';
-import WidgetDialog from '../WidgetDialog';
 import isWidget from '../isWidget';
 
 
@@ -31,7 +29,6 @@ class MoonChart extends React.Component {
     this.state = {
       loading: true,
       drawnChartSeries: [],
-      showChartSettings: false,
       allChartSeries: [],
     }
     this.fetchPaths();
@@ -71,7 +68,6 @@ class MoonChart extends React.Component {
 
         this.setState({
           drawnChartSeries: indexedAllChartSeries,
-          showChartSettings: false,
           allChartSeries: indexedAllChartSeries,
         });
 
@@ -86,12 +82,6 @@ class MoonChart extends React.Component {
       });
 
 
-  }
-
-  toggleChartSettings = () => {
-    this.setState(oldState => ({
-      showChartSettings: !oldState.showChartSettings,
-    }))
   }
 
   // We need to do this weird dance around mousemove events because of performance
@@ -131,7 +121,6 @@ class MoonChart extends React.Component {
   }
 
   render() {
-    const PADDING = 20;
     const MAX_YAXIS_WIDTH = 70;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
     if (this.props.width > 500) {
@@ -221,24 +210,6 @@ class MoonChart extends React.Component {
             )}
           </RePinchy>
         </div>
-
-        <WidgetDialog
-          opened={this.state.showChartSettings}
-          width={this.props.width}
-          height={this.props.height}
-          padding={PADDING}
-          onCloseAttempt={this.toggleChartSettings}
-        >
-          <WidgetForm
-            dashboardSlug={this.props.dashboardSlug}
-            widgetId={this.props.widgetId}
-            lockWidgetType="chart"
-            initialFormData={{
-              name: this.props.title,
-              content: this.props.chartContent,
-            }}
-          />
-        </WidgetDialog>
 
       </div>
     )

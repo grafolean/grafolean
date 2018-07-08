@@ -2,10 +2,8 @@ import React from 'react';
 
 export default class LastValueForm extends React.Component {
   static defaultProps = {
-    initialFormData: {
-      content: {
-        path: '',
-      },
+    initialFormContent: {
+      path: '',
     },
     handleFormContentChange: () => {},
   };
@@ -13,7 +11,7 @@ export default class LastValueForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      content: this.props.initialFormData.content,
+      content: this.props.initialFormContent,
     };
   }
 

@@ -44,16 +44,14 @@ export default class ChartForm extends React.Component {
   // be avoided.
 
   static defaultProps = {
-    initialFormData: {
-      content: [],
-    },
+    initialFormContent: [],
     handleFormContentChange: () => {},
   };
 
   constructor(props) {
     super(props);
     this.state = {
-      seriesGroups: this.props.initialFormData.content.map(c => ({
+      seriesGroups: this.props.initialFormContent.map(c => ({
         pathFilter: c.path_filter,
         pathRenamer: c.renaming,
         unit: c.unit,
