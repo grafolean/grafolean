@@ -106,6 +106,8 @@ def values_get():
             return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
     else:
         t_from = Measurement.get_oldest_measurement_time(paths)
+        if not t_from:
+            t_from = Timestamp(time.time())
         t_froms = [t_from for _ in paths]
 
     t_to_input = flask.request.args.get('t1')
