@@ -51,12 +51,12 @@ export default class ChartForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      seriesGroups: this.props.initialFormContent.map(c => ({
+      seriesGroups: this.props.initialFormContent ? this.props.initialFormContent.map(c => ({
         pathFilter: c.path_filter,
         pathRenamer: c.renaming,
         unit: c.unit,
         metricPrefix: c.metric_prefix,
-      })),
+      })) : [],
     };
   }
 

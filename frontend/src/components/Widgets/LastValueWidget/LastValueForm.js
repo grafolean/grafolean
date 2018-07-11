@@ -29,6 +29,7 @@ export default class LastValueForm extends React.Component {
   }
 
   render() {
+    const currentValue = this.state.content ? this.state.content.path : '';
     return (
       <div>
         <div>
@@ -36,7 +37,7 @@ export default class LastValueForm extends React.Component {
           <input
             type="text"
             name="path"
-            value={this.state.content.path}
+            value={currentValue}
             onChange={this.handlePathChange}
             style={{
               height: 20,

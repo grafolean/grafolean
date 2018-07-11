@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
@@ -15,6 +16,7 @@ class LastValueWidget extends React.Component {
       loading: true,
       fetchingError: false,
       lastValue: null,
+      lastValueTime: null,
     }
     this.fetchData();
   }
@@ -54,7 +56,7 @@ class LastValueWidget extends React.Component {
   render() {
     return (
       <div className="last-value">
-        {this.state.lastValue}
+        {this.state.lastValue} (at {moment(this.state.lastValueTime * 1000).format('YYYY-MM-DD HH:mm:ss')})
       </div>
     )
   }
