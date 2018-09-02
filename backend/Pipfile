@@ -15,6 +15,7 @@ flask-inputs = {ref = "9d7d32902fe04ceb5a6344edaa35b070cf93a6dc", git = "https:/
 
 [dev-packages]
 pytest = "*"
+zappa = "*"
 
 [requires]
 python_version = "3.6"
