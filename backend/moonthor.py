@@ -43,6 +43,11 @@ def handle_invalid_usage(error):
     return str(error), 400
 
 
+@app.route('/')
+def hello():
+    return 'OK'
+
+
 @app.route("/api/values", methods=['PUT'])
 def values_put():
     data = flask.request.get_json()
