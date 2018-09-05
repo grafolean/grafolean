@@ -48,6 +48,12 @@ def hello():
     return 'OK'
 
 
+@app.route('/createtable', methods=['POST'])
+def createtable_post():
+    utils.migrate_if_needed()
+    return '', 204
+
+
 @app.route("/api/values", methods=['PUT'])
 def values_put():
     data = flask.request.get_json()

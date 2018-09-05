@@ -20,7 +20,13 @@ host, dbname, user, password = (
     os.environ.get('DB_USERNAME', 'admin'),
     os.environ.get('DB_PASSWORD', 'admin')
 )
-db = psycopg2.connect("dbname='{}' user='{}' host='{}' password='{}'".format(dbname, user, host, password))
+db = psycopg2.connect(
+    host=host,
+    database=dbname,
+    user=user,
+    password=password,
+    connect_timeout=3
+)
 db.autocommit = True
 
 ###########################
