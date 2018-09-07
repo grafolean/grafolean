@@ -1,5 +1,6 @@
 from colors import color
 import logging
+import os
 import psycopg2
 import psycopg2.extras
 import sys
@@ -13,9 +14,24 @@ logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
 log = logging.getLogger("{}.{}".format(__name__, "base"))
 
 
-host, dbname, user, password = ('localhost', 'moonthor', 'admin', 'admin')
-db = psycopg2.connect("dbname='{}' user='{}' host='{}' password='{}'".format(dbname, user, host, password))
-db.autocommit = True
+host, dbname, user, password = (
+    os.environ.get('DB_HOST', 'localhost'),
+    os.environ.get('DB_DATABASE', 'moonthor'),
+    os.environ.get('DB_USERNAME', 'admin'),
+    os.environ.get('DB_PASSWORD', 'admin')
+)
+try:
+    log.info("Connecting to {} / {} / {}", host, dbname, user)
+    db = psycopg2.connect(
+        host=host,
+        database=dbname,
+        user=user,
+        password=password,
+        connect_timeout=10
+    )
+    db.autocommit = True
+except:
+    db = None
 
 ###########################
 #   DB schema migration   #

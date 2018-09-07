@@ -43,6 +43,19 @@ def handle_invalid_usage(error):
     return str(error), 400
 
 
+@app.route('/')
+def hello():
+    if utils.db is None:
+        return 'DB trouble! But lets allow...', 200
+    return 'OK'
+
+
+@app.route('/createtable', methods=['POST'])
+def createtable_post():
+    utils.migrate_if_needed()
+    return '', 204
+
+
 @app.route("/api/values", methods=['PUT'])
 def values_put():
     data = flask.request.get_json()

@@ -1,0 +1,16 @@
+{
+    "dev": {
+        "app_function": "moonthor.app",
+        "aws_region": "eu-central-1",
+        "environment_variables": {
+            "DB_HOST": "@@DB_HOST@@",
+            "DB_DATABASE": "@@DB_DATABASE@@",
+            "DB_USERNAME": "@@DB_USERNAME@@",
+            "DB_PASSWORD": "@@DB_PASSWORD@@"
+        },
+        "profile_name": "default",
+        "project_name": "moonthor-dev",
+        "runtime": "python3.6",
+        "s3_bucket": "moonthor-dev"
+    }
+}
