@@ -4,3 +4,4 @@ __pycache__/
 
 # flask_input:
 backend/src/*
+backend/zappa_settings.json
