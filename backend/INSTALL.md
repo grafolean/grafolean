@@ -42,3 +42,14 @@ postgres=# alter user admin with encrypted password 'admin';
 
 Warning: please do not use this username and password if there is even a remote chance these settings will be protecting any non-trivial data.
 
+
+# AWS
+
+Security Groups: http://blog.brianz.bz/post/accessing-vpc-resources-with-lambda/
+
+pipenv shell
+cd backend/
+vi zappa_settings.json
+zappa deploy dev
+zappa update dev
+
