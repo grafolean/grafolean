@@ -45,6 +45,8 @@ def handle_invalid_usage(error):
 
 @app.route('/')
 def hello():
+    if utils.db is None:
+        return 'DB trouble! But lets allow...', 200
     return 'OK'
 
 

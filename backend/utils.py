@@ -20,14 +20,18 @@ host, dbname, user, password = (
     os.environ.get('DB_USERNAME', 'admin'),
     os.environ.get('DB_PASSWORD', 'admin')
 )
-db = psycopg2.connect(
-    host=host,
-    database=dbname,
-    user=user,
-    password=password,
-    connect_timeout=3
-)
-db.autocommit = True
+try:
+    log.info("Connecting to {} / {} / {}", host, dbname, user)
+    db = psycopg2.connect(
+        host=host,
+        database=dbname,
+        user=user,
+        password=password,
+        connect_timeout=10
+    )
+    db.autocommit = True
+except:
+    db = None
 
 ###########################
 #   DB schema migration   #
