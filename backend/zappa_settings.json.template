@@ -9,6 +9,7 @@
             "DB_PASSWORD": "@@DB_PASSWORD@@",
             "DB_CONNECT_TIMEOUT": "3"
         },
+        "memory_size": 128,
         "profile_name": "default",
         "project_name": "moonthor-dev",
         "runtime": "python3.6",
