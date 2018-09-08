@@ -13,6 +13,16 @@
         "profile_name": "default",
         "project_name": "moonthor-dev",
         "runtime": "python3.6",
-        "s3_bucket": "moonthor-dev"
+        "s3_bucket": "moonthor-dev",
+        "vpc_config" : {
+            "SubnetIds": [
+                "subnet-00000000",
+                "subnet-11111111",
+                "subnet-22222222"
+            ],
+            "SecurityGroupIds": [
+                "sg-00000000000000000"
+            ]
+        }
     }
 }
