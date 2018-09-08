@@ -6,7 +6,8 @@
             "DB_HOST": "@@DB_HOST@@",
             "DB_DATABASE": "@@DB_DATABASE@@",
             "DB_USERNAME": "@@DB_USERNAME@@",
-            "DB_PASSWORD": "@@DB_PASSWORD@@"
+            "DB_PASSWORD": "@@DB_PASSWORD@@",
+            "DB_CONNECT_TIMEOUT": "3"
         },
         "profile_name": "default",
         "project_name": "moonthor-dev",

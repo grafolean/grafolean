@@ -14,24 +14,31 @@ logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
 log = logging.getLogger("{}.{}".format(__name__, "base"))
 
 
-host, dbname, user, password = (
-    os.environ.get('DB_HOST', 'localhost'),
-    os.environ.get('DB_DATABASE', 'moonthor'),
-    os.environ.get('DB_USERNAME', 'admin'),
-    os.environ.get('DB_PASSWORD', 'admin')
-)
-try:
-    log.info("Connecting to {} / {} / {}", host, dbname, user)
-    db = psycopg2.connect(
-        host=host,
-        database=dbname,
-        user=user,
-        password=password,
-        connect_timeout=10
+db = None
+
+def db_connect():
+    global db
+    host, dbname, user, password, connect_timeout = (
+        os.environ.get('DB_HOST', 'localhost'),
+        os.environ.get('DB_DATABASE', 'moonthor'),
+        os.environ.get('DB_USERNAME', 'admin'),
+        os.environ.get('DB_PASSWORD', 'admin'),
+        int(os.environ.get('DB_CONNECT_TIMEOUT', '10'))
     )
-    db.autocommit = True
-except:
-    db = None
+    try:
+        log.info("Connecting to database, host: [{}], db: [{}], user: [{}]".format(host, dbname, user))
+        db = psycopg2.connect(
+            host=host,
+            database=dbname,
+            user=user,
+            password=password,
+            connect_timeout=connect_timeout
+        )
+        db.autocommit = True
+    except:
+        db = None
+        log.error("DB connection failed")
+
 
 ###########################
 #   DB schema migration   #

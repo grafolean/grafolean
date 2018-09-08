@@ -25,6 +25,15 @@ def echo_socket(ws):
             ws.send("You said: " + message)
 
 
+@app.before_request
+def before_request():
+    if utils.db is None:
+        utils.db_connect()
+        if utils.db is None:
+            # oops, DB error... we should return 500:
+            return 'Service unavailable', 503
+
+
 @app.after_request
 def after_request(response):
     # allow cross-origin requests:
@@ -44,9 +53,7 @@ def handle_invalid_usage(error):
 
 
 @app.route('/')
-def hello():
-    if utils.db is None:
-        return 'DB trouble! But lets allow...', 200
+def root():
     return 'OK'
 
 
