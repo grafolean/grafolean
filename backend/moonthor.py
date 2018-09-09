@@ -7,7 +7,7 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Bot
 import utils
 
 
@@ -57,10 +57,20 @@ def root():
     return 'OK'
 
 
-@app.route('/createtable', methods=['POST'])
+@app.route('/api/createtable', methods=['POST'])
 def createtable_post():
     utils.migrate_if_needed()
     return '', 204
+
+
+@app.route('/api/bot', methods=['POST'])
+def bot_post():
+    bot = Bot.forge_from_input(flask.request)
+    bot_id, bot_token = bot.insert()
+    return json.dumps({
+        'id': bot_id,
+        'token': bot_token,
+    }), 201
 
 
 @app.route("/api/values", methods=['PUT'])

@@ -10,11 +10,13 @@ class ValuesInputs(Inputs):
         'slug': [val.Regexp(re.compile('^[0-9a-z-]{0,50}$'))],
     }
 
+
 class DashboardInputs(Inputs):
     json = {
         'name': [val.InputRequired(), val.Length(min=1, max=200)],
         'slug': [val.Regexp(re.compile('^[0-9a-z-]{0,50}$'))],
     }
+
 
 class DashboardSchemaInputs(Inputs):
     json = [JsonSchema(schema={
@@ -27,6 +29,7 @@ class DashboardSchemaInputs(Inputs):
         'required': ['name'],
     })]
 
+
 class WidgetSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
@@ -37,4 +40,15 @@ class WidgetSchemaInputs(Inputs):
             'content': {'type': 'string'},
         },
         'required': ['type', 'title', 'content'],
+    })]
+
+
+class BotSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'name': {'type': 'string'},
+        },
+        'required': ['name'],
     })]

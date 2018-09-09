@@ -13,6 +13,8 @@ logging.addLevelName(logging.WARNING, color('WRN', fg='red'))
 logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
 log = logging.getLogger("{}.{}".format(__name__, "base"))
 
+# currently, we only work with a single account:
+ADMIN_ACCOUNT_ID = 1
 
 db = None
 
@@ -39,6 +41,7 @@ def db_connect():
         db = None
         log.error("DB connection failed")
 
+db_connect()
 
 ###########################
 #   DB schema migration   #
@@ -124,3 +127,11 @@ def migration_step_6():
         c.execute('ALTER TABLE measurements ADD CONSTRAINT measurements_path_fkey FOREIGN KEY (path) REFERENCES paths(id) ON DELETE CASCADE;')
         c.execute('ALTER TABLE aggregations DROP CONSTRAINT IF EXISTS aggregations_path_fkey;')
         c.execute('ALTER TABLE aggregations ADD CONSTRAINT aggregations_path_fkey FOREIGN KEY (path) REFERENCES paths(id) ON DELETE CASCADE;')
+
+def migration_step_7():
+    with db.cursor() as c:
+        c.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+        c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL DEFAULT '');")
+        c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE);')
+        c.execute('CREATE TABLE bots (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, token UUID DEFAULT uuid_generate_v4(), name TEXT NOT NULL);')
+        c.execute("INSERT INTO accounts (id, name) VALUES ({}, 'Admin account');".format(ADMIN_ACCOUNT_ID))

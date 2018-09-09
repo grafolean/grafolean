@@ -5,8 +5,8 @@ import psycopg2.extras
 import re
 from slugify import slugify
 
-from utils import db, log
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, ValuesInputs
+from utils import db, log, ADMIN_ACCOUNT_ID
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, BotSchemaInputs, ValuesInputs
 
 
 class ValidationError(Exception):
@@ -505,3 +505,28 @@ class Dashboard(object):
             if not res:
                 return None
             return res[0]
+
+
+class Bot(object):
+
+    def __init__(self, account_id, name):
+        self.account_id = account_id
+        self.name = name
+
+    @classmethod
+    def forge_from_input(cls, flask_request):
+        inputs = BotSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+
+        name = data['name']
+        account_id = ADMIN_ACCOUNT_ID
+        return cls(account_id, name)
+
+    def insert(self):
+        log.info("db is: {}".format(db))
+        with db.cursor() as c:
+            c.execute("INSERT INTO bots (account, name) VALUES (%s, %s) RETURNING id, token;", (self.account_id, self.name,))
+            bot_id, bot_token = c.fetchone()
+            return bot_id, bot_token
