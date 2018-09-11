@@ -2,6 +2,7 @@
 import argparse
 import flask
 from flask_sockets import Sockets
+from functools import wraps
 import json
 import psycopg2
 import re
@@ -63,7 +64,7 @@ def createtable_post():
     return '', 204
 
 
-@app.route('/api/bot', methods=['POST'])
+@app.route('/api/bots', methods=['POST'])
 def bot_post():
     bot = Bot.forge_from_input(flask.request)
     bot_id, bot_token = bot.insert()
@@ -81,8 +82,21 @@ def values_put():
     return ""
 
 
+def bot_login(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        query_params_bot_token = flask.request.args.get('b')
+        bot_id, account_id = Bot.authenticate_token(query_params_bot_token)
+        if not account_id:
+            return "Invalid bot API token", 401
+        kwargs['account_id'] = account_id
+        return f(*args, **kwargs)
+    return wrap
+
+
 @app.route("/api/values", methods=['POST'])
-def values_post():
+@bot_login
+def values_post(account_id):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
     # piece, then we use the same function as for PUT:
     data = []

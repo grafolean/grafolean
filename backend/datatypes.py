@@ -136,6 +136,10 @@ class MeasuredValue(_RegexValidatedInputValue):
     _regex = re.compile(r'^[0-9]+([.][0-9]+)?$')
 
 
+class BotToken(_RegexValidatedInputValue):
+    _regex = re.compile(r'^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$')
+
+
 class Aggregation(object):
     FACTOR = 3
     MAX_AGGR_LEVEL = 6  # 6 == one point per month
@@ -530,3 +534,18 @@ class Bot(object):
             c.execute("INSERT INTO bots (account, name) VALUES (%s, %s) RETURNING id, token;", (self.account_id, self.name,))
             bot_id, bot_token = c.fetchone()
             return bot_id, bot_token
+
+    @staticmethod
+    def authenticate_token(bot_token_unclean):
+        try:
+            bot_token = str(BotToken(bot_token_unclean))
+        except:
+            return None, None  # invalid format
+        # authenticate against DB:
+        with db.cursor() as c:
+            c.execute("SELECT id, account FROM bots WHERE token = %s;", (bot_token,))
+            res = c.fetchone()
+            if not res:
+                return None, None
+            bot_id, account_id = res
+            return bot_id, account_id

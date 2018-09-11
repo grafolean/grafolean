@@ -6,15 +6,16 @@ Passing parameters:
 
 ## Authentication
 
-Authentication is via standard HTTP Basic auth. Instead of password you need to use API token (available through UI).
+Authentication for sending values (via POST method) is through query parameters. All other forms use JWT auth.
 
 Supply them in Authorization header like this:
 
 ```
-curl -H 'Authorization: Basic <Base64(Username:APIToken)>' ...
+curl -H 'Authorization: Bearer <JWTToken>' ...
 ```
 
-This part of `curl` command will not be repeated, but should be used everywhere in the examples below.
+This part of `curl` command will not be repeated, but should be used everywhere in the examples below (except POST to /api/values/).
+
 
 # Values
 
@@ -23,7 +24,7 @@ This part of `curl` command will not be repeated, but should be used everywhere 
 If you only need to supply a single value it might be easiest to use query parameters:
 
 ```
-curl -X POST 'https://moonthor.com/api/values/?p=<Path>&v=<Value>'
+curl -X POST 'https://moonthor.com/api/values/?p=<Path>&v=<Value>&b=<BotAPIToken>'
 ```
 
 Often you might have multiple values you want to send in one call, so you just do:
@@ -33,7 +34,7 @@ curl \
     -X POST \
     -H 'Content-Type: application/json' \
     -d '[{p: "<Path>", v: <Value>}, ...]' \
-    'https://moonthor.com/api/values/'
+    'https://moonthor.com/api/values/?b=<BotAPIToken>'
 ```
 
 Parameters:
@@ -41,6 +42,8 @@ Parameters:
     Path: defines a path that the value should be connected to (for example: `zone2.server1.cpu.load`). You are free to use whatever paths you wish, as long as
         they include only characters a-z, A-Z, 0-9, dash ('-'), underscore ('_') and dot ('.'), which is treated as a separator by the system. Maximum
         length is 200 characters.
+    Value: numeric value. Only digits and dot ('.') as decimal separator are allowed. Only 6 decimal places are allowed for fractional digits.
+    BotAPIToken: token to authenticate sender of values. Note that this token only allows sending data, but not modifying, querying or deleting it.
 
 Note that there is no way to specify timestamp with POST requests (time is inferred for time of HTTP request). Specifying time wouldn't make sense anyway - alarms are only possible if the data is current. If you need to cache data and send it in batches, use PUT requests instead.
 
