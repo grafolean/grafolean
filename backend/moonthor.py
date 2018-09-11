@@ -28,6 +28,13 @@ def echo_socket(ws):
 
 @app.before_request
 def before_request():
+
+    # temporary "security" measure until proper auth is done:
+    query_params_bot_token = flask.request.args.get('b')
+    _, account_id = Bot.authenticate_token(query_params_bot_token)
+    if not account_id:
+        return "Invalid bot API token", 401
+
     if utils.db is None:
         utils.db_connect()
         if utils.db is None:
@@ -51,6 +58,18 @@ def after_request(response):
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
     return str(error), 400
+
+
+def bot_login(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        query_params_bot_token = flask.request.args.get('b')
+        _, account_id = Bot.authenticate_token(query_params_bot_token)
+        if not account_id:
+            return "Invalid bot API token", 401
+        kwargs['account_id'] = account_id
+        return f(*args, **kwargs)
+    return wrap
 
 
 @app.route('/')
@@ -80,18 +99,6 @@ def values_put():
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
     Measurement.save_values_data_to_db(data)
     return ""
-
-
-def bot_login(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        query_params_bot_token = flask.request.args.get('b')
-        bot_id, account_id = Bot.authenticate_token(query_params_bot_token)
-        if not account_id:
-            return "Invalid bot API token", 401
-        kwargs['account_id'] = account_id
-        return f(*args, **kwargs)
-    return wrap
 
 
 @app.route("/api/values", methods=['POST'])
