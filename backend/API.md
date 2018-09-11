@@ -374,3 +374,27 @@ JSON response:
     ]
 }
 
+# Accounts
+
+# Users
+
+# Bots
+
+```
+curl \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{ \
+        "name": <BotName> \
+    }' \
+    'https://moonthor.com/api/bots'
+```
+
+Response:
+
+```
+{
+  id: <BotId>,
+  token: <BotAPIToken>
+}
+```
