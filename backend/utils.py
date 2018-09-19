@@ -62,7 +62,7 @@ def migrate_if_needed():
         method_name = 'migration_step_{}'.format(try_migrating_to)
         if not hasattr(sys.modules[__name__], method_name):
             break
-        log.info("Migrating DB schema to {}".format(try_migrating_to))
+        log.info("Migrating DB schema from {} to {}".format(existing_schema_version, try_migrating_to))
         method_to_call = getattr(sys.modules[__name__], method_name)
         method_to_call()
         # automatically upgrade schema version if there is no exception:
@@ -118,6 +118,7 @@ def migration_step_4():
 
 def migration_step_5():
     with db.cursor() as c:
+        c.execute("DROP TABLE IF EXISTS widgets;")
         c.execute('CREATE TABLE widgets (id SERIAL NOT NULL PRIMARY KEY, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, type VARCHAR(50), title TEXT NOT NULL, content TEXT NOT NULL);')
 
 def migration_step_6():
@@ -134,4 +135,13 @@ def migration_step_7():
         c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL DEFAULT '');")
         c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE);')
         c.execute('CREATE TABLE bots (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, token UUID DEFAULT uuid_generate_v4(), name TEXT NOT NULL);')
-        c.execute("INSERT INTO accounts (id, name) VALUES ({}, 'Admin account');".format(ADMIN_ACCOUNT_ID))
+
+def migration_step_8():
+    with db.cursor() as c:
+        c.execute('CREATE TABLE private_jwt_keys (id SERIAL NOT NULL PRIMARY KEY, key TEXT NOT NULL, use_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600);')
+        # c.execute("DROP TABLE IF EXISTS accounts;")
+        # c.execute("DROP TABLE IF EXISTS users;")
+        c.execute('CREATE TABLE admins (id SERIAL NOT NULL PRIMARY KEY, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, passhash TEXT NOT NULL);')
+        # c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);")
+        # c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, email TEXT NOT NULL, passhash TEXT NOT NULL);')
+

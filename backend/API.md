@@ -8,13 +8,35 @@ Passing parameters:
 
 Authentication for sending values (via POST method) is through query parameters. All other forms use JWT auth.
 
-Supply them in Authorization header like this:
+### Fetching JWT token
 
 ```
-curl -H 'Authorization: Bearer <JWTToken>' ...
+curl -i 'https://moonthor.com/api/admin/login/' -d '{ "username": "<Username>", "password": "<Pass>" }'
 ```
 
-This part of `curl` command will not be repeated, but should be used everywhere in the examples below (except POST to /api/values/).
+Example response header:
+X-JWT-Token: Bearer <KeyId>:<JWTToken>
+
+
+### Authenticating
+
+Tokens should be supplied in Authorization header like this:
+
+```
+curl -H 'Authorization: Bearer <KeyId>:<JWTToken>' ...
+```
+
+This part of `curl` command should be used everywhere in the examples below (except in POST to /api/values/).
+
+### Refreshing tokens
+
+Backend will periodically add `X-Refresh-Auth` header:
+
+```
+X-Refresh-Auth: <JWTToken>
+```
+
+There will be 30s window in which both the old and the new token are allowed. After that, requesting with the old token will invalidate both the old and new token (to be precise: new token will be blacklisted and will not be refreshed when it expires).
 
 
 # Values
@@ -60,6 +82,8 @@ curl \
 ```
 
     Timestamp: will be used to insert data at a specific time. Note that HTTP request is idempotent - last value will overwrite the previous ones for a specified EntitySlug and Timestamp pair. If timestamp is floating point, it is rounded on 3 decimal places (millisecond)
+
+Note that (as opposed to POST method) JWT token authentication should be used.
 
 ## Removing values (DELETE)
 
@@ -378,6 +402,24 @@ JSON response:
 }
 
 # Accounts
+
+```
+curl \
+    -X POST \
+    -H 'Content-Type: application/json' \
+    -d '{ \
+        "name": <AccountName> \
+    }' \
+    'https://moonthor.com/api/accounts'
+```
+
+Response:
+
+```
+{
+  id: <AccountId>
+}
+```
 
 # Users
 

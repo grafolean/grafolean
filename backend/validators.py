@@ -43,6 +43,43 @@ class WidgetSchemaInputs(Inputs):
     })]
 
 
+class AdminSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'username': {'type': 'string'},
+            'name': {'type': 'string'},
+            'email': {'type': 'string'},
+            'password': {'type': 'string'},
+        },
+        'required': ['username', 'name', 'email', 'password'],
+    })]
+
+
+class CredentialSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'username': {'type': 'string'},
+            'password': {'type': 'string'},
+        },
+        'required': ['username', 'password'],
+    })]
+
+
+class AccountSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'name': {'type': 'string'},
+        },
+        'required': ['name'],
+    })]
+
+
 class BotSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',

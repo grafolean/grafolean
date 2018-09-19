@@ -6,7 +6,8 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, AdminSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, BotSchemaInputs, ValuesInputs
+from auth import Auth
 
 
 class ValidationError(Exception):
@@ -511,8 +512,30 @@ class Dashboard(object):
             return res[0]
 
 
-class Bot(object):
+class Account(object):
+    def __init__(self, name, is_admin):
+        self.name = name
+        self.is_admin = is_admin
 
+    @classmethod
+    def forge_from_input(cls, flask_request, allow_admin=False):
+        inputs = AccountSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+
+        name = data['name']
+        is_admin = data.get('is_admin') if allow_admin else False
+        return cls(name, is_admin)
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO accounts (name) VALUES (%s) RETURNING id;", (self.name,))
+            bot_id = c.fetchone()[0]
+            return bot_id
+
+
+class Bot(object):
     def __init__(self, account_id, name):
         self.account_id = account_id
         self.name = name
@@ -529,7 +552,6 @@ class Bot(object):
         return cls(account_id, name)
 
     def insert(self):
-        log.info("db is: {}".format(db))
         with db.cursor() as c:
             c.execute("INSERT INTO bots (account, name) VALUES (%s, %s) RETURNING id, token;", (self.account_id, self.name,))
             bot_id, bot_token = c.fetchone()
@@ -549,3 +571,70 @@ class Bot(object):
                 return None, None
             bot_id, account_id = res
             return bot_id, account_id
+
+
+class Admin(object):
+    def __init__(self, name, email, username, password):
+        self.name = name
+        self.email = email
+        self.username = username
+        self.password = password
+
+    @classmethod
+    def forge_from_input(cls, flask_request):
+        inputs = AdminSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+
+        name = data['name']
+        email = data['email']
+        username = data['username']
+        password = data['password']
+        return cls(name, email, username, password)
+
+    def insert(self):
+        with db.cursor() as c:
+            pass_hash = Auth.password_hash(self.password)
+            c.execute("INSERT INTO admins (name, email, username, passhash) VALUES (%s, %s, %s, %s) RETURNING id;", (self.name, self.email, self.username, pass_hash,))
+            admin_id = c.fetchone()[0]
+            return admin_id
+
+
+class Credentials(object):
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    @classmethod
+    def forge_from_input(cls, flask_request):
+        inputs = CredentialSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+
+        username = data['username']
+        password = data['password']
+        return cls(username, password)
+
+    def check_admin_login(self):
+        with db.cursor() as c:
+            c.execute("SELECT id, passhash FROM admins WHERE username = %s;", (self.username,))
+            res = c.fetchone()
+            if not res:
+                return None
+            admin_id, passhash = res
+            if Auth.is_password_valid(self.password, passhash):
+                return admin_id
+            return None
+
+    def check_normal_user_login(self):
+        with db.cursor() as c:
+            c.execute("SELECT id, passhash FROM users WHERE username = %s;", (self.username,))
+            res = c.fetchone()
+            if not res:
+                return None
+            user_id, passhash = res
+            if Auth.is_password_valid(self.password, passhash):
+                return user_id
+            return None

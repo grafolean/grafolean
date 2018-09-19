@@ -7,6 +7,28 @@ import pytest
 from pprint import pprint
 
 from moonthor import app
+from utils import db, migrate_if_needed, log
+
+
+def setup_module():
+    # initialize DB:
+    with db.cursor() as c:
+        c.execute("SELECT tablename, schemaname FROM pg_tables WHERE schemaname = 'public';")
+        results = list(c)
+        log.info(results)
+        for tablename,_ in results:
+            sql = "DROP TABLE IF EXISTS {} CASCADE;".format(tablename)
+            log.info(sql)
+            c.execute(sql)
+        sql = "DROP DOMAIN IF EXISTS AGGR_LEVEL;"
+        log.info(sql)
+        c.execute(sql)
+    migrate_if_needed()
+
+
+def teardown_module():
+    pass
+
 
 @pytest.fixture
 def app_client():
@@ -294,4 +316,40 @@ def test_values_put_paths_get(app_client):
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
     assert PATH in actual['paths']['test.values.*']
+
+def test_accounts(app_client):
+    """
+        Create first admin, login, make sure you get X-JWT-Token. Try to create another first admin, fail.
+    """
+    USERNAME = 'admin'
+    PASSWORD = 'asdf123'
+    data = { 'name': 'First Admin', 'username': USERNAME, 'password': PASSWORD, 'email': 'test@example.com' }
+    r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 201
+    admin_id = json.loads(r.data.decode('utf-8'))['id']
+    assert int(admin_id) == 1
+
+    # next fails:
+    data = { 'name': 'Second Admin', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@example.com' }
+    r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 401
+
+    # invalid login:
+    data = { 'username': USERNAME, 'password': PASSWORD + 'nooot' }
+    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 401
+
+    # valid login:
+    data = { 'username': USERNAME, 'password': PASSWORD }
+    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 204
+    authorization_header = None
+    for header, value in r.headers:
+        if header == 'X-JWT-Token':
+            authorization_header = value
+    assert authorization_header[:9] == 'Bearer 1:'
+
+    # now request some resource:
+    # ...
+
 

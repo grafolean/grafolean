@@ -8,8 +8,9 @@ import psycopg2
 import re
 import time
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Bot
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Admin, Account, Bot, Credentials
 import utils
+from auth import Auth, JWT
 
 
 app = flask.Flask(__name__)
@@ -30,10 +31,11 @@ def echo_socket(ws):
 def before_request():
 
     # temporary "security" measure until proper auth is done:
-    query_params_bot_token = flask.request.args.get('b')
-    _, account_id = Bot.authenticate_token(query_params_bot_token)
-    if not account_id:
-        return "Invalid bot API token", 401
+    # d3c302a9-f607-458f-aaa8-8ac16c4bd632
+    # query_params_bot_token = flask.request.args.get('b')
+    # _, account_id = Bot.authenticate_token(query_params_bot_token)
+    # if not account_id:
+    #     return "Invalid bot API token", 401
 
     if utils.db is None:
         utils.db_connect()
@@ -47,7 +49,7 @@ def after_request(response):
     # allow cross-origin requests:
     # (we will probably want to limit this to our domain later on, or make it configurable4)
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
@@ -60,7 +62,7 @@ def handle_invalid_usage(error):
     return str(error), 400
 
 
-def bot_login(f):
+def needs_valid_bot_token(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         query_params_bot_token = flask.request.args.get('b')
@@ -72,16 +74,77 @@ def bot_login(f):
     return wrap
 
 
+def only_admin(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        try:
+            jwt = JWT.forge_from_authorization_header(flask.request.headers.get('Authorization'))
+            if int(jwt.data['admin_id']) < 1:
+                return "Access denied", 401
+            kwargs['jwt'] = jwt
+            return f(*args, **kwargs)
+        except:
+            return "Access denied", 401
+    return wrap
+
+
+# -----------------------------------------------------------------------
+# Routes:
+# -----------------------------------------------------------------------
+
 @app.route('/')
 def root():
     return 'OK'
 
 
-@app.route('/api/createtable', methods=['POST'])
-def createtable_post():
+@app.route('/api/admin/createtable', methods=['POST'])
+def admin_createtable_post():
     utils.migrate_if_needed()
     return '', 204
 
+
+# This endpoint helps with setting up a new installation. It allows us to set up just one
+# admin access with name, email and password as selected. Later requests to the same endpoint
+# will fail.
+@app.route('/api/admin/first', methods=['POST'])
+def admin_first_post():
+    if Auth.first_user_exists():
+        return 'System already initialized', 401
+    admin = Admin.forge_from_input(flask.request)
+    admin_id = admin.insert()
+    return json.dumps({
+        'id': admin_id,
+    }), 201
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login_post():
+    credentials = Credentials.forge_from_input(flask.request)
+    admin_id = credentials.check_admin_login()
+    if not admin_id:
+        return "Invalid credentials", 401
+
+    session_data = {
+        'admin_id': admin_id,
+    }
+    response = flask.make_response(json.dumps(session_data), 204)
+    response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
+    return response
+
+
+# @app.route('/api/admin/accounts', methods=['POST'])
+# @only_admin
+# def accounts_post():
+#     account = Account.forge_from_input(flask.request)
+#     account_id = account.insert()
+#     return json.dumps({
+#         'id': account_id,
+#     }), 201
+
+
+# @app.route('/api/users', methods=['POST'])
+# @only_admin
+# def users_post():
+#     pass
 
 @app.route('/api/bots', methods=['POST'])
 def bot_post():
@@ -102,7 +165,7 @@ def values_put():
 
 
 @app.route("/api/values", methods=['POST'])
-@bot_login
+@needs_valid_bot_token
 def values_post(account_id):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
     # piece, then we use the same function as for PUT:
