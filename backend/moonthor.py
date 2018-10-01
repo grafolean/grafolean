@@ -81,8 +81,15 @@ def only_admin(f):
             jwt = JWT.forge_from_authorization_header(flask.request.headers.get('Authorization'))
             if int(jwt.data['admin_id']) < 1:
                 return "Access denied", 401
-            kwargs['jwt'] = jwt
-            return f(*args, **kwargs)
+            flask.request.moonthor_data = {
+                'jwt': jwt,
+            }
+            response_body, status = f(*args, **kwargs)
+            response = flask.make_response(response_body, status)
+            if jwt.decoded_with_leeway:
+                # actually, we should hit DB here to make sure we don't allow multiple people refreshing... TODO
+                response.headers['X-Refresh-Auth'] = JWT(jwt.data).encode_as_authorization_header()
+            return response
         except:
             return "Access denied", 401
     return wrap
@@ -129,6 +136,22 @@ def admin_login_post():
     response = flask.make_response(json.dumps(session_data), 204)
     response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
     return response
+
+
+@app.route('/api/admin/accounts', methods=['GET', 'POST'])
+@only_admin
+def accounts_crud():
+    if flask.request.method == 'GET':
+        rec = Account.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        account = Account.forge_from_input(flask.request)
+        try:
+            account.insert()
+        except psycopg2.IntegrityError:
+            return "Account with this name already exists", 400
+        return json.dumps({'name': account.name}), 201
 
 
 # @app.route('/api/admin/accounts', methods=['POST'])

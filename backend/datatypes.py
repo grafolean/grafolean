@@ -513,9 +513,8 @@ class Dashboard(object):
 
 
 class Account(object):
-    def __init__(self, name, is_admin):
+    def __init__(self, name):
         self.name = name
-        self.is_admin = is_admin
 
     @classmethod
     def forge_from_input(cls, flask_request, allow_admin=False):
@@ -525,14 +524,22 @@ class Account(object):
         data = flask_request.get_json()
 
         name = data['name']
-        is_admin = data.get('is_admin') if allow_admin else False
-        return cls(name, is_admin)
+        return cls(name)
 
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO accounts (name) VALUES (%s) RETURNING id;", (self.name,))
             bot_id = c.fetchone()[0]
             return bot_id
+
+    @staticmethod
+    def get_list():
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, name FROM accounts ORDER BY name;')
+            for account_id, name in c:
+                ret.append({'id': account_id, 'name': name})
+            return ret
 
 
 class Bot(object):

@@ -33,7 +33,7 @@ This part of `curl` command should be used everywhere in the examples below (exc
 Backend will periodically add `X-Refresh-Auth` header:
 
 ```
-X-Refresh-Auth: <JWTToken>
+X-Refresh-Auth: Bearer <KeyId>:<JWTToken>
 ```
 
 There will be 30s window in which both the old and the new token are allowed. After that, requesting with the old token will invalidate both the old and new token (to be precise: new token will be blacklisted and will not be refreshed when it expires).
@@ -403,6 +403,7 @@ JSON response:
 
 # Accounts
 
+## Creating
 ```
 curl \
     -X POST \
@@ -410,7 +411,7 @@ curl \
     -d '{ \
         "name": <AccountName> \
     }' \
-    'https://moonthor.com/api/accounts'
+    'https://moonthor.com/api/admin/accounts'
 ```
 
 Response:
@@ -420,6 +421,26 @@ Response:
   id: <AccountId>
 }
 ```
+
+## Reading
+
+```
+curl https://moonthor.com/api/admin/accounts
+```
+Response:
+```
+{
+    "list": [
+        {
+            "id": <AccountId>,
+            "name": <AccountName>,
+        },
+        ...
+    ]
+}
+```
+
+
 
 # Users
 

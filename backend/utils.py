@@ -145,3 +145,8 @@ def migration_step_8():
         # c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);")
         # c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, email TEXT NOT NULL, passhash TEXT NOT NULL);')
 
+def migration_step_9():
+    with db.cursor() as c:
+        c.execute("DROP TABLE IF EXISTS accounts CASCADE;")
+        c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);")
+
