@@ -6,9 +6,10 @@ from functools import wraps
 import json
 import psycopg2
 import re
+import secrets
 import time
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Admin, Account, Bot, Credentials
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, User, Account, Bot, Credentials
 import utils
 from auth import Auth, JWT
 
@@ -43,6 +44,8 @@ def before_request():
             # oops, DB error... we should return 500:
             return 'Service unavailable', 503
 
+    flask.request.moonthor_data = {}
+
 
 @app.after_request
 def after_request(response):
@@ -74,22 +77,30 @@ def needs_valid_bot_token(f):
     return wrap
 
 
+def auth(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        try:
+            authorization_header = flask.request.headers.get('Authorization')
+            if not authorization_header:
+                return "Access denied", 401
+
+            flask.request.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+
+            return f(*args, **kwargs)
+        except:
+            return "Access denied", 401
+    return wrap
+
+
 def only_admin(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         try:
-            jwt = JWT.forge_from_authorization_header(flask.request.headers.get('Authorization'))
-            if int(jwt.data['admin_id']) < 1:
+            jwt = flask.request.moonthor_data['jwt']
+            if int(jwt.data['user_id']) != 1:  # temporary measure - user with id === 1 is admin
                 return "Access denied", 401
-            flask.request.moonthor_data = {
-                'jwt': jwt,
-            }
-            response_body, status = f(*args, **kwargs)
-            response = flask.make_response(response_body, status)
-            if jwt.decoded_with_leeway:
-                # actually, we should hit DB here to make sure we don't allow multiple people refreshing... TODO
-                response.headers['X-Refresh-Auth'] = JWT(jwt.data).encode_as_authorization_header()
-            return response
+            return f(*args, **kwargs)
         except:
             return "Access denied", 401
     return wrap
@@ -103,6 +114,9 @@ def only_admin(f):
 def root():
     return 'OK'
 
+# --------------
+# /admin/ - administration tools; can be locked to local access
+# --------------
 
 @app.route('/api/admin/createtable', methods=['POST'])
 def admin_createtable_post():
@@ -117,28 +131,53 @@ def admin_createtable_post():
 def admin_first_post():
     if Auth.first_user_exists():
         return 'System already initialized', 401
-    admin = Admin.forge_from_input(flask.request)
+    admin = User.forge_from_input(flask.request)
     admin_id = admin.insert()
     return json.dumps({
         'id': admin_id,
     }), 201
 
-@app.route('/api/admin/login', methods=['POST'])
-def admin_login_post():
+
+# --------------
+# /auth/ - authentication; might need different logging settings
+# --------------
+
+@app.route('/api/auth/login', methods=['POST'])
+def auth_login_post():
     credentials = Credentials.forge_from_input(flask.request)
-    admin_id = credentials.check_admin_login()
-    if not admin_id:
+    user_id = credentials.check_user_login()
+    if not user_id:
         return "Invalid credentials", 401
 
     session_data = {
-        'admin_id': admin_id,
+        'user_id': user_id,
+        'session_id': secrets.token_hex(32),
     }
     response = flask.make_response(json.dumps(session_data), 204)
     response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
     return response
 
 
+@app.route('/api/auth/refresh', methods=['POST'])
+def auth_refresh_post():
+    try:
+        authorization_header = flask.request.headers.get('Authorization')
+        if not authorization_header:
+            return "Access denied", 401
+
+        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=True)
+        data = old_jwt.data.copy()
+        new_jwt = JWT(data).encode_as_authorization_header()
+
+        response = flask.make_response(json.dumps(data), 200)
+        response.headers['X-JWT-Token'] = new_jwt
+        return response
+    except:
+        return "Access denied", 401
+
+
 @app.route('/api/admin/accounts', methods=['GET', 'POST'])
+@auth
 @only_admin
 def accounts_crud():
     if flask.request.method == 'GET':

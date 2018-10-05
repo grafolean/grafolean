@@ -140,8 +140,8 @@ def migration_step_8():
     with db.cursor() as c:
         c.execute('CREATE TABLE private_jwt_keys (id SERIAL NOT NULL PRIMARY KEY, key TEXT NOT NULL, use_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600);')
         # c.execute("DROP TABLE IF EXISTS accounts;")
-        # c.execute("DROP TABLE IF EXISTS users;")
-        c.execute('CREATE TABLE admins (id SERIAL NOT NULL PRIMARY KEY, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, passhash TEXT NOT NULL);')
+        c.execute("DROP TABLE IF EXISTS users;")
+        c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, passhash TEXT NOT NULL);')
         # c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);")
         # c.execute('CREATE TABLE users (id SERIAL NOT NULL PRIMARY KEY, account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, email TEXT NOT NULL, passhash TEXT NOT NULL);')
 
@@ -149,4 +149,5 @@ def migration_step_9():
     with db.cursor() as c:
         c.execute("DROP TABLE IF EXISTS accounts CASCADE;")
         c.execute("CREATE TABLE accounts (id SERIAL NOT NULL PRIMARY KEY, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);")
+        c.execute("CREATE TABLE sessions (id TEXT NOT NULL PRIMARY KEY UNIQUE, original_user_agent TEXT NOT NULL);")
 

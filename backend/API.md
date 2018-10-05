@@ -30,13 +30,7 @@ This part of `curl` command should be used everywhere in the examples below (exc
 
 ### Refreshing tokens
 
-Backend will periodically add `X-Refresh-Auth` header:
-
-```
-X-Refresh-Auth: Bearer <KeyId>:<JWTToken>
-```
-
-There will be 30s window in which both the old and the new token are allowed. After that, requesting with the old token will invalidate both the old and new token (to be precise: new token will be blacklisted and will not be refreshed when it expires).
+When the old token expires, any request with it will respond with 401. User should then obtain new token through /api/auth/refresh and repeat the request in question.
 
 
 # Values

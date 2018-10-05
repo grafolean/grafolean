@@ -43,7 +43,7 @@ class WidgetSchemaInputs(Inputs):
     })]
 
 
-class AdminSchemaInputs(Inputs):
+class UserSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema
