@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 .cache/
+.vscode/
+.pytest_cache/
 
 # flask_input:
 backend/src/*
