@@ -13,6 +13,7 @@ import DashboardViewContainer from '../../containers/DashboardViewContainer'
 import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'
 import NotificationsContainer from '../../containers/NotificationsContainer'
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
+import AdminFirst from '../AdminFirst';
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -152,6 +153,8 @@ export default class Main extends Component {
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardViewContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug/widget/:widgetId/edit' component={DashboardWidgetEdit}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/about' component={About}/>
+
+                <WrappedRoute exact contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
               </Switch>
             </Content>
           </div>

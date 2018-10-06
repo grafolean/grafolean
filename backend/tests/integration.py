@@ -16,7 +16,7 @@ TEST_USERNAME = 'admin'
 TEST_PASSWORD = 'asdf123'
 
 
-def setup_module():
+def _delete_all_from_db():
     # initialize DB:
     with db.cursor() as c:
         c.execute("SELECT tablename, schemaname FROM pg_tables WHERE schemaname = 'public';")
@@ -32,8 +32,12 @@ def setup_module():
     migrate_if_needed()
 
 
+def setup_module():
+    _delete_all_from_db()
+
+
 def teardown_module():
-    pass
+    _delete_all_from_db()
 
 
 @pytest.fixture
