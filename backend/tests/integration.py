@@ -5,6 +5,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import json
 import pytest
 from pprint import pprint
+import time
 
 from moonthor import app
 from utils import db, migrate_if_needed, log
@@ -326,42 +327,41 @@ def test_accounts(app_client):
     """
         Create first admin, login, make sure you get X-JWT-Token. Try to create another first admin, fail.
     """
-    data = { 'name': 'First Admin', 'username': TEST_USERNAME, 'password': TEST_PASSWORD, 'email': 'test@example.com' }
+    data = { 'name': 'First User - Admin', 'username': TEST_USERNAME, 'password': TEST_PASSWORD, 'email': 'test@example.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
     assert int(admin_id) == 1
 
     # next fails:
-    data = { 'name': 'Second Admin', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@example.com' }
+    data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@example.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 401
 
     # invalid login:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD + 'nooot' }
-    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 401
 
     # valid login:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
-    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 204
-    authorization_header = None
-    for header, value in r.headers:
-        if header == 'X-JWT-Token':
-            authorization_header = value
+    authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
-    # now request some resource:
+    # now request some resource without auth:
     r = app_client.get('/api/admin/accounts')
     assert r.status_code == 401
-
+    # request resource with valid auth:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': authorization_header})
     assert r.status_code == 200
 
-def test_jwt_expiry_leeway(app_client):
+
+def test_jwt_expiry_refresh(app_client):
     """
-        Login, get X-JWT-Token which expired before 1s, read the new token from header, check it
+        Login, get X-JWT-Token which expired before 1s, make sure you get 401 on resource request,
+        hit /auth/refrest, make sure the new token works
         WARNING: depends on test_accounts() being run first
     """
     # fake the expiry:
@@ -370,35 +370,28 @@ def test_jwt_expiry_leeway(app_client):
 
     # valid login, but get the expired token:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
-    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 204
-    authorization_header = None
-    for header, value in r.headers:
-        if header == 'X-JWT-Token':
-            authorization_header = value
+    authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
     # you got the (expired) token, reset the expiry timediff:
     JWT.TOKEN_VALID_FOR = original_jwt_token_valid_for
 
-    # request resource - it should work because of leeway, but you will get a new token in header:
+    # request resource - access denied because token has expired:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': authorization_header})
+    assert r.status_code == 401
+
+    r = app_client.post('/api/auth/refresh', headers={'Authorization': authorization_header})
     assert r.status_code == 200
-    new_authorization_header = None
-    for header, value in r.headers:
-        if header == 'X-Refresh-Auth':
-            new_authorization_header = value
+    new_authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert new_authorization_header[:7] == 'Bearer '
     assert new_authorization_header[8:9] == ':'
 
     # successful access, no refresh with the new token:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': new_authorization_header})
     assert r.status_code == 200
-    new_authorization_header = None
-    for header, value in r.headers:
-        if header == 'X-Refresh-Auth':
-            new_authorization_header = value
-    assert new_authorization_header is None
+
 
 def test_jwt_total_expiry(app_client):
     """
@@ -408,16 +401,13 @@ def test_jwt_total_expiry(app_client):
 
     # fake the expiry:
     original_jwt_token_valid_for = JWT.TOKEN_VALID_FOR
-    JWT.TOKEN_VALID_FOR = -JWT.TOKEN_DECODING_LEEWAY - 1
+    JWT.TOKEN_VALID_FOR = -JWT.TOKEN_CAN_BE_REFRESHED_FOR - 1  # the token will be too old to even refresh it
 
     # valid login, but get the expired token:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
-    r = app_client.post('/api/admin/login', data=json.dumps(data), content_type='application/json')
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 204
-    authorization_header = None
-    for header, value in r.headers:
-        if header == 'X-JWT-Token':
-            authorization_header = value
+    authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
     # you got the (expired) token, reset the expiry timediff:
@@ -425,5 +415,9 @@ def test_jwt_total_expiry(app_client):
 
     # request resource - it should not work because leeway is past:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': authorization_header})
+    assert r.status_code == 401
+
+    # refresh also fails because the token is too old:
+    r = app_client.post('/api/auth/refresh', headers={'Authorization': authorization_header})
     assert r.status_code == 401
 

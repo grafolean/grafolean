@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, AdminSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, UserSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -580,7 +580,7 @@ class Bot(object):
             return bot_id, account_id
 
 
-class Admin(object):
+class User(object):
     def __init__(self, name, email, username, password):
         self.name = name
         self.email = email
@@ -589,7 +589,7 @@ class Admin(object):
 
     @classmethod
     def forge_from_input(cls, flask_request):
-        inputs = AdminSchemaInputs(flask_request)
+        inputs = UserSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
@@ -603,9 +603,9 @@ class Admin(object):
     def insert(self):
         with db.cursor() as c:
             pass_hash = Auth.password_hash(self.password)
-            c.execute("INSERT INTO admins (name, email, username, passhash) VALUES (%s, %s, %s, %s) RETURNING id;", (self.name, self.email, self.username, pass_hash,))
-            admin_id = c.fetchone()[0]
-            return admin_id
+            c.execute("INSERT INTO users (name, email, username, passhash) VALUES (%s, %s, %s, %s) RETURNING id;", (self.name, self.email, self.username, pass_hash,))
+            user_id = c.fetchone()[0]
+            return user_id
 
 
 class Credentials(object):
@@ -624,18 +624,7 @@ class Credentials(object):
         password = data['password']
         return cls(username, password)
 
-    def check_admin_login(self):
-        with db.cursor() as c:
-            c.execute("SELECT id, passhash FROM admins WHERE username = %s;", (self.username,))
-            res = c.fetchone()
-            if not res:
-                return None
-            admin_id, passhash = res
-            if Auth.is_password_valid(self.password, passhash):
-                return admin_id
-            return None
-
-    def check_normal_user_login(self):
+    def check_user_login(self):
         with db.cursor() as c:
             c.execute("SELECT id, passhash FROM users WHERE username = %s;", (self.username,))
             res = c.fetchone()
