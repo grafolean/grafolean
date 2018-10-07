@@ -6,6 +6,7 @@ import Button from '../Button';
 
 class Logout extends React.Component {
   onLogoutClick = () => {
+    window.sessionStorage.removeItem('moonthor_jwt_token');
     store.dispatch(onLogout());
   }
 

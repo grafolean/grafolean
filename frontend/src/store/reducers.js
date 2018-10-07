@@ -109,10 +109,8 @@ function notifications(state=[],action) {
 function user(state = null, action) {
   switch (action.type) {
     case ON_LOGIN_SUCCESS:
-      window.sessionStorage.setItem('moonthor_jwt_token', action.jwtToken);
       return action.userData;
     case ON_LOGOUT:
-      window.sessionStorage.removeItem('moonthor_jwt_token');
       return null;
     default:
       return state;

@@ -57,7 +57,9 @@ class Login extends React.Component {
       .then(handleFetchErrors)
       .then(response => {
         response.json().then(json => {
-          store.dispatch(onLoginSuccess(json, response.headers.get('X-JWT-Token')));
+          const jwtToken = response.headers.get('X-JWT-Token')
+          window.sessionStorage.setItem('moonthor_jwt_token', jwtToken);
+          store.dispatch(onLoginSuccess(json, jwtToken));
           this.setState({
             processingLogin: false,
           })
