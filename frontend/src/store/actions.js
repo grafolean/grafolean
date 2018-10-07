@@ -2,37 +2,6 @@ import fetch from 'cross-fetch'
 
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL;
 
-export const ON_REQUEST_CHART_DATA = 'ON_REQUEST_CHART_DATA'
-export function onRequestChartData(paths, aggrLevel, fromTs, toTs) {
-  return {
-    type: ON_REQUEST_CHART_DATA,
-    paths,  // should be pathsFilters really - backend should return all paths that match the filter and their data
-    aggrLevel,
-    fromTs,
-    toTs,
-  }
-}
-
-export const ON_RECEIVE_CHART_DATA_SUCCESS = 'ON_RECEIVE_CHART_DATA_SUCCESS'
-export function onReceiveChartDataSuccess(paths, aggrLevel, fromTs, toTs, json) {
-  return {
-    type: ON_RECEIVE_CHART_DATA_SUCCESS,
-    paths,
-    aggrLevel,
-    fromTs,
-    toTs,
-    json,
-  }
-}
-
-export const ON_RECEIVE_CHART_DATA_FAILURE = 'ON_RECEIVE_CHART_DATA_FAILURE'
-export function onReceiveChartDataFailure(paths, errMsg) {
-  return {
-    type: ON_RECEIVE_CHART_DATA_FAILURE,
-    paths,
-    errMsg,
-  }
-}
 
 export const ON_REQUEST_DASHBOARDS_LIST = 'ON_REQUEST_DASHBOARDS_LIST'
 export function onRequestDashboardsList() {

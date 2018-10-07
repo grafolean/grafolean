@@ -2,9 +2,6 @@ import { combineReducers } from 'redux'
 import uniqueId from 'lodash/uniqueId';
 
 import {
-  ON_REQUEST_CHART_DATA,
-  ON_RECEIVE_CHART_DATA_SUCCESS,
-  ON_RECEIVE_CHART_DATA_FAILURE,
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
@@ -18,58 +15,6 @@ import {
   ON_SUCCESS,
   REMOVE_NOTIFICATION,
 } from './actions'
-
-function chartData(state={}, action) {
-  let newState = {...state}
-  switch (action.type) {
-    case ON_REQUEST_CHART_DATA:
-      // for each of the requested paths, mark them as `fetching: true`
-      for (let path of action.paths) {
-        newState[path] = {
-          fetching: true,
-        };
-      };
-      return newState;
-
-    //   return {...state, loading: true}
-    case ON_RECEIVE_CHART_DATA_SUCCESS:
-      /* given the chart data in action, update state
-      // state should look like this:
-          chartdata: {
-              "path.123": {
-                  "-1": [
-                      {
-                          from: 1,
-                          to: 2,
-                          data: [
-                              [123456789.123456, 100.0, false],
-                              [123456789.123456, 100.0, false],
-                              ...
-
-                          ]
-                      }
-                  ]
-              }
-          }
-        */
-      for (let path of action.paths) {
-        newState[path] = {
-          data: action.json.paths[path].data,  // actually, data should probably be merged or some better caching strategy should be devised... but it's good enough for now
-          fetching: false,
-        }
-      };
-      return newState;
-    case ON_RECEIVE_CHART_DATA_FAILURE:
-      for (let path of action.paths) {
-        newState[path] = {
-          fetching: false,
-        }
-      };
-      return newState;
-    default:
-      return state;
-  }
-}
 
 function dashboardsList(
   state={
@@ -141,7 +86,6 @@ function forms(state={}, action) {
 
 function notifications(state=[],action) {
   switch (action.type) {
-    case ON_RECEIVE_CHART_DATA_FAILURE:
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
     case ON_SUBMIT_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
@@ -161,7 +105,6 @@ function notifications(state=[],action) {
 }
 
 const moonthorApp = combineReducers({
-  chartData,
   dashboards: combineReducers({
     list: dashboardsList,
     details: dashboardDetails,
