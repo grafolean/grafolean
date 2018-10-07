@@ -1,9 +1,11 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
 import { onLoginSuccess, ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
 import Loading from '../Loading';
+import Redirect from 'react-router-dom/Redirect';
 
 class Login extends React.Component {
   formValues = {};
@@ -14,10 +16,9 @@ class Login extends React.Component {
       formValues: {
         username: '',
         password: '',
-        name: '',
-        email: '',
       },
       processingLogin: false,
+      redirectToReferrer: this.props.loggedIn ? true : false,
     };
   }
 
@@ -62,6 +63,7 @@ class Login extends React.Component {
           store.dispatch(onLoginSuccess(json, jwtToken));
           this.setState({
             processingLogin: false,
+            redirectToReferrer: true,
           })
         })
       })
@@ -70,7 +72,11 @@ class Login extends React.Component {
   }
 
   render() {
-    const { formValues: { username, password }, processingLogin } = this.state;
+    const { formValues: { username, password }, processingLogin, redirectToReferrer } = this.state;
+    if (redirectToReferrer === true) {
+      const { fromLocation } = this.props.location.state || { fromLocation: "/" };
+      return <Redirect to={fromLocation} />
+    }
     if (processingLogin) {
       return <Loading />;
     }
@@ -88,4 +94,7 @@ class Login extends React.Component {
   }
 }
 
-export default Login;
+const mapLoggedInStateToProps = store => ({
+  loggedIn: !!store.user,
+});
+export default connect(mapLoggedInStateToProps)(Login);
