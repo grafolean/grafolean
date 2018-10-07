@@ -153,7 +153,7 @@ def auth_login_post():
         'user_id': user_id,
         'session_id': secrets.token_hex(32),
     }
-    response = flask.make_response(json.dumps(session_data), 204)
+    response = flask.make_response(json.dumps(session_data), 200)
     response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
     return response
 

@@ -350,7 +350,7 @@ def test_accounts(app_client):
     # valid login:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 204
+    assert r.status_code == 200
     authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
@@ -375,7 +375,7 @@ def test_jwt_expiry_refresh(app_client):
     # valid login, but get the expired token:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 204
+    assert r.status_code == 200
     authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
@@ -410,7 +410,7 @@ def test_jwt_total_expiry(app_client):
     # valid login, but get the expired token:
     data = { 'username': TEST_USERNAME, 'password': TEST_PASSWORD }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 204
+    assert r.status_code == 200
     authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert authorization_header[:9] == 'Bearer 1:'
 
