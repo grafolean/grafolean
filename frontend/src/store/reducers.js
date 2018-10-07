@@ -14,6 +14,8 @@ import {
   ON_FAILURE,
   ON_SUCCESS,
   REMOVE_NOTIFICATION,
+  ON_LOGIN_SUCCESS,
+  ON_LOGOUT,
 } from './actions'
 
 function dashboardsList(
@@ -104,7 +106,21 @@ function notifications(state=[],action) {
   }
 }
 
+function user(state = null, action) {
+  switch (action.type) {
+    case ON_LOGIN_SUCCESS:
+      window.sessionStorage.setItem('moonthor_jwt_token', action.jwtToken);
+      return action.userData;
+    case ON_LOGOUT:
+      window.sessionStorage.removeItem('moonthor_jwt_token');
+      return null;
+    default:
+      return state;
+  }
+}
+
 const moonthorApp = combineReducers({
+  user,
   dashboards: combineReducers({
     list: dashboardsList,
     details: dashboardDetails,

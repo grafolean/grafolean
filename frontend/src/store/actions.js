@@ -3,6 +3,22 @@ import fetch from 'cross-fetch'
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL;
 
 
+export const ON_LOGIN_SUCCESS = 'ON_LOGIN_SUCCESS'
+export function onLoginSuccess(userData, jwtToken) {
+  return {
+    type: ON_LOGIN_SUCCESS,
+    userData,
+    jwtToken,
+  }
+}
+
+export const ON_LOGOUT = 'ON_LOGOUT'
+export function onLogout() {
+  return {
+    type: ON_LOGOUT,
+  }
+}
+
 export const ON_REQUEST_DASHBOARDS_LIST = 'ON_REQUEST_DASHBOARDS_LIST'
 export function onRequestDashboardsList() {
   return {

@@ -56,6 +56,28 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   />)
 );
 
+const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
+  <Navigation>
+    {(!sidebarDocked)?(
+      <Button onClick={onSidebarXClick}>X</Button>
+    ):('')}
+    <Header>
+      <h1 className="App-title">MoonThor</h1>
+    </Header>
+    <ul>
+      <li><Link to='/' onClick={onSidebarLinkClick}>Home</Link></li>
+      <li>
+        <Link to='/dashboards' onClick={onSidebarLinkClick}>List of dashboards</Link><br />
+        Favorites:
+        <ul>
+          <li><Link to='/dashboards/view/asdf' onClick={onSidebarLinkClick}>Dashboard: asdf</Link></li>
+        </ul>
+      </li>
+      <li><Link to='/about' onClick={onSidebarLinkClick}>About</Link></li>
+    </ul>
+  </Navigation>
+)
+
 export default class Main extends Component {
   mql = window.matchMedia(`(min-width: 800px)`)
 
@@ -113,28 +135,6 @@ export default class Main extends Component {
   }
 
   render() {
-    let sidebarContent = (
-      <Navigation>
-        {(!this.state.sidebarDocked)?(
-          <Button onClick={this.onSidebarXClick}>X</Button>
-        ):('')}
-        <Header>
-          <h1 className="App-title">MoonThor</h1>
-        </Header>
-        <ul>
-          <li><Link to='/' onClick={this.onSidebarLinkClick}>Home</Link></li>
-          <li>
-            <Link to='/dashboards' onClick={this.onSidebarLinkClick}>List of dashboards</Link><br />
-            Favorites:
-            <ul>
-              <li><Link to='/dashboards/view/asdf' onClick={this.onSidebarLinkClick}>Dashboard: asdf</Link></li>
-            </ul>
-          </li>
-          <li><Link to='/about' onClick={this.onSidebarLinkClick}>About</Link></li>
-        </ul>
-      </Navigation>
-    )
-
     const CONTENT_PADDING_LR = 30;
     const CONTENT_PADDING_TB = 20;
     const SCROLLBAR_WIDTH = 20;  // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
@@ -142,7 +142,14 @@ export default class Main extends Component {
     const sidebarWidth = Math.min(300, this.state.windowWidth - 40);  // always leave a bit of place (40px) to the right of menu
     const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth: innerWindowWidth;
     return (
-      <Sidebar sidebar={sidebarContent}
+      <Sidebar
+              sidebar={(
+                <SidebarContent
+                  sidebarDocked={this.state.sidebarDocked}
+                  onSidebarXClick={this.onSidebarXClick}
+                  onSidebarLinkClick={this.onSidebarLinkClick}
+                />
+              )}
               open={this.state.sidebarOpen}
               docked={this.state.sidebarDocked}
               onSetOpen={this.onSetSidebarOpen}
