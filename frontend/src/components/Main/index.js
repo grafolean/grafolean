@@ -16,6 +16,7 @@ import DashboardNewFormContainer from '../../containers/DashboardNewFormContaine
 import NotificationsContainer from '../../containers/NotificationsContainer'
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import AdminFirst from '../AdminFirst';
+import PageNotFound from '../PageNotFound';
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -188,6 +189,7 @@ export default class Main extends Component {
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardViewContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug/widget/:widgetId/edit' component={DashboardWidgetEdit}/>
 
+                <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
               </Switch>
             </Content>
           </div>
