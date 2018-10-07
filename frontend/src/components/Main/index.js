@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Switch, Route, Link } from 'react-router-dom'
+import { connect } from 'react-redux';
+import { Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 import styled from 'styled-components';
 
@@ -8,6 +9,7 @@ import './Main.css';
 import Button from '../Button'
 import Home from '../Home'
 import About from '../About'
+import Login from '../Login'
 import DashboardsListContainer from '../../containers/DashboardsListContainer'
 import DashboardViewContainer from '../../containers/DashboardViewContainer'
 import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'
@@ -29,8 +31,29 @@ const Content = styled.div`
   background-color: #ffffff;
 `
 
-const WrappedRoute = ({ component: Component, contentWidth, ...rest }) => (
-  <Route {...rest} render={props => <Component {...props} width={contentWidth} />} />
+// Our routes need to:
+// - know about users' logged-in state (from store)
+// - know if they are publicly available or they need to redirect to login
+// - know about the content width that is available to them
+const mapLoggedInStateToProps = store => ({
+  loggedIn: !!store.user,
+});
+const WrappedRoute = connect(mapLoggedInStateToProps)(
+  ({ component: Component, isPublic, loggedIn, contentWidth, ...rest }) => (
+  <Route
+    {...rest}
+    render={ props => (
+      isPublic === true || loggedIn
+      ? <Component
+          {...props}
+          width={contentWidth}
+        />
+      : <Redirect to={{
+          pathname: '/login',
+          state: { fromLocation: props.location }
+        }} />
+    )}
+  />)
 );
 
 export default class Main extends Component {
@@ -147,14 +170,17 @@ export default class Main extends Component {
           }}>
             <Content>
               <Switch>
-                <WrappedRoute exact contentWidth={contentWidth} path='/' component={Home}/>
+                <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/' component={Home}/>
+                <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/about' component={About}/>
+                <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
+                <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/login' component={Login}/>
+                {/* <WrappedRoute exact contentWidth={contentWidth} path='/login' component={Logout}/> */}
+
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsListContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewFormContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardViewContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug/widget/:widgetId/edit' component={DashboardWidgetEdit}/>
-                <WrappedRoute exact contentWidth={contentWidth} path='/about' component={About}/>
 
-                <WrappedRoute exact contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
               </Switch>
             </Content>
           </div>
