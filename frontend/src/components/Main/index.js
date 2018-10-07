@@ -17,6 +17,7 @@ import NotificationsContainer from '../../containers/NotificationsContainer'
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
+import Logout from '../Logout';
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -57,7 +58,8 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   />)
 );
 
-const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
+const SidebarContent = connect(mapLoggedInStateToProps)(
+  ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick, loggedIn }) => (
   <Navigation>
     {(!sidebarDocked)?(
       <Button onClick={onSidebarXClick}>X</Button>
@@ -67,17 +69,25 @@ const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) 
     </Header>
     <ul>
       <li><Link to='/' onClick={onSidebarLinkClick}>Home</Link></li>
-      <li>
-        <Link to='/dashboards' onClick={onSidebarLinkClick}>List of dashboards</Link><br />
-        Favorites:
-        <ul>
-          <li><Link to='/dashboards/view/asdf' onClick={onSidebarLinkClick}>Dashboard: asdf</Link></li>
-        </ul>
-      </li>
+      {loggedIn
+        ? (
+          [
+            <li>
+              <Link to='/dashboards' onClick={onSidebarLinkClick}>List of dashboards</Link><br />
+              Favorites:
+              <ul>
+                <li><Link to='/dashboards/view/asdf' onClick={onSidebarLinkClick}>Dashboard: asdf</Link></li>
+              </ul>
+            </li>,
+            <li><Link to='/logout' onClick={onSidebarLinkClick}>Logout</Link></li>
+          ]
+        ) : (
+          <li><Link to='/login' onClick={onSidebarLinkClick}>Login</Link></li>
+        )}
       <li><Link to='/about' onClick={onSidebarLinkClick}>About</Link></li>
     </ul>
-  </Navigation>
-)
+  </Navigation>)
+);
 
 export default class Main extends Component {
   mql = window.matchMedia(`(min-width: 800px)`)
@@ -182,7 +192,7 @@ export default class Main extends Component {
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/about' component={About}/>
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/login' component={Login}/>
-                {/* <WrappedRoute exact contentWidth={contentWidth} path='/login' component={Logout}/> */}
+                <WrappedRoute exact contentWidth={contentWidth} path='/logout' component={Logout}/>
 
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsListContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewFormContainer}/>

@@ -3,6 +3,7 @@ import React from 'react';
 import { onLoginSuccess, ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
+import Loading from '../Loading';
 
 class Login extends React.Component {
   formValues = {};
@@ -16,6 +17,7 @@ class Login extends React.Component {
         name: '',
         email: '',
       },
+      processingLogin: false,
     };
   }
 
@@ -41,6 +43,9 @@ class Login extends React.Component {
       username: this.formValues.username,
       password: this.formValues.password,
     }
+    this.setState({
+      processingLogin: true,
+    });
     fetch(`${ROOT_URL}/auth/login`, {
       headers: {
         'Accept': 'application/json',
@@ -53,6 +58,9 @@ class Login extends React.Component {
       .then(response => {
         response.json().then(json => {
           store.dispatch(onLoginSuccess(json, response.headers.get('X-JWT-Token')));
+          this.setState({
+            processingLogin: false,
+          })
         })
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
@@ -60,7 +68,10 @@ class Login extends React.Component {
   }
 
   render() {
-    const { formValues: { username, password } } = this.state;
+    const { formValues: { username, password }, processingLogin } = this.state;
+    if (processingLogin) {
+      return <Loading />;
+    }
     return (
       <div>
         <div className="login_form">
