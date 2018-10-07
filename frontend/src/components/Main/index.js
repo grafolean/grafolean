@@ -17,7 +17,7 @@ import NotificationsContainer from '../../containers/NotificationsContainer'
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
-import Logout from '../Logout';
+import User from '../User';
 
 const Navigation = styled.div`
   padding: 40px 40px;
@@ -79,7 +79,7 @@ const SidebarContent = connect(mapLoggedInStateToProps)(
                 <li><Link to='/dashboards/view/asdf' onClick={onSidebarLinkClick}>Dashboard: asdf</Link></li>
               </ul>
             </li>,
-            <li><Link to='/logout' onClick={onSidebarLinkClick}>Logout</Link></li>
+            <li><Link to='/user' onClick={onSidebarLinkClick}>User</Link></li>
           ]
         ) : (
           <li><Link to='/login' onClick={onSidebarLinkClick}>Login</Link></li>
@@ -192,7 +192,7 @@ export default class Main extends Component {
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/about' component={About}/>
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
                 <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/login' component={Login}/>
-                <WrappedRoute exact contentWidth={contentWidth} path='/logout' component={Logout}/>
+                <WrappedRoute exact contentWidth={contentWidth} path='/user' component={User}/>
 
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsListContainer}/>
                 <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewFormContainer}/>

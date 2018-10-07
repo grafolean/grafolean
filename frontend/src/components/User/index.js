@@ -1,10 +1,11 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
 import { onLogout } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
 
-class Logout extends React.Component {
+class User extends React.Component {
   onLogoutClick = () => {
     window.sessionStorage.removeItem('moonthor_jwt_token');
     store.dispatch(onLogout());
@@ -13,10 +14,14 @@ class Logout extends React.Component {
   render() {
     return (
       <div>
+        <p>User ID: {this.props.userData.user_id}</p>
         <Button onClick={this.onLogoutClick}>Logout</Button>
       </div>
     );
   }
 }
 
-export default Logout;
+const mapStoreToProps = store => ({
+  userData: store.user,
+});
+export default connect(mapStoreToProps)(User);
