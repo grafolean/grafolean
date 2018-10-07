@@ -54,6 +54,7 @@ def after_request(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
+    response.headers['Access-Control-Expose-Headers'] = 'X-JWT-Token'
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
     #time.sleep(1.0)  # so we can see "loading" signs
