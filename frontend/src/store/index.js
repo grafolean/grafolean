@@ -1,5 +1,6 @@
 import { createStore, applyMiddleware, compose } from 'redux'
 import thunkMiddleware from 'redux-thunk'
+import throttle from 'lodash/throttle';
 
 import moonthorApp from './reducers'
 
@@ -34,11 +35,11 @@ const store = createStore(
   )),
 );
 
-store.subscribe(() => {
+store.subscribe(throttle(() => {
   saveStoreState({
     user: store.getState().user,
   });
-});
+}, 1000));
 
 export default store;
 
