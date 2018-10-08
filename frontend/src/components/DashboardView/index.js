@@ -8,6 +8,7 @@ import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import MoonChartWidget from '../Widgets/MoonChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
+import { fetchAuth } from '../../utils/fetch';
 
 export default class DashboardView extends React.Component {
 
@@ -42,7 +43,7 @@ export default class DashboardView extends React.Component {
       loading: true,
     });
     this.abortController = new window.AbortController()
-    fetch(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`, {
+    fetchAuth(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`, {
       signal: this.abortController.signal,
     })
       .then(handleFetchErrors)

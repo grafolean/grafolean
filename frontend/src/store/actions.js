@@ -1,14 +1,14 @@
 import fetch from 'cross-fetch'
+import { fetchAuth } from '../utils/fetch';
 
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL;
 
 
 export const ON_LOGIN_SUCCESS = 'ON_LOGIN_SUCCESS'
-export function onLoginSuccess(userData, jwtToken) {
+export function onLoginSuccess(userData) {
   return {
     type: ON_LOGIN_SUCCESS,
     userData,
-    jwtToken,
   }
 }
 
@@ -135,7 +135,7 @@ export function fetchDashboardsList() {
   return function (dispatch) {
     dispatch(onRequestDashboardsList());
     // return function that will start the request from server:
-    return fetch(`${ROOT_URL}/dashboards`)
+    return fetchAuth(`${ROOT_URL}/dashboards`)
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
@@ -147,7 +147,7 @@ export function fetchDashboardsList() {
 export function submitNewDashboard(formid, name) {
   return function (dispatch) {
     dispatch(onSubmitDashboard(formid));
-    return fetch(`${ROOT_URL}/dashboards`, {
+    return fetchAuth(`${ROOT_URL}/dashboards`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -168,7 +168,7 @@ export function submitNewDashboard(formid, name) {
 export function submitDeleteDashboard(slug) {
   return function (dispatch) {
     dispatch(onSubmitDeleteDashboard(slug));
-    return fetch(`${ROOT_URL}/dashboards/${slug}`, {
+    return fetchAuth(`${ROOT_URL}/dashboards/${slug}`, {
       method: 'DELETE',
     })
     .then(handleFetchErrors)

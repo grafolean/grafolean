@@ -2,6 +2,7 @@ import React from 'react';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
+import { fetchAuth } from '../../utils/fetch';
 
 export default class MatchingPaths extends React.Component {
 
@@ -66,7 +67,7 @@ export default class MatchingPaths extends React.Component {
       this.setState({
         fetchingError: false,
       });
-      fetch(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
+      fetchAuth(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
         .then(handleFetchErrors)
         .then(response => response.json())
         .then(json => {

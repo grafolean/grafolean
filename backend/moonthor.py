@@ -194,22 +194,8 @@ def accounts_crud():
         return json.dumps({'name': account.name}), 201
 
 
-# @app.route('/api/admin/accounts', methods=['POST'])
-# @only_admin
-# def accounts_post():
-#     account = Account.forge_from_input(flask.request)
-#     account_id = account.insert()
-#     return json.dumps({
-#         'id': account_id,
-#     }), 201
-
-
-# @app.route('/api/users', methods=['POST'])
-# @only_admin
-# def users_post():
-#     pass
-
 @app.route('/api/bots', methods=['POST'])
+@auth
 def bot_post():
     bot = Bot.forge_from_input(flask.request)
     bot_id, bot_token = bot.insert()
@@ -220,6 +206,7 @@ def bot_post():
 
 
 @app.route("/api/values", methods=['PUT'])
+@needs_valid_bot_token
 def values_put():
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
@@ -262,6 +249,7 @@ def values_post(account_id):
 
 
 @app.route("/api/values", methods=['GET'])
+@auth
 def values_get():
     # validate and convert input parameters:
     paths_input = flask.request.args.get('p')
@@ -343,6 +331,7 @@ def values_get():
 
 
 @app.route("/api/paths", methods=['GET'])
+@auth
 def paths_get():
     max_results_input = flask.request.args.get('limit')
     if not max_results_input:
@@ -382,6 +371,7 @@ def paths_get():
     return json.dumps(ret), 200
 
 @app.route("/api/paths", methods=['DELETE'])
+@auth
 def path_delete():
     path_input = flask.request.args.get('p')
     if path_input is None:
@@ -398,6 +388,7 @@ def path_delete():
     return "", 200
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])
+@auth
 def dashboards_crud():
     if flask.request.method == 'GET':
         rec = Dashboard.get_list()
@@ -413,6 +404,7 @@ def dashboards_crud():
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
+@auth
 def dashboard_crud(dashboard_slug):
     if flask.request.method == 'GET':
         rec = Dashboard.get(slug=dashboard_slug)
@@ -435,6 +427,7 @@ def dashboard_crud(dashboard_slug):
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
+@auth
 def widgets_crud(dashboard_slug):
     if flask.request.method == 'GET':
         try:
@@ -453,6 +446,7 @@ def widgets_crud(dashboard_slug):
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>/widgets/<string:widget_id>", methods=['GET', 'PUT', 'DELETE'])
+@auth
 def widget_crud(dashboard_slug, widget_id):
     try:
         widget_id = int(widget_id)

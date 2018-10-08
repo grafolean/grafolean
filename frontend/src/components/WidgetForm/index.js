@@ -7,6 +7,7 @@ import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/a
 import ChartForm from '../ChartForm';
 import Loading from '../Loading';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
+import { fetchAuth } from '../../utils/fetch';
 
 const WIDGET_TYPES = [
   { type: 'chart', label: 'chart', form: ChartForm },
@@ -48,7 +49,7 @@ export default class WidgetForm extends React.Component {
     const query_params = {
       paths_limit: 0,
     };
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}?${stringify(query_params)}`, { signal: this.fetchWidgetDataAbortController.signal })
+    fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}?${stringify(query_params)}`, { signal: this.fetchWidgetDataAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -101,7 +102,7 @@ export default class WidgetForm extends React.Component {
       title: widgetName,
       content: JSON.stringify(this.alteredWidgetData[widgetType].content),
     }
-    fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
+    fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',

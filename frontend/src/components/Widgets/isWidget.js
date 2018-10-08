@@ -7,6 +7,7 @@ import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/a
 import './index.css';
 
 import WidgetTitleBar from './WidgetTitleBar';
+import { fetchAuth } from '../../utils/fetch';
 
 const isWidget = WrappedComponent => {
   return class Widget extends React.Component {
@@ -56,7 +57,7 @@ const isWidget = WrappedComponent => {
     }
 
     deleteWidget = () => {
-      fetch(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
+      fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
         .then(handleFetchErrors)
         .then(() => {
           store.dispatch(onSuccess('Widget successfully removed.'));

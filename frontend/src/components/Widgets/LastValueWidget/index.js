@@ -5,6 +5,7 @@ import { stringify } from 'qs';
 import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 
 import isWidget from '../isWidget';
+import { fetchAuth } from '../../../utils/fetch';
 
 class LastValueWidget extends React.Component {
 
@@ -32,7 +33,7 @@ class LastValueWidget extends React.Component {
       sort: 'desc',
       limit: 1,
     };
-    fetch(`${ROOT_URL}/values/?${stringify(query_params)}`, { signal: this.fetchAbortController.signal })
+    fetchAuth(`${ROOT_URL}/values/?${stringify(query_params)}`, { signal: this.fetchAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {

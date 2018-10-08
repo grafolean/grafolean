@@ -17,6 +17,7 @@ import TooltipPopup from '../../TooltipPopup';
 import './index.css';
 import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
+import { fetchAuth } from '../../../utils/fetch';
 
 
 class MoonChart extends React.Component {
@@ -51,7 +52,7 @@ class MoonChart extends React.Component {
       limit: 1001,
       failover_trailing: 'false',
     };
-    fetch(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
+    fetchAuth(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -395,7 +396,7 @@ export class ChartContainer extends React.Component {
       fetching: true,
     })
 
-    fetch(`${ROOT_URL}/values?${stringify({
+    fetchAuth(`${ROOT_URL}/values?${stringify({
       p: this.paths.join(","),
       t0: fromTs,
       t1: toTs,
