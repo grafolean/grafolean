@@ -1,4 +1,3 @@
-import fetch from 'cross-fetch'
 import { fetchAuth } from '../utils/fetch';
 
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL;
