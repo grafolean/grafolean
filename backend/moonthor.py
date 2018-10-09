@@ -44,7 +44,8 @@ def before_request():
             # oops, DB error... we should return 500:
             return 'Service unavailable', 503
 
-    flask.request.moonthor_data = {}
+    # http://flask.pocoo.org/docs/1.0/api/#application-globals
+    flask.g.moonthor_data = {}
 
 
 @app.after_request
@@ -87,7 +88,7 @@ def auth(f):
             if not authorization_header:
                 return "Access denied", 401
 
-            flask.request.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+            flask.g.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
 
             return f(*args, **kwargs)
         except:
@@ -99,7 +100,7 @@ def only_admin(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         try:
-            jwt = flask.request.moonthor_data['jwt']
+            jwt = flask.g.moonthor_data['jwt']
             if int(jwt.data['user_id']) != 1:  # temporary measure - user with id === 1 is admin
                 return "Access denied", 401
             return f(*args, **kwargs)
