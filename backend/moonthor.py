@@ -31,6 +31,26 @@ def echo_socket(ws):
 @app.before_request
 def before_request():
 
+    # http://flask.pocoo.org/docs/1.0/api/#application-globals
+    flask.g.moonthor_data = {}
+
+    if not flask.request.endpoint in app.view_functions:
+        return "Resource not found", 404
+
+    view_func = app.view_functions[flask.request.endpoint]
+    # unless we have explicitly user @noauth decorator, do authorization check here:
+    if not hasattr(view_func, '_exclude_from_auth'):
+        try:
+            print(flask.request.url_rule)
+            authorization_header = flask.request.headers.get('Authorization')
+            if not authorization_header:
+                return "Access denied", 401
+
+            flask.g.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+        except:
+            return "Access denied", 401
+
+
     # temporary "security" measure until proper auth is done:
     # d3c302a9-f607-458f-aaa8-8ac16c4bd632
     # query_params_bot_token = flask.request.args.get('b')
@@ -43,9 +63,6 @@ def before_request():
         if utils.db is None:
             # oops, DB error... we should return 500:
             return 'Service unavailable', 503
-
-    # http://flask.pocoo.org/docs/1.0/api/#application-globals
-    flask.g.moonthor_data = {}
 
 
 @app.after_request
@@ -77,23 +94,19 @@ def needs_valid_bot_token(f):
             return "Invalid bot API token", 401
         kwargs['account_id'] = account_id
         return f(*args, **kwargs)
+
+    if hasattr(f, '_exclude_from_auth'):  # do not break @noauth
+        wrap._exclude_from_auth = True
     return wrap
 
 
-def auth(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        try:
-            authorization_header = flask.request.headers.get('Authorization')
-            if not authorization_header:
-                return "Access denied", 401
-
-            flask.g.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
-
-            return f(*args, **kwargs)
-        except:
-            return "Access denied", 401
-    return wrap
+def noauth(func):
+    # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
+    # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
+    # The beauty of this approach is that every endpoint is defended *by default*.
+    # WARNING: any further decorators must carry the attribute "_exclude_from_auth" over to the wrapper.
+    func._exclude_from_auth = True
+    return func
 
 
 def only_admin(f):
@@ -106,6 +119,9 @@ def only_admin(f):
             return f(*args, **kwargs)
         except:
             return "Access denied", 401
+
+    if hasattr(f, '_exclude_from_auth'):  # do not break @noauth
+        wrap._exclude_from_auth = True
     return wrap
 
 
@@ -113,7 +129,8 @@ def only_admin(f):
 # Routes:
 # -----------------------------------------------------------------------
 
-@app.route('/')
+@app.route('/', defaults={'auth': False})
+@noauth
 def root():
     return 'OK'
 
@@ -122,6 +139,7 @@ def root():
 # --------------
 
 @app.route('/api/admin/createtable', methods=['POST'])
+@only_admin
 def admin_createtable_post():
     utils.migrate_if_needed()
     return '', 204
@@ -131,6 +149,7 @@ def admin_createtable_post():
 # admin access with name, email and password as selected. Later requests to the same endpoint
 # will fail.
 @app.route('/api/admin/first', methods=['POST'])
+@noauth
 def admin_first_post():
     if Auth.first_user_exists():
         return 'System already initialized', 401
@@ -146,6 +165,7 @@ def admin_first_post():
 # --------------
 
 @app.route('/api/auth/login', methods=['POST'])
+@noauth
 def auth_login_post():
     credentials = Credentials.forge_from_input(flask.request)
     user_id = credentials.check_user_login()
@@ -162,6 +182,7 @@ def auth_login_post():
 
 
 @app.route('/api/auth/refresh', methods=['POST'])
+@noauth
 def auth_refresh_post():
     try:
         authorization_header = flask.request.headers.get('Authorization')
@@ -180,7 +201,6 @@ def auth_refresh_post():
 
 
 @app.route('/api/admin/accounts', methods=['GET', 'POST'])
-@auth
 @only_admin
 def accounts_crud():
     if flask.request.method == 'GET':
@@ -197,7 +217,6 @@ def accounts_crud():
 
 
 @app.route('/api/bots', methods=['POST'])
-@auth
 def bot_post():
     bot = Bot.forge_from_input(flask.request)
     bot_id, bot_token = bot.insert()
@@ -208,7 +227,8 @@ def bot_post():
 
 
 @app.route("/api/values", methods=['PUT'])
-@needs_valid_bot_token
+@noauth
+# @needs_valid_bot_token
 def values_put():
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
@@ -217,6 +237,7 @@ def values_put():
 
 
 @app.route("/api/values", methods=['POST'])
+@noauth
 @needs_valid_bot_token
 def values_post(account_id):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
@@ -251,7 +272,6 @@ def values_post(account_id):
 
 
 @app.route("/api/values", methods=['GET'])
-@auth
 def values_get():
     # validate and convert input parameters:
     paths_input = flask.request.args.get('p')
@@ -333,7 +353,6 @@ def values_get():
 
 
 @app.route("/api/paths", methods=['GET'])
-@auth
 def paths_get():
     max_results_input = flask.request.args.get('limit')
     if not max_results_input:
@@ -373,7 +392,6 @@ def paths_get():
     return json.dumps(ret), 200
 
 @app.route("/api/paths", methods=['DELETE'])
-@auth
 def path_delete():
     path_input = flask.request.args.get('p')
     if path_input is None:
@@ -390,7 +408,6 @@ def path_delete():
     return "", 200
 
 @app.route("/api/dashboards", methods=['GET', 'POST'])
-@auth
 def dashboards_crud():
     if flask.request.method == 'GET':
         rec = Dashboard.get_list()
@@ -406,7 +423,6 @@ def dashboards_crud():
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
-@auth
 def dashboard_crud(dashboard_slug):
     if flask.request.method == 'GET':
         rec = Dashboard.get(slug=dashboard_slug)
@@ -429,7 +445,6 @@ def dashboard_crud(dashboard_slug):
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
-@auth
 def widgets_crud(dashboard_slug):
     if flask.request.method == 'GET':
         try:
@@ -448,7 +463,6 @@ def widgets_crud(dashboard_slug):
 
 
 @app.route("/api/dashboards/<string:dashboard_slug>/widgets/<string:widget_id>", methods=['GET', 'PUT', 'DELETE'])
-@auth
 def widget_crud(dashboard_slug, widget_id):
     try:
         widget_id = int(widget_id)
