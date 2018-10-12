@@ -11,7 +11,7 @@ Authentication for sending values (via POST method) is through query parameters.
 ### Fetching JWT token
 
 ```
-curl -i 'https://moonthor.com/api/admin/login/' -d '{ "username": "<Username>", "password": "<Pass>" }'
+curl -i 'https://moonthor.com/api/auth/login/' -d '{ "username": "<Username>", "password": "<Pass>" }'
 ```
 
 Example response header:
@@ -26,7 +26,7 @@ Tokens should be supplied in Authorization header like this:
 curl -H 'Authorization: Bearer <KeyId>:<JWTToken>' ...
 ```
 
-This part of `curl` command should be used everywhere in the examples below (except in POST to /api/values/).
+This part of `curl` command should be used everywhere in the examples below (except in POST to /api/accounts/<AccountId>/values/).
 
 ### Refreshing tokens
 
@@ -40,7 +40,7 @@ When the old token expires, any request with it will respond with 401. User shou
 If you only need to supply a single value it might be easiest to use query parameters:
 
 ```
-curl -X POST 'https://moonthor.com/api/values/?p=<Path>&v=<Value>&b=<BotAPIToken>'
+curl -X POST 'https://moonthor.com/api/accounts/<AccountId>/values/?p=<Path>&v=<Value>&b=<BotAPIToken>'
 ```
 
 Often you might have multiple values you want to send in one call, so you just do:
@@ -50,7 +50,7 @@ curl \
     -X POST \
     -H 'Content-Type: application/json' \
     -d '[{p: "<Path>", v: <Value>}, ...]' \
-    'https://moonthor.com/api/values/?b=<BotAPIToken>'
+    'https://moonthor.com/api/accounts/<AccountId>/values/?b=<BotAPIToken>'
 ```
 
 Parameters:
@@ -72,7 +72,7 @@ curl \
     -X PUT \
     -H 'Content-Type: application/json' \
     -d '[{"p": "<Path>", "t": <Timestamp>, "v": <Value>}, ...]' \
-    'https://moonthor.com/api/values/'
+    'https://moonthor.com/api/accounts/<AccountId>/values/'
 ```
 
     Timestamp: will be used to insert data at a specific time. Note that HTTP request is idempotent - last value will overwrite the previous ones for a specified EntitySlug and Timestamp pair. If timestamp is floating point, it is rounded on 3 decimal places (millisecond)
@@ -84,7 +84,7 @@ Note that (as opposed to POST method) JWT token authentication should be used.
 ```
 curl \
     -X DELETE \
-    'https://moonthor.com/api/values/?p=<Path>&t0=<TimestampFrom|TimestampsFrom>&t1=<TimestampTo>'
+    'https://moonthor.com/api/accounts/<AccountId>/values/?p=<Path>&t0=<TimestampFrom|TimestampsFrom>&t1=<TimestampTo>'
 ```
 
 Note: not implemented yet.
@@ -98,7 +98,7 @@ Parameters:
 ## Reading values (GET)
 
 ```
-curl 'https://moonthor.com/api/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>&sort=<SortAscDesc>&limit=<MaxResults>'
+curl 'https://moonthor.com/api/accounts/<AccountId>/values/?p=<Path0[,Path1...]>&t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>&sort=<SortAscDesc>&limit=<MaxResults>'
 ```
 
 Parameters:
@@ -144,7 +144,7 @@ JSON response:
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/paths/?filter=<PathFilter>&limit=<MaxResults>&failover_trailing=<FailoverTrailing>'
+    'https://moonthor.com/api/accounts/<AccountId>/paths/?filter=<PathFilter>&limit=<MaxResults>&failover_trailing=<FailoverTrailing>'
 ```
 
 Parameters:
@@ -173,10 +173,10 @@ JSON response:
     }
 ]
 
-## Deleting paths (DELETE)
+## Deleting paths and associated data (DELETE)
 
 ```
-curl -X DELETE 'https://moonthor.com/api/paths/?p=<Path>'
+curl -X DELETE 'https://moonthor.com/api/accounts/<AccountId>/paths/?p=<Path>'
 ```
 
 CAREFUL! This will also delete the measurements and aggregations.
@@ -193,7 +193,7 @@ curl \
         "name": <DashboardName>, \
         "slug": <DashboardSlug> \
     }' \
-    'https://moonthor.com/api/dashboards/'
+    'https://moonthor.com/api/accounts/<AccountId>/dashboards/'
 ```
 
 Parameters:
@@ -213,7 +213,7 @@ JSON response:
 ## Reading
 
 ```
-curl 'https://moonthor.com/api/dashboards/'
+curl 'https://moonthor.com/api/accounts/<AccountId>/dashboards/'
 ```
 ## Updating
 
@@ -233,7 +233,7 @@ curl \
         "title": <WidgetTitle>, \
         "content": <WidgetContent>, \
     }' \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets'
+    'https://moonthor.com/api/accounts/<AccountId>/dashboards/<DashboardSlug>/widgets'
 ```
 
 Parameters:
@@ -291,7 +291,7 @@ curl \
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets?paths_limit=<PathsLimit>'
+    'https://moonthor.com/api/accounts/<AccountId>/dashboards/<DashboardSlug>/widgets?paths_limit=<PathsLimit>'
 ```
 
 Parameters:
@@ -326,7 +326,7 @@ JSON response:
 ```
 curl \
     -X GET \
-    'https://moonthor.com/api/dashboards/<DashboardSlug>/widgets/<WidgetId>?paths_limit=<PathsLimit>'
+    'https://moonthor.com/api/accounts/<AccountId>/dashboards/<DashboardSlug>/widgets/<WidgetId>?paths_limit=<PathsLimit>'
 ```
 
 Parameters:
@@ -359,7 +359,7 @@ Often one wishes to mark events on charts (version upgrades, sensor detections,.
 ## Writing labels
 
 ```
-curl -X POST 'https://moonthor.com/api/labels/?l=<Label>&e=<EntityBlob>'
+curl -X POST 'https://moonthor.com/api/accounts/<AccountId>/labels/?l=<Label>&e=<EntityBlob>'
 ```
 
 Parameters:
@@ -370,16 +370,16 @@ Parameters:
 The same as with values, timestamp is inferred from the time of HTTP request.
 
 ```
-curl -X PUT 'https://moonthor.com/api/labels/?l=<Label>&t=<TimeStamp>&e=<EntityBlob>'
+curl -X PUT 'https://moonthor.com/api/accounts/<AccountId>/labels/?l=<Label>&t=<TimeStamp>&e=<EntityBlob>'
 ```
 Note that Label + TimeStamp together identify a record. If you wish to change a label, you need to remove the record first and then insert it again.
 
 ```
-curl -X DELETE 'https://moonthor.com/api/labels/?l=<Label>&t=<TimeStamp>'
+curl -X DELETE 'https://moonthor.com/api/accounts/<AccountId>/labels/?l=<Label>&t=<TimeStamp>'
 ```
 
 ```
-curl 'https://moonthor.com/api/labels/?ts=<TimestampFrom>&te=<TimestampTo>'
+curl 'https://moonthor.com/api/accounts/<AccountId>/labels/?ts=<TimestampFrom>&te=<TimestampTo>'
 ```
 
     TimestampFrom: start timestamp (not included)
@@ -447,7 +447,7 @@ curl \
     -d '{ \
         "name": <BotName> \
     }' \
-    'https://moonthor.com/api/bots'
+    'https://moonthor.com/api/accounts/<AccountId>/bots'
 ```
 
 Response:
