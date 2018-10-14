@@ -2,8 +2,8 @@ import { ROOT_URL, handleFetchErrors, onLogout } from "../store/actions";
 import store from "../store";
 
 const _addAuthHeaderToParams = init => {
-  const headers = init.headers || new Headers();
-  headers.append('Authorization', window.sessionStorage['moonthor_jwt_token']);
+  const headers = init.headers || {};
+  headers['Authorization'] = window.sessionStorage['moonthor_jwt_token'];
   return {
     ...init,
     headers: headers,

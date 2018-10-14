@@ -59,8 +59,40 @@ class AdminFirst extends React.Component {
       body: JSON.stringify(params),
     })
       .then(handleFetchErrors)
+      // login temporarily, but forget jwt token: (user must login explicitly)
       .then(() => {
-        store.dispatch(onSuccess('Admin user successfully created.'));
+        const params = {
+          username: this.formValues.username,
+          password: this.formValues.password,
+        };
+        return fetch(`${ROOT_URL}/auth/login`, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(params),
+        })
+      })
+      .then(handleFetchErrors)
+      .then(response => {
+        const jwtToken = response.headers.get('X-JWT-Token');
+        const params = {
+          name: 'First account',
+        };
+        fetch(`${ROOT_URL}/admin/accounts/`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': jwtToken,
+          },
+          method: 'POST',
+          body: JSON.stringify(params),
+        })
+        .then(handleFetchErrors)
+        .then(() => {
+          store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
+        })
+        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
   }

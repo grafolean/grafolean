@@ -37,6 +37,12 @@ def before_request():
     if not flask.request.endpoint in app.view_functions:
         return "Resource not found", 404
 
+    # browser might (if frontend and backend are not on the same origin) send a pre-flight OPTIONS request to get the
+    # CORS settings. In this case 'Authorization' header will not be set, which could lead to 401 response, which browser
+    # doesn't like. So let's just return 200 on all OPTIONS:
+    if flask.request.method == 'OPTIONS':
+        return '', 200
+
     view_func = app.view_functions[flask.request.endpoint]
     # unless we have explicitly user @noauth decorator, do authorization check here:
     if not hasattr(view_func, '_exclude_from_auth'):
