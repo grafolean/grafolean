@@ -57,7 +57,7 @@ const isWidget = WrappedComponent => {
     }
 
     deleteWidget = () => {
-      fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
+      fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
         .then(handleFetchErrors)
         .then(() => {
           store.dispatch(onSuccess('Widget successfully removed.'));

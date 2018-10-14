@@ -67,7 +67,7 @@ export default class MatchingPaths extends React.Component {
       this.setState({
         fetchingError: false,
       });
-      fetchAuth(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
+      fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
         .then(handleFetchErrors)
         .then(response => response.json())
         .then(json => {

@@ -52,7 +52,7 @@ class MoonChart extends React.Component {
       limit: 1001,
       failover_trailing: 'false',
     };
-    fetchAuth(`${ROOT_URL}/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
+    fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -396,7 +396,7 @@ export class ChartContainer extends React.Component {
       fetching: true,
     })
 
-    fetchAuth(`${ROOT_URL}/values?${stringify({
+    fetchAuth(`${ROOT_URL}/accounts/1/values?${stringify({
       p: this.paths.join(","),
       t0: fromTs,
       t1: toTs,

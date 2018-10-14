@@ -134,7 +134,7 @@ export function fetchDashboardsList() {
   return function (dispatch) {
     dispatch(onRequestDashboardsList());
     // return function that will start the request from server:
-    return fetchAuth(`${ROOT_URL}/dashboards`)
+    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`)
       .then(handleFetchErrors)
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
@@ -146,7 +146,7 @@ export function fetchDashboardsList() {
 export function submitNewDashboard(formid, name) {
   return function (dispatch) {
     dispatch(onSubmitDashboard(formid));
-    return fetchAuth(`${ROOT_URL}/dashboards`, {
+    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`, {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -167,7 +167,7 @@ export function submitNewDashboard(formid, name) {
 export function submitDeleteDashboard(slug) {
   return function (dispatch) {
     dispatch(onSubmitDeleteDashboard(slug));
-    return fetchAuth(`${ROOT_URL}/dashboards/${slug}`, {
+    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${slug}`, {
       method: 'DELETE',
     })
     .then(handleFetchErrors)

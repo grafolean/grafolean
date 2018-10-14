@@ -33,7 +33,7 @@ class LastValueWidget extends React.Component {
       sort: 'desc',
       limit: 1,
     };
-    fetchAuth(`${ROOT_URL}/values/?${stringify(query_params)}`, { signal: this.fetchAbortController.signal })
+    fetchAuth(`${ROOT_URL}/accounts/1/values/?${stringify(query_params)}`, { signal: this.fetchAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {

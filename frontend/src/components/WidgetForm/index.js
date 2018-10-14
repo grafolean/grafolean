@@ -49,7 +49,7 @@ export default class WidgetForm extends React.Component {
     const query_params = {
       paths_limit: 0,
     };
-    fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}?${stringify(query_params)}`, { signal: this.fetchWidgetDataAbortController.signal })
+    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}?${stringify(query_params)}`, { signal: this.fetchWidgetDataAbortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -102,7 +102,7 @@ export default class WidgetForm extends React.Component {
       title: widgetName,
       content: JSON.stringify(this.alteredWidgetData[widgetType].content),
     }
-    fetchAuth(`${ROOT_URL}/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
+    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`, {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',

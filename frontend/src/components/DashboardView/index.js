@@ -43,7 +43,7 @@ export default class DashboardView extends React.Component {
       loading: true,
     });
     this.abortController = new window.AbortController()
-    fetchAuth(`${ROOT_URL}/dashboards/${this.props.match.params.slug}`, {
+    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.match.params.slug}`, {
       signal: this.abortController.signal,
     })
       .then(handleFetchErrors)
