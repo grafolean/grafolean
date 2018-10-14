@@ -61,13 +61,22 @@ def authorization_header(app_client, first_admin_exists):
     assert auth_header[:9] == 'Bearer 1:'
     return auth_header
 
-def test_values_put_get_simple(app_client, authorization_header):
+@pytest.fixture
+def account_id(app_client, authorization_header):
+    data = { 'name': 'First account' }
+    r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': authorization_header})
+    assert r.status_code == 201
+    account_id = json.loads(r.data.decode('utf-8'))['id']
+    return account_id
+
+
+def test_values_put_get_simple(app_client, authorization_header, account_id):
     """
         Put a value, get a value.
     """
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
-    app_client.put('/api/accounts/1/values/', data=json.dumps(data), content_type='application/json')
-    r = app_client.get('/api/accounts/1/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no', headers={'Authorization': authorization_header})
+    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
+    r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': authorization_header})
     expected = {
         'paths': {
             'qqqq.wwww': {
@@ -82,13 +91,13 @@ def test_values_put_get_simple(app_client, authorization_header):
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-def test_values_put_get_noaggrparam_redirect(app_client, authorization_header):
+def test_values_put_get_noaggrparam_redirect(app_client, authorization_header, account_id):
     """
         Try to get values without aggr param, get redirected.
     """
     t_from = 1330000000
     t_to = 1330000000 + 100*15*60 + 1
-    url = '/api/accounts/1/values/?p=aaaa.bbbb&t0={}&t1={}&max=10'.format(t_from, t_to)
+    url = '/api/accounts/{}/values/?p=aaaa.bbbb&t0={}&t1={}&max=10'.format(account_id, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': authorization_header})
 
     assert r.status_code == 301
@@ -99,7 +108,7 @@ def test_values_put_get_noaggrparam_redirect(app_client, authorization_header):
             redirect_location = value
     assert redirect_location[-len(url)-5:] == url + '&a=no'
 
-def test_values_put_get_sort_limit(app_client, authorization_header):
+def test_values_put_get_sort_limit(app_client, authorization_header, account_id):
     """
         Try to get values without aggr param, get redirected.
     """
@@ -110,9 +119,9 @@ def test_values_put_get_sort_limit(app_client, authorization_header):
         {'p': TEST_PATH, 't': 1330002000 + 560, 'v': 140},
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
-    app_client.put('/api/accounts/1/values/', data=json.dumps(data), content_type='application/json')
+    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
 
-    url = '/api/accounts/1/values/?p={}&a=no&sort=desc&limit=2'.format(TEST_PATH)
+    url = '/api/accounts/{}/values/?p={}&a=no&sort=desc&limit=2'.format(account_id, TEST_PATH)
     r = app_client.get(url, headers={'Authorization': authorization_header})
 
     expected = {
@@ -132,7 +141,7 @@ def test_values_put_get_sort_limit(app_client, authorization_header):
     #pprint(actual)
     assert expected == actual
 
-def test_values_put_few_get_aggr(app_client, authorization_header):
+def test_values_put_few_get_aggr(app_client, authorization_header, account_id):
     """
         Put a few values, get aggregated value.
     """
@@ -144,10 +153,10 @@ def test_values_put_few_get_aggr(app_client, authorization_header):
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
 
-    app_client.put('/api/accounts/1/values/', data=json.dumps(data), content_type='application/json')
+    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
     t_from = 1330002000  # aggr level 0 - every 1 hour
     t_to = t_from + 1*3600
-    url = '/api/accounts/1/values/?p={}&t0={}&t1={}&a=0'.format(TEST_PATH, t_from, t_to)
+    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&a=0'.format(account_id, TEST_PATH, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': authorization_header})
 
     expected = {
@@ -167,7 +176,7 @@ def test_values_put_few_get_aggr(app_client, authorization_header):
     assert expected == actual
 
 #@pytest.mark.skip(reason="removing aggregated data is not implemented, so this test fails when repeated! Otherwise it works with fresh DB.")
-def test_values_put_many_get_aggr(app_client, authorization_header):
+def test_values_put_many_get_aggr(app_client, authorization_header, account_id):
     """
         Put many values, get aggregated value. Delete path and values.
     """
@@ -183,9 +192,9 @@ def test_values_put_many_get_aggr(app_client, authorization_header):
         #     {'t': 1234567890.123456, 'v': 111.22}
         # ]}}
 
-        app_client.put('/api/accounts/1/values/', data=json.dumps(data), content_type='application/json')
+        app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
         #print(t_from, t_to)
-        url = '/api/accounts/1/values/?p={}&t0={}&t1={}&max=10&a=3'.format(TEST_PATH, t_from, t_to)
+        url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
         r = app_client.get(url, headers={'Authorization': authorization_header})
 
         expected = {
@@ -204,17 +213,17 @@ def test_values_put_many_get_aggr(app_client, authorization_header):
         #pprint(actual)
         assert expected == actual
     finally:
-        r = app_client.delete('/api/accounts/1/paths/?p={}'.format(TEST_PATH), headers={'Authorization': authorization_header})
+        r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': authorization_header})
         assert r.status_code == 200
 
-def test_paths_delete_need_auth(app_client, authorization_header):
+def test_paths_delete_need_auth(app_client, authorization_header, account_id):
     TEST_PATH = 'test.values.put.many.get.aggr'
-    r = app_client.delete('/api/accounts/1/paths/?p={}'.format(TEST_PATH))
+    r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH))
     assert r.status_code == 401
-    r = app_client.delete('/api/accounts/1/paths/?p={}'.format(TEST_PATH), headers={'Authorization': authorization_header})
+    r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': authorization_header})
     assert r.status_code == 404  # because path is not found, of course
 
-def test_dashboards_widgets_post_get(app_client, authorization_header):
+def test_dashboards_widgets_post_get(app_client, authorization_header, account_id):
     """
         Create a dashboard, get a dashboard, create a widget, get a widget. Delete the dashboard, get 404.
     """
@@ -222,10 +231,10 @@ def test_dashboards_widgets_post_get(app_client, authorization_header):
     try:
         WIDGET = 'chart1'
         data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
-        r = app_client.post('/api/accounts/1/dashboards/', data=json.dumps(data), content_type='application/json', headers={'Authorization': authorization_header})
+        r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': authorization_header})
         assert r.status_code == 201
 
-        r = app_client.get('/api/accounts/1/dashboards/{}'.format(DASHBOARD), headers={'Authorization': authorization_header})
+        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': authorization_header})
         expected = {
             'name': DASHBOARD + ' name',
             'slug': DASHBOARD,
@@ -247,11 +256,11 @@ def test_dashboards_widgets_post_get(app_client, authorization_header):
                 }
             ])
         }
-        r = app_client.post('/api/accounts/1/dashboards/{}/widgets/'.format(DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': authorization_header})
+        r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': authorization_header})
         assert r.status_code == 201
         widget_id = json.loads(r.data.decode('utf-8'))['id']
 
-        r = app_client.get('/api/accounts/1/dashboards/{}/widgets/'.format(DASHBOARD), headers={'Authorization': authorization_header})
+        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': authorization_header})
         actual = json.loads(r.data.decode('utf-8'))
         widget_post_data['id'] = widget_id
         expected = {
@@ -275,11 +284,11 @@ def test_dashboards_widgets_post_get(app_client, authorization_header):
                 }
             ])
         }
-        r = app_client.put('/api/accounts/1/dashboards/{}/widgets/{}'.format(DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': authorization_header})
+        r = app_client.put('/api/accounts/{}/dashboards/{}/widgets/{}'.format(account_id, DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': authorization_header})
         assert r.status_code == 204
 
         # make sure it was updated:
-        r = app_client.get('/api/accounts/1/dashboards/{}/widgets/'.format(DASHBOARD), headers={'Authorization': authorization_header})
+        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': authorization_header})
         actual = json.loads(r.data.decode('utf-8'))
         widget_post_data['id'] = widget_id
         expected = {
@@ -291,33 +300,33 @@ def test_dashboards_widgets_post_get(app_client, authorization_header):
         assert expected == actual
 
         # get a single widget:
-        r = app_client.get('/api/accounts/1/dashboards/{}/widgets/{}/'.format(DASHBOARD, widget_id), headers={'Authorization': authorization_header})
+        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': authorization_header})
         actual = json.loads(r.data.decode('utf-8'))
         expected = widget_post_data
         assert r.status_code == 200
         assert expected == actual
 
         # delete dashboard:
-        r = app_client.delete('/api/accounts/1/dashboards/{}'.format(DASHBOARD), headers={'Authorization': authorization_header})
+        r = app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': authorization_header})
         assert r.status_code == 200
-        r = app_client.get('/api/accounts/1/dashboards/{}'.format(DASHBOARD), headers={'Authorization': authorization_header})
+        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': authorization_header})
         assert r.status_code == 404
 
     except:
         # if something went wrong, delete dashboard so the next run can succeed:
-        app_client.delete('/api/accounts/1/dashboards/{}'.format(DASHBOARD))
+        app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD))
         raise
 
 @pytest.mark.skip(reason="no idea.")
-def test_values_put_paths_get(app_client):
+def test_values_put_paths_get(app_client, authorization_header, account_id):
     """
         Put values, get paths.
     """
     PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
     data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
-    app_client.put('/api/accounts/1/values/', data=json.dumps(data), content_type='application/json')
+    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
 
-    r = app_client.get('/api/accounts/1/paths/?filter=test.values.put.paths.get.*')
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id))
     expected = {
         'paths': {
             'test.values.put.paths.get.*': [
@@ -329,24 +338,24 @@ def test_values_put_paths_get(app_client):
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    r = app_client.get('/api/accounts/1/paths/?filter=test.*&failover_trailing=false')
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.*&failover_trailing=false'.format(account_id))
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
 
-    r = app_client.get('/api/accounts/1/paths/?filter=test.&failover_trailing=false')
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.&failover_trailing=false'.format(account_id))
     assert r.status_code == 400
-    r = app_client.get('/api/accounts/1/paths/?filter=test.')  # same - failover_trailing=false is default option
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.'.format(account_id))  # same - failover_trailing=false is default option
     assert r.status_code == 400
 
     for prefix in ['t', 'te', 'tes', 'test', 'test.', 'test.v']:
-        r = app_client.get('/api/accounts/1/paths/?filter={}&failover_trailing=true'.format(prefix))
+        r = app_client.get('/api/accounts/{}/paths/?filter={}&failover_trailing=true'.format(account_id, prefix))
         actual = json.loads(r.data.decode('utf-8'))
         assert actual['paths'] == {}
         assert PATH in actual['paths_with_trailing'][prefix]
         for path in actual['paths_with_trailing'][prefix]:
            assert path[:len(prefix)] == prefix
 
-    r = app_client.get('/api/accounts/1/paths/?filter=test.*,test.values.*')
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.*,test.values.*'.format(account_id))
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
     assert PATH in actual['paths']['test.values.*']

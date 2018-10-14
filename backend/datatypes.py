@@ -33,36 +33,37 @@ class _RegexValidatedInputValue(object):
 class Path(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-zA-Z0-9_-]+)([.][a-zA-Z0-9_-]+)*$')
 
-    def __init__(self, v, ensure_in_db=False):
+    def __init__(self, account_id, v, ensure_in_db=False):
         super().__init__(v)
         if ensure_in_db:
-            self.path_id = Path._get_path_id_from_db(path=self.v)
+            self.path_id = Path._get_path_id_from_db(account_id, path=self.v)
 
     @staticmethod
     @lru_cache(maxsize=256)
-    def _get_path_id_from_db(path):
+    def _get_path_id_from_db(account_id, path):
         with db.cursor() as c:
             path_cleaned = path.strip()
-            c.execute('SELECT id FROM paths WHERE path=%s;', (path_cleaned,))
+            c.execute('SELECT id FROM paths WHERE account = %s AND path=%s;', (account_id, path_cleaned,))
             res = c.fetchone()
             if not res:
-                c.execute('INSERT INTO paths (path) VALUES (%s) RETURNING id;', (path_cleaned,))
+                c.execute('INSERT INTO paths (account, path) VALUES (%s, %s) RETURNING id;', (account_id, path_cleaned,))
                 res = c.fetchone()
             path_id = res[0]
             return path_id
 
-    @staticmethod
-    def get_all_paths():
-        with db.cursor() as c:
-            c.execute('SELECT path FROM paths ORDER BY path;')
-            for path, in c:
-                yield(path)
+    # this can probably be removed:
+    # @staticmethod
+    # def get_all_paths():
+    #     with db.cursor() as c:
+    #         c.execute('SELECT path FROM paths ORDER BY path;')
+    #         for path, in c:
+    #             yield(path)
 
     @classmethod
-    def delete(cls, path):
+    def delete(cls, account_id, path):
         with db.cursor() as c:
             # delete just the path, "ON DELETE CASCADE" takes care of removing values and aggregations:
-            c.execute('DELETE FROM paths WHERE path = %s;', (str(path),))
+            c.execute('DELETE FROM paths WHERE account = %s AND path = %s;', (account_id, str(path),))
             return c.rowcount
 
 
@@ -70,11 +71,11 @@ class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-zA-Z0-9_-]+|[*?])([.]([a-zA-Z0-9_-]+|[*?]))*$')
 
     @staticmethod
-    def find_matching_paths(path_filters, limit=200, allow_trailing_chars=False):
+    def find_matching_paths(account_id, path_filters, limit=200, allow_trailing_chars=False):
         all_found_paths = set()
         was_limit_reached = False
         for pf in path_filters:
-            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(pf, limit, allow_trailing_chars)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
+            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(account_id, pf, limit, allow_trailing_chars)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
             all_found_paths |= found_paths
             if was_limit_reached or len(all_found_paths) > limit:
                 # always return only up to a limit elements:
@@ -84,11 +85,11 @@ class PathFilter(_RegexValidatedInputValue):
 
     @staticmethod
     @lru_cache(maxsize=1024)
-    def _find_matching_paths_for_filter(path_filter, total_limit, allow_trailing_chars=False):
+    def _find_matching_paths_for_filter(account_id, path_filter, total_limit, allow_trailing_chars=False):
         found_paths = set()
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
-            c.execute('SELECT path FROM paths WHERE path ~ %s ORDER BY path LIMIT %s;', (pf_regex, total_limit + 1,))
+            c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, total_limit + 1,))
             for res in c:
                 if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
                     return found_paths, True
@@ -201,13 +202,13 @@ class Measurement(object):
 
     MAX_DATAPOINTS_RETURNED = 100000
 
-    def __init__(self, path, ts, value):
-        self.path = Path(path)
+    def __init__(self, account_id, path, ts, value):
+        self.path = Path(account_id, path)
         self.ts = Timestamp(ts)
         self.value = MeasuredValue(value)
 
     @classmethod
-    def save_values_data_to_db(cls, put_data, update_on_conflict=True):
+    def save_values_data_to_db(cls, account_id, put_data, update_on_conflict=True):
 
         aggr = Aggregation()
         try:
@@ -215,7 +216,7 @@ class Measurement(object):
             def _get_data(put_data, aggr):
                 for x in put_data:
                     ts_str = str(Timestamp(x['t']))
-                    path = Path(x['p'], ensure_in_db=True)
+                    path = Path(account_id, x['p'], ensure_in_db=True)
                     # while we are traversing our data, we might as well mark the dirty aggregation blocks:
                     aggr.mark_timestamp_as_dirty(path.path_id, ts_str)
                     yield (path.path_id, ts_str, str(MeasuredValue(x['v'])),)
@@ -246,7 +247,7 @@ class Measurement(object):
         return Aggregation.MAX_AGGR_LEVEL
 
     @classmethod
-    def fetch_data(cls, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records):
+    def fetch_data(cls, account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records):
         # t_froms: an array of t_from, one for each path (because the subsequent fetchings usually request a different t_from for each path)
         paths_data = {}
         sort_order = 'ASC' if should_sort_asc else 'DESC'  # PgSQL doesn't allow sort order to be parametrized
@@ -254,7 +255,7 @@ class Measurement(object):
             for p, t_from in zip(paths, t_froms):
                 str_p = str(p)
                 path_data = []
-                path_id = Path._get_path_id_from_db(str_p)
+                path_id = Path._get_path_id_from_db(account_id, str_p)
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
@@ -281,8 +282,8 @@ class Measurement(object):
         return paths_data
 
     @classmethod
-    def get_oldest_measurement_time(cls, paths):
-        path_ids = tuple(Path._get_path_id_from_db(str(p)) for p in paths)
+    def get_oldest_measurement_time(cls, account_id, paths):
+        path_ids = tuple(Path._get_path_id_from_db(account_id, str(p)) for p in paths)
         with db.cursor() as c:
             c.execute('SELECT MIN(ts) FROM measurements WHERE path IN %s;', (path_ids,))
             res = c.fetchone()
@@ -305,7 +306,7 @@ class Widget(object):
         self.widget_id = widget_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, dashboard_slug, widget_id=None):
+    def forge_from_input(cls, account_id, dashboard_slug, flask_request, widget_id=None):
         inputs = WidgetSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
@@ -316,7 +317,7 @@ class Widget(object):
         title = data['title']
         content = data['content']
         # users reference the dashboards by its slug, but we need to know its ID:
-        dashboard_id = Dashboard.get_id(dashboard_slug)
+        dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
@@ -349,15 +350,15 @@ class Widget(object):
             return rowcount
 
     @staticmethod
-    def delete(dashboard_slug, widget_id):
-        dashboard_id = Dashboard.get_id(dashboard_slug)
+    def delete(account_id, dashboard_slug, widget_id):
+        dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         with db.cursor() as c:
             c.execute("DELETE FROM widgets WHERE id = %s and dashboard = %s;", (widget_id, dashboard_id,))
             return c.rowcount
 
     @staticmethod
-    def get_list(dashboard_slug, paths_limit=200):
-        dashboard_id = Dashboard.get_id(dashboard_slug)
+    def get_list(account_id, dashboard_slug, paths_limit=200):
+        dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
@@ -386,8 +387,8 @@ class Widget(object):
             return ret
 
     @staticmethod
-    def get(dashboard_slug, widget_id, paths_limit=200):
-        dashboard_id = Dashboard.get_id(dashboard_slug)
+    def get(account_id, dashboard_slug, widget_id, paths_limit=200):
+        dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
@@ -419,12 +420,13 @@ class Widget(object):
 
 class Dashboard(object):
 
-    def __init__(self, name, slug):
+    def __init__(self, account_id, name, slug):
+        self.account_id = account_id
         self.name = name
         self.slug = slug
 
     @classmethod
-    def forge_from_input(cls, flask_request, force_slug=None):
+    def forge_from_input(cls, account_id, flask_request, force_slug=None):
         """ This function validates input and returns an object which can be used for inserting or updating. """
         for inputs in [DashboardSchemaInputs(flask_request), DashboardInputs(flask_request)]:
             if not inputs.validate():
@@ -439,59 +441,59 @@ class Dashboard(object):
             slug = force_slug
         else:
             if not slug:
-                slug = cls._suggest_new_slug(name)
-        return cls(name, slug)
+                slug = cls._suggest_new_slug(account_id, name)
+        return cls(account_id, name, slug)
 
     @classmethod
-    def _suggest_new_slug(cls, name):
+    def _suggest_new_slug(cls, account_id, name):
         # Find a suitable slug from name, appending numbers for as long as it takes to find a non-existing slug.
         # This is probably not 100% race-condition safe, but it doesn't matter - unique contraint is on DB level,
         # and this is just a nicety from us.
         postfix_nr = 1
         while True:
             slug = slugify(name) + ('' if postfix_nr == 1 else '-{}'.format(postfix_nr))
-            if Dashboard.get_id(slug) is None:
+            if Dashboard.get_id(account_id, slug) is None:
                 return slug  # we have found a slug which doesn't exist yet, use it
             postfix_nr += 1
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO dashboards (name, slug) VALUES (%s, %s);", (self.name, self.slug,))
+            c.execute("INSERT INTO dashboards (name, account, slug) VALUES (%s, %s, %s);", (self.name, self.account_id, self.slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
             Dashboard.get_id.cache_clear()
 
     def update(self):
         with db.cursor() as c:
-            c.execute("UPDATE dashboards SET name = %s WHERE slug = %s;", (self.name, self.slug,))
+            c.execute("UPDATE dashboards SET name = %s WHERE account = %s AND slug = %s;", (self.name, self.account_id, self.slug,))
             return c.rowcount
 
     @staticmethod
-    def delete(slug):
+    def delete(account_id, slug):
         with db.cursor() as c:
-            c.execute("DELETE FROM dashboards WHERE slug = %s;", (slug,))
+            c.execute("DELETE FROM dashboards WHERE account = %s AND slug = %s;", (account_id, slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning the old ID instead of None:
             Dashboard.get_id.cache_clear()
             return c.rowcount
 
     @staticmethod
-    def get_list():
+    def get_list(account_id):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT name, slug FROM dashboards ORDER BY name;')
+            c.execute('SELECT name, slug FROM dashboards WHERE account = %s ORDER BY name;', (account_id,))
             for name, slug in c:
                 ret.append({'name': name, 'slug': slug})
             return ret
 
     @staticmethod
-    def get(slug):
+    def get(account_id, slug):
         with db.cursor() as c:
-            c.execute('SELECT name FROM dashboards WHERE slug = %s;', (slug,))
+            c.execute('SELECT name FROM dashboards WHERE account = %s AND slug = %s;', (account_id, slug,))
             res = c.fetchone()
             if not res:
                 return None
             name = res[0]
 
-        widgets = Widget.get_list(slug)
+        widgets = Widget.get_list(account_id, slug)
         return {
             'name': name,
             'slug': slug,
@@ -500,12 +502,12 @@ class Dashboard(object):
 
     @staticmethod
     @lru_cache(maxsize=256)
-    def get_id(slug):
+    def get_id(account_id, slug):
         """ This is a *cached* function which returns ID based on dashboard slug. Make sure
             to invalidate lru_cache whenever one of the existing slug <-> ID relationships
             changes in any way (delete, insert). """
         with db.cursor() as c:
-            c.execute('SELECT id FROM dashboards WHERE slug = %s;', (slug,))
+            c.execute('SELECT id FROM dashboards WHERE account = %s AND slug = %s;', (account_id, slug,))
             res = c.fetchone()
             if not res:
                 return None
@@ -529,8 +531,8 @@ class Account(object):
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO accounts (name) VALUES (%s) RETURNING id;", (self.name,))
-            bot_id = c.fetchone()[0]
-            return bot_id
+            account_id = c.fetchone()[0]
+            return account_id
 
     @staticmethod
     def get_list():

@@ -210,10 +210,10 @@ def accounts_crud():
     elif flask.request.method == 'POST':
         account = Account.forge_from_input(flask.request)
         try:
-            account.insert()
+            account_id = account.insert()
+            return json.dumps({'name': account.name, 'id': account_id}), 201
         except psycopg2.IntegrityError:
             return "Account with this name already exists", 400
-        return json.dumps({'name': account.name}), 201
 
 
 @app.route('/api/accounts/<string:account_id>/bots', methods=['POST'])
@@ -232,7 +232,7 @@ def bot_post(account_id):
 def values_put(account_id):
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-    Measurement.save_values_data_to_db(data)
+    Measurement.save_values_data_to_db(account_id, data)
     return ""
 
 
@@ -267,7 +267,7 @@ def values_post(account_id):
         return "Missing data", 400
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-    Measurement.save_values_data_to_db(data)
+    Measurement.save_values_data_to_db(account_id, data)
     return ""
 
 
@@ -278,7 +278,7 @@ def values_get(account_id):
     if paths_input is None:
         return "Missing parameter: p\n\n", 400
     try:
-        paths = [Path(p) for p in paths_input.split(',')]
+        paths = [Path(account_id, p) for p in paths_input.split(',')]
     except:
         return "Invalid parameter: p\n\n", 400
 
@@ -292,7 +292,7 @@ def values_get(account_id):
         else:
             return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
     else:
-        t_from = Measurement.get_oldest_measurement_time(paths)
+        t_from = Measurement.get_oldest_measurement_time(account_id, paths)
         if not t_from:
             t_from = Timestamp(time.time())
         t_froms = [t_from for _ in paths]
@@ -346,7 +346,7 @@ def values_get(account_id):
         return "End date is not aligned to aggregation level\n\n", 400
 
     # finally, return the data:
-    paths_data = Measurement.fetch_data(paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
+    paths_data = Measurement.fetch_data(account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
     return json.dumps({
         'paths': paths_data,
     }), 200
@@ -368,7 +368,7 @@ def paths_get(account_id):
         any_limit_reached = False
         for path_filter_input in str(path_filters_input).split(','):
             pf = str(PathFilter(path_filter_input))
-            matching_paths[pf], limit_reached = PathFilter.find_matching_paths([pf], limit=max_results)
+            matching_paths[pf], limit_reached = PathFilter.find_matching_paths(account_id, [pf], limit=max_results)
             any_found = len(matching_paths[pf]) > 0 or any_found
             any_limit_reached = any_limit_reached or limit_reached
     except ValidationError:
@@ -386,7 +386,7 @@ def paths_get(account_id):
         ret['paths_with_trailing'] = {}
         for path_filter_input in str(path_filters_input).split(','):
             upf = str(UnfinishedPathFilter(path_filter_input))
-            ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths([upf], limit=max_results, allow_trailing_chars=True)
+            ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths(account_id, [upf], limit=max_results, allow_trailing_chars=True)
             ret['limit_reached'] = ret['limit_reached'] or limit_reached
 
     return json.dumps(ret), 200
@@ -398,11 +398,11 @@ def path_delete(account_id):
         return "Missing parameter: p\n\n", 400
 
     try:
-        path = Path(path_input)
+        path = Path(account_id, path_input)
     except:
         return "Invalid parameter: p\n\n", 400
 
-    rowcount = Path.delete(str(path))
+    rowcount = Path.delete(account_id, str(path))
     if not rowcount:
         return "No such path", 404
     return "", 200
@@ -410,11 +410,11 @@ def path_delete(account_id):
 @app.route("/api/accounts/<string:account_id>/dashboards", methods=['GET', 'POST'])
 def dashboards_crud(account_id):
     if flask.request.method == 'GET':
-        rec = Dashboard.get_list()
+        rec = Dashboard.get_list(account_id)
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        dashboard = Dashboard.forge_from_input(flask.request)
+        dashboard = Dashboard.forge_from_input(account_id, flask.request)
         try:
             dashboard.insert()
         except psycopg2.IntegrityError:
@@ -425,20 +425,20 @@ def dashboards_crud(account_id):
 @app.route("/api/accounts/<string:account_id>/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
 def dashboard_crud(account_id, dashboard_slug):
     if flask.request.method == 'GET':
-        rec = Dashboard.get(slug=dashboard_slug)
+        rec = Dashboard.get(account_id, slug=dashboard_slug)
         if not rec:
             return "No such dashboard", 404
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        dashboard = Dashboard.forge_from_input(flask.request, force_slug=dashboard_slug)
+        dashboard = Dashboard.forge_from_input(account_id, flask.request, force_slug=dashboard_slug)
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
         return "", 204
 
     elif flask.request.method == 'DELETE':
-        rowcount = Dashboard.delete(dashboard_slug)
+        rowcount = Dashboard.delete(account_id, dashboard_slug)
         if not rowcount:
             return "No such dashboard", 404
         return "", 200
@@ -451,10 +451,10 @@ def widgets_crud(account_id, dashboard_slug):
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:
             return "Invalid parameter: paths_limit\n\n", 400
-        rec = Widget.get_list(dashboard_slug, paths_limit=paths_limit)
+        rec = Widget.get_list(account_id, dashboard_slug, paths_limit=paths_limit)
         return json.dumps({'list': rec}), 200
     elif flask.request.method == 'POST':
-        widget = Widget.forge_from_input(flask.request, dashboard_slug)
+        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request)
         try:
             widget_id = widget.insert()
         except psycopg2.IntegrityError:
@@ -474,13 +474,13 @@ def widget_crud(account_id, dashboard_slug, widget_id):
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:
             return "Invalid parameter: paths_limit\n\n", 400
-        rec = Widget.get(dashboard_slug, widget_id, paths_limit=paths_limit)
+        rec = Widget.get(account_id, dashboard_slug, widget_id, paths_limit=paths_limit)
         if not rec:
             return "No such widget", 404
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        widget = Widget.forge_from_input(flask.request, dashboard_slug, widget_id=widget_id)
+        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request, widget_id=widget_id)
         rowcount = widget.update()
         if not rowcount:
             return "No such widget", 404
@@ -488,7 +488,7 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 
     elif flask.request.method == 'DELETE':
-        rowcount = Widget.delete(dashboard_slug, widget_id)
+        rowcount = Widget.delete(account_id, dashboard_slug, widget_id)
         if not rowcount:
             return "No such widget", 404
         return "", 200
