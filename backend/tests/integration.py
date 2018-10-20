@@ -14,6 +14,7 @@ from auth import JWT
 
 TEST_USERNAME = 'admin'
 TEST_PASSWORD = 'asdf123'
+EXPECTED_FIRST_ADMIN_ID = 1
 
 
 def _delete_all_from_db():
@@ -52,7 +53,7 @@ def first_admin_exists(app_client):
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
-    assert int(admin_id) == 1
+    assert int(admin_id) == EXPECTED_FIRST_ADMIN_ID
     return True
 
 @pytest.fixture
@@ -371,7 +372,7 @@ def test_accounts(app_client):
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
-    assert int(admin_id) == 1
+    assert int(admin_id) == EXPECTED_FIRST_ADMIN_ID
 
     # next fails:
     data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@example.com' }
@@ -471,14 +472,14 @@ def test_permissions_post_get(app_client, authorization_header):
     assert actual == { 'list': [
         {
             'id': 1,
-            'username': TEST_USERNAME,
+            'user_id': EXPECTED_FIRST_ADMIN_ID,
             'url_prefix': None,
             'methods': None,
         }
     ]}
 
     data = {
-        'username': TEST_USERNAME,
+        'user_id': EXPECTED_FIRST_ADMIN_ID,
         'url_prefix': 'accounts/1/',
         'methods': [ 'GET', 'POST' ],
     }
@@ -494,7 +495,7 @@ def test_permissions_post_get(app_client, authorization_header):
     new_record = [x for x in actual['list'] if x['id'] == 2][0]
     assert new_record == {
         'id': 2,
-        'username': data['username'],
+        'user_id': data['user_id'],
         'url_prefix': data['url_prefix'],
         'methods': '{GET,POST}',
     }

@@ -162,7 +162,7 @@ def admin_first_post():
     admin = User.forge_from_input(flask.request)
     admin_id = admin.insert()
     # make it a superuser:
-    permission = Permission(admin.username, None, None)
+    permission = Permission(admin_id, None, None)
     permission.insert()
     return json.dumps({
         'id': admin_id,
@@ -181,13 +181,12 @@ def admin_permissions_crud():
         try:
             permission_id = permission.insert()
             return json.dumps({
-                'username': permission.username,
+                'user_id': permission.user_id,
                 'url_prefix': permission.url_prefix,
                 'methods': permission.methods,
                 'id': permission_id,
             }), 201
         except psycopg2.IntegrityError:
-            raise
             return "Account with this name already exists", 400
 
 

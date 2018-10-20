@@ -545,8 +545,8 @@ class Account(object):
 
 
 class Permission(object):
-    def __init__(self, username, url_prefix, methods):
-        self.username = username
+    def __init__(self, user_id, url_prefix, methods):
+        self.user_id = user_id
         self.url_prefix = url_prefix
         self.methods = methods
 
@@ -556,24 +556,28 @@ class Permission(object):
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-        return cls(data['username'], data['url_prefix'], data['methods'])
+        return cls(data['user_id'], data['url_prefix'], data['methods'])
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, username, url_prefix, methods FROM permissions ORDER BY username, url_prefix, id;')
-            for permission_id, username, url_prefix, methods in c:
-                ret.append({'id': permission_id, 'username': username, 'url_prefix': url_prefix, 'methods': methods})
+            c.execute('SELECT id, user_id, url_prefix, methods FROM permissions ORDER BY user_id, url_prefix, id;')
+            for permission_id, user_id, url_prefix, methods in c:
+                ret.append({'id': permission_id, 'user_id': user_id, 'url_prefix': url_prefix, 'methods': methods})
             return ret
 
     def insert(self):
         with db.cursor() as c:
             methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
-            c.execute("INSERT INTO permissions (username, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.username, self.url_prefix, methods_array,))
+            c.execute("INSERT INTO permissions (user_id, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.url_prefix, methods_array,))
             account_id = c.fetchone()[0]
             return account_id
 
+
+    @staticmethod
+    def check_access_allowed(user_id, url, method):
+        return True
 
 class Bot(object):
     def __init__(self, account_id, name):
