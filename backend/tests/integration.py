@@ -463,12 +463,19 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
 
 def test_permissions_post_get(app_client, authorization_header):
     """
-        Fetch permissions, should be empty, post and get again, should be there
+        Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
     r = app_client.get('/api/admin/permissions', headers={'Authorization': authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual == { 'list': [] }
+    assert actual == { 'list': [
+        {
+            'id': 1,
+            'username': TEST_USERNAME,
+            'url_prefix': None,
+            'methods': None,
+        }
+    ]}
 
     data = {
         'username': TEST_USERNAME,
@@ -478,17 +485,18 @@ def test_permissions_post_get(app_client, authorization_header):
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': authorization_header})
     assert r.status_code == 201
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual['id'] == 1
+    assert actual['id'] == 2
 
     r = app_client.get('/api/admin/permissions', headers={'Authorization': authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual == { 'list': [
-        {
-            'id': 1,
-            'username': data['username'],
-            'url_prefix': data['url_prefix'],
-            'methods': '{GET,POST}',
-        }
-    ]}
+    assert len(actual['list']) == 2
+    new_record = [x for x in actual['list'] if x['id'] == 2][0]
+    assert new_record == {
+        'id': 2,
+        'username': data['username'],
+        'url_prefix': data['url_prefix'],
+        'methods': '{GET,POST}',
+    }
+
 

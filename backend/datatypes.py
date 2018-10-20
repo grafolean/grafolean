@@ -569,7 +569,7 @@ class Permission(object):
 
     def insert(self):
         with db.cursor() as c:
-            methods_array = '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
+            methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
             c.execute("INSERT INTO permissions (username, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.username, self.url_prefix, methods_array,))
             account_id = c.fetchone()[0]
             return account_id
