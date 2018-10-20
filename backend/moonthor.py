@@ -9,7 +9,7 @@ import re
 import secrets
 import time
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, User, Account, Bot, Credentials
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, User, Account, Permission, Bot, Credentials
 import utils
 from auth import Auth, JWT
 
@@ -90,7 +90,7 @@ def after_request(response):
 def handle_invalid_usage(error):
     return str(error), 400
 
-
+# TODO!!! bot login needs to be revisited
 def needs_valid_bot_token(f):
     @wraps(f)
     def wrap(*args, **kwargs):
@@ -164,6 +164,28 @@ def admin_first_post():
     return json.dumps({
         'id': admin_id,
     }), 201
+
+
+@app.route('/api/admin/permissions', methods=['GET', 'POST'])
+@only_admin
+def admin_permissions_crud():
+    if flask.request.method == 'GET':
+        rec = Permission.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        permission = Permission.forge_from_input(flask.request)
+        try:
+            permission_id = permission.insert()
+            return json.dumps({
+                'username': permission.username,
+                'url_prefix': permission.url_prefix,
+                'methods': permission.methods,
+                'id': permission_id,
+            }), 201
+        except psycopg2.IntegrityError:
+            raise
+            return "Account with this name already exists", 400
 
 
 # --------------

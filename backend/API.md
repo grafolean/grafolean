@@ -33,6 +33,24 @@ This part of `curl` command should be used everywhere in the examples below (exc
 When the old token expires, any request with it will respond with 401. User should then obtain new token through /api/auth/refresh and repeat the request in question.
 
 
+## Access control (authorization)
+
+System maintains a list of permissions, each of which is defined by:
+
+  - user id (or none if it applies to all users)
+  - url prefix (or none if it applies to all urls)
+  - method(s) (or none if it applies to all methods)
+
+User's request is authorized if there exists a record which conforms to all of the above conditions.
+
+This allows us to implement very different protections:
+
+  - a superuser which can access everything (like the one generated through /admin/first/)
+  - a readonly user which can access all account, but change nothing (for example, for support users)
+  - a normal user, linked to one or multiple accounts
+  - a readonly user, linked to a single account
+  - resources which are publicly readable (that is, visible to every user)
+
 # Values
 
 ## Sending values without timestamps (POST)

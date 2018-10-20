@@ -80,6 +80,27 @@ class AccountSchemaInputs(Inputs):
     })]
 
 
+class PermissionSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'username': {'type': ['string', 'null']},
+            'url_prefix': {'type': ['string', 'null']},
+            'methods': {
+                'type': ['array', 'null'],
+                'items': {
+                    'type': 'string',
+                    'enum': ['GET', 'POST', 'PUT', 'DELETE'],
+                },
+                'uniqueItems': True,
+                'minItems': 1,
+            },
+        },
+        'required': ['username', 'url_prefix', 'methods'],
+    })]
+
+
 class BotSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',

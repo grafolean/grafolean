@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, UserSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, UserSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -519,7 +519,7 @@ class Account(object):
         self.name = name
 
     @classmethod
-    def forge_from_input(cls, flask_request, allow_admin=False):
+    def forge_from_input(cls, flask_request):
         inputs = AccountSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
@@ -542,6 +542,37 @@ class Account(object):
             for account_id, name in c:
                 ret.append({'id': account_id, 'name': name})
             return ret
+
+
+class Permission(object):
+    def __init__(self, username, url_prefix, methods):
+        self.username = username
+        self.url_prefix = url_prefix
+        self.methods = methods
+
+    @classmethod
+    def forge_from_input(cls, flask_request):
+        inputs = PermissionSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        return cls(data['username'], data['url_prefix'], data['methods'])
+
+    @staticmethod
+    def get_list():
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, username, url_prefix, methods FROM permissions ORDER BY username, url_prefix, id;')
+            for permission_id, username, url_prefix, methods in c:
+                ret.append({'id': permission_id, 'username': username, 'url_prefix': url_prefix, 'methods': methods})
+            return ret
+
+    def insert(self):
+        with db.cursor() as c:
+            methods_array = '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
+            c.execute("INSERT INTO permissions (username, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.username, self.url_prefix, methods_array,))
+            account_id = c.fetchone()[0]
+            return account_id
 
 
 class Bot(object):

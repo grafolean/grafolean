@@ -26,9 +26,12 @@ def _delete_all_from_db():
             sql = "DROP TABLE IF EXISTS {} CASCADE;".format(tablename)
             log.info(sql)
             c.execute(sql)
-        sql = "DROP DOMAIN IF EXISTS AGGR_LEVEL;"
-        log.info(sql)
-        c.execute(sql)
+        for sql in [
+            "DROP DOMAIN IF EXISTS AGGR_LEVEL;",
+            "DROP TYPE IF EXISTS HTTP_METHOD;",
+        ]:
+            log.info(sql)
+            c.execute(sql)
     migrate_if_needed()
 
 def setup_module():
@@ -457,4 +460,35 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
     # refresh also fails because the token is too old:
     r = app_client.post('/api/auth/refresh', headers={'Authorization': authorization_header})
     assert r.status_code == 401
+
+def test_permissions_post_get(app_client, authorization_header):
+    """
+        Fetch permissions, should be empty, post and get again, should be there
+    """
+    r = app_client.get('/api/admin/permissions', headers={'Authorization': authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == { 'list': [] }
+
+    data = {
+        'username': TEST_USERNAME,
+        'url_prefix': 'accounts/1/',
+        'methods': [ 'GET', 'POST' ],
+    }
+    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': authorization_header})
+    assert r.status_code == 201
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['id'] == 1
+
+    r = app_client.get('/api/admin/permissions', headers={'Authorization': authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == { 'list': [
+        {
+            'id': 1,
+            'username': data['username'],
+            'url_prefix': data['url_prefix'],
+            'methods': '{GET,POST}',
+        }
+    ]}
 

@@ -80,11 +80,13 @@ def migration_step_1():
         ACCOUNT_ID_FIELD = 'account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE'
 
         c.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')  # needed for UUID filed type
+        c.execute("CREATE TYPE HTTP_METHOD AS ENUM('GET','POST','PUT','DELETE');")
 
         c.execute("CREATE TABLE accounts ({id}, name TEXT NOT NULL UNIQUE, enabled BOOLEAN NOT NULL DEFAULT TRUE);".format(id=ID_FIELD))
         c.execute('CREATE TABLE users ({id}, username TEXT NOT NULL UNIQUE, name TEXT NOT NULL UNIQUE, email TEXT NOT NULL UNIQUE, passhash TEXT NOT NULL);'.format(id=ID_FIELD))
         c.execute('CREATE TABLE bots ({id}, {account}, token UUID DEFAULT uuid_generate_v4(), name TEXT NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE TABLE private_jwt_keys ({id}, key TEXT NOT NULL, use_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600);'.format(id=ID_FIELD))
+        c.execute('CREATE TABLE permissions ({id}, username TEXT NULL REFERENCES users(username) ON DELETE CASCADE, url_prefix TEXT NULL, methods HTTP_METHOD[] NULL);'.format(id=ID_FIELD))
 
         c.execute('CREATE TABLE paths ({id}, {account}, path TEXT);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE UNIQUE INDEX paths_path ON paths (account, path);')
