@@ -97,21 +97,6 @@ def after_request(response):
 def handle_invalid_usage(error):
     return str(error), 400
 
-# TODO!!! bot login needs to be revisited
-def needs_valid_bot_token(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        query_params_bot_token = flask.request.args.get('b')
-        _, account_id = Bot.authenticate_token(query_params_bot_token)
-        if not account_id:
-            return "Invalid bot API token", 401
-        kwargs['account_id'] = account_id
-        return f(*args, **kwargs)
-
-    if hasattr(f, '_exclude_from_auth'):  # do not break @noauth
-        wrap._exclude_from_auth = True
-    return wrap
-
 
 def noauth(func):
     # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
@@ -126,7 +111,7 @@ def noauth(func):
 # Routes:
 # -----------------------------------------------------------------------
 
-@app.route('/', defaults={'auth': False})
+@app.route('/', methods=['GET'])
 @noauth
 def root():
     return 'OK'
