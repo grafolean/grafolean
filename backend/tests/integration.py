@@ -356,16 +356,17 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
         app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD))
         raise
 
-@pytest.mark.skip(reason="no idea.")
 def test_values_put_paths_get(app_client, admin_authorization_header, account_id):
     """
         Put values, get paths.
     """
     PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
     data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
-    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json')
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
 
-    r = app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id))
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
     expected = {
         'paths': {
             'test.values.put.paths.get.*': [
@@ -377,24 +378,24 @@ def test_values_put_paths_get(app_client, admin_authorization_header, account_id
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    r = app_client.get('/api/accounts/{}/paths/?filter=test.*&failover_trailing=false'.format(account_id))
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.*&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
 
-    r = app_client.get('/api/accounts/{}/paths/?filter=test.&failover_trailing=false'.format(account_id))
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 400
-    r = app_client.get('/api/accounts/{}/paths/?filter=test.'.format(account_id))  # same - failover_trailing=false is default option
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.'.format(account_id), headers={'Authorization': admin_authorization_header})  # same - failover_trailing=false is default option
     assert r.status_code == 400
 
     for prefix in ['t', 'te', 'tes', 'test', 'test.', 'test.v']:
-        r = app_client.get('/api/accounts/{}/paths/?filter={}&failover_trailing=true'.format(account_id, prefix))
+        r = app_client.get('/api/accounts/{}/paths/?filter={}&failover_trailing=true'.format(account_id, prefix), headers={'Authorization': admin_authorization_header})
         actual = json.loads(r.data.decode('utf-8'))
         assert actual['paths'] == {}
         assert PATH in actual['paths_with_trailing'][prefix]
         for path in actual['paths_with_trailing'][prefix]:
            assert path[:len(prefix)] == prefix
 
-    r = app_client.get('/api/accounts/{}/paths/?filter=test.*,test.values.*'.format(account_id))
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.*,test.values.*'.format(account_id), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in actual['paths']['test.*']
     assert PATH in actual['paths']['test.values.*']
