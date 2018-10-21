@@ -62,12 +62,14 @@ class Login extends React.Component {
           window.sessionStorage.setItem('moonthor_jwt_token', jwtToken);
           store.dispatch(onLoginSuccess(json));
           this.setState({
-            processingLogin: false,
             redirectToReferrer: true,
           })
         })
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
+      .then(() => this.setState({
+        processingLogin: false,
+      }))
 
   }
 
