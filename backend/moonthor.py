@@ -9,8 +9,9 @@ import re
 import secrets
 import time
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, User, Account, Permission, Bot, Credentials
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials
 import utils
+from utils import log
 from auth import Auth, JWT
 
 
@@ -47,22 +48,28 @@ def before_request():
     # unless we have explicitly user @noauth decorator, do authorization check here:
     if not hasattr(view_func, '_exclude_from_auth'):
         try:
-            print(flask.request.url_rule)
+            user_id = None
             authorization_header = flask.request.headers.get('Authorization')
-            if not authorization_header:
-                return "Access denied", 401
+            query_params_bot_token = flask.request.args.get('b')
+            if authorization_header is not None:
+                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+                flask.g.moonthor_data['jwt'] = received_jwt
+                user_id = received_jwt.data['user_id']
+            elif query_params_bot_token is not None:
+                user_id = Bot.authenticate_token(query_params_bot_token)
 
-            flask.g.moonthor_data['jwt'] = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+            # check permissions:
+            is_allowed = Permission.is_access_allowed(
+                user_id = user_id,
+                url = flask.request.path,
+                method = flask.request.method,
+            )
+            if not is_allowed:
+                return "Access denied", 401
         except:
+            log.exception("Exception while checking access rights")
             return "Access denied", 401
 
-
-    # temporary "security" measure until proper auth is done:
-    # d3c302a9-f607-458f-aaa8-8ac16c4bd632
-    # query_params_bot_token = flask.request.args.get('b')
-    # _, account_id = Bot.authenticate_token(query_params_bot_token)
-    # if not account_id:
-    #     return "Invalid bot API token", 401
 
     if utils.db is None:
         utils.db_connect()
@@ -115,22 +122,6 @@ def noauth(func):
     return func
 
 
-def only_admin(f):
-    @wraps(f)
-    def wrap(*args, **kwargs):
-        try:
-            jwt = flask.g.moonthor_data['jwt']
-            if int(jwt.data['user_id']) != 1:  # temporary measure - user with id === 1 is admin
-                return "Access denied", 401
-            return f(*args, **kwargs)
-        except:
-            return "Access denied", 401
-
-    if hasattr(f, '_exclude_from_auth'):  # do not break @noauth
-        wrap._exclude_from_auth = True
-    return wrap
-
-
 # -----------------------------------------------------------------------
 # Routes:
 # -----------------------------------------------------------------------
@@ -145,7 +136,6 @@ def root():
 # --------------
 
 @app.route('/api/admin/createtable', methods=['POST'])
-@only_admin
 def admin_createtable_post():
     utils.migrate_if_needed()
     return '', 204
@@ -159,7 +149,7 @@ def admin_createtable_post():
 def admin_first_post():
     if Auth.first_user_exists():
         return 'System already initialized', 401
-    admin = User.forge_from_input(flask.request)
+    admin = Person.forge_from_input(flask.request)
     admin_id = admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)
@@ -170,7 +160,6 @@ def admin_first_post():
 
 
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
-@only_admin
 def admin_permissions_crud():
     if flask.request.method == 'GET':
         rec = Permission.get_list()
@@ -190,6 +179,16 @@ def admin_permissions_crud():
             return "Account with this name already exists", 400
 
 
+@app.route('/api/admin/bots', methods=['POST'])
+def admin_bots_post():
+    bot = Bot.forge_from_input(flask.request)
+    bot_id, bot_token = bot.insert()
+    return json.dumps({
+        'id': bot_id,
+        'token': bot_token,
+    }), 201
+
+
 # --------------
 # /auth/ - authentication; might need different logging settings
 # --------------
@@ -197,7 +196,7 @@ def admin_permissions_crud():
 @app.route('/api/auth/login', methods=['POST'])
 @noauth
 def auth_login_post():
-    credentials = Credentials.forge_from_input(flask.request)
+    credentials = PersonCredentials.forge_from_input(flask.request)
     user_id = credentials.check_user_login()
     if not user_id:
         return "Invalid credentials", 401
@@ -231,7 +230,6 @@ def auth_refresh_post():
 
 
 @app.route('/api/admin/accounts', methods=['GET', 'POST'])
-@only_admin
 def accounts_crud():
     if flask.request.method == 'GET':
         rec = Account.get_list()
@@ -246,19 +244,7 @@ def accounts_crud():
             return "Account with this name already exists", 400
 
 
-@app.route('/api/accounts/<string:account_id>/bots', methods=['POST'])
-def bot_post(account_id):
-    bot = Bot.forge_from_input(flask.request)
-    bot_id, bot_token = bot.insert()
-    return json.dumps({
-        'id': bot_id,
-        'token': bot_token,
-    }), 201
-
-
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])
-@noauth
-# @needs_valid_bot_token
 def values_put(account_id):
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
@@ -267,8 +253,6 @@ def values_put(account_id):
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['POST'])
-@noauth
-@needs_valid_bot_token
 def values_post(account_id):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
     # piece, then we use the same function as for PUT:

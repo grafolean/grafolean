@@ -43,7 +43,7 @@ class WidgetSchemaInputs(Inputs):
     })]
 
 
-class UserSchemaInputs(Inputs):
+class PersonSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema
@@ -57,7 +57,7 @@ class UserSchemaInputs(Inputs):
     })]
 
 
-class CredentialSchemaInputs(Inputs):
+class PersonCredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema

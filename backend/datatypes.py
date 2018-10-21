@@ -6,7 +6,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, UserSchemaInputs, CredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputs, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -576,12 +576,26 @@ class Permission(object):
 
 
     @staticmethod
-    def check_access_allowed(user_id, url, method):
-        return True
+    def is_access_allowed(user_id, url, method):
+        with db.cursor() as c:
+            log.error("Checking for user id [{}], url [{}], method [{}]".format(user_id, url, method))
+            c.execute('SELECT id FROM permissions WHERE ' + \
+                '(user_id IS NULL OR user_id = %s) AND ' + \
+                "(url_prefix IS NULL OR %s LIKE '/api/' || url_prefix || '%%') AND " + \
+                '(methods IS NULL OR %s = ANY(methods)) ' + \
+                'ORDER BY user_id, url_prefix, id;',
+                (user_id, url, method,))
+            res = c.fetchone()
+            if res:
+                log.info("...allowed.")
+                return True
+            else:
+                log.info("...denied.")
+                return False
+
 
 class Bot(object):
-    def __init__(self, account_id, name):
-        self.account_id = account_id
+    def __init__(self, name):
         self.name = name
 
     @classmethod
@@ -590,34 +604,34 @@ class Bot(object):
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-
         name = data['name']
-        account_id = ADMIN_ACCOUNT_ID
-        return cls(account_id, name)
+        return cls(name)
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO bots (account, name) VALUES (%s, %s) RETURNING id, token;", (self.account_id, self.name,))
-            bot_id, bot_token = c.fetchone()
-            return bot_id, bot_token
+            c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
+            user_id, = c.fetchone()
+            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
+            bot_token, = c.fetchone()
+            return user_id, bot_token
 
     @staticmethod
     def authenticate_token(bot_token_unclean):
         try:
             bot_token = str(BotToken(bot_token_unclean))
         except:
-            return None, None  # invalid format
+            return None  # invalid format
         # authenticate against DB:
         with db.cursor() as c:
-            c.execute("SELECT id, account FROM bots WHERE token = %s;", (bot_token,))
+            c.execute("SELECT user_id FROM bots WHERE token = %s;", (bot_token,))
             res = c.fetchone()
             if not res:
-                return None, None
-            bot_id, account_id = res
-            return bot_id, account_id
+                return None
+            user_id, = res
+            return user_id
 
 
-class User(object):
+class Person(object):
     def __init__(self, name, email, username, password):
         self.name = name
         self.email = email
@@ -626,7 +640,7 @@ class User(object):
 
     @classmethod
     def forge_from_input(cls, flask_request):
-        inputs = UserSchemaInputs(flask_request)
+        inputs = PersonSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
@@ -639,20 +653,21 @@ class User(object):
 
     def insert(self):
         with db.cursor() as c:
+            c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
+            user_id, = c.fetchone()
             pass_hash = Auth.password_hash(self.password)
-            c.execute("INSERT INTO users (name, email, username, passhash) VALUES (%s, %s, %s, %s) RETURNING id;", (self.name, self.email, self.username, pass_hash,))
-            user_id = c.fetchone()[0]
+            c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, self.email, self.username, pass_hash,))
             return user_id
 
 
-class Credentials(object):
+class PersonCredentials(object):
     def __init__(self, username, password):
         self.username = username
         self.password = password
 
     @classmethod
     def forge_from_input(cls, flask_request):
-        inputs = CredentialSchemaInputs(flask_request)
+        inputs = PersonCredentialSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
@@ -663,7 +678,7 @@ class Credentials(object):
 
     def check_user_login(self):
         with db.cursor() as c:
-            c.execute("SELECT id, passhash FROM users WHERE username = %s;", (self.username,))
+            c.execute("SELECT user_id, passhash FROM persons WHERE username = %s;", (self.username,))
             res = c.fetchone()
             if not res:
                 return None
