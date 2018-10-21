@@ -585,7 +585,6 @@ class Permission(object):
     @staticmethod
     def is_access_allowed(user_id, url, method):
         with db.cursor() as c:
-            log.error("Checking for user id [{}], url [{}], method [{}]".format(user_id, url, method))
             c.execute('SELECT id FROM permissions WHERE ' + \
                 '(user_id IS NULL OR user_id = %s) AND ' + \
                 "(url_prefix IS NULL OR %s LIKE '/api/' || url_prefix || '%%') AND " + \
@@ -594,10 +593,8 @@ class Permission(object):
                 (user_id, url, method,))
             res = c.fetchone()
             if res:
-                log.info("...allowed.")
                 return True
             else:
-                log.info("...denied.")
                 return False
 
 
