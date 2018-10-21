@@ -10,6 +10,13 @@ from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInput
 from auth import Auth
 
 
+def clear_all_lru_cache():
+    # when testing, it is important to clear memoization cache in between runs, or the results will be... interesting.
+    Dashboard.get_id.cache_clear()
+    Path._get_path_id_from_db.cache_clear()
+    PathFilter._find_matching_paths_for_filter.cache_clear()
+
+
 class ValidationError(Exception):
     pass
 

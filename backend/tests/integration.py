@@ -10,6 +10,7 @@ import time
 from moonthor import app
 from utils import db, migrate_if_needed, log
 from auth import JWT
+from datatypes import clear_all_lru_cache
 
 
 USERNAME_ADMIN = 'admin'
@@ -38,6 +39,7 @@ def _delete_all_from_db():
             log.info(sql)
             c.execute(sql)
     migrate_if_needed()
+    clear_all_lru_cache()
 
 def setup_module():
     pass
@@ -553,18 +555,6 @@ def test_bots(app_client, admin_authorization_header, bot_token, account_id):
     assert r.status_code == 200
     r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no&b={}'.format(account_id, bot_token))
     assert r.status_code == 401
-
-
-#@pytest.mark.skip(reason="This fails, check!!!")
-def test_bots1(app_client, admin_authorization_header, account_id):
-    """
-        !!! this test fails when run after `test_bots`, error is:
-            psycopg2.IntegrityError: insert or update on table "aggregations" violates foreign key constraint "aggregations_path_fkey"
-            DETAIL:  Key (path)=(1) is not present in table "paths".
-    """
-    data = [{'p': 'qqqq.wwww', 'v': 111.223}]
-    r = app_client.post('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
 
 
 
