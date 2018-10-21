@@ -121,6 +121,7 @@ def root():
 # --------------
 
 @app.route('/api/admin/createtable', methods=['POST'])
+@noauth
 def admin_createtable_post():
     utils.migrate_if_needed()
     return '', 204
