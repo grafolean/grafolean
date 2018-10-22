@@ -4,7 +4,7 @@ div.path-filter { margin-bottom: 3px; }
   div.path-filter input { margin: 0; width: calc(100% - 12px); }
   div.path-filter .clear-input { width: 28px; height: 12px; text-align: center; }
   div.path-filter .clear-input span.triangle { border: 6px solid transparent; border-right: 6px solid #000000; display: block; height: 0; float: left; }
-  div.path-filter .clear-input a { background-color: #000000; display: block; width: 14px; height: 12px; float: right; line-height: 9px; padding-right: 2px; }
+  div.path-filter .clear-input button { border: none; background-color: #000000; display: block; width: 14px; height: 12px; line-height: 9px; padding-right: 2px; }
     div.path-filter .clear-input i.fa.fa-close { color: #ffffff; font-size: 12px; }
   div.path-filter .input-with-clear { position: relative; }
     div.path-filter .input-with-clear .clear-input { position: absolute; right: 2px; top: 4px; }

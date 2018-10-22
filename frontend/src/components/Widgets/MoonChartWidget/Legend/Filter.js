@@ -21,13 +21,14 @@ const ClearField = (props) => (
     className="clear-input"
   >
     <span className="triangle" />
-    <a
+    <button
+      className="link-button"
       onClick={props.onClick}
     >
       <i
         className="fa fa-close"
       />
-    </a>
+    </button>
   </div>
 )
 

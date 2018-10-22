@@ -3,3 +3,18 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+/* try to make buttons look like links: (see jsx-a11y/anchor-is-valid eslint rule) */
+.link-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+}
+
+.link-button:hover,
+.link-button:focus {
+  text-decoration: none;
+}
