@@ -69,19 +69,15 @@ const isDockable = WrappedComponent => {
             </div>
           </div>
           {this.props.dockingEnabled && (
-            <a
-              className="toggle-collapse-button"
+            <i
+              className="fa fa-chevron-left toggle-collapse-button"
               onClick={this.toggleOpened}
-            >
-              <i
-                className="fa fa-chevron-left"
-                style={{
-                  transform: `rotate(${this.state.opened ? 180 : 0}deg)`,
-                  transition: 'transform ease-in 0.1s',
-                  marginRight: this.state.opened ? -1 : 4,
-                }}
-              />
-            </a>
+              style={{
+                transform: `rotate(${this.state.opened ? 180 : 0}deg)`,
+                transition: 'transform ease-in 0.1s',
+                marginRight: this.state.opened ? -1 : 4,
+              }}
+            />
           )}
         </div>
       )

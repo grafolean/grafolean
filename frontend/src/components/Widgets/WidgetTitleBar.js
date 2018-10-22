@@ -24,9 +24,10 @@ export default class WidgetTitleBar extends React.Component {
         ))}
 
         <span className="widget-button">
-          <a onClick={ev => this.props.handleToggleFullscreen(!this.props.isFullscreen)}>
-            <i className={`fullscreen fa ${this.props.isFullscreen ? 'fa-compress' : 'fa-expand'}`} />
-          </a>
+          <i
+            className={`fullscreen fa ${this.props.isFullscreen ? 'fa-compress' : 'fa-expand'}`}
+            onClick={ev => this.props.handleToggleFullscreen(!this.props.isFullscreen)}
+          />
         </span>
 
       </div>

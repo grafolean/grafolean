@@ -26,21 +26,23 @@ const isWidget = WrappedComponent => {
 
     widgetSetButtons = () => {
       const deleteButton = (
-        <a onClick={(ev) => {
-          ev.preventDefault();
-          if (window.confirm("Are you sure you want to delete this widget? This can't be undone!")) {
-            this.deleteWidget();
-          };
-        }}>
-          <i className="fa fa-trash" />
-        </a>
+        <i
+          className="fa fa-trash"
+          onClick={(ev) => {
+            ev.preventDefault();
+            if (window.confirm("Are you sure you want to delete this widget? This can't be undone!")) {
+              this.deleteWidget();
+            };
+          }}
+        />
       );
       const editButton = (
         <Route
           render={({ history }) => (
-            <a onClick={() => history.push(`/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`)}>
-              <i className="fa fa-edit" />
-            </a>
+            <i
+              className="fa fa-edit"
+              onClick={() => history.push(`/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`)}
+            />
           )} />
       );
 
