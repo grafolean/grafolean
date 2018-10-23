@@ -33,47 +33,14 @@ class JWT(object):
         if authorization_header is None:
             raise Exception("No Authorization header")
 
-        # It turns out that headers are not really strings (see https://stackoverflow.com/a/10130966/593487) so
-        # pyjwt sometimes has trouble working with them:
-        #
-        #   Traceback (most recent call last):
-        #       File "/var/task/moonthor.py", line 55, in before_request
-        #       received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
-        #       File "/var/task/auth.py", line 43, in forge_from_authorization_header
-        #       jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256')
-        #       File "/var/task/jwt/api_jwt.py", line 93, in decode
-        #       jwt, key=key, algorithms=algorithms, options=options, **kwargs
-        #       File "/var/task/jwt/api_jws.py", line 157, in decode
-        #       key, algorithms)
-        #       File "/var/task/jwt/api_jws.py", line 221, in _verify_signature
-        #       key = alg_obj.prepare_key(key)
-        #       File "/var/task/jwt/algorithms.py", line 140, in prepare_key
-        #       key = force_bytes(key)
-        #       File "/var/task/jwt/utils.py", line 30, in force_bytes
-        #       raise TypeError('Expected a string value')
-        #       TypeError: Expected a string value
-        #
-        # The code however checks the type: (very un-pythonic, but we have been guilty of similar
-        # sins, so who are we to judge... ;) )
-        #
-        #     def force_bytes(value):
-        #         if isinstance(value, text_type):
-        #             return value.encode('utf-8')
-        #         elif isinstance(value, binary_type):
-        #             return value
-        #         else:
-        #     raise TypeError('Expected a string value')
-        #
-        # Explicit conversion to string should hopefully solve this:
-        #   (in other words: do NOT remove the following line!)
-        authorization_header = str(authorization_header)
-
         if authorization_header[:7] != 'Bearer ':
             raise Exception("Invalid Authorization header")
 
         authorization_header = authorization_header[7:]
         key_id, jwt_token = authorization_header.split(':', 1)
         key = JWT._private_jwt_key_for_decoding(key_id)
+        if key is None:
+            raise Exception("Unknown or expired key (key id: {})".format(key_id))
         try:
             jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256')
             decoded_with_leeway = False

@@ -565,3 +565,9 @@ def test_bots(app_client, admin_authorization_header, bot_token, account_id):
 #         - user can't access anything (test with a few endpoints)
 #         - admin assigns permissions to user, check that appropriate endpoints work
 #     """
+
+def test_auth_fails_unknown_key(app_client):
+    jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
+    faulty_authorization_header = 'Bearer 315:' + jwt_token
+    r = app_client.get('/api/admin/permissions', headers={'Authorization': faulty_authorization_header})
+    assert r.status_code == 401
