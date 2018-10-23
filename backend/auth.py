@@ -6,6 +6,10 @@ import secrets
 from utils import db, log
 
 
+class AuthFailedException(Exception):
+    pass
+
+
 class JWT(object):
     """
     Our JWT implementation is a bit specific:
@@ -31,22 +35,22 @@ class JWT(object):
     @classmethod
     def forge_from_authorization_header(cls, authorization_header, allow_leeway=False):
         if authorization_header is None:
-            raise Exception("No Authorization header")
+            raise AuthFailedException("No Authorization header")
 
         if authorization_header[:7] != 'Bearer ':
-            raise Exception("Invalid Authorization header")
+            raise AuthFailedException("Invalid Authorization header")
 
         authorization_header = authorization_header[7:]
         key_id, jwt_token = authorization_header.split(':', 1)
         key = JWT._private_jwt_key_for_decoding(key_id)
         if key is None:
-            raise Exception("Unknown or expired key (key id: {})".format(key_id))
+            raise AuthFailedException("Unknown or expired key (key id: {})".format(key_id))
         try:
             jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256')
             decoded_with_leeway = False
         except jwt.ExpiredSignatureError:
             if not allow_leeway:
-                raise
+                raise AuthFailedException("Signature expired")
             jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
             decoded_with_leeway = True
         return cls(jwt_decoded, decoded_with_leeway)

@@ -12,7 +12,7 @@ import time
 from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials
 import utils
 from utils import log
-from auth import Auth, JWT
+from auth import Auth, JWT, AuthFailedException
 
 
 app = flask.Flask(__name__)
@@ -66,9 +66,12 @@ def before_request():
             )
             if not is_allowed:
                 return "Access denied", 401
+        except AuthFailedException:
+            log.exception("Authentication failed")
+            return "Access denied", 401
         except:
             log.exception("Exception while checking access rights")
-            return "Access denied", 401
+            return "Could not validate access", 500
 
 
     if utils.db is None:
