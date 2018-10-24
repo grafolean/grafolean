@@ -1,32 +1,12 @@
-import React, { Component } from 'react';
-import styled from 'styled-components';
+import React from 'react';
+import { connect } from 'react-redux';
 
 import store from '../../store';
 import { removeNotification } from '../../store/actions';
 
 import Button from '../Button';
 
-const NotificationsList = styled.ul`
-  list-style-type: none;
-`
-
-const NotificationOuter = styled.li`
-  padding: 20px 0px;
-  margin: 10px 0px;
-
-
-  &.error {
-    background-color: #ffdddd;
-  }
-  &.warning {
-    background-color: #ffeedd;
-  }
-  &.info {
-    background-color: #ddffdd;
-  }
-`
-
-class Notifications extends Component {
+class Notifications extends React.Component {
 
   handleClickRemove = (event, notificationId) => {
     store.dispatch(removeNotification(notificationId));
@@ -38,17 +18,22 @@ class Notifications extends Component {
       return null;
     }
     return (
-      <NotificationsList>
+      <div className="notifications">
+      <ul>
         {this.props.notifications.map((v) => {
           return(
-            <NotificationOuter className={v.type} key={v.id}>
+            <li className={v.type} key={v.id}>
               {v.message} <Button onClick={(event) => this.handleClickRemove(event, v.id)}>x</Button>
-            </NotificationOuter>
+            </li>
           )
         })}
-      </NotificationsList>
+      </ul>
+      </div>
     );
   }
 }
 
-export default Notifications;
+const mapStoreToProps = (store) => ({
+  notifications: store.notifications ? store.notifications : [],
+});
+export default connect(mapStoreToProps)(Notifications);
