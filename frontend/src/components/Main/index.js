@@ -151,16 +151,19 @@ export default class Main extends Component {
                   width: sidebarWidth,
                   borderRight: '1px solid #d8d8d8',
                 },
+                content: {
+                  display: "flex",
+                  flexDirection: "column",
+                },
               }}>
+
           {(!this.state.sidebarDocked)?(
             <Button onClick={this.onBurgerClick}>burger</Button>
           ):('')}
 
-        <div className="main">
-
           <Notifications />
 
-          <div className="content">
+          <div className="content centered">
             <Switch>
               <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/' component={Home}/>
               <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/about' component={About}/>
@@ -176,7 +179,6 @@ export default class Main extends Component {
               <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
             </Switch>
           </div>
-        </div>
 
       </Sidebar>
     );

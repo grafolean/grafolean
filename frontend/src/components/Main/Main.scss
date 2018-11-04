@@ -1,5 +1,15 @@
 a, a:visited { color: #3b60b3; text-decoration: none; }
 a:hover { color: #678bdc; text-decoration: none; }
+button {
+  background: #4cd074;
+  border: none;
+  cursor: pointer;
+  color: #fff;
+  border-radius: 3px;
+  padding: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
 
 .hcenter {
   display: flex;
@@ -8,7 +18,7 @@ a:hover { color: #678bdc; text-decoration: none; }
 .vcenter {
   display: flex;
   flex-direction: column;
-  justify-content: cemter;
+  justify-content: center;
 }
 
 header {
@@ -40,6 +50,7 @@ header {
 }
 
 .notifications {
+  flex-grow: 0;
   display: flex;
 
   & > ul {
@@ -63,9 +74,10 @@ header {
 }
 
 .content {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex: 1;
+  display: flex;
+
+  & > .centered {
+    margin: auto;
+  }
 }

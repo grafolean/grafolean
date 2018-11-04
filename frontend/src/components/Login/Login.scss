@@ -1,0 +1,10 @@
+div.login {
+  border: 1px solid #aaa;
+  border-radius: 8px;
+  padding: 50px;
+
+  .error-msg {
+    margin-top: 20px;
+    color: #660000;
+  }
+}
