@@ -44,6 +44,12 @@ def before_request():
     if flask.request.method == 'OPTIONS':
         return '', 200
 
+    if utils.db is None:
+        utils.db_connect()
+        if utils.db is None:
+            # oops, DB error... we should return 500:
+            return 'Service unavailable', 503
+
     view_func = app.view_functions[flask.request.endpoint]
     # unless we have explicitly user @noauth decorator, do authorization check here:
     if not hasattr(view_func, '_exclude_from_auth'):
@@ -72,13 +78,6 @@ def before_request():
         except:
             log.exception("Exception while checking access rights")
             return "Could not validate access", 500
-
-
-    if utils.db is None:
-        utils.db_connect()
-        if utils.db is None:
-            # oops, DB error... we should return 500:
-            return 'Service unavailable', 503
 
 
 @app.after_request
