@@ -20,7 +20,7 @@ class Login extends React.Component {
         password: '',
       },
       processingLogin: false,
-      loginError: false,
+      loginError: undefined,
       redirectToReferrer: this.props.loggedIn ? true : false,
     };
   }
@@ -49,7 +49,7 @@ class Login extends React.Component {
     }
     this.setState({
       processingLogin: true,
-      loginError: false,
+      loginError: undefined,
     });
     fetch(`${ROOT_URL}/auth/login`, {
       headers: {
@@ -59,21 +59,30 @@ class Login extends React.Component {
       method: 'POST',
       body: JSON.stringify(params),
     })
-      .then(handleFetchErrors)
+      //.then(handleFetchErrors) // do not handle automatically - we need to deal with 401
       .then(response => {
+        if (response.status === 401) {
+          this.setState({
+            loginError: 'Invalid credentials!',
+          });
+          return;
+        }
+        if (!response.ok) {
+          throw `Error ${response.status} - ${response.statusText}`;
+        };
         response.json().then(json => {
           const jwtToken = response.headers.get('X-JWT-Token');
           window.sessionStorage.setItem('moonthor_jwt_token', jwtToken);
           store.dispatch(onLoginSuccess(json));
           this.setState({
             redirectToReferrer: true,
-          })
+          });
         })
       })
       .catch(errorMsg => {
         console.error(errorMsg.toString());
         this.setState({
-          loginError: true,
+          loginError: errorMsg.toString(),
         })
       })
       .then(() => this.setState({
@@ -107,7 +116,7 @@ class Login extends React.Component {
         </div>
         {loginError && (
           <div className="error-msg">
-            <i className="fa fa-exclamation-triangle" />&nbsp;Invalid credentials!
+            <i className="fa fa-exclamation-triangle" />&nbsp;{loginError}
           </div>
         )}
       </div>
