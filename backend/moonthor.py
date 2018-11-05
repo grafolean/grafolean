@@ -8,6 +8,7 @@ import psycopg2
 import re
 import secrets
 import time
+from werkzeug.exceptions import HTTPException
 
 from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials
 import utils
@@ -79,9 +80,7 @@ def before_request():
             log.exception("Exception while checking access rights")
             return "Could not validate access", 500
 
-
-@app.after_request
-def after_request(response):
+def _add_cors_headers(response):
     # allow cross-origin requests:
     # (we will probably want to limit this to our domain later on, or make it configurable4)
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -89,6 +88,10 @@ def after_request(response):
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     response.headers['Access-Control-Expose-Headers'] = 'X-JWT-Token'
     response.headers['Access-Control-Max-Age'] = '3600'  # https://damon.ghost.io/killing-cors-preflight-requests-on-a-react-spa/
+
+@app.after_request
+def after_request(response):
+    _add_cors_headers(response)
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
     #time.sleep(1.0)  # so we can see "loading" signs
@@ -98,6 +101,15 @@ def after_request(response):
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
     return str(error), 400
+
+@app.errorhandler(Exception)
+def handle_error(e):
+    code = 500
+    if isinstance(e, HTTPException):
+        code = e.code
+    response = flask.make_response('Unknown exception: {}'.format(str(e)), code)
+    _add_cors_headers(response)  # even if we fail, we should still add CORS headers, or browsers won't display real error status
+    return response
 
 
 def noauth(func):
