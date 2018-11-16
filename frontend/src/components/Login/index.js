@@ -1,10 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { onLoginSuccess, ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
+import { onLoginSuccess, ROOT_URL } from '../../store/actions';
 import store from '../../store';
-import Button from '../Button';
-import Loading from '../Loading';
 import Redirect from 'react-router-dom/Redirect';
 
 import './Login.scss';
@@ -59,7 +57,6 @@ class Login extends React.Component {
       method: 'POST',
       body: JSON.stringify(params),
     })
-      //.then(handleFetchErrors) // do not handle automatically - we need to deal with 401
       .then(response => {
         if (response.status === 401) {
           this.setState({
@@ -68,7 +65,7 @@ class Login extends React.Component {
           return;
         }
         if (!response.ok) {
-          throw `Error ${response.status} - ${response.statusText}`;
+          throw new Error(`Error ${response.status} - ${response.statusText}`);
         };
         response.json().then(json => {
           const jwtToken = response.headers.get('X-JWT-Token');
