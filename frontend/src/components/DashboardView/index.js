@@ -1,6 +1,7 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
-import store from '../../store'
+import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 import Button from '../Button';
@@ -10,7 +11,7 @@ import MoonChartWidget from '../Widgets/MoonChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
 
-export default class DashboardView extends React.Component {
+class DashboardView extends React.Component {
 
   abortController = null;
 
@@ -175,3 +176,12 @@ export default class DashboardView extends React.Component {
   }
 };
 
+
+const mapStoreToProps = (state, ownProps) => {
+  // parameter 'slug' comes from React Router:
+  let slug = ownProps.match.params.slug;
+  if (!state.dashboards.details[slug])
+    return {};
+  return state.dashboards.details[slug];
+};
+export default connect(mapStoreToProps)(DashboardView);

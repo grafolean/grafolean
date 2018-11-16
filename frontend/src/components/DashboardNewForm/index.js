@@ -1,12 +1,14 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
+import { connect } from 'react-redux';
+import uniqueId from 'lodash/uniqueId';
 
 import store from '../../store';
 import { submitNewDashboard } from '../../store/actions';
 
 import Loading from '../Loading';
 
-export default class DashboardNewForm extends React.Component {
+class DashboardNewForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -44,3 +46,22 @@ export default class DashboardNewForm extends React.Component {
     );
   }
 }
+
+
+const mapStoreToProps = (store) => {
+  const formId = uniqueId("form-");
+  let defaultProps = {
+    formid: formId,
+    loading: false,
+    submitted: false,  // we use this to redirect from form after it is successfully submitted
+  }
+  if (!store.forms) {
+    return defaultProps;
+  };
+  if (!store.forms[formId]) {
+    return defaultProps;
+  }
+
+  return {...defaultProps, ...store.forms[formId]}
+}
+export default connect(mapStoreToProps)(DashboardNewForm);

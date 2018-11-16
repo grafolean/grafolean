@@ -9,9 +9,9 @@ import Button from '../Button'
 import Home from '../Home'
 import About from '../About'
 import Login from '../Login'
-import DashboardsListContainer from '../../containers/DashboardsListContainer'
-import DashboardViewContainer from '../../containers/DashboardViewContainer'
-import DashboardNewFormContainer from '../../containers/DashboardNewFormContainer'
+import DashboardNewForm from '../DashboardNewForm';
+import DashboardsList from '../DashboardsList';
+import DashboardView from '../DashboardView';
 import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import AdminFirst from '../AdminFirst';
@@ -171,9 +171,9 @@ export default class Main extends Component {
               <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/login' component={Login}/>
               <WrappedRoute exact contentWidth={contentWidth} path='/user' component={User}/>
 
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsListContainer}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewFormContainer}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardViewContainer}/>
+              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsList}/>
+              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewForm}/>
+              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardView}/>
               <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug/widget/:widgetId/edit' component={DashboardWidgetEdit}/>
 
               <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />

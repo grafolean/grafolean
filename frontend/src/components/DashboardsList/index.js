@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { connect } from 'react-redux'
+
+import store from '../../store';
+import { fetchDashboardsList } from '../../store/actions';
 
 import Loading from '../Loading';
-import DashboardDeleteLinkContainer from '../../containers/DashboardDeleteLinkContainer';
+import DashboardDeleteLink from '../DashboardDeleteLink';
 
-export default class DashboardsList extends React.Component {
-
+class DashboardsList extends React.Component {
   render() {
 
     if ((!this.props.valid) && (!this.props.fetching)) {
@@ -29,7 +32,7 @@ export default class DashboardsList extends React.Component {
                 return (
                   <li key={v.slug}>
                     <Link to={`/dashboards/view/${v.slug}`}>{v.name}</Link>
-                    (<DashboardDeleteLinkContainer slug={v.slug} />)
+                    (<DashboardDeleteLink slug={v.slug} />)
                   </li>
                 )}
               )}
@@ -41,3 +44,12 @@ export default class DashboardsList extends React.Component {
   }
 }
 
+
+const mapStoreToProps = storeState => {
+  if (storeState.dashboards.list.refetch) {
+    store.dispatch(fetchDashboardsList())
+    return {...storeState.dashboards.list, fetching: true}
+  }
+  return storeState.dashboards.list
+};
+export default connect(mapStoreToProps)(DashboardsList);
