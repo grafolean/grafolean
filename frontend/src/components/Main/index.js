@@ -5,10 +5,10 @@ import Sidebar from 'react-sidebar';
 
 import './Main.scss';
 // import Chart from '../Chart'
-import Button from '../Button'
-import Home from '../Home'
-import About from '../About'
-import Login from '../Login'
+import Button from '../Button';
+import Home from '../Home';
+import About from '../About';
+import Login from '../Login';
 import DashboardNewForm from '../DashboardNewForm';
 import DashboardsList from '../DashboardsList';
 import DashboardView from '../DashboardView';
@@ -29,49 +29,69 @@ const mapLoggedInStateToProps = store => ({
 });
 const WrappedRoute = connect(mapLoggedInStateToProps)(
   ({ component: Component, isPublic, loggedIn, contentWidth, ...rest }) => (
-  <Route
-    {...rest}
-    render={ props => (
-      isPublic === true || loggedIn
-      ? <Component
-          {...props}
-          width={contentWidth}
-        />
-      : <Redirect to={{
-          pathname: '/login',
-          state: { fromLocation: props.location }
-        }} />
-    )}
-  />)
+    <Route
+      {...rest}
+      render={props =>
+        isPublic === true || loggedIn ? (
+          <Component {...props} width={contentWidth} />
+        ) : (
+          <Redirect
+            to={{
+              pathname: '/login',
+              state: { fromLocation: props.location },
+            }}
+          />
+        )
+      }
+    />
+  ),
 );
 
 const SidebarContent = connect(mapLoggedInStateToProps)(
   ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick, loggedIn }) => (
-  <div className="navigation">
-    {(!sidebarDocked)?(
-      <Button onClick={onSidebarXClick}>X</Button>
-    ):('')}
-    <header>
-      <img src="/grafolean.svg" alt="Grafolean" />
-    </header>
-    <ul>
-      <li><Link to='/' onClick={onSidebarLinkClick}>Home</Link></li>
-      {loggedIn
-        ? (
+    <div className="navigation">
+      {!sidebarDocked ? <Button onClick={onSidebarXClick}>X</Button> : ''}
+      <header>
+        <img src="/grafolean.svg" alt="Grafolean" />
+      </header>
+      <ul>
+        <li>
+          <Link to="/" onClick={onSidebarLinkClick}>
+            Home
+          </Link>
+        </li>
+        {loggedIn ? (
           [
-            <li><Link to='/dashboards' onClick={onSidebarLinkClick}>Dashboards</Link></li>,
-            <li><Link to='/user' onClick={onSidebarLinkClick}>User</Link></li>
+            <li>
+              <Link to="/dashboards" onClick={onSidebarLinkClick}>
+                Dashboards
+              </Link>
+            </li>,
+            <li>
+              <Link to="/user" onClick={onSidebarLinkClick}>
+                User
+              </Link>
+            </li>,
           ]
         ) : (
-          <li><Link to='/login' onClick={onSidebarLinkClick}>Login</Link></li>
+          <li>
+            <Link to="/login" onClick={onSidebarLinkClick}>
+              Login
+            </Link>
+          </li>
         )}
-      <li><Link to='/about' onClick={onSidebarLinkClick}>About</Link></li>
-    </ul>
-  </div>)
+        <li>
+          <Link to="/about" onClick={onSidebarLinkClick}>
+            About
+          </Link>
+        </li>
+      </ul>
+    </div>
+  ),
 );
 
 export default class Main extends Component {
-  mql = window.matchMedia(`(min-width: 800px)`)
+  mql = window.matchMedia(`(min-width: 800px)`);
 
   constructor(props) {
     super(props);
@@ -81,31 +101,31 @@ export default class Main extends Component {
       sidebarOpen: false,
       windowWidth: 0,
       windowHeight: 0,
-    }
+    };
   }
 
-  onBurgerClick = (event) => {
-    this.setState({sidebarOpen: true});
+  onBurgerClick = event => {
+    this.setState({ sidebarOpen: true });
     event.preventDefault();
-  }
+  };
 
-  onSidebarXClick = (event) => {
-    this.setState({sidebarOpen: false});
+  onSidebarXClick = event => {
+    this.setState({ sidebarOpen: false });
     event.preventDefault();
-  }
+  };
 
-  onSidebarLinkClick = (event) => {
-    this.setState({sidebarOpen: false});
+  onSidebarLinkClick = event => {
+    this.setState({ sidebarOpen: false });
     // follow up the link (don't do event.preventDefault())
-  }
+  };
 
-  onSetSidebarOpen = (open) => {
-    this.setState({sidebarOpen: open});
-  }
+  onSetSidebarOpen = open => {
+    this.setState({ sidebarOpen: open });
+  };
 
   componentWillMount() {
     this.mql.addListener(this.mediaQueryChanged);
-    this.setState({sidebarDocked: this.mql.matches});
+    this.setState({ sidebarDocked: this.mql.matches });
   }
 
   componentDidMount() {
@@ -119,69 +139,89 @@ export default class Main extends Component {
   }
 
   updateWindowDimensions = () => {
-    this.setState({ windowWidth: window.innerWidth, windowHeight: window.innerHeight });
-  }
+    this.setState({
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+    });
+  };
 
   mediaQueryChanged = () => {
-    this.setState({sidebarDocked: this.mql.matches});
-  }
+    this.setState({ sidebarDocked: this.mql.matches });
+  };
 
   render() {
     const CONTENT_PADDING_LR = 30;
-    const SCROLLBAR_WIDTH = 20;  // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
+    const SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
     const innerWindowWidth = this.state.windowWidth - 2 * CONTENT_PADDING_LR - SCROLLBAR_WIDTH;
-    const sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, this.state.windowWidth - 40);  // always leave a bit of place (40px) to the right of menu
-    const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth: innerWindowWidth;
+    const sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, this.state.windowWidth - 40); // always leave a bit of place (40px) to the right of menu
+    const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
     return (
       <Sidebar
-              sidebar={(
-                <SidebarContent
-                  sidebarDocked={this.state.sidebarDocked}
-                  onSidebarXClick={this.onSidebarXClick}
-                  onSidebarLinkClick={this.onSidebarLinkClick}
-                />
-              )}
-              open={this.state.sidebarOpen}
-              docked={this.state.sidebarDocked}
-              onSetOpen={this.onSetSidebarOpen}
-              shadow={false}
-              styles={{
-                sidebar: {
-                  backgroundColor: '#fff',
-                  width: sidebarWidth,
-                  borderRight: '1px solid #d8d8d8',
-                },
-                content: {
-                  display: "flex",
-                  flexDirection: "column",
-                },
-              }}>
+        sidebar={
+          <SidebarContent
+            sidebarDocked={this.state.sidebarDocked}
+            onSidebarXClick={this.onSidebarXClick}
+            onSidebarLinkClick={this.onSidebarLinkClick}
+          />
+        }
+        open={this.state.sidebarOpen}
+        docked={this.state.sidebarDocked}
+        onSetOpen={this.onSetSidebarOpen}
+        shadow={false}
+        styles={{
+          sidebar: {
+            backgroundColor: '#fff',
+            width: sidebarWidth,
+            borderRight: '1px solid #d8d8d8',
+          },
+          content: {
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+      >
+        {!this.state.sidebarDocked ? <Button onClick={this.onBurgerClick}>burger</Button> : ''}
 
-          {(!this.state.sidebarDocked)?(
-            <Button onClick={this.onBurgerClick}>burger</Button>
-          ):('')}
+        <Notifications />
 
-          <Notifications />
+        <div className="content centered">
+          <Switch>
+            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/" component={Home} />
+            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/about" component={About} />
+            <WrappedRoute
+              exact
+              isPublic={true}
+              contentWidth={contentWidth}
+              path="/admin/first"
+              component={AdminFirst}
+            />
+            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/login" component={Login} />
+            <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
-          <div className="content centered">
-            <Switch>
-              <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/' component={Home}/>
-              <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/about' component={About}/>
-              <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/admin/first' component={AdminFirst}/>
-              <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path='/login' component={Login}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/user' component={User}/>
+            <WrappedRoute exact contentWidth={contentWidth} path="/dashboards" component={DashboardsList} />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/dashboards/new"
+              component={DashboardNewForm}
+            />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/dashboards/view/:slug"
+              component={DashboardView}
+            />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/dashboards/view/:slug/widget/:widgetId/edit"
+              component={DashboardWidgetEdit}
+            />
 
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards' component={DashboardsList}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/new' component={DashboardNewForm}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug' component={DashboardView}/>
-              <WrappedRoute exact contentWidth={contentWidth} path='/dashboards/view/:slug/widget/:widgetId/edit' component={DashboardWidgetEdit}/>
-
-              <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
-            </Switch>
-          </div>
-
+            <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
+          </Switch>
+        </div>
       </Sidebar>
     );
   }
 }
-

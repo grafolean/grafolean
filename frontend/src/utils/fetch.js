@@ -1,5 +1,5 @@
-import { ROOT_URL, handleFetchErrors, onLogout } from "../store/actions";
-import store from "../store";
+import { ROOT_URL, handleFetchErrors, onLogout } from '../store/actions';
+import store from '../store';
 
 const _addAuthHeaderToParams = init => {
   const headers = init.headers || {};
@@ -8,9 +8,9 @@ const _addAuthHeaderToParams = init => {
     ...init,
     headers: headers,
   };
-}
+};
 
-export const fetchAuth = (input, init={}) => {
+export const fetchAuth = (input, init = {}) => {
   const initWithAuth = _addAuthHeaderToParams(init);
   return new Promise((resolve, reject) => {
     fetch(input, initWithAuth)
@@ -24,9 +24,9 @@ export const fetchAuth = (input, init={}) => {
         const oldJwtToken = window.sessionStorage.getItem('moonthor_jwt_token');
         fetch(`${ROOT_URL}/auth/refresh`, {
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
-            'Authorization': oldJwtToken,
+            Authorization: oldJwtToken,
           },
           method: 'POST',
         })
@@ -47,6 +47,5 @@ export const fetchAuth = (input, init={}) => {
           });
       })
       .catch(err => reject(err));
-  })
-
+  });
 };

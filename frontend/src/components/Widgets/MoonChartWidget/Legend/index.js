@@ -6,8 +6,9 @@ import { generateSerieColor } from '../utils';
 import Filter from './Filter';
 import isDockable from './isDockable';
 
-const Checkbox = (props) => (
-  <div className="path-checkbox"
+const Checkbox = props => (
+  <div
+    className="path-checkbox"
     style={{
       borderColor: props.color,
     }}
@@ -15,26 +16,29 @@ const Checkbox = (props) => (
     <div
       style={{
         backgroundColor: props.checked !== false ? props.color : '#fff',
-        backgroundImage: props.checked === null ? `repeating-linear-gradient(135deg, #fff, #fff 7px, ${props.color} 7px, ${props.color} 15px)` : null,
+        backgroundImage:
+          props.checked === null
+            ? `repeating-linear-gradient(135deg, #fff, #fff 7px, ${props.color} 7px, ${props.color} 15px)`
+            : null,
       }}
     />
   </div>
-)
+);
 
 class Legend extends React.Component {
   static defaultProps = {
     width: 200,
     height: 300,
     chartSeries: [],
-    onDrawnChartSeriesChange: (selectedChartSeries) => {},
-  }
+    onDrawnChartSeriesChange: selectedChartSeries => {},
+  };
 
   constructor(props) {
     super(props);
     this.state = {
-      selectedChartSeries: null,  // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
-      filter: "",
-    }
+      selectedChartSeries: null, // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
+      filter: '',
+    };
   }
 
   static getDerivedStateFromProps(props, state) {
@@ -42,18 +46,18 @@ class Legend extends React.Component {
     if (state.selectedChartSeries === null && props.chartSeries.length > 0) {
       return {
         selectedChartSeries: new Set(props.chartSeries),
-      }
+      };
     }
     return null;
   }
 
-  handleDrawnPathsChange = (filter) => {
+  handleDrawnPathsChange = filter => {
     const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeries], filter);
     this.props.onDrawnChartSeriesChange(drawnChartSeries);
     this.setState({
       filter: filter,
-    })
-  }
+    });
+  };
 
   toggleChartSerieSelected(cs, filter) {
     this.setState(
@@ -66,9 +70,9 @@ class Legend extends React.Component {
         }
         return {
           selectedChartSeries: newSelectedChartSeries,
-        }
+        };
       },
-      () => this.handleDrawnPathsChange(filter)
+      () => this.handleDrawnPathsChange(filter),
     );
   }
 
@@ -82,24 +86,25 @@ class Legend extends React.Component {
           filteredChartSeries.forEach(cs => newSelectedChartSeries.add(cs));
         } else {
           filteredChartSeries.forEach(cs => newSelectedChartSeries.delete(cs));
-        };
+        }
         return {
           selectedChartSeries: newSelectedChartSeries,
-        }
+        };
       },
-      () => this.handleDrawnPathsChange(filter)
+      () => this.handleDrawnPathsChange(filter),
     );
   }
 
   static getFilteredChartSeries(originalChartSeries, filter) {
-    if (filter === "") {
+    if (filter === '') {
       return originalChartSeries;
     }
-    const filterLowerCase = filter.toLowerCase()
-    const filteredChartSeries = originalChartSeries.filter(cs => (
-      cs.serieName.toLowerCase().includes(filterLowerCase) ||
-      cs.unit.toLowerCase().includes(filterLowerCase)
-    ));
+    const filterLowerCase = filter.toLowerCase();
+    const filteredChartSeries = originalChartSeries.filter(
+      cs =>
+        cs.serieName.toLowerCase().includes(filterLowerCase) ||
+        cs.unit.toLowerCase().includes(filterLowerCase),
+    );
     return filteredChartSeries;
   }
 
@@ -119,28 +124,20 @@ class Legend extends React.Component {
           height: this.props.height ? this.props.height : 'initial',
         }}
       >
-        <Filter
-          width={this.props.width}
-          onChange={this.handleDrawnPathsChange}
-        />
+        <Filter width={this.props.width} onChange={this.handleDrawnPathsChange} />
 
         <div
           className="path-checkbox-parent all"
           onClick={() => this.toggleAll(allChecked ? false : true, this.state.filter)}
         >
-          <Checkbox
-            color="#666"
-            checked={allChecked ? true : (noneChecked ? false : null) }
-          />
+          <Checkbox color="#666" checked={allChecked ? true : noneChecked ? false : null} />
           <div className="checkbox-label">
             <i className="fa fa-check" />
           </div>
         </div>
 
-        {(filteredChartSeries.length === 0) ? (
-          <div className="path-filter-noresults">
-            No paths match the filter "{this.state.filter}"
-          </div>
+        {filteredChartSeries.length === 0 ? (
+          <div className="path-filter-noresults">No paths match the filter "{this.state.filter}"</div>
         ) : (
           filteredChartSeries.map(cs => (
             <div
@@ -153,7 +150,9 @@ class Legend extends React.Component {
                 checked={this.state.selectedChartSeries.has(cs)}
               />
               <div className="checkbox-label">
-                <span className="legend-label">{cs.serieName} [{cs.unit}]</span>
+                <span className="legend-label">
+                  {cs.serieName} [{cs.unit}]
+                </span>
               </div>
             </div>
           ))

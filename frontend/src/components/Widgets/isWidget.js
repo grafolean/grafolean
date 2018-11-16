@@ -11,13 +11,12 @@ import { fetchAuth } from '../../utils/fetch';
 
 const isWidget = WrappedComponent => {
   return class Widget extends React.Component {
-
     constructor(props) {
       super(props);
       this.state = {
         buttonRenders: [],
         isFullscreen: false,
-      }
+      };
     }
 
     componentDidMount() {
@@ -28,11 +27,11 @@ const isWidget = WrappedComponent => {
       const deleteButton = (
         <i
           className="fa fa-trash"
-          onClick={(ev) => {
+          onClick={ev => {
             ev.preventDefault();
             if (window.confirm("Are you sure you want to delete this widget? This can't be undone!")) {
               this.deleteWidget();
-            };
+            }
           }}
         />
       );
@@ -41,61 +40,62 @@ const isWidget = WrappedComponent => {
           render={({ history }) => (
             <i
               className="fa fa-edit"
-              onClick={() => history.push(`/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`)}
+              onClick={() =>
+                history.push(
+                  `/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`,
+                )
+              }
             />
-          )} />
+          )}
+        />
       );
 
       this.setState({
-        buttonRenders: [
-          editButton,
-          deleteButton,
-        ],
-      })
-    }
+        buttonRenders: [editButton, deleteButton],
+      });
+    };
 
-    editWidget = () => {
-
-    }
+    editWidget = () => {};
 
     deleteWidget = () => {
-      fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`, { method: 'DELETE' })
+      fetchAuth(
+        `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`,
+        { method: 'DELETE' },
+      )
         .then(handleFetchErrors)
         .then(() => {
           store.dispatch(onSuccess('Widget successfully removed.'));
           this.props.refreshParent();
         })
-        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
-    }
+        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+    };
 
-    toggleFullscreen = (shouldBeFullscreen) => {
+    toggleFullscreen = shouldBeFullscreen => {
       this.setState({
         isFullscreen: shouldBeFullscreen,
       });
       if (shouldBeFullscreen) {
-        window.addEventListener("keyup", this.handleEscKey, true);
+        window.addEventListener('keyup', this.handleEscKey, true);
       } else {
-        window.removeEventListener("keyup", this.handleEscKey, true);
+        window.removeEventListener('keyup', this.handleEscKey, true);
       }
-    }
+    };
 
-    handleEscKey = (ev) => {
+    handleEscKey = ev => {
       if (ev.keyCode === 27) {
         ev.preventDefault();
         this.toggleFullscreen(false);
-      };
-    }
+      }
+    };
 
     render() {
       const { title, width, height, ...passThroughProps } = this.props;
       const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
       const outerHeight = this.state.isFullscreen ? window.innerHeight : height;
-      const contentWidth = outerWidth - 42;  // minus padding & border
-      const contentHeight = outerHeight - 37 - 31;  // minus padding, border & title bar height
+      const contentWidth = outerWidth - 42; // minus padding & border
+      const contentHeight = outerHeight - 37 - 31; // minus padding, border & title bar height
       return (
-        <div
-          className={`widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}
-        >
+        <div className={`widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}>
           <WidgetTitleBar
             title={title}
             buttonRenders={this.state.buttonRenders}
@@ -114,9 +114,9 @@ const isWidget = WrappedComponent => {
             />
           </div>
         </div>
-      )
+      );
     }
-  }
-}
+  };
+};
 
 export default isWidget;

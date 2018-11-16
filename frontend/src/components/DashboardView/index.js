@@ -12,7 +12,6 @@ import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
 
 class DashboardView extends React.Component {
-
   abortController = null;
 
   constructor(props) {
@@ -37,19 +36,19 @@ class DashboardView extends React.Component {
 
   fetchDashboardDetails = () => {
     if (this.abortController !== null) {
-      return;  // fetching already in progress, abort
-    };
+      return; // fetching already in progress, abort
+    }
 
     this.setState({
       loading: true,
     });
-    this.abortController = new window.AbortController()
+    this.abortController = new window.AbortController();
     fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.match.params.slug}`, {
       signal: this.abortController.signal,
     })
       .then(handleFetchErrors)
-      .then(response => response.json()
-        .then(json => {
+      .then(response =>
+        response.json().then(json => {
           this.setState({
             name: json.name,
             widgets: json.widgets.map(w => ({
@@ -73,34 +72,27 @@ class DashboardView extends React.Component {
           });
           this.abortController = null;
         }
-      })
-  }
+      });
+  };
 
-  handleShowNewChartForm = (ev) => {
+  handleShowNewChartForm = ev => {
     ev.preventDefault();
     this.setState({
       newChartFormOpened: true,
-    })
-  }
+    });
+  };
 
-  handleHideNewChartForm = (ev) => {
+  handleHideNewChartForm = ev => {
     ev.preventDefault();
     this.setState({
       newChartFormOpened: true,
-    })
-  }
+    });
+  };
 
   render() {
-
     if (!this.state.valid) {
-      if (this.state.loading)
-        return <Loading />
-      else
-        return (
-          <div>
-            Could not fetch data - please try again.
-          </div>
-        )
+      if (this.state.loading) return <Loading />;
+      else return <div>Could not fetch data - please try again.</div>;
     }
 
     return (
@@ -110,20 +102,14 @@ class DashboardView extends React.Component {
         }}
       >
         Dashboard:
-        {this.state.loading && (
-          <Loading
-            overlayParent={true}
-          />
-        )}
+        {this.state.loading && <Loading overlayParent={true} />}
         <hr />
-
         {this.state.name}
-
         <div>
-          {this.state.widgets.map((widget) => {
+          {this.state.widgets.map(widget => {
             switch (widget.type) {
               case 'lastvalue':
-                return(
+                return (
                   <LastValueWidget
                     key={widget.id}
                     width={this.props.width}
@@ -151,37 +137,29 @@ class DashboardView extends React.Component {
                   />
                 );
               default:
-                return (
-                  <div>
-                    Unknown widget type.
-                  </div>
-                )
+                return <div>Unknown widget type.</div>;
             }
           })}
         </div>
-
-        {(!this.state.newChartFormOpened) ? (
-            <div>
-              <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
-            </div>
-          ) : (
-            <div>
-              <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-              <WidgetForm dashboardSlug={this.props.match.params.slug}/>
-            </div>
-          )
-        }
+        {!this.state.newChartFormOpened ? (
+          <div>
+            <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
+          </div>
+        ) : (
+          <div>
+            <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
+            <WidgetForm dashboardSlug={this.props.match.params.slug} />
+          </div>
+        )}
       </div>
-    )
+    );
   }
-};
-
+}
 
 const mapStoreToProps = (state, ownProps) => {
   // parameter 'slug' comes from React Router:
   let slug = ownProps.match.params.slug;
-  if (!state.dashboards.details[slug])
-    return {};
+  if (!state.dashboards.details[slug]) return {};
   return state.dashboards.details[slug];
 };
 export default connect(mapStoreToProps)(DashboardView);

@@ -4,44 +4,44 @@ import { getMissingIntervals, aggregateIntervalOnTheFly } from '../utils';
 test('getMissingIntervals', () => {
   const params = [
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 100, toTs: 150},
-      expectedResult: [ {fromTs: 100, toTs: 150} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 100, toTs: 150 },
+      expectedResult: [{ fromTs: 100, toTs: 150 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 10, toTs: 50},
-      expectedResult: [ {fromTs: 10, toTs: 50} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 10, toTs: 50 },
+      expectedResult: [{ fromTs: 10, toTs: 50 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 10, toTs: 15},
-      expectedResult: [ {fromTs: 10, toTs: 15} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 10, toTs: 15 },
+      expectedResult: [{ fromTs: 10, toTs: 15 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 110, toTs: 150},
-      expectedResult: [ {fromTs: 110, toTs: 150} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 110, toTs: 150 },
+      expectedResult: [{ fromTs: 110, toTs: 150 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 11, toTs: 55},
-      expectedResult: [ {fromTs: 11, toTs: 50} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 11, toTs: 55 },
+      expectedResult: [{ fromTs: 11, toTs: 50 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 88, toTs: 155},
-      expectedResult: [ {fromTs: 100, toTs: 155} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 88, toTs: 155 },
+      expectedResult: [{ fromTs: 100, toTs: 155 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100} ],
-      wantedInterval: {fromTs: 38, toTs: 155},
-      expectedResult: [ {fromTs: 38, toTs: 50}, {fromTs: 100, toTs: 155} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }],
+      wantedInterval: { fromTs: 38, toTs: 155 },
+      expectedResult: [{ fromTs: 38, toTs: 50 }, { fromTs: 100, toTs: 155 }],
     },
     {
-      existingIntervals: [ {fromTs: 50, toTs: 100}, {fromTs: 200, toTs: 255} ],
-      wantedInterval: {fromTs: 3, toTs: 355},
-      expectedResult: [ {fromTs: 3, toTs: 50}, {fromTs: 100, toTs: 200}, {fromTs: 255, toTs: 355} ],
+      existingIntervals: [{ fromTs: 50, toTs: 100 }, { fromTs: 200, toTs: 255 }],
+      wantedInterval: { fromTs: 3, toTs: 355 },
+      expectedResult: [{ fromTs: 3, toTs: 50 }, { fromTs: 100, toTs: 200 }, { fromTs: 255, toTs: 355 }],
     },
   ];
   for (let param of params) {
@@ -54,11 +54,7 @@ test('aggregateIntervalOnTheFly single path, single bucket', () => {
   const fromTs = 2000;
   const toTs = 4000;
   const pathsData = {
-    'asdf.123': [
-      { t: 2010, v: 100.0 },
-      { t: 2020, v: 150.0 },
-      { t: 2030, v: 110.0 },
-    ],
+    'asdf.123': [{ t: 2010, v: 100.0 }, { t: 2020, v: 150.0 }, { t: 2030, v: 110.0 }],
   };
   const useAggrLevel = -1; // aggr. interval == 1200 s
   const expectedResult = {
@@ -180,4 +176,3 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets, aggr -2', () =
   const result = aggregateIntervalOnTheFly(fromTs, toTs, pathsData, useAggrLevel);
   expect(result).toEqual(expectedResult);
 });
-

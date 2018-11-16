@@ -25,23 +25,23 @@ class AdminFirst extends React.Component {
       formValues: {
         ...oldState.formValues,
         [fieldName]: value,
-      }
+      },
     }));
     this.formValues[fieldName] = value;
   }
 
   changeUsername = e => {
     this.changeFormValue('username', e.target.value);
-  }
+  };
   changePassword = e => {
     this.changeFormValue('password', e.target.value);
-  }
+  };
   changeName = e => {
     this.changeFormValue('name', e.target.value);
-  }
+  };
   changeEmail = e => {
     this.changeFormValue('email', e.target.value);
-  }
+  };
 
   handleSubmit = () => {
     const params = {
@@ -49,10 +49,10 @@ class AdminFirst extends React.Component {
       password: this.formValues.password,
       email: this.formValues.email,
       name: this.formValues.name,
-    }
+    };
     fetch(`${ROOT_URL}/admin/first`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       method: 'POST',
@@ -67,12 +67,12 @@ class AdminFirst extends React.Component {
         };
         return fetch(`${ROOT_URL}/auth/login`, {
           headers: {
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'Content-Type': 'application/json',
           },
           method: 'POST',
           body: JSON.stringify(params),
-        })
+        });
       })
       .then(handleFetchErrors)
       .then(response => {
@@ -83,22 +83,24 @@ class AdminFirst extends React.Component {
         fetch(`${ROOT_URL}/admin/accounts/`, {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': jwtToken,
+            Authorization: jwtToken,
           },
           method: 'POST',
           body: JSON.stringify(params),
         })
-        .then(handleFetchErrors)
-        .then(() => {
-          store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
-        })
-        .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
+          .then(handleFetchErrors)
+          .then(() => {
+            store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
+          })
+          .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
       })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())))
-  }
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+  };
 
   render() {
-    const { formValues: { username, password, name, email } } = this.state;
+    const {
+      formValues: { username, password, name, email },
+    } = this.state;
     return (
       <div>
         <h3>Add first (admin) user:</h3>
@@ -115,11 +117,12 @@ class AdminFirst extends React.Component {
         <div class="bottom">
           <Button onClick={this.handleSubmit}>Create first user</Button>
           <div>
-            <i class="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will have administrator privileges. It will not be possible to insert another user in this way!
+            <i class="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will have
+            administrator privileges. It will not be possible to insert another user in this way!
           </div>
         </div>
       </div>
-    )
+    );
   }
 }
 

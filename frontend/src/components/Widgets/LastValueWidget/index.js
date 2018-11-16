@@ -8,7 +8,6 @@ import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 
 class LastValueWidget extends React.Component {
-
   fetchAbortController = null;
 
   constructor(props) {
@@ -18,13 +17,13 @@ class LastValueWidget extends React.Component {
       fetchingError: false,
       lastValue: null,
       lastValueTime: null,
-    }
+    };
     this.fetchData();
   }
 
   fetchData = () => {
     if (this.fetchAbortController !== null) {
-      return;  // fetch is already in progress
+      return; // fetch is already in progress
     }
     this.fetchAbortController = new window.AbortController();
     const query_params = {
@@ -33,7 +32,9 @@ class LastValueWidget extends React.Component {
       sort: 'desc',
       limit: 1,
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/values/?${stringify(query_params)}`, { signal: this.fetchAbortController.signal })
+    fetchAuth(`${ROOT_URL}/accounts/1/values/?${stringify(query_params)}`, {
+      signal: this.fetchAbortController.signal,
+    })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -52,14 +53,14 @@ class LastValueWidget extends React.Component {
       .then(() => {
         this.fetchPathsAbortController = null;
       });
-  }
+  };
 
   render() {
     return (
       <div className="last-value">
         {this.state.lastValue} (at {moment(this.state.lastValueTime * 1000).format('YYYY-MM-DD HH:mm:ss')})
       </div>
-    )
+    );
   }
 }
 

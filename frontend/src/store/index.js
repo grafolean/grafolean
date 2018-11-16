@@ -1,8 +1,8 @@
-import { createStore, applyMiddleware, compose } from 'redux'
-import thunkMiddleware from 'redux-thunk'
+import { createStore, applyMiddleware, compose } from 'redux';
+import thunkMiddleware from 'redux-thunk';
 import throttle from 'lodash/throttle';
 
-import moonthorApp from './reducers'
+import moonthorApp from './reducers';
 
 // we are loading and saving user's authentication to sessionStorage:
 const loadStoreState = () => {
@@ -16,7 +16,7 @@ const loadStoreState = () => {
     return undefined;
   }
 };
-const saveStoreState = (state) => {
+const saveStoreState = state => {
   try {
     const serializedState = JSON.stringify(state);
     window.sessionStorage.setItem('state', serializedState);
@@ -30,16 +30,19 @@ const persistedState = loadStoreState();
 const store = createStore(
   moonthorApp,
   persistedState,
-  composeWithDevTools(applyMiddleware(
-    thunkMiddleware, // lets us dispatch() functions
-  )),
+  composeWithDevTools(
+    applyMiddleware(
+      thunkMiddleware, // lets us dispatch() functions
+    ),
+  ),
 );
 
-store.subscribe(throttle(() => {
-  saveStoreState({
-    user: store.getState().user,
-  });
-}, 1000));
+store.subscribe(
+  throttle(() => {
+    saveStoreState({
+      user: store.getState().user,
+    });
+  }, 1000),
+);
 
 export default store;
-

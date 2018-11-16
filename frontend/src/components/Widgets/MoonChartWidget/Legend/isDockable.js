@@ -5,9 +5,9 @@ import './isDockable.css';
 const isDockable = WrappedComponent => {
   return class Dockable extends React.Component {
     static defaultProps = {
-      dockingEnabled: false,  // if false, do not do anything (don't even display a button) - docking is not allowed
+      dockingEnabled: false, // if false, do not do anything (don't even display a button) - docking is not allowed
       initiallyOpened: false,
-    }
+    };
 
     PADDING = 10;
     SHADOW_SIZE = 10;
@@ -23,7 +23,7 @@ const isDockable = WrappedComponent => {
       this.setState(oldState => ({
         opened: !oldState.opened,
       }));
-    }
+    };
 
     render() {
       const { width, height, ...passThroughProps } = this.props;
@@ -42,7 +42,7 @@ const isDockable = WrappedComponent => {
           boxShadow: `0 0 ${this.SHADOW_SIZE}px #999999`,
         };
       } else {
-        wrapperStyle = {}
+        wrapperStyle = {};
       }
       return (
         <div
@@ -58,12 +58,10 @@ const isDockable = WrappedComponent => {
               height: this.props.dockingEnabled ? height + 2 : height,
             }}
           >
-            <div
-              style={wrapperStyle}
-            >
+            <div style={wrapperStyle}>
               <WrappedComponent
-                width={width - 2*this.PADDING}
-                height={height - 32 - 2*this.PADDING - this.SHADOW_SIZE}
+                width={width - 2 * this.PADDING}
+                height={height - 32 - 2 * this.PADDING - this.SHADOW_SIZE}
                 {...passThroughProps}
               />
             </div>
@@ -80,9 +78,9 @@ const isDockable = WrappedComponent => {
             />
           )}
         </div>
-      )
+      );
     }
-  }
-}
+  };
+};
 
 export default isDockable;

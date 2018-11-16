@@ -28,30 +28,30 @@ class Login extends React.Component {
       formValues: {
         ...oldState.formValues,
         [fieldName]: value,
-      }
+      },
     }));
     this.formValues[fieldName] = value;
   }
 
   changeUsername = e => {
     this.changeFormValue('username', e.target.value);
-  }
+  };
   changePassword = e => {
     this.changeFormValue('password', e.target.value);
-  }
+  };
 
   onLoginClick = () => {
     const params = {
       username: this.formValues.username,
       password: this.formValues.password,
-    }
+    };
     this.setState({
       processingLogin: true,
       loginError: undefined,
     });
     fetch(`${ROOT_URL}/auth/login`, {
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       method: 'POST',
@@ -66,7 +66,7 @@ class Login extends React.Component {
         }
         if (!response.ok) {
           throw new Error(`Error ${response.status} - ${response.statusText}`);
-        };
+        }
         response.json().then(json => {
           const jwtToken = response.headers.get('X-JWT-Token');
           window.sessionStorage.setItem('moonthor_jwt_token', jwtToken);
@@ -74,25 +74,33 @@ class Login extends React.Component {
           this.setState({
             redirectToReferrer: true,
           });
-        })
+        });
       })
       .catch(errorMsg => {
         console.error(errorMsg.toString());
         this.setState({
           loginError: errorMsg.toString(),
-        })
+        });
       })
-      .then(() => this.setState({
-        processingLogin: false,
-      }))
-
-  }
+      .then(() =>
+        this.setState({
+          processingLogin: false,
+        }),
+      );
+  };
 
   render() {
-    const { formValues: { username, password }, processingLogin, loginError, redirectToReferrer } = this.state;
+    const {
+      formValues: { username, password },
+      processingLogin,
+      loginError,
+      redirectToReferrer,
+    } = this.state;
     if (redirectToReferrer === true) {
-      const { fromLocation } = this.props.location.state || { fromLocation: "/" };
-      return <Redirect to={fromLocation} />
+      const { fromLocation } = this.props.location.state || {
+        fromLocation: '/',
+      };
+      return <Redirect to={fromLocation} />;
     }
     return (
       <div className="login centered">
@@ -101,19 +109,22 @@ class Login extends React.Component {
           <input type="text" value={username} onChange={this.changeUsername} />
           <label>Password:</label>
           <input type="password" value={password} onChange={this.changePassword} />
-          <div></div>
+          <div />
           {processingLogin ? (
-            <button><i className="fa fa-spinner fa-spin" /></button>
+            <button>
+              <i className="fa fa-spinner fa-spin" />
+            </button>
           ) : (
-            <button
-              onClick={this.onLoginClick}
-              disabled={username.length === 0 || password.length === 0}
-            >Login</button>
+            <button onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
+              Login
+            </button>
           )}
         </div>
         {loginError && (
           <div className="error-msg">
-            <i className="fa fa-exclamation-triangle" />&nbsp;{loginError}
+            <i className="fa fa-exclamation-triangle" />
+            &nbsp;
+            {loginError}
           </div>
         )}
       </div>

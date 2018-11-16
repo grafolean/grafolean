@@ -1,47 +1,31 @@
 import React from 'react';
 
-const InputWithClear = (props) => (
-  <div
-    className="input-with-clear"
-  >
-    <input
-      type="text"
-      name="pathFilter"
-      value={props.value}
-      onChange={props.onChange}
-    />
-    <ClearField
-      onClick={props.onClear}
-    />
-  </div >
-)
+const InputWithClear = props => (
+  <div className="input-with-clear">
+    <input type="text" name="pathFilter" value={props.value} onChange={props.onChange} />
+    <ClearField onClick={props.onClear} />
+  </div>
+);
 
-const ClearField = (props) => (
-  <div
-    className="clear-input"
-  >
+const ClearField = props => (
+  <div className="clear-input">
     <span className="triangle" />
-    <button
-      className="link-button"
-      onClick={props.onClick}
-    >
-      <i
-        className="fa fa-close"
-      />
+    <button className="link-button" onClick={props.onClick}>
+      <i className="fa fa-close" />
     </button>
   </div>
-)
+);
 
 export default class Filter extends React.Component {
   static defaultProps = {
     onChange: () => {},
-  }
+  };
 
   constructor(props) {
     super(props);
     this.state = {
       filter: '',
-    }
+    };
   }
 
   handleInputChange = ev => {
@@ -50,18 +34,18 @@ export default class Filter extends React.Component {
       {
         filter: inputValue,
       },
-      () => this.props.onChange(inputValue)
+      () => this.props.onChange(inputValue),
     );
-  }
+  };
 
   clearInput = () => {
     this.setState(
       {
         filter: '',
       },
-      () => this.props.onChange('')
-    )
-  }
+      () => this.props.onChange(''),
+    );
+  };
 
   render() {
     return (
@@ -73,6 +57,6 @@ export default class Filter extends React.Component {
           onClear={this.clearInput}
         />
       </div>
-    )
+    );
   }
 }

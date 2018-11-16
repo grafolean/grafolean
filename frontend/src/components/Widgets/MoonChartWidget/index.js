@@ -19,7 +19,6 @@ import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 
-
 class MoonChart extends React.Component {
   repinchyMouseMoveHandler = null;
   repinchyClickHandler = null;
@@ -31,7 +30,7 @@ class MoonChart extends React.Component {
       loading: true,
       drawnChartSeries: [],
       allChartSeries: [],
-    }
+    };
     this.fetchPaths();
   }
 
@@ -44,34 +43,40 @@ class MoonChart extends React.Component {
 
   fetchPaths = () => {
     if (this.fetchPathsAbortController !== null) {
-      return;  // fetch is already in progress
+      return; // fetch is already in progress
     }
     this.fetchPathsAbortController = new window.AbortController();
     const query_params = {
-      filter: this.props.chartContent.map(cc => cc.path_filter).join(","),
+      filter: this.props.chartContent.map(cc => cc.path_filter).join(','),
       limit: 1001,
       failover_trailing: 'false',
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, { signal: this.fetchPathsAbortController.signal })
+    fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, {
+      signal: this.fetchPathsAbortController.signal,
+    })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
         // construct a better representation of the data for display in the chart:
         const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
-          return result.concat(json.paths[c.path_filter].map(path => ({
-            chartSeriesId: `${contentIndex}-${path}`,
-            path: path,
-            serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
-            unit: c.unit,
-          })));
+          return result.concat(
+            json.paths[c.path_filter].map(path => ({
+              chartSeriesId: `${contentIndex}-${path}`,
+              path: path,
+              serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
+              unit: c.unit,
+            })),
+          );
         }, []);
-        const indexedAllChartSeries = allChartSeries.map((cs, i) => ({...cs, index: i }));
+        const indexedAllChartSeries = allChartSeries.map((cs, i) => ({
+          ...cs,
+          index: i,
+        }));
 
         this.setState({
           drawnChartSeries: indexedAllChartSeries,
           allChartSeries: indexedAllChartSeries,
         });
-
       })
       .catch(errorMsg => {
         this.setState({
@@ -81,9 +86,7 @@ class MoonChart extends React.Component {
       .then(() => {
         this.fetchPathsAbortController = null;
       });
-
-
-  }
+  };
 
   // We need to do this weird dance around mousemove events because of performance
   // issues. RePinchy handles all of mouse events (because it needs them for its
@@ -95,31 +98,31 @@ class MoonChart extends React.Component {
   // via call to `MoonChartWidget.registerRepinchyMouseMoveHandler()`. On the other
   // hand, RePinchy gets our handler as its prop (and calls it), and we pass the
   // events to registered event handler. Easy, right? :)
-  registerRePinchyMouseMoveHandler = (handler) => {
+  registerRePinchyMouseMoveHandler = handler => {
     this.repinchyMouseMoveHandler = handler;
-  }
-  handleRePinchyMouseMove = (ev) => {
+  };
+  handleRePinchyMouseMove = ev => {
     if (this.repinchyMouseMoveHandler === null) {
       return;
     }
     this.repinchyMouseMoveHandler(ev);
-  }
+  };
   // and then we use the same principle with click, just to be consistent:
-  registerRePinchyClickHandler = (handler) => {
+  registerRePinchyClickHandler = handler => {
     this.repinchyClickHandler = handler;
-  }
-  handleRePinchyClick = (ev) => {
+  };
+  handleRePinchyClick = ev => {
     if (this.repinchyClickHandler === null) {
       return;
     }
     this.repinchyClickHandler(ev);
-  }
+  };
 
-  handleDrawnChartSeriesChange = (drawnChartSeries) => {
+  handleDrawnChartSeriesChange = drawnChartSeries => {
     this.setState({
       drawnChartSeries: drawnChartSeries,
     });
-  }
+  };
 
   render() {
     const MAX_YAXIS_WIDTH = 70;
@@ -142,15 +145,19 @@ class MoonChart extends React.Component {
         top: 0,
       };
     }
-    const yAxisWidth = Math.min(Math.round(chartWidth * 0.10), MAX_YAXIS_WIDTH);  // 10% of chart width, max. 100px
-    const xAxisHeight = Math.min(Math.round(this.props.height * 0.10), 50);  // 10% of chart height, max. 50px
+    const yAxisWidth = Math.min(Math.round(chartWidth * 0.1), MAX_YAXIS_WIDTH); // 10% of chart width, max. 100px
+    const xAxisHeight = Math.min(Math.round(this.props.height * 0.1), 50); // 10% of chart height, max. 50px
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
     const yAxesWidth = yAxesCount * yAxisWidth;
 
-    const toTs = moment().add(1, 'day').unix();
-    const fromTs = moment().subtract(1, 'month').unix();
+    const toTs = moment()
+      .add(1, 'day')
+      .unix();
+    const fromTs = moment()
+      .subtract(1, 'month')
+      .unix();
     const initialScale = chartWidth / (toTs - fromTs);
-    const initialPanX = - fromTs * initialScale;
+    const initialPanX = -fromTs * initialScale;
     return (
       <div
         className="widget-dialog-container"
@@ -160,7 +167,6 @@ class MoonChart extends React.Component {
           width: this.props.width,
         }}
       >
-
         <div>
           <RePinchy
             width={this.props.width}
@@ -187,8 +193,8 @@ class MoonChart extends React.Component {
                   drawnChartSeries={this.state.drawnChartSeries}
                   width={chartWidth}
                   height={this.props.height}
-                  fromTs={Math.round(-(x - yAxesWidth)/scale)}
-                  toTs={Math.round(-(x - yAxesWidth)/scale) + Math.round(chartWidth / scale)}
+                  fromTs={Math.round(-(x - yAxesWidth) / scale)}
+                  toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
                   scale={scale}
                   zoomInProgress={zoomInProgress}
                   xAxisHeight={xAxisHeight}
@@ -196,9 +202,7 @@ class MoonChart extends React.Component {
                   registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
                   registerClickHandler={this.registerRePinchyClickHandler}
                 />
-                <div
-                  style={legendPositionStyle}
-                >
+                <div style={legendPositionStyle}>
                   <Legend
                     dockingEnabled={legendIsDockable}
                     width={legendWidth}
@@ -211,9 +215,8 @@ class MoonChart extends React.Component {
             )}
           </RePinchy>
         </div>
-
       </div>
-    )
+    );
   }
 }
 
@@ -252,7 +255,7 @@ export class ChartContainer extends React.Component {
     this.state = {
       fetchedIntervalsData: [],
       errorMsg: null,
-    }
+    };
   }
 
   componentDidMount() {
@@ -260,23 +263,24 @@ export class ChartContainer extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
-    if (prevProps.chartSeries !== this.props.chartSeries
-      || prevProps.fromTs !== this.props.fromTs
-      || prevProps.toTs !== this.props.toTs
+    if (
+      prevProps.chartSeries !== this.props.chartSeries ||
+      prevProps.fromTs !== this.props.fromTs ||
+      prevProps.toTs !== this.props.toTs
     ) {
       this.paths = this.props.chartSeries.map(cs => cs.path);
       this.ensureData(this.props.fromTs, this.props.toTs);
-    };
+    }
     this.updateYAxisDerivedProperties(this.props);
   }
 
   ensureData(fromTs, toTs) {
     if (this.paths === null) {
-      return;  // we didn't receive the list of paths yet, we only have path filters
+      return; // we didn't receive the list of paths yet, we only have path filters
     }
-    const maxPointsOnChart = this.MAX_POINTS_PER_100PX * this.props.width / 100;
-    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1);  // -1 for no aggregation
-    this.setState((oldState) => ({
+    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * this.props.width) / 100;
+    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1); // -1 for no aggregation
+    this.setState(oldState => ({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
     }));
@@ -284,11 +288,14 @@ export class ChartContainer extends React.Component {
       // anything that we might have already fetched for this aggrLevel:
       ...(this.fetchedData[`${aggrLevel}`] || []),
       // and anything that is being fetched:
-      ...this.requestsInProgress.filter((v) => (v.aggrLevel === aggrLevel)),
+      ...this.requestsInProgress.filter(v => v.aggrLevel === aggrLevel),
     ];
 
     const diffTs = toTs - fromTs;
-    const wantedIntervals = getMissingIntervals(existingIntervals, { fromTs: fromTs - diffTs/2, toTs: toTs + diffTs/2 });  // do we have everything we need, plus some more?
+    const wantedIntervals = getMissingIntervals(existingIntervals, {
+      fromTs: fromTs - diffTs / 2,
+      toTs: toTs + diffTs / 2,
+    }); // do we have everything we need, plus some more?
     if (wantedIntervals.length === 0) {
       return;
     }
@@ -297,18 +304,21 @@ export class ChartContainer extends React.Component {
     // sure that the timestamps are aligned according to aggr. level)
     const alignedFromTs = this.alignTs(fromTs - diffTs, aggrLevel, Math.floor);
     const alignedToTs = this.alignTs(toTs + diffTs, aggrLevel, Math.ceil);
-    const intervalsToFeFetched = getMissingIntervals(existingIntervals, { fromTs: alignedFromTs, toTs: alignedToTs });
+    const intervalsToFeFetched = getMissingIntervals(existingIntervals, {
+      fromTs: alignedFromTs,
+      toTs: alignedToTs,
+    });
     for (let intervalToBeFetched of intervalsToFeFetched) {
-      this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel);  // take exactly what is needed, so you'll be able to merge intervals easily
-    };
+      this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel); // take exactly what is needed, so you'll be able to merge intervals easily
+    }
   }
 
   // API requests the timestamps to be aligned to correct times according to aggr. level:
   alignTs(originalTs, aggrLevel, floorCeilFunc) {
     if (aggrLevel === -1) {
-      return originalTs;  // no aggregation -> no alignment
-    };
-    const interval = 3600 * (3 ** aggrLevel);
+      return originalTs; // no aggregation -> no alignment
+    }
+    const interval = 3600 * 3 ** aggrLevel;
     return floorCeilFunc(originalTs / interval) * interval;
   }
 
@@ -318,8 +328,8 @@ export class ChartContainer extends React.Component {
 
     // find all existing intervals which are touching our interval so you can merge
     // them to a single block:
-    const existingBlockBefore = this.fetchedData[aggrLevel].find((b) => (b.toTs === fromTs));
-    const existingBlockAfter = this.fetchedData[aggrLevel].find((b) => (b.fromTs === toTs));
+    const existingBlockBefore = this.fetchedData[aggrLevel].find(b => b.toTs === fromTs);
+    const existingBlockAfter = this.fetchedData[aggrLevel].find(b => b.fromTs === toTs);
     // if there are any, merge them together:
     let pathsData = {};
     for (let path of this.paths) {
@@ -327,19 +337,19 @@ export class ChartContainer extends React.Component {
         ...(existingBlockBefore ? existingBlockBefore.pathsData[path] : []),
         ...json.paths[path].data,
         ...(existingBlockAfter ? existingBlockAfter.pathsData[path] : []),
-      ]
-    };
-    const mergedBlock = {
-      fromTs: (existingBlockBefore) ? (existingBlockBefore.fromTs) : (fromTs),
-      toTs: (existingBlockAfter) ? (existingBlockAfter.toTs) : (toTs),
-      pathsData: pathsData,
+      ];
     }
+    const mergedBlock = {
+      fromTs: existingBlockBefore ? existingBlockBefore.fromTs : fromTs,
+      toTs: existingBlockAfter ? existingBlockAfter.toTs : toTs,
+      pathsData: pathsData,
+    };
 
     // then construct new this.fetchedData from data blocks that came before, our merged block and those that are after:
     this.fetchedData[aggrLevel] = [
-      ...this.fetchedData[aggrLevel].filter((b) => (b.toTs < mergedBlock.fromTs)),
+      ...this.fetchedData[aggrLevel].filter(b => b.toTs < mergedBlock.fromTs),
       mergedBlock,
-      ...this.fetchedData[aggrLevel].filter((b) => (b.fromTs > mergedBlock.toTs)),
+      ...this.fetchedData[aggrLevel].filter(b => b.fromTs > mergedBlock.toTs),
     ];
 
     // while you are saving data, update min/max value:
@@ -348,14 +358,16 @@ export class ChartContainer extends React.Component {
         this.yAxesProperties[cs.unit] = {
           minYValue: 0,
           maxYValue: Number.NEGATIVE_INFINITY,
-        }
+        };
       }
-      this.yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
-        Math.min(prevValue, (aggrLevel < 0) ? (d.v) : (d.minv))
-      ), this.yAxesProperties[cs.unit].minYValue);
-      this.yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce((prevValue, d) => (
-        Math.max(prevValue, (aggrLevel < 0) ? (d.v) : (d.maxv))
-      ), this.yAxesProperties[cs.unit].maxYValue);
+      this.yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce(
+        (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
+        this.yAxesProperties[cs.unit].minYValue,
+      );
+      this.yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce(
+        (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
+        this.yAxesProperties[cs.unit].maxYValue,
+      );
     }
 
     // now that you have updated minYValue and maxYValue for each unit, prepare some of the data that you
@@ -367,26 +379,30 @@ export class ChartContainer extends React.Component {
     }));
   }
 
-  updateYAxisDerivedProperties = (props) => {
+  updateYAxisDerivedProperties = props => {
     const yAxisHeight = props.height - props.xAxisHeight - this.YAXIS_TOP_PADDING;
     for (let unit in this.yAxesProperties) {
-      const ticks = ChartView.getYTicks(this.yAxesProperties[unit].minYValue, this.yAxesProperties[unit].maxYValue);
+      const ticks = ChartView.getYTicks(
+        this.yAxesProperties[unit].minYValue,
+        this.yAxesProperties[unit].maxYValue,
+      );
       const minY = parseFloat(ticks[0]);
       const maxY = parseFloat(ticks[ticks.length - 1]);
       this.yAxesProperties[unit].derived = {
         minY: minY,
         maxY: maxY,
         ticks: ticks,
-        v2y: (v) => (this.YAXIS_TOP_PADDING + yAxisHeight - (v - minY) * yAxisHeight / (maxY - minY)),
-        y2v: (y) => ((maxY - minY) * (yAxisHeight - y + this.YAXIS_TOP_PADDING) / yAxisHeight + minY),
-        dy2dv: (dy) => (dy * (maxY - minY) / yAxisHeight),
-        dv2dy: (dv) => (dv * yAxisHeight / (maxY - minY)),
+        v2y: v => this.YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY),
+        y2v: y => ((maxY - minY) * (yAxisHeight - y + this.YAXIS_TOP_PADDING)) / yAxisHeight + minY,
+        dy2dv: dy => (dy * (maxY - minY)) / yAxisHeight,
+        dv2dy: dv => (dv * yAxisHeight) / (maxY - minY),
       };
     }
-  }
+  };
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
-    const requestInProgress = {  // prepare an object and remember its reference; you will need it when removing it from the list
+    const requestInProgress = {
+      // prepare an object and remember its reference; you will need it when removing it from the list
       aggrLevel,
       fromTs,
       toTs,
@@ -394,34 +410,35 @@ export class ChartContainer extends React.Component {
     this.requestsInProgress.push(requestInProgress);
     this.setState({
       fetching: true,
-    })
+    });
 
-    fetchAuth(`${ROOT_URL}/accounts/1/values?${stringify({
-      p: this.paths.join(","),
-      t0: fromTs,
-      t1: toTs,
-      a: (aggrLevel < 0) ? ('no') : (aggrLevel),
-    })}`)
+    fetchAuth(
+      `${ROOT_URL}/accounts/1/values?${stringify({
+        p: this.paths.join(','),
+        t0: fromTs,
+        t1: toTs,
+        a: aggrLevel < 0 ? 'no' : aggrLevel,
+      })}`,
+    )
       .then(handleFetchErrors)
       .then(
-        response => response.json().then(json => {
-          this.saveResponseData(fromTs, toTs, aggrLevel, json);
-          return null;
-        }),
+        response =>
+          response.json().then(json => {
+            this.saveResponseData(fromTs, toTs, aggrLevel, json);
+            return null;
+          }),
         errorMsg => {
           return errorMsg;
-        }
+        },
       )
-      .then(
-        errorMsg => {
-          // whatever happened, remove the info about this particular request:
-          this.requestsInProgress = this.requestsInProgress.filter((r) => (r !== requestInProgress));
-          this.setState({
-            fetching: this.requestsInProgress.length > 0,
-            errorMsg,
-          });
-        }
-      )
+      .then(errorMsg => {
+        // whatever happened, remove the info about this particular request:
+        this.requestsInProgress = this.requestsInProgress.filter(r => r !== requestInProgress);
+        this.setState({
+          fetching: this.requestsInProgress.length > 0,
+          errorMsg,
+        });
+      });
   }
 
   getMinKnownTs() {
@@ -457,7 +474,7 @@ export class ChartContainer extends React.Component {
         minKnownTs={this.getMinKnownTs()}
         yAxesProperties={this.yAxesProperties}
       />
-    )
+    );
   }
 }
 
@@ -473,71 +490,70 @@ export class ChartView extends React.Component {
     scale: 1,
     zoomInProgress: false,
     aggrLevel: null,
-    registerMouseMoveHandler: (handler) => {},
+    registerMouseMoveHandler: handler => {},
     fetchedIntervalsData: [],
     drawnChartSeries: [],
     yAxesProperties: {},
-  }
+  };
   oldClosest = null;
 
   constructor(props) {
     super(props);
     this.state = {
       closestPoint: null,
-      overrideClosestPoint: null,  // when tooltip is open, this is set
-    }
+      overrideClosestPoint: null, // when tooltip is open, this is set
+    };
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
     this.props.registerClickHandler(this.handleClick);
   }
 
   // functions for converting x <-> t:
-  dx2dt = (dx) => (dx / this.props.scale)
-  dt2dx = (dt) => (dt * this.props.scale)
-  x2t = (x) => (this.props.fromTs + x / this.props.scale);
-  t2x = (t) => ((t - this.props.fromTs) * this.props.scale);
+  dx2dt = dx => dx / this.props.scale;
+  dt2dx = dt => dt * this.props.scale;
+  x2t = x => this.props.fromTs + x / this.props.scale;
+  t2x = t => (t - this.props.fromTs) * this.props.scale;
 
-  _getClosestPointFromEvent = (ev) => {
-      // this will get called from RePinchy when there is a mousemove event:
+  _getClosestPointFromEvent = ev => {
+    // this will get called from RePinchy when there is a mousemove event:
     let rect = ev.currentTarget.getBoundingClientRect();
     const ts = this.x2t(ev.clientX - rect.left);
     const y = ev.clientY - rect.top;
     const newClosest = this.getClosestValue(ts, y);
     return newClosest;
-  }
+  };
 
-  _hasClosestPointChanged = (newClosest) => {
+  _hasClosestPointChanged = newClosest => {
     // if both are null, no change:
     if (this.oldClosest === null && newClosest === null) {
       return false;
-    };
+    }
     // one is null, there was change:
     if (this.oldClosest === null || newClosest === null) {
       return true;
-    };
+    }
     // otherwise compare their content:
     if (
-        this.oldClosest.cs === newClosest.cs &&
-        this.oldClosest.point.t === newClosest.point.t &&
-        this.oldClosest.point.v === newClosest.point.v
-      )
-    {
+      this.oldClosest.cs === newClosest.cs &&
+      this.oldClosest.point.t === newClosest.point.t &&
+      this.oldClosest.point.v === newClosest.point.v
+    ) {
       return false;
     } else {
       return true;
     }
-  }
+  };
 
-  handleClick = (ev) => {
+  handleClick = ev => {
     const newClosest = this._getClosestPointFromEvent(ev);
     this.oldClosest = newClosest;
     this.setState({
       closestPoint: newClosest,
       overrideClosestPoint: newClosest,
-    })
-  }
+    });
+  };
 
-  handleMouseMove = (ev) => {
+  handleMouseMove = ev => {
     const newClosest = this._getClosestPointFromEvent(ev);
     if (!this._hasClosestPointChanged(newClosest)) {
       return;
@@ -546,14 +562,14 @@ export class ChartView extends React.Component {
     this.oldClosest = newClosest;
     this.setState({
       closestPoint: newClosest,
-    })
-  }
+    });
+  };
 
   static getYTicks(minYValue, maxYValue) {
     // returns an array of strings - values of Y ticks
-    if ((minYValue === null) || (maxYValue === null)) {
+    if (minYValue === null || maxYValue === null) {
       return null;
-    };
+    }
     // - normalize values to interval 10.0 - 99.9
     // - determine the appropriate interval I (10, 5 or 2)
     // - return the smallest list of ticks so that ticks[0] <= minYValue, ticks[n+1] = ticks[n] + 1, ticks[last] >= maxYValue
@@ -569,13 +585,13 @@ export class ChartView extends React.Component {
       normalizedInterval = 5;
     } else {
       normalizedInterval = 2;
-    };
+    }
 
     const interval = normalizedInterval * Math.pow(10, power10);
     const minValueLimit = Math.floor(minYValue / interval) * interval;
     let ret = [];
     let i;
-    const numberOfDecimals = Math.max(0, - power10 - ((normalizedInterval === 10) ? 1 : 0) )
+    const numberOfDecimals = Math.max(0, -power10 - (normalizedInterval === 10 ? 1 : 0));
     for (i = minValueLimit; i < maxYValue; i += interval) {
       ret.push(i.toFixed(numberOfDecimals));
     }
@@ -588,24 +604,25 @@ export class ChartView extends React.Component {
     const maxDistTs = this.dx2dt(MAX_DIST_PX);
 
     // brute-force search:
-    const applicableIntervals = this.props.fetchedIntervalsData
-      .filter(fid => !( fid.toTs < ts - maxDistTs || fid.fromTs > ts + maxDistTs ));  // only intervals which are close enough to our ts
+    const applicableIntervals = this.props.fetchedIntervalsData.filter(
+      fid => !(fid.toTs < ts - maxDistTs || fid.fromTs > ts + maxDistTs),
+    ); // only intervals which are close enough to our ts
 
     let closest = null;
     for (let interval of applicableIntervals) {
       for (let cs of this.props.drawnChartSeries) {
-        if (!interval.pathsData.hasOwnProperty(cs.path)) {  // do we have fetched data for this cs?
+        if (!interval.pathsData.hasOwnProperty(cs.path)) {
+          // do we have fetched data for this cs?
           continue;
-        };
+        }
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
         for (let point of interval.pathsData[cs.path]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
-          if ((distTs > maxDistTs) || (distV > maxDistV))
-            continue;
-            // when we are searching for closest match, we want it to be in x/y space, not ts/v:
+          if (distTs > maxDistTs || distV > maxDistV) continue;
+          // when we are searching for closest match, we want it to be in x/y space, not ts/v:
           const distX = this.dt2dx(distTs);
           const distY = helpers.dv2dy(distV);
           const dist = Math.sqrt(distX * distX + distY * distY);
@@ -615,7 +632,7 @@ export class ChartView extends React.Component {
               cs,
               point,
               dist,
-            }
+            };
           }
         }
       }
@@ -661,8 +678,9 @@ export class ChartView extends React.Component {
 
     const closest = this.state.overrideClosestPoint || this.state.closestPoint;
 
-    const drawnUnits = Object.keys(this.props.yAxesProperties)
-      .filter(unit => !!this.props.drawnChartSeries.find(cs => cs.unit === unit));
+    const drawnUnits = Object.keys(this.props.yAxesProperties).filter(
+      unit => !!this.props.drawnChartSeries.find(cs => cs.unit === unit),
+    );
 
     const yAxesCount = drawnUnits.length;
     const yAxesWidth = this.props.yAxisWidth * yAxesCount;
@@ -673,31 +691,36 @@ export class ChartView extends React.Component {
           ...this.props.style,
         }}
       >
-        <div className="chart"
+        <div
+          className="chart"
           style={{
             width: this.props.width,
             height: this.props.height,
-            backgroundColor: (this.props.zoomInProgress) ? ('yellow') : ('white'),
+            backgroundColor: this.props.zoomInProgress ? 'yellow' : 'white',
             position: 'relative',
             float: 'left',
           }}
         >
-
           {(this.props.fetching || this.props.errorMsg) && (
-            <div style={{
+            <div
+              style={{
                 position: 'absolute',
                 right: 9,
                 top: 9,
               }}
             >
-              {(this.props.fetching) ? (
-                <i className="fa fa-spinner fa-spin" style={{
+              {this.props.fetching ? (
+                <i
+                  className="fa fa-spinner fa-spin"
+                  style={{
                     color: '#666',
                     fontSize: 30,
                   }}
                 />
               ) : (
-                <i className="fa fa-exclamation-triangle" style={{
+                <i
+                  className="fa fa-exclamation-triangle"
+                  style={{
                     color: '#660000',
                     margin: 5,
                     fontSize: 20,
@@ -709,18 +732,14 @@ export class ChartView extends React.Component {
           )}
 
           <svg width={this.props.width} height={this.props.height}>
-
             <defs>
               <clipPath id="chartContentArea">
-                <rect x={yAxesWidth} y="0" width={this.props.width - yAxesWidth} height={yAxisHeight}/>
+                <rect x={yAxesWidth} y="0" width={this.props.width - yAxesWidth} height={yAxisHeight} />
               </clipPath>
             </defs>
 
             {drawnUnits.map((unit, i) => (
-              <g
-                key={i}
-                transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}
-              >
+              <g key={i} transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}>
                 <Grid
                   width={this.props.width - this.props.yAxisWidth * (i + 1)}
                   height={yAxisHeight}
@@ -733,35 +752,33 @@ export class ChartView extends React.Component {
               </g>
             ))}
 
-            <g
-              clipPath="url(#chartContentArea)"
-            >
+            <g clipPath="url(#chartContentArea)">
               {/*
                 Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
                 only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
               */}
               <g
-                transform={`translate(${yAxesWidth - 1 - ((this.props.fromTs - this.props.minKnownTs) * this.props.scale)} 0)`}
+                transform={`translate(${yAxesWidth -
+                  1 -
+                  (this.props.fromTs - this.props.minKnownTs) * this.props.scale} 0)`}
               >
-                {this.props.fetchedIntervalsData
-                  .map((interval, intervalIndex) => (
-                    <IntervalLineChart
-                      key={`i-${this.props.aggrLevel}-${intervalIndex}`}
-                      interval={interval}
-                      yAxisHeight={yAxisHeight}
-                      scale={this.props.scale}
-                      minKnownTs={this.props.minKnownTs}
-                      isAggr={this.props.aggrLevel >= 0}
-                      drawnChartSeries={this.props.drawnChartSeries}
-                      // dict of v2y() functions per unit:
-                      v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
-                        result[unit] = this.props.yAxesProperties[unit].derived.v2y;
-                        return result;
-                      }, {})}
-                    />
-                  ))
-                }
-                {(closest) && (
+                {this.props.fetchedIntervalsData.map((interval, intervalIndex) => (
+                  <IntervalLineChart
+                    key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                    interval={interval}
+                    yAxisHeight={yAxisHeight}
+                    scale={this.props.scale}
+                    minKnownTs={this.props.minKnownTs}
+                    isAggr={this.props.aggrLevel >= 0}
+                    drawnChartSeries={this.props.drawnChartSeries}
+                    // dict of v2y() functions per unit:
+                    v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
+                      result[unit] = this.props.yAxesProperties[unit].derived.v2y;
+                      return result;
+                    }, {})}
+                  />
+                ))}
+                {closest && (
                   <TooltipIndicator
                     {...closest}
                     x={this.dt2dx(closest.point.t - this.props.minKnownTs)}
@@ -791,7 +808,6 @@ export class ChartView extends React.Component {
                 width={this.props.width - yAxesWidth}
                 height={this.props.xAxisHeight}
                 color="#999999"
-
                 scale={this.props.scale}
                 panX={
                   this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
@@ -800,7 +816,7 @@ export class ChartView extends React.Component {
             </g>
           </svg>
 
-          {(closest) && (
+          {closest && (
             <div
               style={{
                 position: 'absolute',
@@ -812,18 +828,24 @@ export class ChartView extends React.Component {
                 // if tooltip was opened by a click, it should be on top so user can select text:
                 zIndex={this.state.overrideClosestPoint ? 999999 : 1}
               >
-                {(closest.point.minv) ? (
+                {closest.point.minv ? (
                   <div>
                     <p>{closest.cs.serieName}</p>
                     <p>{closest.cs.path}</p>
-                    <p>{closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} - {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})</p>
+                    <p>
+                      {closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} -{' '}
+                      {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø{' '}
+                      {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})
+                    </p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
                   </div>
                 ) : (
                   <div>
                     <p>{closest.cs.serieName}</p>
                     <p>{closest.cs.path}</p>
-                    <p>Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}</p>
+                    <p>
+                      Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}
+                    </p>
                     <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
                   </div>
                 )}

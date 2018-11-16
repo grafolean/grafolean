@@ -2,7 +2,6 @@ import React from 'react';
 import WidgetForm from '../WidgetForm';
 
 export default class DashboardWidgetEdit extends React.Component {
-
   render() {
     return (
       <div>
@@ -11,7 +10,6 @@ export default class DashboardWidgetEdit extends React.Component {
           widgetId={this.props.match.params.widgetId}
         />
       </div>
-    )
+    );
   }
 }
-

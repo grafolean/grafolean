@@ -22,10 +22,10 @@ const METRIC_PREFIXES = [
 ];
 const KNOWN_UNITS = {
   '%': { name: 'percent', allowedPrefixes: '' },
-  s:   { name: 'second', allowedPrefixes: 'mµnp' },
-  m:   { name: 'meter', allowedPrefixes: 'pnµmcdk' },
+  s: { name: 'second', allowedPrefixes: 'mµnp' },
+  m: { name: 'meter', allowedPrefixes: 'pnµmcdk' },
   bps: { name: 'bits per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
-  B:   { name: 'byte', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
+  B: { name: 'byte', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
   Bps: { name: 'bytes per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
   ETH: { name: 'Ether', allowedPrefixes: '' },
   BTC: { name: 'Bitcoin', allowedPrefixes: '' },
@@ -51,12 +51,14 @@ export default class ChartForm extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      seriesGroups: this.props.initialFormContent ? this.props.initialFormContent.map(c => ({
-        pathFilter: c.path_filter,
-        pathRenamer: c.renaming,
-        unit: c.unit,
-        metricPrefix: c.metric_prefix,
-      })) : [],
+      seriesGroups: this.props.initialFormContent
+        ? this.props.initialFormContent.map(c => ({
+            pathFilter: c.path_filter,
+            pathRenamer: c.renaming,
+            unit: c.unit,
+            metricPrefix: c.metric_prefix,
+          }))
+        : [],
     };
   }
 
@@ -69,32 +71,34 @@ export default class ChartForm extends React.Component {
     }));
     const valid = true;
     this.props.onChange('chart', content, valid);
-  }
+  };
 
   setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
-    this.setState((prevState) => {
-      let newSeriesGroups = [ ...prevState.seriesGroups ];
+    this.setState(prevState => {
+      let newSeriesGroups = [...prevState.seriesGroups];
       newSeriesGroups[seriesGroupIndex][whichProperty] = newValue;
       return {
         seriesGroups: newSeriesGroups,
       };
     }, this.notifyParentOfChange);
-  }
+  };
 
-  userUnitCreator = (option) => {
+  userUnitCreator = option => {
     return {
       value: option.label,
       label: option.label,
     };
-  }
+  };
 
   metricPrefixOptionRenderer = (pOption, unit) => (
     <span>
-      {pOption.prefix}{unit} [{pOption.name} - 10<sup>{pOption.power}</sup> {unit}]
+      {pOption.prefix}
+      {unit} [{pOption.name} - 10
+      <sup>{pOption.power}</sup> {unit}]
     </span>
-  )
+  );
 
-  handleAddEmptySerie = (ev) => {
+  handleAddEmptySerie = ev => {
     this.setState(prevState => ({
       seriesGroups: [
         ...prevState.seriesGroups,
@@ -107,7 +111,7 @@ export default class ChartForm extends React.Component {
       ],
     }));
     ev.preventDefault();
-  }
+  };
 
   render() {
     let allUnits = Object.keys(KNOWN_UNITS).map(unit => ({
@@ -125,97 +129,102 @@ export default class ChartForm extends React.Component {
         value: sg.unit,
         label: sg.unit,
         allowedPrefixes: null,
-      })
+      });
     }
 
     return (
       <div>
-          <div>
-            <label>Series definitions:</label>
-            {this.state.seriesGroups.map((sg, sgIndex) =>
-              <div className="serie" key={sgIndex}>
-
-                <div className="form-item">
-                  <div style={{ display: 'flex', flexDirection: 'row' }}>
-
-                    <div
+        <div>
+          <label>Series definitions:</label>
+          {this.state.seriesGroups.map((sg, sgIndex) => (
+            <div className="serie" key={sgIndex}>
+              <div className="form-item">
+                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      marginRight: 10,
+                    }}
+                  >
+                    <label>Path filter:</label>
+                    <input
+                      type="text"
+                      name={`pf-${sgIndex}`}
+                      value={sg.pathFilter}
+                      onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
                       style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        marginRight: 10,
+                        height: 20,
+                        minWidth: 300,
                       }}
-                    >
-                      <label>Path filter:</label>
-                      <input
-                        type="text"
-                        name={`pf-${sgIndex}`}
-                        value={sg.pathFilter}
-                        onChange={(ev) => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
-                      />
-                      <label>Path renamer:</label>
-                      <input
-                        type="text"
-                        name={`pr-${sgIndex}`}
-                        value={sg.pathRenamer}
-                        onChange={(ev) => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
-                      />
-                    </div>
-
-                    <MatchingPaths
-                      pathFilter={sg.pathFilter}
-                      pathRenamer={sg.pathRenamer}
-                      displayPaths={true}
+                    />
+                    <label>Path renamer:</label>
+                    <input
+                      type="text"
+                      name={`pr-${sgIndex}`}
+                      value={sg.pathRenamer}
+                      onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
+                      style={{
+                        height: 20,
+                        minWidth: 300,
+                      }}
                     />
                   </div>
-                </div>
 
-                <div className="form-item">
-                  <label>Base unit:</label>
-                  <Creatable
-                    value={sg.unit || ''}
-                    onChange={selectedOption => this.setSeriesGroupProperty(sgIndex, 'unit', selectedOption === null ? '' : selectedOption.value)}
-                    options={allUnits}
-                    promptTextCreator={label => `Use custom unit (${label})`}
-                    newOptionCreator={this.userUnitCreator}
+                  <MatchingPaths
+                    pathFilter={sg.pathFilter}
+                    pathRenamer={sg.pathRenamer}
+                    displayPaths={true}
                   />
                 </div>
+              </div>
 
-                {(sg.unit && (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '')) && (
+              <div className="form-item">
+                <label>Base unit:</label>
+                <Creatable
+                  value={sg.unit || ''}
+                  onChange={selectedOption =>
+                    this.setSeriesGroupProperty(
+                      sgIndex,
+                      'unit',
+                      selectedOption === null ? '' : selectedOption.value,
+                    )
+                  }
+                  options={allUnits}
+                  promptTextCreator={label => `Use custom unit (${label})`}
+                  newOptionCreator={this.userUnitCreator}
+                />
+              </div>
+
+              {sg.unit &&
+                (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '') && (
                   <div className="form-item">
                     <label>Metric prefix: (optional)</label>
                     <Select
                       value={sg.metricPrefix || ''}
                       placeholder={`-- none [1${sg.unit}] --`}
-                      onChange={selectedOption => this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)}
-                      options={METRIC_PREFIXES
-                        .filter(p => (!(sg.unit in KNOWN_UNITS)) || KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix))
-                        .map(p => ({
-                          value: p.prefix,
-                          // no need for label because we specify optionRenderer; but we must supply additional info to it:
-                          ...p,
-                        }))
+                      onChange={selectedOption =>
+                        this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)
                       }
+                      options={METRIC_PREFIXES.filter(
+                        p =>
+                          !(sg.unit in KNOWN_UNITS) ||
+                          KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix),
+                      ).map(p => ({
+                        value: p.prefix,
+                        // no need for label because we specify optionRenderer; but we must supply additional info to it:
+                        ...p,
+                      }))}
                       optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
                       valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
-                      />
+                    />
                   </div>
                 )}
-
-              </div>
-            )}
-            <Button onClick={this.handleAddEmptySerie}>+</Button>
-          </div>
-
+            </div>
+          ))}
+          <Button onClick={this.handleAddEmptySerie}>+</Button>
+        </div>
       </div>
-    )
+    );
   }
-};
-
+}

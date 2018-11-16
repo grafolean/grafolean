@@ -2,23 +2,19 @@ import React from 'react';
 
 export default class WidgetTitleBar extends React.Component {
   static defaultProps = {
-    title: "Title",
+    title: 'Title',
     buttonRenders: [],
-    handleToggleFullscreen: (shouldBeFullscreen) => {},
+    handleToggleFullscreen: shouldBeFullscreen => {},
     isFullscreen: false,
-  }
+  };
 
   render() {
     return (
       <div className="widget-title">
-
         <h1>{this.props.title}</h1>
 
         {this.props.buttonRenders.map((renderButton, i) => (
-          <span
-            key={i}
-            className="widget-button"
-          >
+          <span key={i} className="widget-button">
             {renderButton}
           </span>
         ))}
@@ -29,8 +25,7 @@ export default class WidgetTitleBar extends React.Component {
             onClick={ev => this.props.handleToggleFullscreen(!this.props.isFullscreen)}
           />
         </span>
-
       </div>
-    )
+    );
   }
 }

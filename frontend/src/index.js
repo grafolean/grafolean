@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { BrowserRouter } from 'react-router-dom'
+import { BrowserRouter } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import 'font-awesome/css/font-awesome.min.css';
 
@@ -15,6 +15,6 @@ ReactDOM.render(
       <Main />
     </BrowserRouter>
   </Provider>,
-  document.getElementById('root')
+  document.getElementById('root'),
 );
 registerServiceWorker();

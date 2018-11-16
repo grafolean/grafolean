@@ -18,15 +18,18 @@ export default class LastValueForm extends React.Component {
   notifyParentOfChange = () => {
     const valid = true;
     this.props.onChange('lastvalue', this.state.content, valid);
-  }
+  };
 
-  handlePathChange = (event) => {
-    this.setState({
-      content: {
-        path: event.target.value,
+  handlePathChange = event => {
+    this.setState(
+      {
+        content: {
+          path: event.target.value,
+        },
       },
-    }, this.notifyParentOfChange);
-  }
+      this.notifyParentOfChange,
+    );
+  };
 
   render() {
     const currentValue = this.state.content ? this.state.content.path : '';
@@ -46,7 +49,6 @@ export default class LastValueForm extends React.Component {
           />
         </div>
       </div>
-    )
+    );
   }
 }
-

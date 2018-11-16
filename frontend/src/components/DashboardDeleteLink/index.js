@@ -5,14 +5,13 @@ import store from '../../store';
 import { submitDeleteDashboard } from '../../store/actions';
 
 import Loading from '../Loading';
-import Button from '../Button'
+import Button from '../Button';
 
 class DashboardDeleteLink extends React.Component {
-
   handleClick = event => {
-    store.dispatch(submitDeleteDashboard(this.props.slug))
+    store.dispatch(submitDeleteDashboard(this.props.slug));
     event.preventDefault();
-  }
+  };
 
   render() {
     if (this.props.deleting) {
@@ -21,26 +20,23 @@ class DashboardDeleteLink extends React.Component {
           Deleting...
           <Loading />
         </div>
-      )
+      );
     }
 
-    return (
-      <Button onClick={this.handleClick}>delete</Button>
-    )
+    return <Button onClick={this.handleClick}>delete</Button>;
   }
 }
-
 
 const mapStoreToProps = (store, ownProps) => {
   let slug = ownProps.slug;
   let defaultProps = {
     slug: slug,
-  }
+  };
 
-  if ((!store.dashboards) || (!store.dashboards[slug])) {
+  if (!store.dashboards || !store.dashboards[slug]) {
     return defaultProps;
   }
 
-  return {...defaultProps, ...store.dashboards[slug]}
+  return { ...defaultProps, ...store.dashboards[slug] };
 };
 export default connect(mapStoreToProps)(DashboardDeleteLink);

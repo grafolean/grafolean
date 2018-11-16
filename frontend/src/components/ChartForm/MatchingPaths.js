@@ -5,7 +5,6 @@ import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 
 export default class MatchingPaths extends React.Component {
-
   static MATCH_EXACT = 0;
   static MATCH_WILDCARD = 1;
   static MATCH_RESIDUAL = 2;
@@ -27,7 +26,7 @@ export default class MatchingPaths extends React.Component {
         paths: [],
         pathsWithTrailing: [],
         pathFilter: this.props.pathFilter,
-      }
+      },
     };
     this.onPathFilterChange(this.props.pathFilter);
   }
@@ -63,11 +62,13 @@ export default class MatchingPaths extends React.Component {
         filter: newPathFilter,
         limit: 101,
         failover_trailing: 'true',
-      }
+      };
       this.setState({
         fetchingError: false,
       });
-      fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, { signal: this.fetchInProgressAbortController.signal })
+      fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, {
+        signal: this.fetchInProgressAbortController.signal,
+      })
         .then(handleFetchErrors)
         .then(response => response.json())
         .then(json => {
@@ -76,8 +77,8 @@ export default class MatchingPaths extends React.Component {
               paths: json.paths[newPathFilter] || [],
               pathsWithTrailing: (json.paths_with_trailing && json.paths_with_trailing[newPathFilter]) || [],
               pathFilter: newPathFilter,
-            }
-          })
+            },
+          });
         })
         .catch(errorMsg => {
           this.setState({
@@ -87,23 +88,24 @@ export default class MatchingPaths extends React.Component {
         .then(() => {
           this.fetchInProgressAbortController = undefined;
         });
-
     }, this.FETCH_DELAY_MS);
   }
 
   static breakMatchingPath(path, partialPathFilter) {
     const regex = `^(${partialPathFilter
-      .replace(/[.]/g, '[.]')     // escape '.'
-      .replace(/[*]/g, ')(.+)(')  // escape '*'
-      .replace(/[?]/g, ')([^.]+)(')})(.*)$`    // escape '?'
-      .replace(/[(][)]/g, '');    // get rid of empty parenthesis, if any
-    const regexGroupPatterns = regex.substr(2, regex.length - 4).split(")("); // remove leading and trailing 2 chars and split by parenthesis
-    const matches = path.match(new RegExp(regex)).slice(1)
+      .replace(/[.]/g, '[.]') // escape '.'
+      .replace(/[*]/g, ')(.+)(') // escape '*'
+      .replace(/[?]/g, ')([^.]+)(')})(.*)$` // escape '?'
+      .replace(/[(][)]/g, ''); // get rid of empty parenthesis, if any
+    const regexGroupPatterns = regex.substr(2, regex.length - 4).split(')('); // remove leading and trailing 2 chars and split by parenthesis
+    const matches = path.match(new RegExp(regex)).slice(1);
     return matches.map((m, i) => ({
       part: m,
-      match: regexGroupPatterns[i].endsWith('+') ? this.MATCH_WILDCARD : (
-          regexGroupPatterns[i] === '.*' ? this.MATCH_RESIDUAL : this.MATCH_EXACT
-        ),
+      match: regexGroupPatterns[i].endsWith('+')
+        ? this.MATCH_WILDCARD
+        : regexGroupPatterns[i] === '.*'
+          ? this.MATCH_RESIDUAL
+          : this.MATCH_EXACT,
     }));
   }
 
@@ -115,14 +117,15 @@ export default class MatchingPaths extends React.Component {
     const parts = this.breakMatchingPath(path, partialPathFilter);
     const wildcardParts = parts.filter(p => p.match === this.MATCH_WILDCARD);
     let ret = pathRenamer;
-    for (let i=0; i<wildcardParts.length; i++) {
-      ret = ret.replace(new RegExp(`[$]${i+1}`, 'g'), wildcardParts[i].part);
+    for (let i = 0; i < wildcardParts.length; i++) {
+      ret = ret.replace(new RegExp(`[$]${i + 1}`, 'g'), wildcardParts[i].part);
     }
     return ret;
   }
 
   render() {
-    const pathsToDisplay = this.state.fetched.paths.length > 0 ? this.state.fetched.paths : this.state.fetched.pathsWithTrailing;
+    const pathsToDisplay =
+      this.state.fetched.paths.length > 0 ? this.state.fetched.paths : this.state.fetched.pathsWithTrailing;
     return (
       <div
         style={{
@@ -136,26 +139,33 @@ export default class MatchingPaths extends React.Component {
         onClick={this.props.onClick}
       >
         {this.state.fetchingError ? (
-          <div>
-            Error validating filter
-          </div>
+          <div>Error validating filter</div>
         ) : (
           <div>
-            <div style={{
-              fontStyle: 'italic',
-            }}>
-              Matching paths: {this.state.fetched.paths.length}, partial match: {this.state.fetched.pathsWithTrailing.length}
+            <div
+              style={{
+                fontStyle: 'italic',
+              }}
+            >
+              Matching paths: {this.state.fetched.paths.length}, partial match:{' '}
+              {this.state.fetched.pathsWithTrailing.length}
             </div>
             {pathsToDisplay.map(path => (
               <div key={path}>
-                {path}<br />
+                {path}
+                <br />
                 {this.props.pathRenamer && (
                   <div
                     style={{
                       marginLeft: 20,
                     }}
                   >
-                    ⤷ {MatchingPaths.constructChartSerieName(path, this.state.fetched.pathFilter, this.props.pathRenamer)}
+                    ⤷{' '}
+                    {MatchingPaths.constructChartSerieName(
+                      path,
+                      this.state.fetched.pathFilter,
+                      this.props.pathRenamer,
+                    )}
                   </div>
                 )}
               </div>
@@ -163,6 +173,6 @@ export default class MatchingPaths extends React.Component {
           </div>
         )}
       </div>
-    )
+    );
   }
 }

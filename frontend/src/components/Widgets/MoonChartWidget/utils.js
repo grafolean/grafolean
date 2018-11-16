@@ -23,8 +23,8 @@ const GOOGLE_CHART_COLOR_LIST = [
   '#329262',
   '#5574A6',
   '#3B3EAC',
-]
-export const generateSerieColor = (path, index=null) => {
+];
+export const generateSerieColor = (path, index = null) => {
   // if index is not defined, use the random generator - which doesn't work quite as well as curated lists
   if (index === null) {
     var rng = seedrandom(path);
@@ -33,49 +33,52 @@ export const generateSerieColor = (path, index=null) => {
   return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };
 
-const GRID_COLORS = [
-  '#f0f0f0',
-  '#e7e7e7',
-]
-export const generateGridColor = (index) => {
+const GRID_COLORS = ['#f0f0f0', '#e7e7e7'];
+export const generateGridColor = index => {
   return GRID_COLORS[index % GRID_COLORS.length];
 };
 
-export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLevel=-1) => {
+export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLevel = -1) => {
   // returns -1 for no aggregation, aggr. level otherwise
   let nHours = Math.ceil((toTs - fromTs) / 3600.0);
-  for (let l=minAggrLevel; l<MAX_AGGR_LEVEL; l++) {
-    if (maxPointsAllowed >= nHours / (3**l)) {
+  for (let l = minAggrLevel; l < MAX_AGGR_LEVEL; l++) {
+    if (maxPointsAllowed >= nHours / 3 ** l) {
       return l;
-    };
-  };
+    }
+  }
   return MAX_AGGR_LEVEL;
 };
 
 export const getMissingIntervals = (existingIntervals, wantedInterval) => {
-  let wantedIntervals = [ wantedInterval ];
+  let wantedIntervals = [wantedInterval];
   for (let existingInterval of existingIntervals) {
     wantedIntervals = wantedIntervals.reduce((newWantedIntervals, wantedInterval) => {
       // punch the holes into wantedInterval with each existingInterval:
-      if ((existingInterval.toTs <= wantedInterval.fromTs) || (existingInterval.fromTs >= wantedInterval.toTs)) {
+      if (existingInterval.toTs <= wantedInterval.fromTs || existingInterval.fromTs >= wantedInterval.toTs) {
         newWantedIntervals.push(wantedInterval);
-        return newWantedIntervals;  // no intersection - wantedInterval is unchanged
-      };
+        return newWantedIntervals; // no intersection - wantedInterval is unchanged
+      }
       // there is intersection; we don't know the extent of it, but if there is a part over each edge, add a new interval for it:
       if (wantedInterval.fromTs < existingInterval.fromTs) {
-        newWantedIntervals.push({fromTs: wantedInterval.fromTs, toTs: existingInterval.fromTs});
-      };
+        newWantedIntervals.push({
+          fromTs: wantedInterval.fromTs,
+          toTs: existingInterval.fromTs,
+        });
+      }
       if (existingInterval.toTs < wantedInterval.toTs) {
-        newWantedIntervals.push({fromTs: existingInterval.toTs, toTs: wantedInterval.toTs});
-      };
+        newWantedIntervals.push({
+          fromTs: existingInterval.toTs,
+          toTs: wantedInterval.toTs,
+        });
+      }
       return newWantedIntervals;
     }, []);
   }
   return wantedIntervals;
-}
+};
 
 export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel) => {
-  const interval = Math.round(3600 * (3 ** useAggrLevel));
+  const interval = Math.round(3600 * 3 ** useAggrLevel);
   const fromTsAligned = Math.floor(fromTs / interval) * interval;
   const toTsAligned = Math.ceil(toTs / interval) * interval;
 
@@ -84,15 +87,15 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
   let result = {};
   for (let path in pathsData) {
     result[path] = new Array(numberOfBuckets);
-    for (let i=0; i<numberOfBuckets; i++) {
+    for (let i = 0; i < numberOfBuckets; i++) {
       result[path][i] = {
         sumv: 0,
         minv: Number.POSITIVE_INFINITY,
         maxv: Number.NEGATIVE_INFINITY,
-        count: 0,  // we need this so we can efficiently calculate new average value
+        count: 0, // we need this so we can efficiently calculate new average value
       };
-    };
-  };
+    }
+  }
 
   // aggregate each of the values with correct bucket:
   for (let path in pathsData) {
@@ -104,13 +107,13 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
         minv: Math.min(r.minv, x.v),
         maxv: Math.max(r.maxv, x.v),
         count: r.count + 1,
-      }
+      };
     }
   }
 
   // and now set the times of the buckets too, and forget count, and calculate average value:
   for (let path in pathsData) {
-    for (let i=0; i<numberOfBuckets; i++) {
+    for (let i = 0; i < numberOfBuckets; i++) {
       if (result[path][i].count === 0) {
         result[path][i] = {
           t: fromTsAligned + i * interval + interval / 2,
@@ -126,7 +129,7 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
           maxv: result[path][i].maxv,
         };
       }
-    };
-  };
+    }
+  }
   return result;
-}
+};

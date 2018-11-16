@@ -8,13 +8,11 @@ test.skip('TimestampXAxis creates horizontal line', () => {
       width={1000}
       height={100}
       color="#999999"
-
       scale={1.0}
       panX={0}
-
       minTimestamp={1234500000}
       maxTimestamp={1234500000 + 5 * 3600}
-    />
+    />,
   );
 
   //console.log(xaxis.debug())
@@ -25,5 +23,5 @@ test.skip('TimestampXAxis creates horizontal line', () => {
 test.skip('TimestampXAxis yearly ticks', () => {
   const xaxis = shallow(<TimestampXAxis />);
 
-  console.log(xaxis.instance()._getXLabels(0, 100, 1.0))
+  console.log(xaxis.instance()._getXLabels(0, 100, 1.0));
 });
