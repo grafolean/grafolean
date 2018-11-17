@@ -1,10 +1,9 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
-import { Switch, Route, Link, Redirect } from 'react-router-dom';
+import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import './Main.scss';
-// import Chart from '../Chart'
 import Button from '../Button';
 import Home from '../Home';
 import About from '../About';
@@ -18,11 +17,8 @@ import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
 
-const SIDEBAR_MAX_WIDTH = 250;
-
 // Our routes need to:
 // - know about users' logged-in state (from store)
-// - know if they are publicly available or they need to redirect to login
 // - know about the content width that is available to them
 const mapLoggedInStateToProps = store => ({
   loggedIn: !!store.user,
@@ -32,7 +28,7 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
     <Route
       {...rest}
       render={props =>
-        isPublic === true || loggedIn ? (
+        loggedIn ? (
           <Component {...props} width={contentWidth} />
         ) : (
           <Redirect
@@ -90,19 +86,30 @@ const SidebarContent = connect(mapLoggedInStateToProps)(
   ),
 );
 
-export default class Main extends Component {
-  mql = window.matchMedia(`(min-width: 800px)`);
-
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      sidebarDocked: false,
-      sidebarOpen: false,
-      windowWidth: 0,
-      windowHeight: 0,
-    };
+export default class Main extends React.Component {
+  render() {
+    return (
+      <BrowserRouter>
+        <Switch>
+          <Route exact path="/login" component={Login} />
+          <Route exact component={LoggedInContent} />
+        </Switch>
+      </BrowserRouter>
+    );
   }
+}
+
+class LoggedInContent extends React.Component {
+  CONTENT_PADDING_LR = 30;
+  SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
+  SIDEBAR_MAX_WIDTH = 250;
+  state = {
+    sidebarDocked: false,
+    sidebarOpen: false,
+    windowWidth: 0,
+    windowHeight: 0,
+  };
+  mql = window.matchMedia(`(min-width: 800px)`);
 
   onBurgerClick = event => {
     this.setState({ sidebarOpen: true });
@@ -150,22 +157,22 @@ export default class Main extends Component {
   };
 
   render() {
-    const CONTENT_PADDING_LR = 30;
-    const SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
-    const innerWindowWidth = this.state.windowWidth - 2 * CONTENT_PADDING_LR - SCROLLBAR_WIDTH;
-    const sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, this.state.windowWidth - 40); // always leave a bit of place (40px) to the right of menu
-    const contentWidth = this.state.sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
+    const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
+    const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
+    const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
+    const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
+
     return (
       <Sidebar
         sidebar={
           <SidebarContent
-            sidebarDocked={this.state.sidebarDocked}
+            sidebarDocked={sidebarDocked}
             onSidebarXClick={this.onSidebarXClick}
             onSidebarLinkClick={this.onSidebarLinkClick}
           />
         }
-        open={this.state.sidebarOpen}
-        docked={this.state.sidebarDocked}
+        open={sidebarOpen}
+        docked={sidebarDocked}
         onSetOpen={this.onSetSidebarOpen}
         shadow={false}
         styles={{
@@ -180,7 +187,7 @@ export default class Main extends Component {
           },
         }}
       >
-        {!this.state.sidebarDocked ? <Button onClick={this.onBurgerClick}>burger</Button> : ''}
+        {!sidebarDocked && <Button onClick={this.onBurgerClick}>burger</Button>}
 
         <Notifications />
 
@@ -195,7 +202,6 @@ export default class Main extends Component {
               path="/admin/first"
               component={AdminFirst}
             />
-            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/login" component={Login} />
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
             <WrappedRoute exact contentWidth={contentWidth} path="/dashboards" component={DashboardsList} />
