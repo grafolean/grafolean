@@ -7,11 +7,7 @@ import Redirect from 'react-router-dom/Redirect';
 
 import './LoginPage.scss';
 
-export const LoginPage = props => (
-  <Login {...props} />
-)
-
-class Login extends React.Component {
+export class LoginPage extends React.Component {
   formValues = {};
 
   constructor(props) {
@@ -107,30 +103,42 @@ class Login extends React.Component {
       return <Redirect to={fromLocation} />;
     }
     return (
-      <div className="login centered">
-        <div className="login_form">
-          <label>Username:</label>
-          <input type="text" value={username} onChange={this.changeUsername} />
-          <label>Password:</label>
-          <input type="password" value={password} onChange={this.changePassword} />
-          <div />
-          {processingLogin ? (
-            <button>
-              <i className="fa fa-spinner fa-spin" />
-            </button>
-          ) : (
-            <button onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
-              Login
-            </button>
+      <div className="login-page">
+        <div className="login-box">
+          <div className="grafolean">
+            <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
+            <img className="grafolean-icon" src="/grafolean_icon.svg" alt="Grafolean" />
+          </div>
+
+          <div className="login form">
+            <div className="field">
+              <label>Username:</label>
+              <input type="text" value={username} onChange={this.changeUsername} />
+            </div>
+            <div className="field">
+              <label>Password:</label>
+              <input type="password" value={password} onChange={this.changePassword} />
+            </div>
+
+            {processingLogin ? (
+              <button>
+                <i className="fa fa-spinner fa-spin" />
+              </button>
+            ) : (
+              <button onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
+                Login
+              </button>
+            )}
+          </div>
+
+          {loginError && (
+            <div className="error-msg">
+              <i className="fa fa-exclamation-triangle" />
+              &nbsp;
+              {loginError}
+            </div>
           )}
         </div>
-        {loginError && (
-          <div className="error-msg">
-            <i className="fa fa-exclamation-triangle" />
-            &nbsp;
-            {loginError}
-          </div>
-        )}
       </div>
     );
   }
@@ -139,4 +147,4 @@ class Login extends React.Component {
 const mapLoggedInStateToProps = store => ({
   loggedIn: !!store.user,
 });
-export default connect(mapLoggedInStateToProps)(Login);
+export default connect(mapLoggedInStateToProps)(LoginPage);

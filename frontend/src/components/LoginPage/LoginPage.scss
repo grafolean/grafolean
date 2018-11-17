@@ -1,10 +1,56 @@
-div.login {
-  border: 1px solid #aaa;
-  border-radius: 8px;
-  padding: 50px;
+.login-page {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
-  .error-msg {
-    margin-top: 20px;
-    color: #660000;
+  .login-box {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 50px;
+    position: relative;
+    // margin-bottom: 20vh;
+
+    .grafolean {
+      width: 250px;
+      display: flex;
+      margin-bottom: 30px;
+
+      .grafolean-logo {
+        width: 150px;
+        margin-right: 80px;
+      }
+      .grafolean-icon {
+        width: 20px;
+      }
+    }
+
+    .login.form {
+      display: flex;
+      flex-direction: column;
+
+      .field {
+        margin-bottom: 10px;
+
+        label {
+          margin-bottom: 3px;
+          font-size: 12px;
+          display: block;
+        }
+        input {
+          width: 250px;
+        }
+      }
+      button {
+        margin-top: 20px;
+      }
+    }
+
+    .error-msg {
+      margin: 20px 0 0;
+      color: #660000;
+    }
+
   }
 }

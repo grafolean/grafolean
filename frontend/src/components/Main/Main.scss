@@ -1,14 +1,21 @@
 a, a:visited { color: #3b60b3; text-decoration: none; }
 a:hover { color: #678bdc; text-decoration: none; }
 button {
-  background: #4cd074;
-  border: none;
-  cursor: pointer;
+  background-color: #4cd074;
   color: #fff;
+  border: 1px solid #45bc69;
+  height: 27px;
+  cursor: pointer;
   border-radius: 3px;
-  padding: 4px;
+  padding: 1px 4px;
   font-size: 12px;
   font-weight: 600;
+}
+button:disabled {
+  color: #ccc;
+}
+button:hover {
+  background-color: #4cd074;
 }
 
 .hcenter {

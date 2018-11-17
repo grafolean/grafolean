@@ -104,7 +104,7 @@ class AdminFirst extends React.Component {
     return (
       <div>
         <h3>Add first (admin) user:</h3>
-        <div class="login_form">
+        <div class="admin_first form">
           <label>Username:</label>
           <input type="text" value={username} onChange={this.changeUsername} />
           <label>Password:</label>

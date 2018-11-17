@@ -1,8 +1,16 @@
+html, body, #root {
+  height: 100%;
+}
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
 }
+input {
+  border-radius: 2px;
+  height: 23px;
+}
+
 /* try to make buttons look like links: (see jsx-a11y/anchor-is-valid eslint rule) */
 .link-button {
   background-color: transparent;
