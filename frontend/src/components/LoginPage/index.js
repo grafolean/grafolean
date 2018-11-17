@@ -5,7 +5,11 @@ import { onLoginSuccess, ROOT_URL } from '../../store/actions';
 import store from '../../store';
 import Redirect from 'react-router-dom/Redirect';
 
-import './Login.scss';
+import './LoginPage.scss';
+
+export const LoginPage = props => (
+  <Login {...props} />
+)
 
 class Login extends React.Component {
   formValues = {};

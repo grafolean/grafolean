@@ -7,7 +7,7 @@ import './Main.scss';
 import Button from '../Button';
 import Home from '../Home';
 import About from '../About';
-import Login from '../Login';
+import LoginPage from '../LoginPage';
 import DashboardNewForm from '../DashboardNewForm';
 import DashboardsList from '../DashboardsList';
 import DashboardView from '../DashboardView';
@@ -17,7 +17,20 @@ import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
 
-// Our routes need to:
+export default class Main extends React.Component {
+  render() {
+    return (
+      <BrowserRouter>
+        <Switch>
+          <Route exact path="/login" component={LoginPage} />
+          <Route exact component={LoggedInContent} />
+        </Switch>
+      </BrowserRouter>
+    );
+  }
+}
+
+// Our logged-in routes need to:
 // - know about users' logged-in state (from store)
 // - know about the content width that is available to them
 const mapLoggedInStateToProps = store => ({
@@ -43,61 +56,36 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   ),
 );
 
-const SidebarContent = connect(mapLoggedInStateToProps)(
-  ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick, loggedIn }) => (
-    <div className="navigation">
-      {!sidebarDocked ? <Button onClick={onSidebarXClick}>X</Button> : ''}
-      <header>
-        <img src="/grafolean.svg" alt="Grafolean" />
-      </header>
-      <ul>
-        <li>
-          <Link to="/" onClick={onSidebarLinkClick}>
-            Home
-          </Link>
-        </li>
-        {loggedIn ? (
-          [
-            <li>
-              <Link to="/dashboards" onClick={onSidebarLinkClick}>
-                Dashboards
-              </Link>
-            </li>,
-            <li>
-              <Link to="/user" onClick={onSidebarLinkClick}>
-                User
-              </Link>
-            </li>,
-          ]
-        ) : (
-          <li>
-            <Link to="/login" onClick={onSidebarLinkClick}>
-              Login
-            </Link>
-          </li>
-        )}
-        <li>
-          <Link to="/about" onClick={onSidebarLinkClick}>
-            About
-          </Link>
-        </li>
-      </ul>
-    </div>
-  ),
+const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
+  <div className="navigation">
+    {!sidebarDocked ? <Button onClick={onSidebarXClick}>X</Button> : ''}
+    <header>
+      <img src="/grafolean.svg" alt="Grafolean" />
+    </header>
+    <ul>
+      <li>
+        <Link to="/" onClick={onSidebarLinkClick}>
+          Home
+        </Link>
+      </li>
+      <li>
+        <Link to="/dashboards" onClick={onSidebarLinkClick}>
+          Dashboards
+        </Link>
+      </li>
+      <li>
+        <Link to="/user" onClick={onSidebarLinkClick}>
+          User
+        </Link>
+      </li>
+      <li>
+        <Link to="/about" onClick={onSidebarLinkClick}>
+          About
+        </Link>
+      </li>
+    </ul>
+  </div>
 );
-
-export default class Main extends React.Component {
-  render() {
-    return (
-      <BrowserRouter>
-        <Switch>
-          <Route exact path="/login" component={Login} />
-          <Route exact component={LoggedInContent} />
-        </Switch>
-      </BrowserRouter>
-    );
-  }
-}
 
 class LoggedInContent extends React.Component {
   CONTENT_PADDING_LR = 30;
