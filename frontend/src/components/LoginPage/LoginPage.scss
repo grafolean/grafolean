@@ -9,6 +9,7 @@
     padding: 50px;
     position: relative;
     display: flex;
+    margin-bottom: 20px;
 
     .grafolean {
       width: 250px;
@@ -40,6 +41,8 @@
         }
         input {
           width: 250px;
+          max-width: 90vw;
+          min-width: 150px;
         }
       }
       button {
@@ -52,5 +55,19 @@
       color: #660000;
     }
 
+  }
+}
+
+@media screen and (max-width: 700px) {
+  .login-page .login-box  {
+    flex-direction: column !important;
+
+    .grafolean {
+      margin-top: none;
+    }
+
+    .login.form {
+      border-left: none;
+    }
   }
 }
