@@ -6,27 +6,27 @@
   justify-content: center;
 
   .login-box {
-    border: 1px solid #ccc;
-    border-radius: 8px;
     padding: 50px;
     position: relative;
-    // margin-bottom: 20vh;
+    display: flex;
 
     .grafolean {
       width: 250px;
+      margin-top: 30px;
       display: flex;
-      margin-bottom: 30px;
+      justify-content: right;
+      align-items: flex-start;
+
 
       .grafolean-logo {
         width: 150px;
-        margin-right: 80px;
-      }
-      .grafolean-icon {
-        width: 20px;
+        margin-right: 50px;
       }
     }
 
     .login.form {
+      border-left: 1px solid #ccc;
+      padding: 20px 50px;
       display: flex;
       flex-direction: column;
 
@@ -43,7 +43,7 @@
         }
       }
       button {
-        margin-top: 20px;
+        margin-top: 10px;
       }
     }
 

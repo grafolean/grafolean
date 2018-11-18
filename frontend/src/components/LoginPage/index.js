@@ -107,7 +107,6 @@ export class LoginPage extends React.Component {
         <div className="login-box">
           <div className="grafolean">
             <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
-            <img className="grafolean-icon" src="/grafolean_icon.svg" alt="Grafolean" />
           </div>
 
           <div className="login form">
@@ -129,15 +128,17 @@ export class LoginPage extends React.Component {
                 Login
               </button>
             )}
+
+            {loginError && (
+              <div className="error-msg">
+                <i className="fa fa-exclamation-triangle" />
+                &nbsp;
+                {loginError}
+              </div>
+            )}
+
           </div>
 
-          {loginError && (
-            <div className="error-msg">
-              <i className="fa fa-exclamation-triangle" />
-              &nbsp;
-              {loginError}
-            </div>
-          )}
         </div>
       </div>
     );
