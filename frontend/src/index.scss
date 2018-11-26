@@ -53,6 +53,11 @@ a.button, button {
   &.disabled {
     color: #ccc;
   }
+
+  & > i.fa {
+    font-size: 14px;
+    margin-right: 5px;
+  }
 }
 
 // button {

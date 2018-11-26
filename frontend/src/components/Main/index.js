@@ -5,8 +5,6 @@ import Sidebar from 'react-sidebar';
 
 import './Main.scss';
 import Button from '../Button';
-import Home from '../Home';
-import About from '../About';
 import LoginPage from '../LoginPage';
 import DashboardNewForm from '../DashboardNewForm';
 import DashboardsList from '../DashboardsList';
@@ -60,17 +58,11 @@ const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) 
   <div className="navigation">
     {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
-    <Link className="button action" to="/" onClick={onSidebarLinkClick}>
-      Home
-    </Link>
     <Link className="button action" to="/dashboards" onClick={onSidebarLinkClick}>
       Dashboards
     </Link>
     <Link className="button action" to="/user" onClick={onSidebarLinkClick}>
       User
-    </Link>
-    <Link className="button action" to="/about" onClick={onSidebarLinkClick}>
-      About
     </Link>
 
   </div>
@@ -171,8 +163,6 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
-            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/" component={Home} />
-            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/about" component={About} />
             <WrappedRoute
               exact
               isPublic={true}
