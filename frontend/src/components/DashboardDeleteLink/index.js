@@ -5,7 +5,6 @@ import store from '../../store';
 import { submitDeleteDashboard } from '../../store/actions';
 
 import Loading from '../Loading';
-import Button from '../Button';
 
 class DashboardDeleteLink extends React.Component {
   handleClick = event => {
@@ -23,7 +22,7 @@ class DashboardDeleteLink extends React.Component {
       );
     }
 
-    return <Button onClick={this.handleClick}>delete</Button>;
+    return <button className="red" onClick={this.handleClick}>delete</button>;
   }
 }
 

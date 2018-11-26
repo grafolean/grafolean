@@ -9,6 +9,10 @@ import Loading from '../Loading';
 import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class DashboardsList extends React.Component {
+  componentDidMount() {
+    store.dispatch(fetchDashboardsList());
+  }
+
   render() {
     if (!this.props.valid && !this.props.fetching) {
       return <div>Could not fetch data - please try again.</div>;
@@ -19,12 +23,12 @@ class DashboardsList extends React.Component {
         {this.props.fetching ? <Loading /> : ''}
         {this.props.valid ? (
           <div>
-            <Link to="/dashboards/new">+ Add dashboard</Link>
+            <Link className="button blue" to="/dashboards/new">+ Add dashboard</Link>
             <ul>
-              {this.props.data.map(v => {
+              {this.props.dashboards.map(v => {
                 return (
                   <li key={v.slug}>
-                    <Link to={`/dashboards/view/${v.slug}`}>{v.name}</Link>(
+                    <Link className="button" to={`/dashboards/view/${v.slug}`}>{v.name}</Link>(
                     <DashboardDeleteLink slug={v.slug} />)
                   </li>
                 );
@@ -40,10 +44,11 @@ class DashboardsList extends React.Component {
 }
 
 const mapStoreToProps = storeState => {
-  if (storeState.dashboards.list.refetch) {
-    store.dispatch(fetchDashboardsList());
-    return { ...storeState.dashboards.list, fetching: true };
-  }
-  return storeState.dashboards.list;
+  const { data, valid, fetching } = storeState.dashboards.list;
+  return {
+    dashboards: data,
+    valid: valid,
+    fetching: fetching,
+  };
 };
 export default connect(mapStoreToProps)(DashboardsList);

@@ -58,32 +58,21 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 
 const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
   <div className="navigation">
-    {!sidebarDocked ? <Button onClick={onSidebarXClick}>X</Button> : ''}
-    <header>
-      <img src="/grafolean.svg" alt="Grafolean" />
-    </header>
-    <ul>
-      <li>
-        <Link to="/" onClick={onSidebarLinkClick}>
-          Home
-        </Link>
-      </li>
-      <li>
-        <Link to="/dashboards" onClick={onSidebarLinkClick}>
-          Dashboards
-        </Link>
-      </li>
-      <li>
-        <Link to="/user" onClick={onSidebarLinkClick}>
-          User
-        </Link>
-      </li>
-      <li>
-        <Link to="/about" onClick={onSidebarLinkClick}>
-          About
-        </Link>
-      </li>
-    </ul>
+    {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+
+    <Link className="button action" to="/" onClick={onSidebarLinkClick}>
+      Home
+    </Link>
+    <Link className="button action" to="/dashboards" onClick={onSidebarLinkClick}>
+      Dashboards
+    </Link>
+    <Link className="button action" to="/user" onClick={onSidebarLinkClick}>
+      User
+    </Link>
+    <Link className="button action" to="/about" onClick={onSidebarLinkClick}>
+      About
+    </Link>
+
   </div>
 );
 
@@ -165,11 +154,12 @@ class LoggedInContent extends React.Component {
         shadow={false}
         styles={{
           sidebar: {
-            backgroundColor: '#fff',
+            backgroundColor: '#f3f3f3',
             width: sidebarWidth,
             borderRight: '1px solid #d8d8d8',
           },
           content: {
+            backgroundColor: '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },

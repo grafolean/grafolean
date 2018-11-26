@@ -1,22 +1,5 @@
 a, a:visited { color: #3b60b3; text-decoration: none; }
 a:hover { color: #678bdc; text-decoration: none; }
-button {
-  background-color: #4cd074;
-  color: #fff;
-  border: 1px solid #45bc69;
-  height: 27px;
-  cursor: pointer;
-  border-radius: 3px;
-  padding: 1px 4px;
-  font-size: 12px;
-  font-weight: 600;
-}
-button:disabled {
-  color: #ccc;
-}
-button:hover {
-  background-color: #4cd074;
-}
 
 .hcenter {
   display: flex;
@@ -38,21 +21,14 @@ header {
 .navigation {
   margin: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-  font-size: 16px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items: start;
 
-  ul {
-    margin: 5px 0;
-    padding: 0;
-
-    li {
-      list-style-type: none;
-      margin: 0;
-      padding: 5px 0 5px 20px;
-
-      a {
-        text-decoration: none;
-      }
-    }
+  a {
+    margin-bottom: 5px;
   }
 }
 
@@ -83,6 +59,7 @@ header {
 .content {
   flex: 1;
   display: flex;
+  margin: 20px;
 
   & > .centered {
     margin: auto;
