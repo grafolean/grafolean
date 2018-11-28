@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
@@ -156,10 +155,22 @@ class DashboardView extends React.Component {
   }
 }
 
-const mapStoreToProps = (state, ownProps) => {
-  // parameter 'slug' comes from React Router:
-  let slug = ownProps.match.params.slug;
-  if (!state.dashboards.details[slug]) return {};
-  return state.dashboards.details[slug];
-};
-export default connect(mapStoreToProps)(DashboardView);
+class DashboardViewRemountable extends React.Component {
+  /*
+    React Router doesn't re-mount the component when the params change; DashboardView however
+    assumes it will be remounted. Solution is to put a component in between which will use
+    key to remount DashboardView as necessary.
+  */
+  render() {
+    const { match, ...rest } = this.props;
+    return (
+      <DashboardView
+        key={match ? match.params.slug : ''}
+        match={match}
+        {...rest}
+      />
+    )
+  }
+}
+
+export default DashboardViewRemountable;

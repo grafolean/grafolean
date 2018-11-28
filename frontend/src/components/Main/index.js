@@ -35,7 +35,7 @@ const mapLoggedInStateToProps = store => ({
   loggedIn: !!store.user,
 });
 const WrappedRoute = connect(mapLoggedInStateToProps)(
-  ({ component: Component, isPublic, loggedIn, contentWidth, ...rest }) => (
+  ({ component: Component, loggedIn, contentWidth, ...rest }) => (
     <Route
       {...rest}
       render={props =>
@@ -54,19 +54,28 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   ),
 );
 
-const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
+const SidebarContentWithoutDashboards = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards }) => (
   <div className="navigation">
     {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
     <Link className="button action" to="/dashboards" onClick={onSidebarLinkClick}>
       Dashboards
     </Link>
+    {dashboards && dashboards.map(dash => (
+      <Link key={dash.slug} className="button action" to={`/dashboards/view/${dash.slug}`} onClick={onSidebarLinkClick}>
+        {dash.name}
+      </Link>
+    ))}
     <Link className="button action" to="/user" onClick={onSidebarLinkClick}>
       User
     </Link>
 
   </div>
 );
+const mapDashboardsListToProps = store => ({
+  dashboards: store.dashboards.list.data,
+});
+const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentWithoutDashboards);
 
 class LoggedInContent extends React.Component {
   CONTENT_PADDING_LR = 30;
@@ -165,7 +174,6 @@ class LoggedInContent extends React.Component {
           <Switch>
             <WrappedRoute
               exact
-              isPublic={true}
               contentWidth={contentWidth}
               path="/admin/first"
               component={AdminFirst}
@@ -192,7 +200,7 @@ class LoggedInContent extends React.Component {
               component={DashboardWidgetEdit}
             />
 
-            <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
+            <WrappedRoute contentWidth={contentWidth} component={PageNotFound} />
           </Switch>
         </div>
       </Sidebar>
