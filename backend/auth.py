@@ -66,7 +66,7 @@ class JWT(object):
     @classmethod
     def _private_jwt_key_for_decoding(cls, key_id):
         with db.cursor() as c:
-            c.execute('SELECT key FROM private_jwt_keys WHERE id=%s AND use_until > EXTRACT(EPOCH FROM NOW()) + {};'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,), (key_id,))
+            c.execute('SELECT key FROM private_jwt_keys WHERE id=%s AND EXTRACT(EPOCH FROM NOW()) < use_until + {};'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,), (key_id,))
             res = c.fetchone()
             if not res:
                 return None
@@ -77,7 +77,7 @@ class JWT(object):
     def _private_jwt_key_for_encoding(cls):
         with db.cursor() as c:
             # fetch the newest private key that is still valid:
-            c.execute('SELECT id, key FROM private_jwt_keys WHERE use_until > EXTRACT(EPOCH FROM NOW()) ORDER BY use_until DESC LIMIT 1;')
+            c.execute('SELECT id, key FROM private_jwt_keys WHERE EXTRACT(EPOCH FROM NOW()) < use_until ORDER BY use_until DESC LIMIT 1;')
             res = c.fetchone()
             if not res:
                 cls._remove_old_jwt_keys()
