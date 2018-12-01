@@ -9,6 +9,7 @@ import WidgetForm from '../WidgetForm';
 import MoonChartWidget from '../Widgets/MoonChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
+import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class DashboardView extends React.Component {
   abortController = null;
@@ -89,8 +90,11 @@ class DashboardView extends React.Component {
   };
 
   render() {
-    if (!this.state.valid) {
-      if (this.state.loading) return <Loading />;
+    const { valid, loading } = this.state;
+    const dashboardSlug = this.props.match.params.slug;
+
+    if (!valid) {
+      if (loading) return <Loading />;
       else return <div>Could not fetch data - please try again.</div>;
     }
 
@@ -100,11 +104,13 @@ class DashboardView extends React.Component {
           position: 'relative',
         }}
       >
-        Dashboard:
-        {this.state.loading && <Loading overlayParent={true} />}
-        <hr />
-        {this.state.name}
-        <div>
+        <div className="window">
+          Dashboard: {this.state.name}
+          {loading && <Loading overlayParent={true} />}
+          <DashboardDeleteLink slug={dashboardSlug} />
+        </div>
+
+        <div className="window">
           {this.state.widgets.map(widget => {
             switch (widget.type) {
               case 'lastvalue':
@@ -115,7 +121,7 @@ class DashboardView extends React.Component {
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
-                    dashboardSlug={this.props.match.params.slug}
+                    dashboardSlug={dashboardSlug}
                     title={widget.title}
                     content={widget.content}
                     refreshParent={this.fetchDashboardDetails}
@@ -129,7 +135,7 @@ class DashboardView extends React.Component {
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
-                    dashboardSlug={this.props.match.params.slug}
+                    dashboardSlug={dashboardSlug}
                     title={widget.title}
                     chartContent={widget.content}
                     refreshParent={this.fetchDashboardDetails}
@@ -147,7 +153,7 @@ class DashboardView extends React.Component {
         ) : (
           <div>
             <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-            <WidgetForm dashboardSlug={this.props.match.params.slug} />
+            <WidgetForm dashboardSlug={dashboardSlug} />
           </div>
         )}
       </div>

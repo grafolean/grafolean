@@ -8,8 +8,11 @@ import Loading from '../Loading';
 
 class DashboardDeleteLink extends React.Component {
   handleClick = event => {
-    store.dispatch(submitDeleteDashboard(this.props.slug));
     event.preventDefault();
+    if (!window.confirm("Are you sure you want to delete this dashboard? This can't be undone!")) {
+      return;
+    }
+    store.dispatch(submitDeleteDashboard(this.props.slug));
   };
 
   render() {

@@ -57,6 +57,9 @@ a.button, button {
   & > i.fa {
     font-size: 14px;
     margin-right: 5px;
+    &.fa-plus {
+      font-size: 12px;
+    }
   }
 }
 

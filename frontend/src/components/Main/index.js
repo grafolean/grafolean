@@ -3,11 +3,14 @@ import { connect } from 'react-redux';
 import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
+import store from '../../store';
+import { fetchDashboardsList } from '../../store/actions';
+
 import './Main.scss';
 import Button from '../Button';
+import Loading from '../Loading';
 import LoginPage from '../LoginPage';
 import DashboardNewForm from '../DashboardNewForm';
-import DashboardsList from '../DashboardsList';
 import DashboardView from '../DashboardView';
 import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
@@ -54,28 +57,43 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   ),
 );
 
-const SidebarContentWithoutDashboards = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards }) => (
-  <div className="navigation">
-    {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+class SidebarContentNoStore extends React.Component {
+  componentDidMount() {
+    store.dispatch(fetchDashboardsList());
+  }
 
-    <Link className="button action" to="/dashboards" onClick={onSidebarLinkClick}>
-      Dashboards
-    </Link>
-    {dashboards && dashboards.map(dash => (
-      <Link key={dash.slug} className="button action" to={`/dashboards/view/${dash.slug}`} onClick={onSidebarLinkClick}>
-        {dash.name}
-      </Link>
-    ))}
-    <Link className="button action" to="/user" onClick={onSidebarLinkClick}>
-      User
-    </Link>
+  render() {
+    const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
+    if (fetching) {
+      return <Loading />;
+    }
+    if (!valid) {
+      return <div><i className="fa fa-exclamation-triangle" /></div>;
+    }
 
-  </div>
-);
+    return (
+      <div className="navigation">
+        {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+
+        <Link className="button blue" to="/dashboards/new" onClick={onSidebarLinkClick}><i className="fa fa-plus" />Add dashboard</Link>
+        {dashboards && dashboards.map(dash => (
+          <Link key={dash.slug} className="button green" to={`/dashboards/view/${dash.slug}`} onClick={onSidebarLinkClick}>
+            {dash.name}
+          </Link>
+        ))}
+        <Link className="button blue" to="/user" onClick={onSidebarLinkClick}>
+          User
+        </Link>
+      </div>
+    )
+  }
+}
 const mapDashboardsListToProps = store => ({
   dashboards: store.dashboards.list.data,
+  fetching: store.dashboards.list.fetching,
+  valid: store.dashboards.list.valid,
 });
-const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentWithoutDashboards);
+const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentNoStore);
 
 class LoggedInContent extends React.Component {
   CONTENT_PADDING_LR = 30;
@@ -155,9 +173,10 @@ class LoggedInContent extends React.Component {
         shadow={false}
         styles={{
           sidebar: {
-            backgroundColor: '#f3f3f3',
+            backgroundColor: '#f5f5f5',
             width: sidebarWidth,
             borderRight: '1px solid #d8d8d8',
+            boxShadow: '0 0 10px #ddd',
           },
           content: {
             backgroundColor: '#fafafa',
@@ -180,7 +199,6 @@ class LoggedInContent extends React.Component {
             />
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
-            <WrappedRoute exact contentWidth={contentWidth} path="/dashboards" component={DashboardsList} />
             <WrappedRoute
               exact
               contentWidth={contentWidth}
