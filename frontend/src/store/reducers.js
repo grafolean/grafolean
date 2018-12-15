@@ -132,7 +132,7 @@ function user(state = null, action) {
   }
 }
 
-const moonthorApp = combineReducers({
+const grafoleanApp = combineReducers({
   user,
   dashboards: combineReducers({
     list: dashboardsList,
@@ -142,4 +142,4 @@ const moonthorApp = combineReducers({
   notifications,
 });
 
-export default moonthorApp;
+export default grafoleanApp;

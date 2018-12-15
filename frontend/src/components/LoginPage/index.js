@@ -69,7 +69,7 @@ export class LoginPage extends React.Component {
         }
         response.json().then(json => {
           const jwtToken = response.headers.get('X-JWT-Token');
-          window.sessionStorage.setItem('moonthor_jwt_token', jwtToken);
+          window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
           store.dispatch(onLoginSuccess(json));
           this.setState({
             redirectToReferrer: true,

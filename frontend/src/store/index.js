@@ -2,7 +2,7 @@ import { createStore, applyMiddleware, compose } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import throttle from 'lodash/throttle';
 
-import moonthorApp from './reducers';
+import grafoleanApp from './reducers';
 
 // we are loading and saving user's authentication to sessionStorage:
 const loadStoreState = () => {
@@ -28,7 +28,7 @@ const saveStoreState = state => {
 const composeWithDevTools = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const persistedState = loadStoreState();
 const store = createStore(
-  moonthorApp,
+  grafoleanApp,
   persistedState,
   composeWithDevTools(
     applyMiddleware(

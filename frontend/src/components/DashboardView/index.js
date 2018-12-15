@@ -6,7 +6,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import Button from '../Button';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
-import MoonChartWidget from '../Widgets/MoonChartWidget';
+import GLeanChartWidget from '../Widgets/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
 import DashboardDeleteLink from '../DashboardDeleteLink';
@@ -130,7 +130,7 @@ class DashboardView extends React.Component {
                 );
               case 'chart':
                 return (
-                  <MoonChartWidget
+                  <GLeanChartWidget
                     key={widget.id}
                     width={innerWidth}
                     height={500}

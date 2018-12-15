@@ -19,7 +19,7 @@ import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 
-class MoonChart extends React.Component {
+class GLeanChartWidget extends React.Component {
   repinchyMouseMoveHandler = null;
   repinchyClickHandler = null;
   fetchPathsAbortController = null;
@@ -95,7 +95,7 @@ class MoonChart extends React.Component {
   // would cause React rerendeings. Even with shouldComponentUpdate this is too
   // intensive.
   // So our solution is for the child component to register its mousemove handler
-  // via call to `MoonChartWidget.registerRepinchyMouseMoveHandler()`. On the other
+  // via call to `GLeanChartWidget.registerRepinchyMouseMoveHandler()`. On the other
   // hand, RePinchy gets our handler as its prop (and calls it), and we pass the
   // events to registered event handler. Easy, right? :)
   registerRePinchyMouseMoveHandler = handler => {
@@ -859,5 +859,4 @@ export class ChartView extends React.Component {
   }
 }
 
-const MoonChartWidget = isWidget(MoonChart);
-export default MoonChartWidget;
+export default isWidget(GLeanChartWidget);

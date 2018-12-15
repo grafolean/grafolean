@@ -3,7 +3,7 @@ import store from '../store';
 
 const _addAuthHeaderToParams = init => {
   const headers = init.headers || {};
-  headers['Authorization'] = window.sessionStorage['moonthor_jwt_token'];
+  headers['Authorization'] = window.sessionStorage['grafolean_jwt_token'];
   return {
     ...init,
     headers: headers,
@@ -21,7 +21,7 @@ export const fetchAuth = (input, init = {}) => {
           return;
         }
         // refresh jwt token:
-        const oldJwtToken = window.sessionStorage.getItem('moonthor_jwt_token');
+        const oldJwtToken = window.sessionStorage.getItem('grafolean_jwt_token');
         fetch(`${ROOT_URL}/auth/refresh`, {
           headers: {
             Accept: 'application/json',
@@ -34,14 +34,14 @@ export const fetchAuth = (input, init = {}) => {
           .then(response => {
             // now that you have refreshed jwt token, request resource again:
             const newJwtToken = response.headers.get('X-JWT-Token');
-            window.sessionStorage.setItem('moonthor_jwt_token', newJwtToken);
+            window.sessionStorage.setItem('grafolean_jwt_token', newJwtToken);
             const newInit = _addAuthHeaderToParams(init);
             fetch(input, newInit)
               .then(resp => resolve(resp))
               .catch(err => reject(err));
           })
           .catch(() => {
-            window.sessionStorage.removeItem('moonthor_jwt_token');
+            window.sessionStorage.removeItem('grafolean_jwt_token');
             store.dispatch(onLogout());
             reject('Error refreshing session.');
           });

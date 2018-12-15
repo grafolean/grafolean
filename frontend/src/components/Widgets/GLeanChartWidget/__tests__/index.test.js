@@ -48,8 +48,6 @@ test('ChartContainer merging of intervals - add before', () => {
       },
     },
   });
-  // console.log(moonChartInstance.fetchedData)
-  // console.log(moonChartInstance.fetchedData['2'][0].pathsData)
   expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {
@@ -125,8 +123,6 @@ test('ChartContainer merging of intervals - add between', () => {
       },
     },
   });
-  // console.log(moonChartInstance.fetchedData)
-  // console.log(moonChartInstance.fetchedData['2'][0].pathsData)
   expect(chartContainerInstance.fetchedData).toEqual({
     '2': [
       {

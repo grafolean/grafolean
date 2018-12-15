@@ -474,7 +474,7 @@ export default class RePinchy extends React.Component {
                 scale: 1.0,
               }}>
               {(x, y, scale, zoomInProgress) => (
-                <MoonChart ...props />
+                <GLeanChart ...props />
               )}
             </RePinchy>
           */}
