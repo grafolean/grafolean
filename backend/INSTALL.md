@@ -6,7 +6,7 @@ $ apt-get update && apt-get install -y postgresql-9.6
 
 ## Moving PostgreSQL data dir (optional)
 
-This is especially recommended if running Moonthor on RaspberryPi (continuous writing to SD card is a bad idea so it makes sense to move database elsewhere, for example to an USB stick).
+This is especially recommended if running GrafoLean on RaspberryPi (continuous writing to SD card is a bad idea so it makes sense to move database elsewhere, for example to an USB stick).
 Warning: PostgreSQL will not accept FAT32/VFAT target.
 
 ```
@@ -16,12 +16,12 @@ Warning: PostgreSQL will not accept FAT32/VFAT target.
 
 Set appropriate directory:
 ```
-data_directory = '/data/moonthor_db'
+data_directory = '/data/grafolean_db'
 ```
 
 Copy original directory, preserving all file attributes:
 ```
-# cp -aRv /var/lib/postgresql/9.6/main.original/ /data/moonthor_db
+# cp -aRv /var/lib/postgresql/9.6/main.original/ /data/grafolean_db
 ```
 
 Start PostgreSQL again:
@@ -35,7 +35,7 @@ Create database, user and password:
 ```
 # su postgres
 $ createuser admin
-$ createdb moonthor
+$ createdb grafolean
 $ psql
 postgres=# alter user admin with encrypted password 'admin';
 ```

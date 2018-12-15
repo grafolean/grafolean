@@ -1,0 +1,14 @@
+[Unit]
+Description=GrafoLean
+After=network.target
+
+[Service]
+ExecStart=/bin/sh -c '/usr/bin/python3 /data/grafolean/backend/grafolean.py serve >> grafolean.log 2>&1'
+WorkingDirectory=/data/grafolean/backend/
+# with systemd version 236 logging can be made simpler:
+#ExecStart=/usr/bin/python3 /data/grafolean/backend/grafolean.py
+#StandardOutput=file:/data/grafolean/backend/grafolean.log
+#StandardError=file:/data/grafolean/backend/grafolean.log
+
+[Install]
+WantedBy=multi-user.target

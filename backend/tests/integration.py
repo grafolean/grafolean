@@ -7,7 +7,7 @@ import pytest
 from pprint import pprint
 import time
 
-from moonthor import app
+from grafolean import app
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache

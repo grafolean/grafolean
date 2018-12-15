@@ -12,8 +12,8 @@ Flame charts for Python:
 
 PostgreSQL slow queries:
 
-$ docker run -d --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -e POSTGRES_DB=moonthor \
+$ docker run -d --name postgres -p 5432:5432 -e POSTGRES_PASSWORD=admin -e POSTGRES_USER=admin -e POSTGRES_DB=grafolean \
   -v ./pgdata/:/var/lib/postgresql/data/ postgres:latest -c shared_preload_libraries=pg_stat_statements
 $ docker exec -ti postgres bash
-# psql -U admin moonthor
-moonthor=# SELECT query,calls,total_time,mean_time,stddev_time,blk_read_time FROM pg_stat_statements ORDER BY total_time DESC;
+# psql -U admin grafolean
+grafolean=# SELECT query,calls,total_time,mean_time,stddev_time,blk_read_time FROM pg_stat_statements ORDER BY total_time DESC;

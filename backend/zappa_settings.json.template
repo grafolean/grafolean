@@ -1,6 +1,6 @@
 {
     "dev": {
-        "app_function": "moonthor.app",
+        "app_function": "grafolean.app",
         "aws_region": "eu-central-1",
         "environment_variables": {
             "DB_HOST": "@@DB_HOST@@",
@@ -11,9 +11,9 @@
         },
         "memory_size": 128,
         "profile_name": "default",
-        "project_name": "moonthor-dev",
+        "project_name": "grafolean-dev",
         "runtime": "python3.6",
-        "s3_bucket": "moonthor-dev",
+        "s3_bucket": "grafolean-dev",
         "vpc_config" : {
             "SubnetIds": [
                 "subnet-00000000",

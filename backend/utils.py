@@ -22,7 +22,7 @@ def db_connect():
     global db
     host, dbname, user, password, connect_timeout = (
         os.environ.get('DB_HOST', 'localhost'),
-        os.environ.get('DB_DATABASE', 'moonthor'),
+        os.environ.get('DB_DATABASE', 'grafolean'),
         os.environ.get('DB_USERNAME', 'admin'),
         os.environ.get('DB_PASSWORD', 'admin'),
         int(os.environ.get('DB_CONNECT_TIMEOUT', '10'))

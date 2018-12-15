@@ -34,7 +34,7 @@ def echo_socket(ws):
 def before_request():
 
     # http://flask.pocoo.org/docs/1.0/api/#application-globals
-    flask.g.moonthor_data = {}
+    flask.g.grafolean_data = {}
 
     if not flask.request.endpoint in app.view_functions:
         return "Resource not found", 404
@@ -60,7 +60,7 @@ def before_request():
             query_params_bot_token = flask.request.args.get('b')
             if authorization_header is not None:
                 received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
-                flask.g.moonthor_data['jwt'] = received_jwt
+                flask.g.grafolean_data['jwt'] = received_jwt
                 user_id = received_jwt.data['user_id']
             elif query_params_bot_token is not None:
                 user_id = Bot.authenticate_token(query_params_bot_token)
