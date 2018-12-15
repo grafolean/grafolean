@@ -3,13 +3,14 @@ import { connect } from 'react-redux';
 import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
+import store from '../../store';
+import { fetchDashboardsList } from '../../store/actions';
+
 import './Main.scss';
 import Button from '../Button';
-import Home from '../Home';
-import About from '../About';
+import Loading from '../Loading';
 import LoginPage from '../LoginPage';
 import DashboardNewForm from '../DashboardNewForm';
-import DashboardsList from '../DashboardsList';
 import DashboardView from '../DashboardView';
 import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
@@ -37,12 +38,14 @@ const mapLoggedInStateToProps = store => ({
   loggedIn: !!store.user,
 });
 const WrappedRoute = connect(mapLoggedInStateToProps)(
-  ({ component: Component, isPublic, loggedIn, contentWidth, ...rest }) => (
+  ({ component: Component, loggedIn, contentWidth, ...rest }) => (
     <Route
       {...rest}
       render={props =>
         loggedIn ? (
-          <Component {...props} width={contentWidth} />
+          <div className={`page ${Component.name}`}>
+            <Component {...props} width={contentWidth} />
+          </div>
         ) : (
           <Redirect
             to={{
@@ -56,39 +59,59 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   ),
 );
 
-const SidebarContent = ({ sidebarDocked, onSidebarXClick, onSidebarLinkClick }) => (
-  <div className="navigation">
-    {!sidebarDocked ? <Button onClick={onSidebarXClick}>X</Button> : ''}
-    <header>
-      <img src="/grafolean.svg" alt="Grafolean" />
-    </header>
-    <ul>
-      <li>
-        <Link to="/" onClick={onSidebarLinkClick}>
-          Home
+class SidebarContentNoStore extends React.Component {
+  componentDidMount() {
+    store.dispatch(fetchDashboardsList());
+  }
+
+  render() {
+    const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
+    if (fetching) {
+      return <Loading />;
+    }
+    if (!valid) {
+      return (
+        <div>
+          <i className="fa fa-exclamation-triangle" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="navigation">
+        {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+
+        <Link className="button blue" to="/dashboards/new" onClick={onSidebarLinkClick}>
+          <i className="fa fa-plus" />
+          Add dashboard
         </Link>
-      </li>
-      <li>
-        <Link to="/dashboards" onClick={onSidebarLinkClick}>
-          Dashboards
-        </Link>
-      </li>
-      <li>
-        <Link to="/user" onClick={onSidebarLinkClick}>
+        {dashboards &&
+          dashboards.map(dash => (
+            <Link
+              key={dash.slug}
+              className="button green"
+              to={`/dashboards/view/${dash.slug}`}
+              onClick={onSidebarLinkClick}
+            >
+              {dash.name}
+            </Link>
+          ))}
+        <Link className="button blue" to="/user" onClick={onSidebarLinkClick}>
           User
         </Link>
-      </li>
-      <li>
-        <Link to="/about" onClick={onSidebarLinkClick}>
-          About
-        </Link>
-      </li>
-    </ul>
-  </div>
-);
+      </div>
+    );
+  }
+}
+const mapDashboardsListToProps = store => ({
+  dashboards: store.dashboards.list.data,
+  fetching: store.dashboards.list.fetching,
+  valid: store.dashboards.list.valid,
+});
+const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentNoStore);
 
 class LoggedInContent extends React.Component {
-  CONTENT_PADDING_LR = 30;
+  CONTENT_PADDING_LR = 20;
   SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
   SIDEBAR_MAX_WIDTH = 250;
   state = {
@@ -148,7 +171,7 @@ class LoggedInContent extends React.Component {
     const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
-    const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
+    const contentWidth = innerWindowWidth - sidebarWidth;
 
     return (
       <Sidebar
@@ -165,11 +188,12 @@ class LoggedInContent extends React.Component {
         shadow={false}
         styles={{
           sidebar: {
-            backgroundColor: '#fff',
+            backgroundColor: '#f5f5f5',
             width: sidebarWidth,
-            borderRight: '1px solid #d8d8d8',
+            borderRight: '1px solid #e3e3e3',
           },
           content: {
+            backgroundColor: '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },
@@ -181,18 +205,9 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
-            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/" component={Home} />
-            <WrappedRoute exact isPublic={true} contentWidth={contentWidth} path="/about" component={About} />
-            <WrappedRoute
-              exact
-              isPublic={true}
-              contentWidth={contentWidth}
-              path="/admin/first"
-              component={AdminFirst}
-            />
+            <WrappedRoute exact contentWidth={contentWidth} path="/admin/first" component={AdminFirst} />
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
-            <WrappedRoute exact contentWidth={contentWidth} path="/dashboards" component={DashboardsList} />
             <WrappedRoute
               exact
               contentWidth={contentWidth}
@@ -212,7 +227,7 @@ class LoggedInContent extends React.Component {
               component={DashboardWidgetEdit}
             />
 
-            <WrappedRoute isPublic={true} contentWidth={contentWidth} component={PageNotFound} />
+            <WrappedRoute contentWidth={contentWidth} component={PageNotFound} />
           </Switch>
         </div>
       </Sidebar>

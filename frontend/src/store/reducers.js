@@ -22,14 +22,13 @@ function dashboardsList(
   state = {
     fetching: false, // when true, fresh data is being fetched ("loading" sign can be shown)
     valid: false, // when true, data can be shown on screen
-    refetch: true, // a signal to start fetching as soon as convenient
     data: [], // list of dashboards
   },
   action,
 ) {
   switch (action.type) {
     case ON_REQUEST_DASHBOARDS_LIST:
-      return { ...state, fetching: true, refetch: false };
+      return { ...state, fetching: true };
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
       return { ...state, fetching: false, data: [], valid: false }; // valid: data should be re-fetched (in response to some user action, not automatically!) before use
     case ON_RECEIVE_DASHBOARDS_LIST_SUCCESS:
@@ -40,7 +39,7 @@ function dashboardsList(
     case ON_SUBMIT_DASHBOARD_FAILURE:
     case ON_SUBMIT_DASHBOARD_SUCCESS:
       // it might be good if we marked data as stale, but we re-fetch it on each componentWillMount anyway...
-      return { ...state, refetch: true };
+      return { ...state };
     default:
       return state;
   }

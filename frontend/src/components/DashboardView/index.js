@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
@@ -10,6 +9,7 @@ import WidgetForm from '../WidgetForm';
 import MoonChartWidget from '../Widgets/MoonChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
+import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class DashboardView extends React.Component {
   abortController = null;
@@ -90,8 +90,13 @@ class DashboardView extends React.Component {
   };
 
   render() {
-    if (!this.state.valid) {
-      if (this.state.loading) return <Loading />;
+    const { valid, loading } = this.state;
+    const dashboardSlug = this.props.match.params.slug;
+
+    const innerWidth = this.props.width - 2 * 21; // padding
+
+    if (!valid) {
+      if (loading) return <Loading />;
       else return <div>Could not fetch data - please try again.</div>;
     }
 
@@ -101,22 +106,23 @@ class DashboardView extends React.Component {
           position: 'relative',
         }}
       >
-        Dashboard:
-        {this.state.loading && <Loading overlayParent={true} />}
-        <hr />
-        {this.state.name}
-        <div>
+        <div className="frame dashboard-info">
+          Dashboard: {this.state.name}{' '}
+          {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}
+        </div>
+
+        <div className="frame">
           {this.state.widgets.map(widget => {
             switch (widget.type) {
               case 'lastvalue':
                 return (
                   <LastValueWidget
                     key={widget.id}
-                    width={this.props.width}
+                    width={innerWidth}
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
-                    dashboardSlug={this.props.match.params.slug}
+                    dashboardSlug={dashboardSlug}
                     title={widget.title}
                     content={widget.content}
                     refreshParent={this.fetchDashboardDetails}
@@ -126,11 +132,11 @@ class DashboardView extends React.Component {
                 return (
                   <MoonChartWidget
                     key={widget.id}
-                    width={this.props.width}
+                    width={innerWidth}
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
-                    dashboardSlug={this.props.match.params.slug}
+                    dashboardSlug={dashboardSlug}
                     title={widget.title}
                     chartContent={widget.content}
                     refreshParent={this.fetchDashboardDetails}
@@ -141,25 +147,34 @@ class DashboardView extends React.Component {
             }
           })}
         </div>
-        {!this.state.newChartFormOpened ? (
-          <div>
-            <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
-          </div>
-        ) : (
-          <div>
-            <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-            <WidgetForm dashboardSlug={this.props.match.params.slug} />
-          </div>
-        )}
+
+        <div className="frame">
+          {!this.state.newChartFormOpened ? (
+            <div>
+              <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
+            </div>
+          ) : (
+            <div>
+              <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
+              <WidgetForm dashboardSlug={dashboardSlug} />
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 }
 
-const mapStoreToProps = (state, ownProps) => {
-  // parameter 'slug' comes from React Router:
-  let slug = ownProps.match.params.slug;
-  if (!state.dashboards.details[slug]) return {};
-  return state.dashboards.details[slug];
-};
-export default connect(mapStoreToProps)(DashboardView);
+class DashboardViewRemountable extends React.Component {
+  /*
+    React Router doesn't re-mount the component when the params change; DashboardView however
+    assumes it will be remounted. Solution is to put a component in between which will use
+    key to remount DashboardView as necessary.
+  */
+  render() {
+    const { match, ...rest } = this.props;
+    return <DashboardView key={match ? match.params.slug : ''} match={match} {...rest} />;
+  }
+}
+
+export default DashboardViewRemountable;

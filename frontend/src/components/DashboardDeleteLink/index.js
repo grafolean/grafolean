@@ -5,12 +5,14 @@ import store from '../../store';
 import { submitDeleteDashboard } from '../../store/actions';
 
 import Loading from '../Loading';
-import Button from '../Button';
 
 class DashboardDeleteLink extends React.Component {
   handleClick = event => {
-    store.dispatch(submitDeleteDashboard(this.props.slug));
     event.preventDefault();
+    if (!window.confirm("Are you sure you want to delete this dashboard? This can't be undone!")) {
+      return;
+    }
+    store.dispatch(submitDeleteDashboard(this.props.slug));
   };
 
   render() {
@@ -23,7 +25,11 @@ class DashboardDeleteLink extends React.Component {
       );
     }
 
-    return <Button onClick={this.handleClick}>delete</Button>;
+    return (
+      <button className="red" onClick={this.handleClick}>
+        <i className="fa fa-trash" /> delete
+      </button>
+    );
   }
 }
 

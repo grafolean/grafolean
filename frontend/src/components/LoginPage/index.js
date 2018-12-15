@@ -136,9 +136,7 @@ export class LoginPage extends React.Component {
                 {loginError}
               </div>
             )}
-
           </div>
-
         </div>
       </div>
     );
