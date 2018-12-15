@@ -111,42 +111,45 @@ class DashboardView extends React.Component {
           {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}
         </div>
 
-        <div className="frame">
-          {this.state.widgets.map(widget => {
-            switch (widget.type) {
-              case 'lastvalue':
-                return (
-                  <LastValueWidget
-                    key={widget.id}
-                    width={innerWidth}
-                    height={500}
-                    widgetId={widget.id}
-                    widgetType={widget.type}
-                    dashboardSlug={dashboardSlug}
-                    title={widget.title}
-                    content={widget.content}
-                    refreshParent={this.fetchDashboardDetails}
-                  />
-                );
-              case 'chart':
-                return (
-                  <GLeanChartWidget
-                    key={widget.id}
-                    width={innerWidth}
-                    height={500}
-                    widgetId={widget.id}
-                    widgetType={widget.type}
-                    dashboardSlug={dashboardSlug}
-                    title={widget.title}
-                    chartContent={widget.content}
-                    refreshParent={this.fetchDashboardDetails}
-                  />
-                );
-              default:
-                return <div>Unknown widget type.</div>;
-            }
-          })}
-        </div>
+        {this.state.widgets.length > 0 && (
+          <div className="frame">
+            {this.state.widgets.map(widget => {
+              switch (widget.type) {
+                case 'lastvalue':
+                  return (
+                    <LastValueWidget
+                      key={widget.id}
+                      width={innerWidth}
+                      height={500}
+                      widgetId={widget.id}
+                      widgetType={widget.type}
+                      dashboardSlug={dashboardSlug}
+                      title={widget.title}
+                      content={widget.content}
+                      refreshParent={this.fetchDashboardDetails}
+                    />
+                  );
+                case 'chart':
+                  return (
+                    <GLeanChartWidget
+                      key={widget.id}
+                      width={innerWidth}
+                      height={500}
+                      widgetId={widget.id}
+                      widgetType={widget.type}
+                      dashboardSlug={dashboardSlug}
+                      title={widget.title}
+                      chartContent={widget.content}
+                      refreshParent={this.fetchDashboardDetails}
+                    />
+                  );
+                default:
+                  return <div>Unknown widget type.</div>;
+              }
+            })}
+          </div>
+        )}
+
 
         <div className="frame">
           {!this.state.newChartFormOpened ? (
