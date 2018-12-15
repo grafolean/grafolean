@@ -93,6 +93,8 @@ class DashboardView extends React.Component {
     const { valid, loading } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
+    const innerWidth = this.props.width - 2 * 21; // padding
+
     if (!valid) {
       if (loading) return <Loading />;
       else return <div>Could not fetch data - please try again.</div>;
@@ -104,20 +106,20 @@ class DashboardView extends React.Component {
           position: 'relative',
         }}
       >
-        <div className="window">
+        <div className="frame">
           Dashboard: {this.state.name}
           {loading && <Loading overlayParent={true} />}
           <DashboardDeleteLink slug={dashboardSlug} />
         </div>
 
-        <div className="window">
+        <div className="frame">
           {this.state.widgets.map(widget => {
             switch (widget.type) {
               case 'lastvalue':
                 return (
                   <LastValueWidget
                     key={widget.id}
-                    width={this.props.width}
+                    width={innerWidth}
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
@@ -131,7 +133,7 @@ class DashboardView extends React.Component {
                 return (
                   <MoonChartWidget
                     key={widget.id}
-                    width={this.props.width}
+                    width={innerWidth}
                     height={500}
                     widgetId={widget.id}
                     widgetType={widget.type}
@@ -146,16 +148,19 @@ class DashboardView extends React.Component {
             }
           })}
         </div>
-        {!this.state.newChartFormOpened ? (
-          <div>
-            <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
-          </div>
-        ) : (
-          <div>
-            <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-            <WidgetForm dashboardSlug={dashboardSlug} />
-          </div>
-        )}
+
+        <div className="frame">
+          {!this.state.newChartFormOpened ? (
+            <div>
+              <Button onClick={this.handleShowNewChartForm}>+ add widget</Button>
+            </div>
+          ) : (
+            <div>
+              <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
+              <WidgetForm dashboardSlug={dashboardSlug} />
+            </div>
+          )}
+        </div>
       </div>
     );
   }
