@@ -175,8 +175,7 @@ class LoggedInContent extends React.Component {
           sidebar: {
             backgroundColor: '#f5f5f5',
             width: sidebarWidth,
-            borderRight: '1px solid #d8d8d8',
-            boxShadow: '0 0 10px #ddd',
+            borderRight: '1px solid #e3e3e3',
           },
           content: {
             backgroundColor: '#fafafa',
