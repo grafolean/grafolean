@@ -106,10 +106,9 @@ class DashboardView extends React.Component {
           position: 'relative',
         }}
       >
-        <div className="frame">
-          Dashboard: {this.state.name}
-          {loading && <Loading overlayParent={true} />}
-          <DashboardDeleteLink slug={dashboardSlug} />
+        <div className="frame dashboard-info">
+          Dashboard: {this.state.name}{' '}
+          {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}
         </div>
 
         <div className="frame">
@@ -174,13 +173,7 @@ class DashboardViewRemountable extends React.Component {
   */
   render() {
     const { match, ...rest } = this.props;
-    return (
-      <DashboardView
-        key={match ? match.params.slug : ''}
-        match={match}
-        {...rest}
-      />
-    )
+    return <DashboardView key={match ? match.params.slug : ''} match={match} {...rest} />;
   }
 }
 

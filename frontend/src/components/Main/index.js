@@ -43,7 +43,9 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
       {...rest}
       render={props =>
         loggedIn ? (
-          <Component {...props} width={contentWidth} />
+          <div className={`page ${Component.name}`}>
+            <Component {...props} width={contentWidth} />
+          </div>
         ) : (
           <Redirect
             to={{
@@ -68,24 +70,37 @@ class SidebarContentNoStore extends React.Component {
       return <Loading />;
     }
     if (!valid) {
-      return <div><i className="fa fa-exclamation-triangle" /></div>;
+      return (
+        <div>
+          <i className="fa fa-exclamation-triangle" />
+        </div>
+      );
     }
 
     return (
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
-        <Link className="button blue" to="/dashboards/new" onClick={onSidebarLinkClick}><i className="fa fa-plus" />Add dashboard</Link>
-        {dashboards && dashboards.map(dash => (
-          <Link key={dash.slug} className="button green" to={`/dashboards/view/${dash.slug}`} onClick={onSidebarLinkClick}>
-            {dash.name}
-          </Link>
-        ))}
+        <Link className="button blue" to="/dashboards/new" onClick={onSidebarLinkClick}>
+          <i className="fa fa-plus" />
+          Add dashboard
+        </Link>
+        {dashboards &&
+          dashboards.map(dash => (
+            <Link
+              key={dash.slug}
+              className="button green"
+              to={`/dashboards/view/${dash.slug}`}
+              onClick={onSidebarLinkClick}
+            >
+              {dash.name}
+            </Link>
+          ))}
         <Link className="button blue" to="/user" onClick={onSidebarLinkClick}>
           User
         </Link>
       </div>
-    )
+    );
   }
 }
 const mapDashboardsListToProps = store => ({
@@ -190,12 +205,7 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
-            <WrappedRoute
-              exact
-              contentWidth={contentWidth}
-              path="/admin/first"
-              component={AdminFirst}
-            />
+            <WrappedRoute exact contentWidth={contentWidth} path="/admin/first" component={AdminFirst} />
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
             <WrappedRoute

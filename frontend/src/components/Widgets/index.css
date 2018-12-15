@@ -9,3 +9,5 @@
       .widget .widget-title i.fullscreen { margin-left: 10px; font-size: 12px; padding-top: 2px; color: hsl(215, 80%, 30%); }
 
   .widget-content { padding: 15px 20px 20px; }
+
+.page.DashboardViewRemountable .frame.dashboard-info button.red { margin-left: 50px; }

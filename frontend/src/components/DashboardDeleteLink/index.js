@@ -25,7 +25,11 @@ class DashboardDeleteLink extends React.Component {
       );
     }
 
-    return <button className="red" onClick={this.handleClick}><i className="fa fa-trash" /> delete</button>;
+    return (
+      <button className="red" onClick={this.handleClick}>
+        <i className="fa fa-trash" /> delete
+      </button>
+    );
   }
 }
 
