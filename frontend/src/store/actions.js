@@ -40,31 +40,6 @@ export function onReceiveDashboardsListFailure(errMsg) {
   };
 }
 
-export const ON_SUBMIT_DELETE_DASHBOARD = 'ON_SUBMIT_DELETE_DASHBOARD';
-export function onSubmitDeleteDashboard(slug) {
-  return {
-    type: ON_SUBMIT_DELETE_DASHBOARD,
-    slug,
-  };
-}
-
-export const ON_SUBMIT_DELETE_DASHBOARD_SUCCESS = 'ON_SUBMIT_DELETE_DASHBOARD_SUCCESS';
-export function onSubmitDeleteDashboardSuccess(slug) {
-  return {
-    type: ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
-    slug,
-  };
-}
-
-export const ON_SUBMIT_DELETE_DASHBOARD_FAILURE = 'ON_SUBMIT_DELETE_DASHBOARD_FAILURE';
-export function onSubmitDeleteDashboardFailure(slug, errMsg) {
-  return {
-    type: ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
-    slug,
-    errMsg,
-  };
-}
-
 export const ON_FAILURE = 'ON_FAILURE';
 export function onFailure(msg) {
   return {
@@ -117,16 +92,3 @@ export function fetchDashboardsList() {
   };
 }
 
-export function submitDeleteDashboard(slug) {
-  return function(dispatch) {
-    dispatch(onSubmitDeleteDashboard(slug));
-    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${slug}`, {
-      method: 'DELETE',
-    })
-      .then(handleFetchErrors)
-      .then(
-        response => dispatch(onSubmitDeleteDashboardSuccess(slug)),
-        errorMsg => dispatch(onSubmitDeleteDashboardFailure(slug, errorMsg.toString())),
-      );
-  };
-}

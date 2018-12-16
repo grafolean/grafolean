@@ -1,33 +1,51 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import Redirect from 'react-router-dom/Redirect';
 
 import store from '../../store';
-import { submitDeleteDashboard } from '../../store/actions';
+import { handleFetchErrors, fetchDashboardsList, ROOT_URL, onFailure } from '../../store/actions';
 
-import Loading from '../Loading';
+import { fetchAuth } from '../../utils/fetch';
 
 class DashboardDeleteLink extends React.Component {
+  state = {
+    deleting: false,
+    deleted: false,
+  }
+
   handleClick = event => {
     event.preventDefault();
     if (!window.confirm("Are you sure you want to delete this dashboard? This can't be undone!")) {
       return;
     }
-    store.dispatch(submitDeleteDashboard(this.props.slug));
+
+    fetchAuth(
+      `${ROOT_URL}/accounts/1/dashboards/${this.props.slug}`,
+      {
+        method: 'DELETE',
+      },
+    )
+      .then(handleFetchErrors)
+      .then(() => {
+        this.setState({
+          deleting: false,
+          deleted: true,
+        });
+        store.dispatch(fetchDashboardsList());
+      })
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   render() {
-    if (this.props.deleting) {
-      return (
-        <div>
-          Deleting...
-          <Loading />
-        </div>
-      );
+    const { deleting, deleted } = this.state;
+
+    if (deleted) {
+      return <Redirect to="/" />;
     }
 
     return (
       <button className="red" onClick={this.handleClick}>
-        <i className="fa fa-trash" /> delete
+        <i className="fa fa-trash" /> {deleting ? <i className="fa fa-spinner fa-spin" /> : "delete"}
       </button>
     );
   }

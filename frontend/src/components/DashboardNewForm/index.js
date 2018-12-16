@@ -2,7 +2,7 @@ import React from 'react';
 import { Redirect } from 'react-router-dom';
 
 import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure, fetchDashboardsList } from '../../store/actions';
 
 import Loading from '../Loading';
 import { fetchAuth } from '../../utils/fetch';
@@ -36,12 +36,13 @@ class DashboardNewForm extends React.Component {
       },
     )
       .then(handleFetchErrors)
-      .then(response =>
+      .then(response => {
         response.json().then(json => this.setState({
           submitted: true,
           newSlug: json.slug,
-        }))
-      )
+        }));
+        store.dispatch(fetchDashboardsList());
+      })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
