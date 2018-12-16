@@ -5,9 +5,6 @@ import {
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
-  ON_SUBMIT_DASHBOARD,
-  ON_SUBMIT_DASHBOARD_SUCCESS,
-  ON_SUBMIT_DASHBOARD_FAILURE,
   ON_SUBMIT_DELETE_DASHBOARD,
   ON_SUBMIT_DELETE_DASHBOARD_SUCCESS,
   ON_SUBMIT_DELETE_DASHBOARD_FAILURE,
@@ -36,8 +33,6 @@ function dashboardsList(
 
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
-    case ON_SUBMIT_DASHBOARD_FAILURE:
-    case ON_SUBMIT_DASHBOARD_SUCCESS:
       // it might be good if we marked data as stale, but we re-fetch it on each componentWillMount anyway...
       return { ...state };
     default:
@@ -75,29 +70,9 @@ function dashboardDetailsPerSlug(
   }
 }
 
-function forms(state = {}, action) {
-  switch (action.type) {
-    case ON_SUBMIT_DASHBOARD:
-      return { ...state, [action.formid]: { loading: true, submitted: false } };
-    case ON_SUBMIT_DASHBOARD_SUCCESS:
-      return {
-        ...state,
-        [action.formid]: { loading: false, submitted: true, slug: action.slug },
-      };
-    case ON_SUBMIT_DASHBOARD_FAILURE:
-      return {
-        ...state,
-        [action.formid]: { loading: false, submitted: false },
-      };
-    default:
-      return state;
-  }
-}
-
 function notifications(state = [], action) {
   switch (action.type) {
     case ON_RECEIVE_DASHBOARDS_LIST_FAILURE:
-    case ON_SUBMIT_DASHBOARD_FAILURE:
     case ON_SUBMIT_DELETE_DASHBOARD_FAILURE:
       return [{ type: 'error', message: action.errMsg, id: uniqueId('notif-') }, ...state];
     case ON_SUBMIT_DELETE_DASHBOARD_SUCCESS:
@@ -138,7 +113,6 @@ const grafoleanApp = combineReducers({
     list: dashboardsList,
     details: dashboardDetails,
   }),
-  forms,
   notifications,
 });
 

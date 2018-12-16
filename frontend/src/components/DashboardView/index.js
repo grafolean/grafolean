@@ -101,11 +101,7 @@ class DashboardView extends React.Component {
     }
 
     return (
-      <div
-        style={{
-          position: 'relative',
-        }}
-      >
+      <div>
         <div className="frame dashboard-info">
           Dashboard: {this.state.name}{' '}
           {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}

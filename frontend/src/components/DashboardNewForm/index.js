@@ -1,19 +1,18 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
-import { connect } from 'react-redux';
-import uniqueId from 'lodash/uniqueId';
 
 import store from '../../store';
-import { submitNewDashboard } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 import Loading from '../Loading';
+import { fetchAuth } from '../../utils/fetch';
 
 class DashboardNewForm extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      name: '',
-    };
+  state = {
+    name: '',
+    submitted: false,
+    loading: false,
+    newSlug: null,
   }
 
   handleChange = event => {
@@ -21,39 +20,45 @@ class DashboardNewForm extends React.Component {
   };
 
   handleSubmit = event => {
-    store.dispatch(submitNewDashboard(this.props.formid, this.state.name));
     event.preventDefault();
+    const params = {
+      name: this.state.name,
+    };
+    fetchAuth(
+      `${ROOT_URL}/accounts/1/dashboards/`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify(params),
+      },
+    )
+      .then(handleFetchErrors)
+      .then(response =>
+        response.json().then(json => this.setState({
+          submitted: true,
+          newSlug: json.slug,
+        }))
+      )
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   render() {
-    return this.props.submitted ? (
-      <Redirect to={`/dashboards/view/${this.props.slug}`} />
+    const { submitted, loading, name, newSlug } = this.state;
+    return submitted ? (
+      <Redirect to={`/dashboards/view/${newSlug}`} />
     ) : (
-      <form id={this.props.formid} onSubmit={this.handleSubmit}>
+      <form>
         <label>
           Name:
-          <input type="text" name="name" value={this.state.name} onChange={this.handleChange} />
+          <input type="text" name="name" value={name} onChange={this.handleChange} />
         </label>
-        {this.props.loading ? <Loading /> : <input type="submit" value="Submit" />}
+        {loading ? <Loading /> : <button onClick={this.handleSubmit}>Submit</button>}
       </form>
     );
   }
 }
 
-const mapStoreToProps = store => {
-  const formId = uniqueId('form-');
-  let defaultProps = {
-    formid: formId,
-    loading: false,
-    submitted: false, // we use this to redirect from form after it is successfully submitted
-  };
-  if (!store.forms) {
-    return defaultProps;
-  }
-  if (!store.forms[formId]) {
-    return defaultProps;
-  }
-
-  return { ...defaultProps, ...store.forms[formId] };
-};
-export default connect(mapStoreToProps)(DashboardNewForm);
+export default DashboardNewForm;

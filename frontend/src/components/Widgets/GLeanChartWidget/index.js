@@ -37,7 +37,6 @@ class GLeanChartWidget extends React.Component {
   componentWillUnmount() {
     if (this.fetchPathsAbortController !== null) {
       this.fetchPathsAbortController.abort();
-      this.fetchPathsAbortController = null;
     }
   }
 

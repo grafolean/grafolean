@@ -40,31 +40,6 @@ export function onReceiveDashboardsListFailure(errMsg) {
   };
 }
 
-export const ON_SUBMIT_DASHBOARD = 'ON_SUBMIT_DASHBOARD';
-export function onSubmitDashboard(formid) {
-  return {
-    type: ON_SUBMIT_DASHBOARD,
-    formid,
-  };
-}
-
-export const ON_SUBMIT_DASHBOARD_SUCCESS = 'ON_SUBMIT_DASHBOARD_SUCCESS';
-export function onSubmitDashboardSuccess(formid, json) {
-  return {
-    type: ON_SUBMIT_DASHBOARD_SUCCESS,
-    formid,
-    slug: json.slug,
-  };
-}
-
-export const ON_SUBMIT_DASHBOARD_FAILURE = 'ON_SUBMIT_DASHBOARD_FAILURE';
-export function onSubmitDashboardFailure(errMsg) {
-  return {
-    type: ON_SUBMIT_DASHBOARD_FAILURE,
-    errMsg,
-  };
-}
-
 export const ON_SUBMIT_DELETE_DASHBOARD = 'ON_SUBMIT_DELETE_DASHBOARD';
 export function onSubmitDeleteDashboard(slug) {
   return {
@@ -138,27 +113,6 @@ export function fetchDashboardsList() {
       .then(
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
         errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
-      );
-  };
-}
-
-export function submitNewDashboard(formid, name) {
-  return function(dispatch) {
-    dispatch(onSubmitDashboard(formid));
-    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name,
-      }),
-    })
-      .then(handleFetchErrors)
-      .then(
-        response => response.json().then(json => dispatch(onSubmitDashboardSuccess(formid, json))),
-        errorMsg => dispatch(onSubmitDashboardFailure(errorMsg.toString())),
       );
   };
 }
