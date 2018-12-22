@@ -85,7 +85,7 @@ class DashboardView extends React.Component {
   handleHideNewChartForm = ev => {
     ev.preventDefault();
     this.setState({
-      newChartFormOpened: true,
+      newChartFormOpened: false,
     });
   };
 

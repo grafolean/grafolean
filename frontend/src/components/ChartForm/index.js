@@ -134,7 +134,7 @@ export default class ChartForm extends React.Component {
 
     return (
       <div>
-        <div>
+        <div className="field">
           <label>Series definitions:</label>
           {this.state.seriesGroups.map((sg, sgIndex) => (
             <div className="serie" key={sgIndex}>
@@ -147,6 +147,7 @@ export default class ChartForm extends React.Component {
                       marginRight: 10,
                     }}
                   >
+                  <div className="field">
                     <label>Path filter:</label>
                     <input
                       type="text"
@@ -158,6 +159,8 @@ export default class ChartForm extends React.Component {
                         minWidth: 300,
                       }}
                     />
+                  </div>
+                  <div className="field">
                     <label>Path renamer:</label>
                     <input
                       type="text"
@@ -170,6 +173,7 @@ export default class ChartForm extends React.Component {
                       }}
                     />
                   </div>
+                  </div>
 
                   <MatchingPaths
                     pathFilter={sg.pathFilter}
@@ -179,7 +183,7 @@ export default class ChartForm extends React.Component {
                 </div>
               </div>
 
-              <div className="form-item">
+              <div className="form-item field">
                 <label>Base unit:</label>
                 <Creatable
                   value={sg.unit || ''}

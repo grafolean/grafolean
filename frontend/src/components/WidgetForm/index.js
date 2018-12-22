@@ -9,6 +9,8 @@ import Loading from '../Loading';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 import { fetchAuth } from '../../utils/fetch';
 
+import '../form.scss';
+
 const WIDGET_TYPES = [
   { type: 'chart', label: 'chart', form: ChartForm },
   { type: 'lastvalue', label: 'last value', form: LastValueForm },
@@ -95,7 +97,10 @@ export default class WidgetForm extends React.Component {
     };
   };
 
-  handleSubmit = (widgetType, widgetName) => {
+  handleSubmit = (ev) => {
+    ev.preventDefault();
+
+    const { widgetType, widgetName } = this.state;
     if (!this.alteredWidgetData[widgetType].valid) {
       store.dispatch(onFailure('Form contents not valid!'));
       return;
@@ -129,47 +134,54 @@ export default class WidgetForm extends React.Component {
   };
 
   render() {
-    if (this.state.loading) {
+    const { loading, errorFetching, widgetType, widgetName, widgetContent, submitting } = this.state;
+    const { formid, lockWidgetType } = this.props;
+    if (loading) {
       return <Loading />;
     }
-    if (this.state.errorFetching) {
+    if (errorFetching) {
       return <div>Error fetching data.</div>;
     }
 
-    const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === this.state.widgetType).form;
+    const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === widgetType).form;
     return (
       <div>
-        <form
-          id={this.props.formid}
-          onSubmit={ev => {
-            ev.preventDefault();
-            this.handleSubmit(this.state.widgetType, this.state.widgetName);
-          }}
-        >
-          <div>
+        <form id={formid} style={{ marginTop: 20 }}>
+          <div className="field">
             <label>Widget title:</label>
-            <input type="text" name="name" value={this.state.widgetName} onChange={this.handleNameChange} />
+            <input type="text" name="name" value={widgetName} onChange={this.handleNameChange} />
           </div>
 
-          {!this.props.lockWidgetType && (
-            <select
-              onChange={ev => this.setState({ widgetType: ev.target.value })}
-              value={this.state.widgetType}
-            >
-              {WIDGET_TYPES.map(wt => (
-                <option key={wt.type} value={wt.type}>
-                  {wt.label}
-                </option>
-              ))}
-            </select>
+          {!lockWidgetType && (
+            <div className="field">
+              <label>Type:</label>
+              <select
+                onChange={ev => this.setState({ widgetType: ev.target.value })}
+                value={widgetType}
+              >
+                {WIDGET_TYPES.map(wt => (
+                  <option key={wt.type} value={wt.type}>
+                    {wt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           )}
 
           <WidgetTypeForm
             onChange={this.handleFormContentChange}
-            initialFormContent={this.state.widgetContent}
+            initialFormContent={widgetContent}
           />
 
-          {this.state.submitting ? <Loading /> : <input type="submit" value="Submit" />}
+          {submitting ? (
+            <button>
+              <i className="fa fa-circle-o-notch fa-spin" />
+            </button>
+          ) : (
+            <button onClick={this.handleSubmit} disabled={widgetName.length === 0}>
+              Submit
+            </button>
+          )}
         </form>
       </div>
     );
