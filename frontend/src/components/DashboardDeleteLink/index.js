@@ -11,7 +11,7 @@ class DashboardDeleteLink extends React.Component {
   state = {
     deleting: false,
     deleted: false,
-  }
+  };
 
   handleClick = event => {
     event.preventDefault();
@@ -19,12 +19,9 @@ class DashboardDeleteLink extends React.Component {
       return;
     }
 
-    fetchAuth(
-      `${ROOT_URL}/accounts/1/dashboards/${this.props.slug}`,
-      {
-        method: 'DELETE',
-      },
-    )
+    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.slug}`, {
+      method: 'DELETE',
+    })
       .then(handleFetchErrors)
       .then(() => {
         this.setState({
@@ -45,7 +42,7 @@ class DashboardDeleteLink extends React.Component {
 
     return (
       <button className="red" onClick={this.handleClick}>
-        <i className="fa fa-trash" /> {deleting ? <i className="fa fa-spinner fa-spin" /> : "delete"}
+        <i className="fa fa-trash" /> {deleting ? <i className="fa fa-circle-o-notch fa-spin" /> : 'delete'}
       </button>
     );
   }

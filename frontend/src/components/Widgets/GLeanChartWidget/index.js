@@ -710,7 +710,7 @@ export class ChartView extends React.Component {
             >
               {this.props.fetching ? (
                 <i
-                  className="fa fa-spinner fa-spin"
+                  className="fa fa-circle-o-notch fa-spin"
                   style={{
                     color: '#666',
                     fontSize: 30,

@@ -31,7 +31,7 @@ class Loading extends Component {
         }}
       >
         <i
-          className="fa fa-spinner fa-spin"
+          className="fa fa-circle-o-notch fa-spin"
           style={{
             fontSize: this.props.wh,
           }}

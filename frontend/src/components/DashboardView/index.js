@@ -146,7 +146,6 @@ class DashboardView extends React.Component {
           </div>
         )}
 
-
         <div className="frame">
           {!this.state.newChartFormOpened ? (
             <div>

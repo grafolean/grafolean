@@ -61,32 +61,29 @@ export class LoginPage extends React.Component {
         if (response.status === 401) {
           this.setState({
             loginError: 'Invalid credentials!',
+            processingLogin: false,
           });
           return;
         }
         if (!response.ok) {
           throw new Error(`Error ${response.status} - ${response.statusText}`);
         }
-        response.json().then(json => {
-          const jwtToken = response.headers.get('X-JWT-Token');
-          window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
-          store.dispatch(onLoginSuccess(json));
-          this.setState({
-            redirectToReferrer: true,
-          });
+        return Promise.all([response.json(), response.headers.get('X-JWT-Token')]);
+      })
+      .then(([json, jwtToken]) => {
+        window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
+        store.dispatch(onLoginSuccess(json));
+        this.setState({
+          redirectToReferrer: true,
         });
       })
       .catch(errorMsg => {
         console.error(errorMsg.toString());
         this.setState({
           loginError: errorMsg.toString(),
-        });
-      })
-      .then(() =>
-        this.setState({
           processingLogin: false,
-        }),
-      );
+        });
+      });
   };
 
   render() {
@@ -121,7 +118,7 @@ export class LoginPage extends React.Component {
 
             {processingLogin ? (
               <button>
-                <i className="fa fa-spinner fa-spin" />
+                <i className="fa fa-circle-o-notch fa-spin" />
               </button>
             ) : (
               <button onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
