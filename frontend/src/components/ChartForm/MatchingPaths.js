@@ -5,10 +5,6 @@ import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 
 export default class MatchingPaths extends React.Component {
-  static MATCH_EXACT = 0;
-  static MATCH_WILDCARD = 1;
-  static MATCH_RESIDUAL = 2;
-
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When
     props.pathFilter changes, new fetch request is issued (after some small timeout).
@@ -17,17 +13,20 @@ export default class MatchingPaths extends React.Component {
     pathFilter: '',
     pathRenamer: '',
   };
+  state = {
+    fetched: {
+      paths: [],
+      pathsWithTrailing: [],
+      pathFilter: this.props.pathFilter,
+    },
+  };
+  static MATCH_EXACT = 0;
+  static MATCH_WILDCARD = 1;
+  static MATCH_RESIDUAL = 2;
+
   static FETCH_DELAY_MS = 100;
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      fetched: {
-        paths: [],
-        pathsWithTrailing: [],
-        pathFilter: this.props.pathFilter,
-      },
-    };
+  componentDidMount() {
     this.onPathFilterChange(this.props.pathFilter);
   }
 

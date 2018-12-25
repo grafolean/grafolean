@@ -126,7 +126,11 @@ export class LoginPage extends React.Component {
               <input type="password" value={password} onChange={this.changePassword} />
             </div>
 
-            <Button isLoading={processingLogin} onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
+            <Button
+              isLoading={processingLogin}
+              onClick={this.onLoginClick}
+              disabled={username.length === 0 || password.length === 0}
+            >
               Login
             </Button>
 

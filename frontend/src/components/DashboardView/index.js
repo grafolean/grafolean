@@ -12,17 +12,13 @@ import { fetchAuth } from '../../utils/fetch';
 import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class DashboardView extends React.Component {
+  state = {
+    loading: false,
+    valid: true,
+    widgets: [],
+    newChartFormOpened: false,
+  };
   abortController = null;
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: false,
-      valid: true,
-      widgets: [],
-      newChartFormOpened: false,
-    };
-  }
 
   componentDidMount() {
     this.fetchDashboardDetails();

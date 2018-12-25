@@ -32,14 +32,10 @@ class Legend extends React.Component {
     chartSeries: [],
     onDrawnChartSeriesChange: selectedChartSeries => {},
   };
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      selectedChartSeries: null, // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
-      filter: '',
-    };
-  }
+  state = {
+    selectedChartSeries: null, // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
+    filter: '',
+  };
 
   static getDerivedStateFromProps(props, state) {
     // initialize this.state.selectedChartSeries:

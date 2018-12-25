@@ -8,16 +8,15 @@ import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 
 class LastValueWidget extends React.Component {
+  state = {
+    loading: true,
+    fetchingError: false,
+    lastValue: null,
+    lastValueTime: null,
+  };
   fetchAbortController = null;
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      fetchingError: false,
-      lastValue: null,
-      lastValueTime: null,
-    };
+  componentDidMount() {
     this.fetchData();
   }
 

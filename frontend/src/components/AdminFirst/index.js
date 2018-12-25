@@ -7,18 +7,14 @@ import store from '../../store';
 
 class AdminFirst extends React.Component {
   formValues = {};
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      formValues: {
-        username: '',
-        password: '',
-        name: '',
-        email: '',
-      },
-    };
-  }
+  state = {
+    formValues: {
+      username: '',
+      password: '',
+      name: '',
+      email: '',
+    },
+  };
 
   changeFormValue(fieldName, value) {
     this.setState(oldState => ({

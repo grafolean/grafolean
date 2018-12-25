@@ -11,13 +11,10 @@ import { fetchAuth } from '../../utils/fetch';
 
 const isWidget = WrappedComponent => {
   return class Widget extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-        buttonRenders: [],
-        isFullscreen: false,
-      };
-    }
+    state = {
+      buttonRenders: [],
+      isFullscreen: false,
+    };
 
     componentDidMount() {
       this.widgetSetButtons();

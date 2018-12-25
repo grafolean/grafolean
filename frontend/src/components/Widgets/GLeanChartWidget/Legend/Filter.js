@@ -20,13 +20,9 @@ export default class Filter extends React.Component {
   static defaultProps = {
     onChange: () => {},
   };
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      filter: '',
-    };
-  }
+  state = {
+    filter: '',
+  };
 
   handleInputChange = ev => {
     const inputValue = ev.target.value;

@@ -20,17 +20,16 @@ import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 
 class GLeanChartWidget extends React.Component {
+  state = {
+    loading: true,
+    drawnChartSeries: [],
+    allChartSeries: [],
+  };
   repinchyMouseMoveHandler = null;
   repinchyClickHandler = null;
   fetchPathsAbortController = null;
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      loading: true,
-      drawnChartSeries: [],
-      allChartSeries: [],
-    };
+  componentDidMount() {
     this.fetchPaths();
   }
 
@@ -220,6 +219,10 @@ class GLeanChartWidget extends React.Component {
 }
 
 export class ChartContainer extends React.Component {
+  state = {
+    fetchedIntervalsData: [],
+    errorMsg: null,
+  };
   requestsInProgress = [
     // {
     //   aggrLevel: ...
@@ -248,14 +251,6 @@ export class ChartContainer extends React.Component {
   yAxesProperties = {};
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
-
-  constructor(props) {
-    super(props);
-    this.state = {
-      fetchedIntervalsData: [],
-      errorMsg: null,
-    };
-  }
 
   componentDidMount() {
     this.ensureData(this.props.fromTs, this.props.toTs);
@@ -490,18 +485,18 @@ export class ChartView extends React.Component {
     zoomInProgress: false,
     aggrLevel: null,
     registerMouseMoveHandler: handler => {},
+    registerClickHandler: handler => {},
     fetchedIntervalsData: [],
     drawnChartSeries: [],
     yAxesProperties: {},
   };
+  state = {
+    closestPoint: null,
+    overrideClosestPoint: null, // when tooltip is open, this is set
+  };
   oldClosest = null;
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      closestPoint: null,
-      overrideClosestPoint: null, // when tooltip is open, this is set
-    };
+  componentDidMount() {
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
     this.props.registerClickHandler(this.handleClick);
