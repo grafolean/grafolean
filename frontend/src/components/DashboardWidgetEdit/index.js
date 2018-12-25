@@ -8,6 +8,7 @@ export default class DashboardWidgetEdit extends React.Component {
         <WidgetForm
           dashboardSlug={this.props.match.params.slug}
           widgetId={this.props.match.params.widgetId}
+          lockWidgetType={true}
         />
       </div>
     );
