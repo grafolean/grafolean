@@ -14,7 +14,7 @@ import Grid from './Grid';
 import TooltipIndicator from './TooltipIndicator';
 import TooltipPopup from '../../TooltipPopup';
 
-import './index.css';
+import './index.scss';
 import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';

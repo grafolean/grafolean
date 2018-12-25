@@ -2,7 +2,7 @@
   position: relative;
   overflow-x: hidden;
 }
-.toggle-collapse-button {
+i.toggle-collapse-button {
   position: absolute;
   right: 0;
   top: 0;
@@ -14,5 +14,8 @@
   text-align: center;
   z-index: 2;
   border-radius: 3px;
+  font-size: 12px;
+  line-height: 30px;
+  margin-right: 4px;
+  color: #335533;
 }
-  i.toggle-collapse-button { font-size: 12px; line-height: 30px; margin-right: 4px; color: #335533; }

@@ -4,7 +4,7 @@ import 'react-select/dist/react-select.css';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../Button';
-import './index.css';
+import './index.scss';
 
 const METRIC_PREFIXES = [
   { prefix: 'P', name: 'peta', power: 15 },
@@ -133,7 +133,7 @@ export default class ChartForm extends React.Component {
     }
 
     return (
-      <div>
+      <div className="chart-form">
         <div className="field">
           <label>Series definitions:</label>
           {this.state.seriesGroups.map((sg, sgIndex) => (

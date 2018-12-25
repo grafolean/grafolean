@@ -4,7 +4,7 @@ import { Route } from 'react-router-dom';
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
 
-import './index.css';
+import './index.scss';
 
 import WidgetTitleBar from './WidgetTitleBar';
 import { fetchAuth } from '../../utils/fetch';

@@ -1,0 +1,25 @@
+.widget-dialog-container {
+  position: relative;
+
+  .widget-dialog-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background-color: #000000;
+  }
+  .widget-dialog {
+    position: absolute;
+    left: 20px;
+    top: 0;
+    box-sizing: border-box;
+    padding: 20px;
+    background-color: #ffffff;
+    box-shadow: 10px 20px 20px #cccccc;
+    border: 1px solid #eeeeee;
+    border-top: none;
+  }
+}
+
+.repinchy-content {
+  position: relative;
+}

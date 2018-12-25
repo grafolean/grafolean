@@ -1,6 +1,6 @@
 import React from 'react';
 
-import './isDockable.css';
+import './isDockable.scss';
 
 const isDockable = WrappedComponent => {
   return class Dockable extends React.Component {
