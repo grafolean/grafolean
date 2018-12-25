@@ -97,7 +97,7 @@ export default class WidgetForm extends React.Component {
     };
   };
 
-  handleSubmit = (ev) => {
+  handleSubmit = ev => {
     ev.preventDefault();
 
     const { widgetType, widgetName } = this.state;
@@ -155,10 +155,7 @@ export default class WidgetForm extends React.Component {
           {!lockWidgetType && (
             <div className="field">
               <label>Type:</label>
-              <select
-                onChange={ev => this.setState({ widgetType: ev.target.value })}
-                value={widgetType}
-              >
+              <select onChange={ev => this.setState({ widgetType: ev.target.value })} value={widgetType}>
                 {WIDGET_TYPES.map(wt => (
                   <option key={wt.type} value={wt.type}>
                     {wt.label}
@@ -168,10 +165,7 @@ export default class WidgetForm extends React.Component {
             </div>
           )}
 
-          <WidgetTypeForm
-            onChange={this.handleFormContentChange}
-            initialFormContent={widgetContent}
-          />
+          <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
 
           {submitting ? (
             <button>

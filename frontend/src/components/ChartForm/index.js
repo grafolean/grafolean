@@ -147,32 +147,32 @@ export default class ChartForm extends React.Component {
                       marginRight: 10,
                     }}
                   >
-                  <div className="field">
-                    <label>Path filter:</label>
-                    <input
-                      type="text"
-                      name={`pf-${sgIndex}`}
-                      value={sg.pathFilter}
-                      onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
-                      style={{
-                        height: 20,
-                        minWidth: 300,
-                      }}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>Path renamer:</label>
-                    <input
-                      type="text"
-                      name={`pr-${sgIndex}`}
-                      value={sg.pathRenamer}
-                      onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
-                      style={{
-                        height: 20,
-                        minWidth: 300,
-                      }}
-                    />
-                  </div>
+                    <div className="field">
+                      <label>Path filter:</label>
+                      <input
+                        type="text"
+                        name={`pf-${sgIndex}`}
+                        value={sg.pathFilter}
+                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
+                        style={{
+                          height: 20,
+                          minWidth: 300,
+                        }}
+                      />
+                    </div>
+                    <div className="field">
+                      <label>Path renamer:</label>
+                      <input
+                        type="text"
+                        name={`pr-${sgIndex}`}
+                        value={sg.pathRenamer}
+                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
+                        style={{
+                          height: 20,
+                          minWidth: 300,
+                        }}
+                      />
+                    </div>
                   </div>
 
                   <MatchingPaths
