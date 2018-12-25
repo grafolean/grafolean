@@ -104,7 +104,7 @@ class AdminFirst extends React.Component {
     return (
       <div className="admin_first">
         <h3>Add first (admin) user:</h3>
-        <div class="form">
+        <div className="form">
           <label>Username:</label>
           <input type="text" value={username} onChange={this.changeUsername} />
           <label>Password:</label>
@@ -114,10 +114,10 @@ class AdminFirst extends React.Component {
           <label>First and last name:</label>
           <input type="text" value={name} onChange={this.changeName} />
         </div>
-        <div class="bottom">
+        <div className="bottom">
           <Button onClick={this.handleSubmit}>Create first user</Button>
           <div>
-            <i class="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will have
+            <i className="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will have
             administrator privileges. It will not be possible to insert another user in this way!
           </div>
         </div>
