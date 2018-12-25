@@ -69,7 +69,8 @@ export class LoginPage extends React.Component {
           throw new Error(`Error ${response.status} - ${response.statusText}`);
         }
         const jwtToken = response.headers.get('X-JWT-Token');
-        response.json()
+        response
+          .json()
           .then(json => {
             window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
             store.dispatch(onLoginSuccess(json));
@@ -83,7 +84,7 @@ export class LoginPage extends React.Component {
               loginError: errorMsg.toString(),
               processingLogin: false,
             });
-          })
+          });
       })
       .catch(errorMsg => {
         console.error(errorMsg.toString());

@@ -117,8 +117,8 @@ class AdminFirst extends React.Component {
         <div className="bottom">
           <Button onClick={this.handleSubmit}>Create first user</Button>
           <div>
-            <i className="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will have
-            administrator privileges. It will not be possible to insert another user in this way!
+            <i className="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will
+            have administrator privileges. It will not be possible to insert another user in this way!
           </div>
         </div>
       </div>
