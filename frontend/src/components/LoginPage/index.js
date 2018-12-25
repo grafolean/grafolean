@@ -6,6 +6,7 @@ import store from '../../store';
 import Redirect from 'react-router-dom/Redirect';
 
 import './LoginPage.scss';
+import Button from '../Button';
 
 export class LoginPage extends React.Component {
   formValues = {};
@@ -125,15 +126,9 @@ export class LoginPage extends React.Component {
               <input type="password" value={password} onChange={this.changePassword} />
             </div>
 
-            {processingLogin ? (
-              <button>
-                <i className="fa fa-circle-o-notch fa-spin" />
-              </button>
-            ) : (
-              <button onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
-                Login
-              </button>
-            )}
+            <Button isLoading={processingLogin} onClick={this.onLoginClick} disabled={username.length === 0 || password.length === 0}>
+              Login
+            </Button>
 
             {loginError && (
               <div className="error-msg">

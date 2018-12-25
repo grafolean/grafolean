@@ -7,6 +7,7 @@ import { ROOT_URL, handleFetchErrors, onFailure, fetchDashboardsList } from '../
 import { fetchAuth } from '../../utils/fetch';
 
 import '../form.scss';
+import Button from '../Button';
 
 class DashboardNewForm extends React.Component {
   state = {
@@ -59,15 +60,9 @@ class DashboardNewForm extends React.Component {
             <input type="text" name="name" value={name} onChange={this.handleChange} />
           </div>
 
-          {loading ? (
-            <button>
-              <i className="fa fa-circle-o-notch fa-spin" />
-            </button>
-          ) : (
-            <button onClick={this.handleSubmit} disabled={name.length === 0}>
-              Submit
-            </button>
-          )}
+          <Button isLoading={loading} onClick={this.handleSubmit} disabled={name.length === 0}>
+            Submit
+          </Button>
         </form>
       </div>
     );

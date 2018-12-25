@@ -10,6 +10,7 @@ import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 import { fetchAuth } from '../../utils/fetch';
 
 import '../form.scss';
+import Button from '../Button';
 
 const WIDGET_TYPES = [
   { type: 'chart', label: 'chart', form: ChartForm },
@@ -167,15 +168,9 @@ export default class WidgetForm extends React.Component {
 
           <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
 
-          {submitting ? (
-            <button>
-              <i className="fa fa-circle-o-notch fa-spin" />
-            </button>
-          ) : (
-            <button onClick={this.handleSubmit} disabled={widgetName.length === 0}>
-              Submit
-            </button>
-          )}
+          <Button isLoading={submitting} onClick={this.handleSubmit} disabled={widgetName.length === 0}>
+            Submit
+          </Button>
         </form>
       </div>
     );

@@ -6,6 +6,7 @@ import store from '../../store';
 import { handleFetchErrors, fetchDashboardsList, ROOT_URL, onFailure } from '../../store/actions';
 
 import { fetchAuth } from '../../utils/fetch';
+import Button from '../Button';
 
 class DashboardDeleteLink extends React.Component {
   state = {
@@ -41,9 +42,9 @@ class DashboardDeleteLink extends React.Component {
     }
 
     return (
-      <button className="red" onClick={this.handleClick}>
-        <i className="fa fa-trash" /> {deleting ? <i className="fa fa-circle-o-notch fa-spin" /> : 'delete'}
-      </button>
+      <Button isLoading={deleting} className="red" onClick={this.handleClick}>
+        <i className="fa fa-trash" /> delete
+      </Button>
     );
   }
 }
