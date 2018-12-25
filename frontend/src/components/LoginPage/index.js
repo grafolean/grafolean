@@ -68,14 +68,22 @@ export class LoginPage extends React.Component {
         if (!response.ok) {
           throw new Error(`Error ${response.status} - ${response.statusText}`);
         }
-        return Promise.all([response.json(), response.headers.get('X-JWT-Token')]);
-      })
-      .then(([json, jwtToken]) => {
-        window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
-        store.dispatch(onLoginSuccess(json));
-        this.setState({
-          redirectToReferrer: true,
-        });
+        const jwtToken = response.headers.get('X-JWT-Token');
+        response.json()
+          .then(json => {
+            window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
+            store.dispatch(onLoginSuccess(json));
+            this.setState({
+              redirectToReferrer: true,
+            });
+          })
+          .catch(errorMsg => {
+            console.error(errorMsg.toString());
+            this.setState({
+              loginError: errorMsg.toString(),
+              processingLogin: false,
+            });
+          })
       })
       .catch(errorMsg => {
         console.error(errorMsg.toString());
