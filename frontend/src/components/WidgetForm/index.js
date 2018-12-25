@@ -3,6 +3,7 @@ import { stringify } from 'qs';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+import Button from '../Button';
 
 import ChartForm from '../ChartForm';
 import Loading from '../Loading';
@@ -10,7 +11,7 @@ import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 import { fetchAuth } from '../../utils/fetch';
 
 import '../form.scss';
-import Button from '../Button';
+import './widgetForm.scss';
 
 const WIDGET_TYPES = [
   { type: 'chart', label: 'chart', form: ChartForm },
@@ -31,7 +32,7 @@ export default class WidgetForm extends React.Component {
     this.state = {
       loading: this.props.widgetId ? true : false,
       errorFetching: false,
-      widgetType: props.widgetId ? null : WIDGET_TYPES[0].type,
+      widgetType: this.props.widgetId ? null : WIDGET_TYPES[0].type,
       widgetName: '',
       widgetContent: null,
     };
@@ -81,7 +82,7 @@ export default class WidgetForm extends React.Component {
         });
       })
       .then(() => {
-        this.fetchPathsAbortController = null;
+        this.fetchWidgetDataAbortController = null;
       });
   };
 
@@ -93,8 +94,8 @@ export default class WidgetForm extends React.Component {
 
   handleFormContentChange = (widgetType, content, valid) => {
     this.alteredWidgetData[widgetType] = {
-      content,
-      valid,
+      valid: valid,
+      content: content,
     };
   };
 
@@ -136,7 +137,7 @@ export default class WidgetForm extends React.Component {
 
   render() {
     const { loading, errorFetching, widgetType, widgetName, widgetContent, submitting } = this.state;
-    const { formid, lockWidgetType } = this.props;
+    const { lockWidgetType } = this.props;
     if (loading) {
       return <Loading />;
     }
@@ -146,8 +147,8 @@ export default class WidgetForm extends React.Component {
 
     const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === widgetType).form;
     return (
-      <div>
-        <form id={formid} style={{ marginTop: 20 }}>
+      <div className="widget-form">
+        <form>
           <div className="field">
             <label>Widget title:</label>
             <input type="text" name="name" value={widgetName} onChange={this.handleNameChange} />
