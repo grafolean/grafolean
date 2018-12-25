@@ -24,6 +24,7 @@ export default class Main extends React.Component {
       <BrowserRouter>
         <Switch>
           <Route exact path="/login" component={LoginPage} />
+          <Route exact path="/admin/first" component={AdminFirst} />
           <Route exact component={LoggedInContent} />
         </Switch>
       </BrowserRouter>
@@ -205,7 +206,6 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
-            <WrappedRoute exact contentWidth={contentWidth} path="/admin/first" component={AdminFirst} />
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
 
             <WrappedRoute
