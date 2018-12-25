@@ -1,17 +1,19 @@
-div.admin_first.form {
-  display: grid;
-  grid-template-columns: auto auto;
-  column-gap: 10px;
-  row-gap: 10px;
+div.admin_first {
+  .form {
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 10px;
+    row-gap: 10px;
 
-  label {
-    display: block;
+    label {
+      display: block;
+    }
   }
-}
-div.bottom {
-  clear: both;
+  div.bottom {
+    clear: both;
 
-  .fa-exclamation-triangle {
-    color: #660000;
+    .fa-exclamation-triangle {
+      color: #660000;
+    }
   }
 }

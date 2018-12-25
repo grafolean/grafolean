@@ -102,9 +102,9 @@ class AdminFirst extends React.Component {
       formValues: { username, password, name, email },
     } = this.state;
     return (
-      <div>
+      <div className="admin_first">
         <h3>Add first (admin) user:</h3>
-        <div class="admin_first form">
+        <div class="form">
           <label>Username:</label>
           <input type="text" value={username} onChange={this.changeUsername} />
           <label>Password:</label>
