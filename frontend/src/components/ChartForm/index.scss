@@ -8,3 +8,19 @@
     width: 250px;
   }
 }
+
+.matching-paths {
+  border: 1px solid #cccccc;
+  padding: 5px 15px;
+  background-color: #dadaff;
+  font-size: 13px;
+  max-height: 100px;
+  overflow: auto;
+
+  .info {
+    font-style: italic;
+  }
+  .renaming {
+    margin-left: 20px;
+  }
+}

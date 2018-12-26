@@ -4,6 +4,8 @@ import { stringify } from 'qs';
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 
+import './index.scss';
+
 export default class MatchingPaths extends React.Component {
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When
@@ -126,26 +128,12 @@ export default class MatchingPaths extends React.Component {
     const pathsToDisplay =
       this.state.fetched.paths.length > 0 ? this.state.fetched.paths : this.state.fetched.pathsWithTrailing;
     return (
-      <div
-        style={{
-          border: '1px solid #cccccc',
-          padding: '5px 15px',
-          backgroundColor: '#dadaff',
-          fontSize: 13,
-          maxHeight: 100,
-          overflow: 'auto',
-        }}
-        onClick={this.props.onClick}
-      >
+      <div className="matching-paths" onClick={this.props.onClick}>
         {this.state.fetchingError ? (
           <div>Error validating filter</div>
         ) : (
           <div>
-            <div
-              style={{
-                fontStyle: 'italic',
-              }}
-            >
+            <div className="info">
               Matching paths: {this.state.fetched.paths.length}, partial match:{' '}
               {this.state.fetched.pathsWithTrailing.length}
             </div>
@@ -154,11 +142,7 @@ export default class MatchingPaths extends React.Component {
                 {path}
                 <br />
                 {this.props.pathRenamer && (
-                  <div
-                    style={{
-                      marginLeft: 20,
-                    }}
-                  >
+                  <div className="renaming">
                     ⤷{' '}
                     {MatchingPaths.constructChartSerieName(
                       path,

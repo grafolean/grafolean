@@ -7,6 +7,10 @@ export default class LastValueForm extends React.Component {
     },
     handleFormContentChange: () => {},
   };
+  INPUT_STYLE = {
+    height: 20,
+    minWidth: 300,
+  };
 
   constructor(props) {
     super(props);
@@ -42,10 +46,7 @@ export default class LastValueForm extends React.Component {
             name="path"
             value={currentValue}
             onChange={this.handlePathChange}
-            style={{
-              height: 20,
-              minWidth: 300,
-            }}
+            style={this.INPUT_STYLE}
           />
         </div>
       </div>
