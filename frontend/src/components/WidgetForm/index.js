@@ -2,7 +2,7 @@ import React from 'react';
 import { stringify } from 'qs';
 
 import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import Button from '../Button';
 
 import ChartForm from '../ChartForm';
@@ -127,11 +127,6 @@ export default class WidgetForm extends React.Component {
     )
       .then(handleFetchErrors)
       .then(() => {
-        store.dispatch(
-          onSuccess(
-            this.props.widgetId ? 'Widget successfully updated.' : 'New widget successfully created.',
-          ),
-        );
         this.props.onUpdate();
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
