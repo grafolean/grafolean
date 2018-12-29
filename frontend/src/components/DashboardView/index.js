@@ -85,6 +85,13 @@ class DashboardView extends React.Component {
     });
   };
 
+  handleWidgetUpdate = () => {
+    this.fetchDashboardDetails();
+    this.setState({
+      newChartFormOpened: false,
+    });
+  };
+
   render() {
     const { valid, loading } = this.state;
     const dashboardSlug = this.props.match.params.slug;
@@ -150,7 +157,7 @@ class DashboardView extends React.Component {
           ) : (
             <div>
               <Button onClick={this.handleHideNewChartForm}>- cancel</Button>
-              <WidgetForm dashboardSlug={dashboardSlug} />
+              <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
             </div>
           )}
         </div>

@@ -90,7 +90,7 @@ class AdminFirst extends React.Component {
             store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
             this.setState({
               userCreated: true,
-            })
+            });
             // we are done here, trigger fetching of backend status so that Main component learns about our work:
             store.dispatch(fetchBackendStatus());
           })
@@ -100,7 +100,10 @@ class AdminFirst extends React.Component {
   };
 
   render() {
-    const { formValues: { username, password, name, email }, userCreated } = this.state;
+    const {
+      formValues: { username, password, name, email },
+      userCreated,
+    } = this.state;
     if (userCreated) {
       return null;
     }
@@ -127,8 +130,9 @@ class AdminFirst extends React.Component {
           <div className="info">
             <Button onClick={this.handleSubmit}>Create first user</Button>
             <div>
-              <i className="fa fa-exclamation-triangle" /> IMPORTANT: this will insert the first user (which will
-              have administrator privileges). It will not be possible to insert another user in such a way!
+              <i className="fa fa-exclamation-triangle" /> IMPORTANT: this will insert the first user (which
+              will have administrator privileges). It will not be possible to insert another user in such a
+              way!
             </div>
           </div>
         </form>

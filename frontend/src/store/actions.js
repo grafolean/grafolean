@@ -124,10 +124,10 @@ export function fetchBackendStatus() {
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
-        dispatch(onReceiveBackendStatusSuccess(json))
+        dispatch(onReceiveBackendStatusSuccess(json));
       })
       .catch(errorMsg => {
-        dispatch(onReceiveBackendStatusFailure(errorMsg.toString()))
+        dispatch(onReceiveBackendStatusFailure(errorMsg.toString()));
       });
   };
 }

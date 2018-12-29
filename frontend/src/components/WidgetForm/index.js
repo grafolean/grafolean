@@ -22,6 +22,7 @@ export default class WidgetForm extends React.Component {
   static defaultProps = {
     dashboardSlug: null,
     widgetId: null,
+    onUpdate: () => {},
   };
 
   alteredWidgetData = {};
@@ -131,6 +132,7 @@ export default class WidgetForm extends React.Component {
             this.props.widgetId ? 'Widget successfully updated.' : 'New widget successfully created.',
           ),
         );
+        this.props.onUpdate();
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };

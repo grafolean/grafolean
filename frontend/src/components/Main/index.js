@@ -26,13 +26,13 @@ class Main extends React.Component {
   render() {
     const { backendStatus } = this.props;
     if (!backendStatus) {
-      return <Loading overlayParent={true} />
+      return <Loading overlayParent={true} />;
     }
     if (backendStatus.db_migration_needed === true) {
-      return <AdminMigrateDB />
+      return <AdminMigrateDB />;
     }
     if (backendStatus.user_exists === false) {
-      return <AdminFirst />
+      return <AdminFirst />;
     }
     return (
       <BrowserRouter>
