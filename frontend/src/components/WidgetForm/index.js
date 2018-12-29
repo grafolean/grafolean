@@ -104,7 +104,7 @@ export default class WidgetForm extends React.Component {
     ev.preventDefault();
 
     const { widgetType, widgetName } = this.state;
-    if (!this.alteredWidgetData[widgetType].valid) {
+    if (!this.alteredWidgetData[widgetType] || !this.alteredWidgetData[widgetType].valid) {
       store.dispatch(onFailure('Form contents not valid!'));
       return;
     }
@@ -112,7 +112,7 @@ export default class WidgetForm extends React.Component {
     const params = {
       type: widgetType,
       title: widgetName,
-      content: JSON.stringify(this.alteredWidgetData[widgetType].content),
+      content: this.alteredWidgetData[widgetType] ? JSON.stringify(this.alteredWidgetData[widgetType].content) : null,
     };
     fetchAuth(
       `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`,
