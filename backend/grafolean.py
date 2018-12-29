@@ -182,6 +182,16 @@ def status_info_get():
     return json.dumps(result), 200
 
 
+@app.route('/api/status/sitemap', methods=['GET'])
+@noauth
+def status_sitemap_get():
+    rules = defaultdict(set)
+    for rule in app.url_map.iter_rules():
+        rules[str(rule)] |= rule.methods
+    result = [{ 'url': k, 'methods': sorted(list(v))} for k, v in rules.items()]
+    return json.dumps(result), 200
+
+
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
 def admin_permissions_crud():
     if flask.request.method == 'GET':

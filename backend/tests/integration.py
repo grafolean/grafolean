@@ -602,3 +602,17 @@ def test_status_info_after_first(app_client, first_admin_exists):
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
+
+def test_sitemap(app_client):
+    r = app_client.get('/api/status/sitemap')
+    assert r.status_code == 200
+    expected_entry = {
+        "url": "/api/status/sitemap",
+        "methods": [
+            "GET",
+            "HEAD",
+            "OPTIONS",
+        ],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected_entry in actual
