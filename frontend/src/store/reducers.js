@@ -5,6 +5,9 @@ import {
   ON_REQUEST_DASHBOARDS_LIST,
   ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
   ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
+  ON_REQUEST_BACKEND_STATUS,
+  ON_RECEIVE_BACKEND_STATUS_SUCCESS,
+  ON_RECEIVE_BACKEND_STATUS_FAILURE,
   ON_FAILURE,
   ON_SUCCESS,
   REMOVE_NOTIFICATION,
@@ -59,8 +62,21 @@ function user(state = null, action) {
   }
 }
 
+function backendStatus(state = null, action) {
+  switch (action.type) {
+    case ON_RECEIVE_BACKEND_STATUS_FAILURE:
+      return null;
+    case ON_RECEIVE_BACKEND_STATUS_SUCCESS:
+      return action.json;
+    case ON_REQUEST_BACKEND_STATUS:
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
   user,
+  backendStatus,
   dashboards: combineReducers({
     list: dashboardsList,
   }),

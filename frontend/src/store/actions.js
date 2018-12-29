@@ -40,6 +40,29 @@ export function onReceiveDashboardsListFailure(errMsg) {
   };
 }
 
+export const ON_REQUEST_BACKEND_STATUS = 'ON_REQUEST_BACKEND_STATUS';
+export function onRequestBackendStatus() {
+  return {
+    type: ON_REQUEST_BACKEND_STATUS,
+  };
+}
+
+export const ON_RECEIVE_BACKEND_STATUS_SUCCESS = 'ON_RECEIVE_BACKEND_STATUS_SUCCESS';
+export function onReceiveBackendStatusSuccess(json) {
+  return {
+    type: ON_RECEIVE_BACKEND_STATUS_SUCCESS,
+    json,
+  };
+}
+
+export const ON_RECEIVE_BACKEND_STATUS_FAILURE = 'ON_RECEIVE_BACKEND_STATUS_FAILURE';
+export function onReceiveBackendStatusFailure(errMsg) {
+  return {
+    type: ON_RECEIVE_BACKEND_STATUS_FAILURE,
+    errMsg,
+  };
+}
+
 export const ON_FAILURE = 'ON_FAILURE';
 export function onFailure(msg) {
   return {
@@ -89,5 +112,22 @@ export function fetchDashboardsList() {
         response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
         errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
       );
+  };
+}
+
+export function fetchBackendStatus() {
+  // react-thunk - return function instead of object:
+  return function(dispatch) {
+    dispatch(onRequestBackendStatus());
+    // return function that will start the request from server:
+    return fetchAuth(`${ROOT_URL}/status/info`)
+      .then(handleFetchErrors)
+      .then(response => response.json())
+      .then(json => {
+        dispatch(onReceiveBackendStatusSuccess(json))
+      })
+      .catch(errorMsg => {
+        dispatch(onReceiveBackendStatusFailure(errorMsg.toString()))
+      });
   };
 }

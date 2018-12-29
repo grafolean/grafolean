@@ -4,7 +4,7 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchDashboardsList } from '../../store/actions';
+import { fetchBackendStatus, fetchDashboardsList } from '../../store/actions';
 
 import './Main.scss';
 import Button from '../Button';
@@ -18,8 +18,15 @@ import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
 
-export default class Main extends React.Component {
+class Main extends React.Component {
+  componentDidMount() {
+    store.dispatch(fetchBackendStatus());
+  }
   render() {
+    const { backendStatus } = this.props;
+    if (!backendStatus) {
+      return <Loading overlayParent={true} />
+    }
     return (
       <BrowserRouter>
         <Switch>
@@ -31,6 +38,10 @@ export default class Main extends React.Component {
     );
   }
 }
+const mapBackendStatusToProps = store => ({
+  backendStatus: store.backendStatus,
+});
+export default connect(mapBackendStatusToProps)(Main);
 
 // Our logged-in routes need to:
 // - know about users' logged-in state (from store)
