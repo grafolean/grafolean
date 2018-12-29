@@ -1,17 +1,15 @@
 div.admin_first {
-  .form {
-    display: grid;
-    grid-template-columns: auto auto;
-    column-gap: 10px;
-    row-gap: 10px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-    label {
-      display: block;
+  div.info {
+    color: #222;
+
+    button {
+      margin-bottom: 20px;
     }
-  }
-  div.bottom {
-    clear: both;
-
     .fa-exclamation-triangle {
       color: #660000;
     }

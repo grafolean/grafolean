@@ -99,24 +99,32 @@ class AdminFirst extends React.Component {
     } = this.state;
     return (
       <div className="admin_first">
-        <h3>Add first (admin) user:</h3>
-        <div className="form">
-          <label>Username:</label>
-          <input type="text" value={username} onChange={this.changeUsername} />
-          <label>Password:</label>
-          <input type="text" value={password} onChange={this.changePassword} />
-          <label>E-mail:</label>
-          <input type="text" value={email} onChange={this.changeEmail} />
-          <label>First and last name:</label>
-          <input type="text" value={name} onChange={this.changeName} />
-        </div>
-        <div className="bottom">
-          <Button onClick={this.handleSubmit}>Create first user</Button>
-          <div>
-            <i className="fa fa-exclamation-triangle" /> Careful! This will insert the first user, which will
-            have administrator privileges. It will not be possible to insert another user in this way!
+        <form>
+          <h3>Add first (admin) user:</h3>
+          <div className="field">
+            <label>Username:</label>
+            <input type="text" value={username} onChange={this.changeUsername} />
           </div>
-        </div>
+          <div className="field">
+            <label>Password:</label>
+            <input type="text" value={password} onChange={this.changePassword} />
+          </div>
+          <div className="field">
+            <label>E-mail:</label>
+            <input type="text" value={email} onChange={this.changeEmail} />
+          </div>
+          <div className="field">
+            <label>First and last name:</label>
+            <input type="text" value={name} onChange={this.changeName} />
+          </div>
+          <div className="info">
+            <Button onClick={this.handleSubmit}>Create first user</Button>
+            <div>
+              <i className="fa fa-exclamation-triangle" /> IMPORTANT: this will insert the first user (which will
+              have administrator privileges). It will not be possible to insert another user in such a way!
+            </div>
+          </div>
+        </form>
       </div>
     );
   }
