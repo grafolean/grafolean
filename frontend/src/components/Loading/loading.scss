@@ -13,6 +13,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    .message {
+      margin-left: 20px;
+    }
   }
 
   i {

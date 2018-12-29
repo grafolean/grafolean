@@ -8,9 +8,13 @@ class Loading extends Component {
     overlayParent: false,
   };
   render() {
+    const { overlayParent, message } = this.props;
     return (
-      <div className={`loading-component ${this.props.overlayParent ? 'overlay' : ''}`}>
+      <div className={`loading-component ${overlayParent ? 'overlay' : ''}`}>
         <i className="fa fa-circle-o-notch fa-spin" alt="Please wait, loading..." />
+        {message && (
+          <div className="message">{message}</div>
+        )}
       </div>
     );
   }

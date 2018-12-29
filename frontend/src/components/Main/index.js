@@ -4,7 +4,7 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, fetchDashboardsList } from '../../store/actions';
+import { fetchBackendStatus, fetchDashboardsList, ROOT_URL } from '../../store/actions';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -26,7 +26,7 @@ class Main extends React.Component {
   render() {
     const { backendStatus } = this.props;
     if (!backendStatus) {
-      return <Loading overlayParent={true} />;
+      return <Loading overlayParent={true} message={`Trying to connect to backend at: ${ROOT_URL}`} />;
     }
     if (backendStatus.db_migration_needed === true) {
       return <AdminMigrateDB />;
