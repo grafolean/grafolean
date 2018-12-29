@@ -18,6 +18,7 @@ import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
+import CORSWarningPage from '../CORSWarningPage';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -33,6 +34,9 @@ class Main extends React.Component {
     }
     if (backendStatus.user_exists === false) {
       return <AdminFirst />;
+    }
+    if (!backendStatus.cors_domains.includes(window.location.origin)) {
+      return <CORSWarningPage />;
     }
     return (
       <BrowserRouter>
