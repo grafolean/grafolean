@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import argparse
+from collections import defaultdict
 import flask
 from functools import wraps
 import json
@@ -43,16 +44,23 @@ def before_request():
     if not flask.request.endpoint in app.view_functions:
         return "Resource not found", 404
 
-    # browser might (if frontend and backend are not on the same origin) send a pre-flight OPTIONS request to get the
+    # Browser might (if frontend and backend are not on the same origin) send a pre-flight OPTIONS request to get the
     # CORS settings. In this case 'Authorization' header will not be set, which could lead to 401 response, which browser
     # doesn't like. So let's just return 200 on all OPTIONS:
     if flask.request.method == 'OPTIONS':
-        return '', 200
+        # we need to set 'Allow' header to notify caller which methods are available:
+        methods = set()
+        for rule in app.url_map.iter_rules():
+            if flask.request.url_rule == rule:
+                methods |= rule.methods
+        response = flask.make_response('', 200)
+        response.headers['Allow'] = ",".join(methods)
+        return response
 
     if utils.db is None:
         utils.db_connect()
         if utils.db is None:
-            # oops, DB error... we should return 500:
+            # oops, DB error... we should return 5xx:
             return 'Service unavailable', 503
 
     view_func = app.view_functions[flask.request.endpoint]
