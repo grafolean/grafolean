@@ -22,7 +22,7 @@ class Notifications extends React.Component {
           {this.props.notifications.map(v => {
             return (
               <li className={v.type} key={v.id}>
-                {v.message} <Button onClick={event => this.handleClickRemove(event, v.id)}>x</Button>
+                {v.message} <i className="fa fa-close" onClick={ev => this.handleClickRemove(ev, v.id)}/>
               </li>
             );
           })}

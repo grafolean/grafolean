@@ -38,19 +38,31 @@ header {
 
   & > ul {
     list-style-type: none;
+    margin: 0;
+    padding: 0;
 
     & > li {
-      padding: 20px 0px;
-      margin: 10px 0px;
+      padding: 20px 20px;
+      margin: 20px 20px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      position: relative;
 
       &.error {
-        background-color: #ffdddd;
+        background-color: #ffeeee;
       }
       &.warning {
         background-color: #ffeedd;
       }
       &.info {
         background-color: #ddffdd;
+      }
+
+      i.fa-close {
+        position: absolute;
+        padding: 10px;
+        top: -5px;
+        right: -5px;
       }
     }
   }
