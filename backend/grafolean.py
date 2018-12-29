@@ -4,6 +4,7 @@ from collections import defaultdict
 import flask
 from functools import wraps
 import json
+import os
 import psycopg2
 import re
 import secrets
@@ -22,6 +23,10 @@ from auth import Auth, JWT, AuthFailedException
 app = flask.Flask(__name__)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
+
+
+CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').split(",")))
+
 
 # if WEBSOCKETS:
 #     from flask_sockets import Sockets
@@ -93,9 +98,25 @@ def before_request():
             return "Could not validate access", 500
 
 def _add_cors_headers(response):
-    # allow cross-origin requests:
-    # (we will probably want to limit this to our domain later on, or make it configurable4)
-    response.headers['Access-Control-Allow-Origin'] = '*'
+    if flask.request.path == '/api/status/info':
+        # we are nice to the frontend - we allow call to (only) this path, so that if CORS is misconfigured, frontend can advise on proper solution:
+        allow_origin = '*'
+    else:
+        # allow cross-origin request if Origin matches env var:
+        if not CORS_DOMAINS:
+            # browser has set Origin header (so the request might be cross-domain or POST), but we don't allow CORS, so we don't set any header
+            return
+        origin_header = flask.request.headers.get('Origin', None)
+        if not origin_header:
+            # Origin header was not set in request, so there is no need to set CORS headers (browser apparently thinks this is the same domain)
+            return
+        if origin_header not in CORS_DOMAINS:
+            # the protocol + domain (+ port) in Origin header doesn't match any of the specified domains, so we don't set any headers:
+            return
+        allow_origin = origin_header
+
+    # domain in Origin header matches, return appropriate CORS headers:
+    response.headers['Access-Control-Allow-Origin'] = allow_origin
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     response.headers['Access-Control-Expose-Headers'] = 'X-JWT-Token'
@@ -176,6 +197,7 @@ def status_info_get():
         'db_migration_needed': db_migration_needed,
         'db_version': utils.get_existing_schema_version(),
         'user_exists': Auth.first_user_exists() if not db_migration_needed else None,
+        'cors_domains': CORS_DOMAINS,
     }
     return json.dumps(result), 200
 
