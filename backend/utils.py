@@ -47,7 +47,7 @@ db_connect()
 #   DB schema migration   #
 ###########################
 
-def _get_existing_schema_version():
+def get_existing_schema_version():
     existing_schema_version = 0
     with db.cursor() as c:
         try:
@@ -65,12 +65,12 @@ def _get_migration_method(next_migration_version):
 
 
 def is_migration_needed():
-    existing_schema_version = _get_existing_schema_version()
+    existing_schema_version = get_existing_schema_version()
     return _get_migration_method(existing_schema_version + 1) is not None
 
 
 def migrate_if_needed():
-    existing_schema_version = _get_existing_schema_version()
+    existing_schema_version = get_existing_schema_version()
     try_migrating_to = existing_schema_version + 1
     while True:
         method_name = _get_migration_method(try_migrating_to)

@@ -141,9 +141,9 @@ def noauth(func):
 # /admin/ - administration tools; can be locked to local access
 # --------------
 
-@app.route('/api/admin/createtable', methods=['POST'])
+@app.route('/api/admin/migratedb', methods=['POST'])
 @noauth
-def admin_createtable_post():
+def admin_migratedb_post():
     utils.migrate_if_needed()
     return '', 204
 
@@ -171,11 +171,11 @@ def admin_first_post():
 @noauth
 def status_info_get():
     db_migration_needed = utils.is_migration_needed()
-    user_exists = Auth.first_user_exists() if not db_migration_needed else None
     result = {
         'alive': True,
         'db_migration_needed': db_migration_needed,
-        'user_exists': user_exists,
+        'db_version': utils.get_existing_schema_version(),
+        'user_exists': Auth.first_user_exists() if not db_migration_needed else None,
     }
     return json.dumps(result), 200
 

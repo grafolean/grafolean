@@ -7,6 +7,8 @@ import store from '../../store';
 import { fetchBackendStatus, fetchDashboardsList } from '../../store/actions';
 
 import './Main.scss';
+import AdminFirst from '../AdminFirst';
+import AdminMigrateDB from '../AdminMigrateDB';
 import Button from '../Button';
 import Loading from '../Loading';
 import LoginPage from '../LoginPage';
@@ -14,7 +16,6 @@ import DashboardNewForm from '../DashboardNewForm';
 import DashboardView from '../DashboardView';
 import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
-import AdminFirst from '../AdminFirst';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
 
@@ -27,12 +28,17 @@ class Main extends React.Component {
     if (!backendStatus) {
       return <Loading overlayParent={true} />
     }
+    if (backendStatus.db_migration_needed === true) {
+      return <AdminMigrateDB />
+    }
+    if (backendStatus.user_exists === false) {
+      return <AdminFirst />
+    }
     return (
       <BrowserRouter>
         <Switch>
           <Route exact path="/login" component={LoginPage} />
-          <Route exact path="/admin/first" component={AdminFirst} />
-          <Route exact component={LoggedInContent} />
+          <Route component={LoggedInContent} />
         </Switch>
       </BrowserRouter>
     );

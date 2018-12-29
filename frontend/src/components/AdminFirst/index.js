@@ -2,7 +2,7 @@ import React from 'react';
 
 import './AdminFirst.scss';
 import Button from '../Button';
-import { handleFetchErrors, ROOT_URL, onSuccess, onFailure } from '../../store/actions';
+import { handleFetchErrors, ROOT_URL, onSuccess, onFailure, fetchBackendStatus } from '../../store/actions';
 import store from '../../store';
 
 class AdminFirst extends React.Component {
@@ -14,6 +14,7 @@ class AdminFirst extends React.Component {
       name: '',
       email: '',
     },
+    userCreated: false,
   };
 
   changeFormValue(fieldName, value) {
@@ -39,20 +40,20 @@ class AdminFirst extends React.Component {
     this.changeFormValue('email', e.target.value);
   };
 
-  handleSubmit = () => {
-    const params = {
+  handleSubmit = ev => {
+    ev.preventDefault();
+    const params = JSON.stringify({
       username: this.formValues.username,
       password: this.formValues.password,
       email: this.formValues.email,
       name: this.formValues.name,
-    };
+    });
     fetch(`${ROOT_URL}/admin/first`, {
       headers: {
-        Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       method: 'POST',
-      body: JSON.stringify(params),
+      body: params,
     })
       .then(handleFetchErrors)
       // login temporarily, but forget jwt token: (user must login explicitly)
@@ -87,6 +88,11 @@ class AdminFirst extends React.Component {
           .then(handleFetchErrors)
           .then(() => {
             store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
+            this.setState({
+              userCreated: true,
+            })
+            // we are done here, trigger fetching of backend status so that Main component learns about our work:
+            store.dispatch(fetchBackendStatus());
           })
           .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
       })
@@ -94,9 +100,10 @@ class AdminFirst extends React.Component {
   };
 
   render() {
-    const {
-      formValues: { username, password, name, email },
-    } = this.state;
+    const { formValues: { username, password, name, email }, userCreated } = this.state;
+    if (userCreated) {
+      return null;
+    }
     return (
       <div className="admin_first">
         <form>

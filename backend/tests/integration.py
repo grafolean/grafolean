@@ -596,31 +596,49 @@ def test_status_info_before_migration(app_client_db_not_migrated):
     expected = {
         'alive': True,
         'db_migration_needed': True,
+        'db_version': 0,
         'user_exists': None,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-def test_status_info_before_first(app_client):
-    r = app_client.get('/api/status/info')
+    r = app_client_db_not_migrated.post('/api/admin/migratedb')
+    assert r.status_code == 204
+
+    r = app_client_db_not_migrated.get('/api/status/info')
     assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'alive': True,
         'db_migration_needed': False,
+        'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
     }
+    assert expected == actual
+
+
+def test_status_info_before_first(app_client):
+    r = app_client.get('/api/status/info')
+    assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'alive': True,
+        'db_migration_needed': False,
+        'db_version': actual['db_version'],  # we don't care about this
+        'user_exists': False,
+    }
     assert expected == actual
 
 def test_status_info_after_first(app_client, first_admin_exists):
     r = app_client.get('/api/status/info')
     assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'alive': True,
         'db_migration_needed': False,
+        'db_version': actual['db_version'],  # we don't care about this
         'user_exists': True,
     }
-    actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
 def test_sitemap(app_client):
