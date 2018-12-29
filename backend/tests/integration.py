@@ -582,3 +582,23 @@ def test_options(app_client):
     assert dict(r.headers).get('Access-Control-Allow-Methods', None) == 'GET, POST, DELETE, PUT, OPTIONS'
     assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
     assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'
+
+def test_status_info_before_first(app_client):
+    r = app_client.get('/api/status/info')
+    assert r.status_code == 200
+    expected = {
+        'alive': True,
+        'user_exists': False,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+def test_status_info_after_first(app_client, first_admin_exists):
+    r = app_client.get('/api/status/info')
+    assert r.status_code == 200
+    expected = {
+        'alive': True,
+        'user_exists': True,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual

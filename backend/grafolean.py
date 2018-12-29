@@ -171,6 +171,17 @@ def admin_first_post():
     }), 201
 
 
+# Useful for determining status of backend (is it available, is the first user initialized,...)
+@app.route('/api/status/info', methods=['GET'])
+@noauth
+def status_info_get():
+    result = {
+        'alive': True,
+        'user_exists': Auth.first_user_exists(),
+    }
+    return json.dumps(result), 200
+
+
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
 def admin_permissions_crud():
     if flask.request.method == 'GET':
