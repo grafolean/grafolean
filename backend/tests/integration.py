@@ -616,6 +616,11 @@ def test_options(app_client):
         assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
         assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'
 
+def test_cors_get_post_protection(app_client):
+    r = app_client.get('/api/status/sitemap', headers={'Origin': 'https://invalid.example.org'})
+    assert r.status_code == 403
+    r = app_client.post('/api/admin/migratedb', headers={'Origin': 'https://invalid.example.org'})
+    assert r.status_code == 403
 
 def test_status_info_cors(app_client_db_not_migrated):
     r = app_client_db_not_migrated.get('/api/status/info')

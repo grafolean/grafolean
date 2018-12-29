@@ -62,6 +62,15 @@ def before_request():
         response.headers['Allow'] = ",".join(sorted(methods))
         return response
 
+    if flask.request.method in ['GET', 'HEAD', 'POST']:
+        # While it is true that CORS is client-side protection, the rules about preflights allow these 3 types of requests
+        # to be sent to the server without OPTIONS preflight - which means that browser will learn about violation too late.
+        # To combat this, we still check Origin header and explicitly deny non-whitelisted requests:
+        origin_header = flask.request.headers.get('Origin', None)
+        if origin_header:  # is it a cross-origin request?
+            if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
+                return 'CORS not allowed for this origin', 403
+
     if utils.db is None:
         utils.db_connect()
         if utils.db is None:
