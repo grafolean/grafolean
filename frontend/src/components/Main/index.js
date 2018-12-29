@@ -134,25 +134,6 @@ class LoggedInContent extends React.Component {
   };
   mql = window.matchMedia(`(min-width: 800px)`);
 
-  onBurgerClick = event => {
-    this.setState({ sidebarOpen: true });
-    event.preventDefault();
-  };
-
-  onSidebarXClick = event => {
-    this.setState({ sidebarOpen: false });
-    event.preventDefault();
-  };
-
-  onSidebarLinkClick = event => {
-    this.setState({ sidebarOpen: false });
-    // follow up the link (don't do event.preventDefault())
-  };
-
-  onSetSidebarOpen = open => {
-    this.setState({ sidebarOpen: open });
-  };
-
   componentWillMount() {
     this.mql.addListener(this.mediaQueryChanged);
     this.setState({ sidebarDocked: this.mql.matches });
@@ -177,6 +158,25 @@ class LoggedInContent extends React.Component {
 
   mediaQueryChanged = () => {
     this.setState({ sidebarDocked: this.mql.matches });
+  };
+
+  onBurgerClick = event => {
+    this.setState({ sidebarOpen: true });
+    event.preventDefault();
+  };
+
+  onSidebarXClick = event => {
+    this.setState({ sidebarOpen: false });
+    event.preventDefault();
+  };
+
+  onSidebarLinkClick = event => {
+    this.setState({ sidebarOpen: false });
+    // follow up the link (don't do event.preventDefault())
+  };
+
+  onSetSidebarOpen = open => {
+    this.setState({ sidebarOpen: open });
   };
 
   render() {
