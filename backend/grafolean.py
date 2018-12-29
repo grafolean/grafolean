@@ -137,11 +137,6 @@ def noauth(func):
 # Routes:
 # -----------------------------------------------------------------------
 
-@app.route('/', methods=['GET'])
-@noauth
-def root():
-    return 'OK'
-
 # --------------
 # /admin/ - administration tools; can be locked to local access
 # --------------

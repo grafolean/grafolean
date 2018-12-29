@@ -23,6 +23,7 @@
             "SecurityGroupIds": [
                 "sg-00000000000000000"
             ]
-        }
+        },
+        "touch_path": "/api/status/info/"
     }
 }
