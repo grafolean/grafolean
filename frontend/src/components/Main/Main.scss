@@ -19,16 +19,18 @@ header {
 }
 
 .navigation {
-  margin: 20px;
+  margin: 10px 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   font-size: 14px;
   display: flex;
   flex-direction: column;
-  justify-content: start;
-  align-items: start;
+  height: calc(100% - 20px);
 
+  div.spacer {
+    flex-grow: 1;
+  }
   a {
-    margin-bottom: 5px;
+    margin: 10px 15px 0;
   }
 }
 

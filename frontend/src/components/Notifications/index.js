@@ -4,8 +4,6 @@ import { connect } from 'react-redux';
 import store from '../../store';
 import { removeNotification } from '../../store/actions';
 
-import Button from '../Button';
-
 class Notifications extends React.Component {
   handleClickRemove = (event, notificationId) => {
     store.dispatch(removeNotification(notificationId));

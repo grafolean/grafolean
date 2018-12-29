@@ -103,23 +103,23 @@ class SidebarContentNoStore extends React.Component {
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
-        <Link className="button blue" to="/dashboards/new" onClick={onSidebarLinkClick}>
-          <i className="fa fa-plus" />
-          Add dashboard
-        </Link>
         {dashboards &&
           dashboards.map(dash => (
             <Link
               key={dash.slug}
-              className="button green"
+              className="button blue"
               to={`/dashboards/view/${dash.slug}`}
               onClick={onSidebarLinkClick}
             >
-              {dash.name}
+              <i className="fa fa-dashboard"/> {dash.name}
             </Link>
           ))}
-        <Link className="button blue" to="/user" onClick={onSidebarLinkClick}>
-          User
+        <Link className="button green" to="/dashboards/new" onClick={onSidebarLinkClick}>
+          <i className="fa fa-plus" /> Add dashboard
+        </Link>
+        <div className="spacer"></div>
+        <Link className="button green" to="/user" onClick={onSidebarLinkClick}>
+          <i className="fa fa-user"/> User
         </Link>
       </div>
     );
