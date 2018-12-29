@@ -54,7 +54,7 @@ def before_request():
             if flask.request.url_rule == rule:
                 methods |= rule.methods
         response = flask.make_response('', 200)
-        response.headers['Allow'] = ",".join(methods)
+        response.headers['Allow'] = ",".join(sorted(methods))
         return response
 
     if utils.db is None:
