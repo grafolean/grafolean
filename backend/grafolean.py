@@ -20,7 +20,7 @@ from auth import Auth, JWT, AuthFailedException
 # don't want to have just a git branch. This flag hides them until we are ready to include them:
 #WEBSOCKETS = False
 
-app = flask.Flask(__name__)
+app = flask.Flask(__name__, static_folder=None)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
 
