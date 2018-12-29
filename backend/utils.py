@@ -47,7 +47,8 @@ db_connect()
 #   DB schema migration   #
 ###########################
 
-def migrate_if_needed():
+def _get_existing_schema_version():
+    existing_schema_version = 0
     with db.cursor() as c:
         try:
             c.execute('SELECT schema_version FROM runtime_data;')
@@ -55,12 +56,25 @@ def migrate_if_needed():
             existing_schema_version = res[0]
         except psycopg2.ProgrammingError:
             db.rollback()
-            existing_schema_version = 0
+    return existing_schema_version
 
+
+def _get_migration_method(next_migration_version):
+    method_name = 'migration_step_{}'.format(next_migration_version)
+    return method_name if hasattr(sys.modules[__name__], method_name) else None
+
+
+def is_migration_needed():
+    existing_schema_version = _get_existing_schema_version()
+    return _get_migration_method(existing_schema_version + 1) is not None
+
+
+def migrate_if_needed():
+    existing_schema_version = _get_existing_schema_version()
     try_migrating_to = existing_schema_version + 1
     while True:
-        method_name = 'migration_step_{}'.format(try_migrating_to)
-        if not hasattr(sys.modules[__name__], method_name):
+        method_name = _get_migration_method(try_migrating_to)
+        if method_name is None:
             break
         log.info("Migrating DB schema from {} to {}".format(existing_schema_version, try_migrating_to))
         method_to_call = getattr(sys.modules[__name__], method_name)

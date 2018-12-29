@@ -38,7 +38,7 @@ def _delete_all_from_db():
         ]:
             log.info(sql)
             c.execute(sql)
-    migrate_if_needed()
+    # don't forget to clear memoization cache:
     clear_all_lru_cache()
 
 def setup_module():
@@ -49,6 +49,13 @@ def teardown_module():
 
 @pytest.fixture
 def app_client():
+    _delete_all_from_db()
+    migrate_if_needed()
+    app.testing = True
+    return app.test_client()
+
+@pytest.fixture
+def app_client_db_not_migrated():
     _delete_all_from_db()
     app.testing = True
     return app.test_client()
@@ -583,11 +590,23 @@ def test_options(app_client):
     assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
     assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'
 
+def test_status_info_before_migration(app_client_db_not_migrated):
+    r = app_client_db_not_migrated.get('/api/status/info')
+    assert r.status_code == 200
+    expected = {
+        'alive': True,
+        'db_migration_needed': True,
+        'user_exists': None,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
 def test_status_info_before_first(app_client):
     r = app_client.get('/api/status/info')
     assert r.status_code == 200
     expected = {
         'alive': True,
+        'db_migration_needed': False,
         'user_exists': False,
     }
     actual = json.loads(r.data.decode('utf-8'))
@@ -598,6 +617,7 @@ def test_status_info_after_first(app_client, first_admin_exists):
     assert r.status_code == 200
     expected = {
         'alive': True,
+        'db_migration_needed': False,
         'user_exists': True,
     }
     actual = json.loads(r.data.decode('utf-8'))

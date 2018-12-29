@@ -170,9 +170,12 @@ def admin_first_post():
 @app.route('/api/status/info', methods=['GET'])
 @noauth
 def status_info_get():
+    db_migration_needed = utils.is_migration_needed()
+    user_exists = Auth.first_user_exists() if not db_migration_needed else None
     result = {
         'alive': True,
-        'user_exists': Auth.first_user_exists(),
+        'db_migration_needed': db_migration_needed,
+        'user_exists': user_exists,
     }
     return json.dumps(result), 200
 
