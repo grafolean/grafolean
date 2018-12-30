@@ -102,22 +102,22 @@ def bot_token(app_client, admin_authorization_header):
     assert j['id'] == EXPECTED_BOT_ID
     return j['token']
 
-# @pytest.fixture
-# def user_exists(app_client, admin_authorization_header):
-#     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@example.com' }
-#     r = app_client.post('/api/admin/users', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-#     assert r.status_code == 201
-#     user_id = json.loads(r.data.decode('utf-8'))['id']
-#     return user_id
+@pytest.fixture
+def person_id(app_client, admin_authorization_header):
+    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@example.com' }
+    r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    user_id = json.loads(r.data.decode('utf-8'))['id']
+    return user_id
 
-# @pytest.fixture
-# def user_authorization_header(app_client, admin_authorization_header, user_exists):
-#     data = { 'username': USERNAME_USER1, 'password': PASSWORD_USER1 }
-#     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
-#     assert r.status_code == 200
-#     auth_header = dict(r.headers).get('X-JWT-Token', None)
-#     assert auth_header[:9] == 'Bearer 1:'
-#     return auth_header
+@pytest.fixture
+def person_authorization_header(app_client, admin_authorization_header, person_id):
+    data = { 'username': USERNAME_USER1, 'password': PASSWORD_USER1 }
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 200
+    auth_header = dict(r.headers).get('X-JWT-Token', None)
+    assert auth_header[:9] == 'Bearer 1:'
+    return auth_header
 
 
 ###################################################
@@ -519,14 +519,17 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual == { 'list': [
-        {
-            'id': 1,
-            'user_id': EXPECTED_FIRST_ADMIN_ID,
-            'url_prefix': None,
-            'methods': None,
-        }
-    ]}
+    expected = {
+        'list': [
+            {
+                'id': 1,
+                'user_id': EXPECTED_FIRST_ADMIN_ID,
+                'url_prefix': None,
+                'methods': None,
+            },
+        ],
+    }
+    assert actual == expected
 
     data = {
         'user_id': EXPECTED_FIRST_ADMIN_ID,
@@ -572,13 +575,70 @@ def test_bots(app_client, admin_authorization_header, bot_token, account_id):
     assert r.status_code == 401
 
 
+def test_auth_grant_permission(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
+    """
+        - user can't access anything (test with a few endpoints)
+        - admin assigns permissions to user, check that appropriate endpoints work
+    """
+    r = app_client.get('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401
+
+    # grant a permission:
+    data = {
+        'user_id': person_id,
+        'url_prefix': 'accounts/{}'.format(account_id),
+        'methods': [ 'GET' ],  # but only GET
+    }
+    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    # try again:
+    r = app_client.get('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    # but DELETE is denied:
+    r = app_client.delete('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401  # it would have been 4xx anyway, but it must be denied before that
 
 
-# def test_auth(app_client, admin_authorization_header, user_authorization_header):
-#     """
-#         - user can't access anything (test with a few endpoints)
-#         - admin assigns permissions to user, check that appropriate endpoints work
-#     """
+def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
+    """
+        If url_prefix is set to 'asdf/ghij', it should match:
+          - asdf/ghij
+          - asdf/ghij/whatever
+        But not:
+          - asdf/ghijklm
+        Also, the effect of `asdf/ghij/` should be the same as `asdf/ghij` (it should match URL `asdf/ghij` without trailing slash too).
+    """
+    r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401
+    r = app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401
+    r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401
+
+    # we want to test that both versions (with an without trailing slash) of url_prefix perform the same:
+    for url_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
+        # grant a permission:
+        data = {
+            'user_id': person_id,
+            'url_prefix': url_prefix,
+            'methods': None,
+        }
+        r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201
+        permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
+
+        # try again:
+        r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        r = app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 401  # stays denied
+
+        # then clean up:
+        r = app_client.delete('/api/admin/permissions/{}'.format(permission_id), headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 200
 
 def test_auth_fails_unknown_key(app_client):
     jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'

@@ -550,11 +550,25 @@ class Account(object):
                 ret.append({'id': account_id, 'name': name})
             return ret
 
+    @staticmethod
+    def get(account_id):
+        with db.cursor() as c:
+            c.execute('SELECT name FROM accounts WHERE id = %s;', (account_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            name = res[0]
+            return {
+                'id': account_id,
+                'name': name,
+            }
+
 
 class Permission(object):
     def __init__(self, user_id, url_prefix, methods):
         self.user_id = user_id
-        self.url_prefix = url_prefix
+        # permission should perform the same, no matter if url_prefix ends with slash or not - so let's enforce this:
+        self.url_prefix = None if url_prefix is None else url_prefix.rstrip('/')
         self.methods = methods
 
     @classmethod
@@ -585,17 +599,24 @@ class Permission(object):
     @staticmethod
     def is_access_allowed(user_id, url, method):
         with db.cursor() as c:
+            # with url_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
                 '(user_id IS NULL OR user_id = %s) AND ' + \
-                "(url_prefix IS NULL OR %s LIKE '/api/' || url_prefix || '%%') AND " + \
+                "(url_prefix IS NULL OR %s LIKE '/api/' || url_prefix OR %s LIKE '/api/' || url_prefix || '/%%') AND " + \
                 '(methods IS NULL OR %s = ANY(methods)) ' + \
                 'ORDER BY user_id, url_prefix, id;',
-                (user_id, url, method,))
+                (user_id, url, url, method,))
             res = c.fetchone()
             if res:
                 return True
             else:
                 return False
+
+    @staticmethod
+    def delete(permission_id):
+        with db.cursor() as c:
+            c.execute('DELETE FROM permissions WHERE id = %s;', (permission_id,))
+            return c.rowcount
 
 
 class Bot(object):

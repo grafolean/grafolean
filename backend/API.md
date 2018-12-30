@@ -1,12 +1,11 @@
 
-Passing parameters:
-- GET & DELETE requests: query parameters (because it's a filter)
-- POST & PUT requests: JSON in body (structures are needed), with some exceptions allowing query parameters too if simplicity is paramount
+- ending slashes ('/') are optional, there will be no redirects if missing
 
 
 ## Authentication
 
-Authentication for sending values (via POST method) is through query parameters. All other forms use JWT auth.
+Authentication uses JWT tokens, passed through `Authorization` header. The only exception is POST to `/api/accounts/<AccountId>/values` which
+allows authentication via API token in query parameters - the reason is that it might be difficult for bots to use regular authentication mechanism.
 
 ### Fetching JWT token
 
@@ -15,15 +14,14 @@ curl -i 'https://grafolean.com/api/auth/login/' -d '{ "username": "<Username>", 
 ```
 
 Example response header:
-X-JWT-Token: Bearer <KeyId>:<JWTToken>
-
+X-JWT-Token: Bearer <JWTToken>
 
 ### Authenticating
 
-Tokens should be supplied in Authorization header like this:
+Tokens should be supplied with Authorization request header like this:
 
 ```
-curl -H 'Authorization: Bearer <KeyId>:<JWTToken>' ...
+curl -H 'Authorization: Bearer <JWTToken>' ...
 ```
 
 This part of `curl` command should be used everywhere in the examples below (except in POST to /api/accounts/<AccountId>/values/).

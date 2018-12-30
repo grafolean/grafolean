@@ -11,7 +11,7 @@ import secrets
 import time
 from werkzeug.exceptions import HTTPException
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
 import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
@@ -222,7 +222,7 @@ def status_sitemap_get():
 
 
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
-def admin_permissions_crud():
+def admin_permissions_get_post():
     if flask.request.method == 'GET':
         rec = Permission.get_list()
         return json.dumps({'list': rec}), 200
@@ -241,13 +241,30 @@ def admin_permissions_crud():
             return "Account with this name already exists", 400
 
 
+@app.route('/api/admin/permissions/<string:permission_id>', methods=['DELETE'])
+def admin_permission_delete(permission_id):
+    rowcount = Permission.delete(permission_id)
+    if not rowcount:
+        return "No such permission", 404
+    return "", 200
+
+
 @app.route('/api/admin/bots', methods=['POST'])
 def admin_bots_post():
     bot = Bot.forge_from_input(flask.request)
-    bot_id, bot_token = bot.insert()
+    user_id, bot_token = bot.insert()
     return json.dumps({
-        'id': bot_id,
+        'id': user_id,
         'token': bot_token,
+    }), 201
+
+
+@app.route('/api/admin/persons', methods=['POST'])
+def admin_persons_post():
+    person = Person.forge_from_input(flask.request)
+    user_id = person.insert()
+    return json.dumps({
+        'id': user_id,
     }), 201
 
 
@@ -304,6 +321,12 @@ def accounts_crud():
             return json.dumps({'name': account.name, 'id': account_id}), 201
         except psycopg2.IntegrityError:
             return "Account with this name already exists", 400
+
+
+@app.route('/api/accounts/<string:account_id>', methods=['GET'])
+def account_get(account_id):
+    rec = Account.get(account_id)
+    return json.dumps(rec), 200
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])
