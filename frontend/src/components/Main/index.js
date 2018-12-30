@@ -111,15 +111,15 @@ class SidebarContentNoStore extends React.Component {
               to={`/dashboards/view/${dash.slug}`}
               onClick={onSidebarLinkClick}
             >
-              <i className="fa fa-dashboard"/> {dash.name}
+              <i className="fa fa-dashboard" /> {dash.name}
             </Link>
           ))}
         <Link className="button green" to="/dashboards/new" onClick={onSidebarLinkClick}>
           <i className="fa fa-plus" /> Add dashboard
         </Link>
-        <div className="spacer"></div>
+        <div className="spacer" />
         <Link className="button green" to="/user" onClick={onSidebarLinkClick}>
-          <i className="fa fa-user"/> User
+          <i className="fa fa-user" /> User
         </Link>
       </div>
     );

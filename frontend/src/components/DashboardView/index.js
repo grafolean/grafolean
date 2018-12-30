@@ -152,11 +152,15 @@ class DashboardView extends React.Component {
         <div className="frame">
           {!this.state.newChartFormOpened ? (
             <div>
-              <Button onClick={this.handleShowNewChartForm}><i className="fa fa-plus" /> add widget</Button>
+              <Button onClick={this.handleShowNewChartForm}>
+                <i className="fa fa-plus" /> add widget
+              </Button>
             </div>
           ) : (
             <div>
-              <Button onClick={this.handleHideNewChartForm}><i className="fa fa-minus" /> cancel</Button>
+              <Button onClick={this.handleHideNewChartForm}>
+                <i className="fa fa-minus" /> cancel
+              </Button>
               <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
             </div>
           )}

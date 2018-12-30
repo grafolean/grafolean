@@ -112,7 +112,9 @@ export default class WidgetForm extends React.Component {
     const params = {
       type: widgetType,
       title: widgetName,
-      content: this.alteredWidgetData[widgetType] ? JSON.stringify(this.alteredWidgetData[widgetType].content) : null,
+      content: this.alteredWidgetData[widgetType]
+        ? JSON.stringify(this.alteredWidgetData[widgetType].content)
+        : null,
     };
     fetchAuth(
       `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`,

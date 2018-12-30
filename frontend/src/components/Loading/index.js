@@ -12,9 +12,7 @@ class Loading extends Component {
     return (
       <div className={`loading-component ${overlayParent ? 'overlay' : ''}`}>
         <i className="fa fa-circle-o-notch fa-spin" alt="Please wait, loading..." />
-        {message && (
-          <div className="message">{message}</div>
-        )}
+        {message && <div className="message">{message}</div>}
       </div>
     );
   }
