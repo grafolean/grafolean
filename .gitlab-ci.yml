@@ -1,0 +1,14 @@
+image: node:10-alpine
+
+stages:
+  - test
+
+before_script:
+  - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
+
+lint:
+  stage: test
+  script:
+    - cd frontend
+    - yarn install
+    - yarn lint
