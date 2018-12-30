@@ -458,7 +458,7 @@ class Dashboard(object):
         # and this is just a nicety from us.
         postfix_nr = 1
         while True:
-            slug = slugify(name) + ('' if postfix_nr == 1 else '-{}'.format(postfix_nr))
+            slug = slugify(name[:40]) + ('' if postfix_nr == 1 else '-{}'.format(postfix_nr))
             if Dashboard.get_id(account_id, slug) is None:
                 return slug  # we have found a slug which doesn't exist yet, use it
             postfix_nr += 1
