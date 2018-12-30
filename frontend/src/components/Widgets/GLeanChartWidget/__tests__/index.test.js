@@ -251,7 +251,6 @@ test('ChartView coordinate system transformations - x', () => {
     />,
   );
   const inst = comp.instance();
-  const yAxisHeight = 600;
 
   const params = [
     { x: 0, t: 1000 },
@@ -422,7 +421,7 @@ test('ChartView getYTicks', () => {
   for (let param of params) {
     const { minYValue, maxYValue, expectedResult, expectedDecimals } = param;
     const result = ChartView.getYTicks(minYValue, maxYValue);
-    result.map((r, i) => {
+    result.forEach((r, i) => {
       const expectedString = expectedResult[i].toFixed(expectedDecimals || 0);
       expect(r).toEqual(expectedString);
     });

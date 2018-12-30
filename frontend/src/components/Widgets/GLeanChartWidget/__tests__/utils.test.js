@@ -1,4 +1,3 @@
-import React from 'react';
 import { getMissingIntervals, aggregateIntervalOnTheFly } from '../utils';
 
 test('getMissingIntervals', () => {
