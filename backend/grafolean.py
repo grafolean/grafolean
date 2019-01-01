@@ -16,9 +16,6 @@ import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
 
-# We started work on websockets, but it is far from finished yet - still, they will be supported once upon a time, so we
-# don't want to have just a git branch. This flag hides them until we are ready to include them:
-#WEBSOCKETS = False
 
 app = flask.Flask(__name__, static_folder=None)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
@@ -26,18 +23,6 @@ app.url_map.strict_slashes = False
 
 
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').split(",")))
-
-
-# if WEBSOCKETS:
-#     from flask_sockets import Sockets
-#     sockets = Sockets(app)
-
-#     @sockets.route('/echo')
-#     def echo_socket(ws):
-#         while not ws.closed:
-#             message = ws.receive()
-#             if message:
-#                 ws.send("You said: " + message)
 
 
 @app.before_request
@@ -627,10 +612,4 @@ if __name__ == "__main__":
     if args.operation == 'migrate':
         utils.migrate_if_needed()
     elif args.operation == 'serve':
-        # if WEBSOCKETS:
-        #     from gevent import pywsgi
-        #     from geventwebsocket.handler import WebSocketHandler
-        #     server = pywsgi.WSGIServer(('', 5000), app, handler_class=WebSocketHandler)
-        #     server.serve_forever()
-        # else:
         app.run()
