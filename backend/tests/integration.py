@@ -549,7 +549,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     assert new_record == {
         'id': 2,
         'user_id': data['user_id'],
-        'url_prefix': data['url_prefix'],
+        'url_prefix': data['url_prefix'].rstrip('/'),
         'methods': '{GET,POST}',
     }
 
