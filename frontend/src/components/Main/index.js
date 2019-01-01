@@ -31,14 +31,14 @@ class Main extends React.Component {
     if (!backendStatus) {
       return <Loading overlayParent={true} message={`Trying to connect to backend at: ${ROOT_URL}`} />;
     }
+    if (!backendStatus.cors_domains.includes(window.location.origin)) {
+      return <CORSWarningPage />;
+    }
     if (backendStatus.db_migration_needed === true) {
       return <AdminMigrateDB />;
     }
     if (backendStatus.user_exists === false) {
       return <AdminFirst />;
-    }
-    if (!backendStatus.cors_domains.includes(window.location.origin)) {
-      return <CORSWarningPage />;
     }
     return (
       <BrowserRouter>

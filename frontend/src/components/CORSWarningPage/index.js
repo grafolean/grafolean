@@ -9,9 +9,18 @@ class CORSWarningPage extends React.Component {
     return (
       <div className="cors_warning">
         <div>
-          WARNING: backend is not configured to be accessed from this web page. Our origin is{' '}
-          <b>{window.location.origin}</b>, while backend only allows: [{corsDomains.join(', ')}
-          ].
+          <i className="fa fa-exclamation-triangle" />
+          <b>WARNING:</b> backend is not configured to be accessed from this web page. Our origin is{' '}
+          <b>{window.location.origin}</b>, while backend only allows:{' '}
+          {corsDomains.length === 0 ? (
+            <i>no domains allowed!</i>
+          ) : (
+            <ul>
+              {corsDomains.map(domain => (
+                <li>{domain}</li>
+              ))}
+            </ul>
+          )}
         </div>
         <div>
           Make sure that <b>GRAFOLEAN_CORS_DOMAINS</b> environment variable for backend includes{' '}
