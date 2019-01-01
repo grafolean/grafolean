@@ -21,6 +21,7 @@ import Profile from '../Profile';
 import CORSWarningPage from '../CORSWarningPage';
 import Bots from '../Bots';
 import BotNewForm from '../BotNewForm';
+import VersionInfo from './VersionInfo';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -126,6 +127,7 @@ class SidebarContentNoStore extends React.Component {
         <Link className="button green" to="/profile" onClick={onSidebarLinkClick}>
           <i className="fa fa-user" /> Profile
         </Link>
+        <VersionInfo />
       </div>
     );
   }

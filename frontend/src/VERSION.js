@@ -1,1 +1,1 @@
-export const VERSION_INFO = { ciCommitTag: 'unknown' };
+export const VERSION_INFO = { ciCommitTag: null };
