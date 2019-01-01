@@ -5,7 +5,7 @@ import { onLogout } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
 
-class User extends React.Component {
+class Profile extends React.Component {
   onLogoutClick = () => {
     window.sessionStorage.removeItem('grafolean_jwt_token');
     store.dispatch(onLogout());
@@ -24,4 +24,4 @@ class User extends React.Component {
 const mapStoreToProps = store => ({
   userData: store.user,
 });
-export default connect(mapStoreToProps)(User);
+export default connect(mapStoreToProps)(Profile);

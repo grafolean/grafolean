@@ -17,7 +17,7 @@ import DashboardView from '../DashboardView';
 import Notifications from '../Notifications';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import PageNotFound from '../PageNotFound';
-import User from '../User';
+import Profile from '../Profile';
 import CORSWarningPage from '../CORSWarningPage';
 import Bots from '../Bots';
 import BotNewForm from '../BotNewForm';
@@ -123,8 +123,8 @@ class SidebarContentNoStore extends React.Component {
         <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
           <i className="fa fa-user-secret" /> Bots
         </Link>
-        <Link className="button green" to="/user" onClick={onSidebarLinkClick}>
-          <i className="fa fa-user" /> User
+        <Link className="button green" to="/profile" onClick={onSidebarLinkClick}>
+          <i className="fa fa-user" /> Profile
         </Link>
       </div>
     );
@@ -232,7 +232,7 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
-            <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
+            <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
             <WrappedRoute exact contentWidth={contentWidth} path="/settings/bots" component={Bots} />
             <WrappedRoute
               exact
