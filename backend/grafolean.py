@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-import argparse
 from collections import defaultdict
 import flask
 from functools import wraps
@@ -605,11 +604,4 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("operation", type=str, choices=['migrate', 'serve'])
-    args = parser.parse_args()
-
-    if args.operation == 'migrate':
-        utils.migrate_if_needed()
-    elif args.operation == 'serve':
-        app.run()
+    app.run()
