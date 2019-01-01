@@ -583,6 +583,35 @@ def test_bots_crud(app_client, admin_authorization_header):
     }
     assert actual == expected
 
+    # individual GET:
+    r = app_client.get('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = expected['list'][0]
+    assert actual == expected
+
+    # PUT:
+    data = { 'name': 'Bot 1 - altered' }
+    r = app_client.put('/api/admin/bots/{}'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+    r = app_client.get('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == 'Bot 1 - altered'
+
+    # DELETE:
+    r = app_client.delete('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    r = app_client.get('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
+    r = app_client.get('/api/admin/bots', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'list': [],
+    }
+    assert actual == expected
+
 def test_bots_token(app_client, admin_authorization_header, bot_token, account_id):
     """
         Assign permissions to a bot (created via fixture), put values with it.

@@ -400,7 +400,7 @@ class Widget(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c, db.cursor() as c2:
+        with db.cursor() as c:  #, db.cursor() as c2:
             c.execute('SELECT type, title, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
@@ -621,17 +621,18 @@ class Permission(object):
 
 
 class Bot(object):
-    def __init__(self, name):
+    def __init__(self, name, force_id=None):
         self.name = name
+        self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request):
+    def forge_from_input(cls, flask_request, force_id=None):
         inputs = BotSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        return cls(name)
+        return cls(name, force_id)
 
     @staticmethod
     def get_list():
@@ -654,6 +655,34 @@ class Bot(object):
             c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
             bot_token, = c.fetchone()
             return user_id, bot_token
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(user_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM users WHERE id = %s and user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
+            return c.rowcount
+
+    @staticmethod
+    def get(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            user_id, name, token, insert_time = res
+        return {
+            'id': user_id,
+            'name': name,
+            'token': token,
+            'insert_time': calendar.timegm(insert_time.timetuple()),
+        }
 
     @staticmethod
     def authenticate_token(bot_token_unclean):

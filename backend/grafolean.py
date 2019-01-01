@@ -250,7 +250,7 @@ def admin_permission_delete(permission_id):
 
 
 @app.route('/api/admin/bots', methods=['GET', 'POST'])
-def admin_bots_post():
+def admin_bots():
     if flask.request.method == 'GET':
         rec = Bot.get_list()
         return json.dumps({'list': rec}), 200
@@ -262,6 +262,27 @@ def admin_bots_post():
             'id': user_id,
             'token': bot_token,
         }), 201
+
+@app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
+def admin_bot_crud(user_id):
+    if flask.request.method == 'GET':
+        rec = Bot.get(user_id)
+        if not rec:
+            return "No such bot", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        bot = Bot.forge_from_input(flask.request, force_id=user_id)
+        rowcount = bot.update()
+        if not rowcount:
+            return "No such bot", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        rowcount = Bot.delete(user_id)
+        if not rowcount:
+            return "No such bot", 404
+        return "", 200
 
 
 @app.route('/api/admin/persons', methods=['POST'])
