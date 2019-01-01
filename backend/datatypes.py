@@ -638,7 +638,7 @@ class Bot(object):
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY name;')
+            c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
             for user_id, name, token, insert_time in c:
                 ret.append({
                     'id': user_id,

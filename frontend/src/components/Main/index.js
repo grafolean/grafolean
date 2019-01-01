@@ -19,6 +19,8 @@ import DashboardWidgetEdit from '../DashboardWidgetEdit';
 import PageNotFound from '../PageNotFound';
 import User from '../User';
 import CORSWarningPage from '../CORSWarningPage';
+import Bots from '../Bots';
+import BotNewForm from '../BotNewForm';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -118,6 +120,9 @@ class SidebarContentNoStore extends React.Component {
           <i className="fa fa-plus" /> Add dashboard
         </Link>
         <div className="spacer" />
+        <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
+          <i className="fa fa-user-secret" /> Bots
+        </Link>
         <Link className="button green" to="/user" onClick={onSidebarLinkClick}>
           <i className="fa fa-user" /> User
         </Link>
@@ -228,6 +233,13 @@ class LoggedInContent extends React.Component {
         <div className="content centered">
           <Switch>
             <WrappedRoute exact contentWidth={contentWidth} path="/user" component={User} />
+            <WrappedRoute exact contentWidth={contentWidth} path="/settings/bots" component={Bots} />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/settings/bots/new"
+              component={BotNewForm}
+            />
 
             <WrappedRoute
               exact
