@@ -249,14 +249,19 @@ def admin_permission_delete(permission_id):
     return "", 200
 
 
-@app.route('/api/admin/bots', methods=['POST'])
+@app.route('/api/admin/bots', methods=['GET', 'POST'])
 def admin_bots_post():
-    bot = Bot.forge_from_input(flask.request)
-    user_id, bot_token = bot.insert()
-    return json.dumps({
-        'id': user_id,
-        'token': bot_token,
-    }), 201
+    if flask.request.method == 'GET':
+        rec = Bot.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        bot = Bot.forge_from_input(flask.request)
+        user_id, bot_token = bot.insert()
+        return json.dumps({
+            'id': user_id,
+            'token': bot_token,
+        }), 201
 
 
 @app.route('/api/admin/persons', methods=['POST'])

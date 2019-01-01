@@ -1,3 +1,4 @@
+import calendar
 from collections import defaultdict
 from functools import lru_cache
 import math
@@ -631,6 +632,20 @@ class Bot(object):
         data = flask_request.get_json()
         name = data['name']
         return cls(name)
+
+    @staticmethod
+    def get_list():
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY name;')
+            for user_id, name, token, insert_time in c:
+                ret.append({
+                    'id': user_id,
+                    'name': name,
+                    'token': token,
+                    'insert_time': calendar.timegm(insert_time.timetuple()),
+                })
+            return ret
 
     def insert(self):
         with db.cursor() as c:

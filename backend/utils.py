@@ -102,7 +102,7 @@ def migration_step_1():
         c.execute("CREATE TABLE users ({id}, user_type USER_TYPE);".format(id=ID_FIELD))
         USER_ID_FIELD = 'user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE'
         c.execute('CREATE TABLE persons ({user_id}, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, username TEXT NOT NULL UNIQUE, passhash TEXT NOT NULL);'.format(user_id=USER_ID_FIELD))
-        c.execute('CREATE TABLE bots ({user_id}, name TEXT NOT NULL, token UUID DEFAULT uuid_generate_v4());'.format(user_id=USER_ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE TABLE bots ({user_id}, name TEXT NOT NULL, token UUID DEFAULT uuid_generate_v4(), insert_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);'.format(user_id=USER_ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE TABLE private_jwt_keys ({id}, key TEXT NOT NULL, use_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600);'.format(id=ID_FIELD))
         c.execute('CREATE TABLE permissions ({id}, user_id INTEGER NULL REFERENCES users(id) ON DELETE CASCADE, url_prefix TEXT NULL, methods HTTP_METHOD[] NULL);'.format(id=ID_FIELD))
 

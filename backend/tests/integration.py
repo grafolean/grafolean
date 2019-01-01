@@ -553,7 +553,37 @@ def test_permissions_post_get(app_client, admin_authorization_header):
         'methods': '{GET,POST}',
     }
 
-def test_bots(app_client, admin_authorization_header, bot_token, account_id):
+def test_bots_crud(app_client, admin_authorization_header):
+    """
+        Create a bot, make sure it is in the list.
+    """
+    time_before_insert = time.time()
+    data = { 'name': 'Bot 1' }
+    r = app_client.post('/api/admin/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    j = json.loads(r.data.decode('utf-8'))
+    bot_id = j['id']
+    token = j['token']
+
+    r = app_client.get('/api/admin/bots', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    now = time.time()
+    assert int(time_before_insert) <= int(actual['list'][0]['insert_time'])
+    assert int(actual['list'][0]['insert_time']) <= int(now)
+    expected = {
+        'list': [
+            {
+                'id': bot_id,
+                'name': data['name'],
+                'token': token,
+                'insert_time': actual['list'][0]['insert_time'],
+            },
+        ],
+    }
+    assert actual == expected
+
+def test_bots_token(app_client, admin_authorization_header, bot_token, account_id):
     """
         Assign permissions to a bot (created via fixture), put values with it.
     """
