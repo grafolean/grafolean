@@ -113,7 +113,7 @@ export class LoginPage extends React.Component {
       <div className="login-page">
         <div className="login-box">
           <div className="grafolean">
-            <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
+            <img className="grafolean-logo" src="/grafolean.svg" alt="GrafoLean" />
           </div>
 
           <div className="login form">
