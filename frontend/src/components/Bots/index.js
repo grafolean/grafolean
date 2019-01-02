@@ -57,32 +57,33 @@ export default class Bots extends React.PureComponent {
     const { bots } = this.state;
     return (
       <div className="bots frame">
-        {bots ? (
-          <table className="list">
-            <tbody>
-              <tr>
-                <th>Name</th>
-                <th>Token</th>
-                <th>Insert time</th>
-                <th />
-              </tr>
-              {bots.map(bot => (
-                <tr>
-                  <td>{bot.name}</td>
-                  <td>{bot.token}</td>
-                  {/* <td>{bot.insert_time}</td> */}
-                  <td>{moment(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
-                  <td>
-                    <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
-                      <i className="fa fa-trash" /> Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
+        {bots === null ? (
           <Loading />
+        ) : (
+          bots.length > 0 && (
+            <table className="list">
+              <tbody>
+                <tr>
+                  <th>Name</th>
+                  <th>Token</th>
+                  <th>Insert time (UTC)</th>
+                  <th />
+                </tr>
+                {bots.map(bot => (
+                  <tr>
+                    <td>{bot.name}</td>
+                    <td>{bot.token}</td>
+                    <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
+                    <td>
+                      <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
+                        <i className="fa fa-trash" /> Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
         )}
         <Link className="button green" to="/settings/bots/new">
           <i className="fa fa-plus" /> Add bot
