@@ -1,0 +1,30 @@
+version: "2"
+services:
+
+  db:
+    image: postgres:9.6-alpine
+    volumes:
+      - ./db/:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=grafolean
+    networks:
+      - grafolean
+
+  backend:
+    build:
+      context: ../../backend/
+      dockerfile: docker/Dockerfile
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=grafolean
+      - DB_USERNAME=admin
+      - DB_PASSWORD=admin
+    ports:
+      - "80:80"
+    networks:
+      - grafolean
+
+networks:
+  grafolean:
