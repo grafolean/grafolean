@@ -6,9 +6,9 @@ services:
     volumes:
       - ./db/:/var/lib/postgresql/data/
     environment:
+      - POSTGRES_DB=grafolean
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
-      - POSTGRES_DB=grafolean
     networks:
       - grafolean
 
