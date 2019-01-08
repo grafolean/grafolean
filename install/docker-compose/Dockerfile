@@ -8,23 +8,30 @@ ARG REACT_APP_BACKEND_ROOT_URL
 RUN yarn build
 
 
-FROM python:3.6
+FROM python:3.6-slim-stretch as python-requirements
+WORKDIR /grafolean/backend
+COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 RUN \
-    pip install uwsgi && \
+    pip install pipenv && \
+    pipenv lock -r > /requirements.txt
+
+
+FROM python:3.6-slim-stretch
+RUN \
     apt-get update && \
-    apt-get install -q -y nginx && \
+    apt-get install --no-install-recommends -q -y nginx git && \
+    apt-get install --no-install-recommends -q -y build-essential && \
+    pip install uwsgi && \
+    apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/
+COPY --from=python-requirements /requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./backend /grafolean/backend
 WORKDIR /grafolean/backend
-RUN \
-    pip install pipenv && \
-    pipenv lock -r > requirements.txt && \
-    pip install -r requirements.txt && \
-    pip uninstall -y pipenv
 CMD ["/bin/bash", "-c", "service nginx start && uwsgi --ini /etc/uwsgi.ini"]
 
