@@ -12,27 +12,18 @@ services:
     networks:
       - grafolean
 
-  backend:
+  grafolean:
     build:
-      context: ../../backend/
-      dockerfile: docker/Dockerfile
+      context: ../../
+      dockerfile: install/docker-compose/Dockerfile
+      args:
+        - REACT_APP_BACKEND_ROOT_URL=/api
     environment:
       - DB_HOST=db
       - DB_DATABASE=grafolean
       - DB_USERNAME=admin
       - DB_PASSWORD=admin
       - GRAFOLEAN_CORS_DOMAINS=http://localhost
-    ports:
-      - "81:80"
-    networks:
-      - grafolean
-
-  frontend:
-    build:
-      context: ../../frontend/
-      dockerfile: docker/Dockerfile
-      args:
-        - REACT_APP_BACKEND_ROOT_URL=http://localhost:81/api
     ports:
       - "80:80"
     networks:
