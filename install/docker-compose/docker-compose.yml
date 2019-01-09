@@ -18,6 +18,7 @@ services:
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
+    image: grafolean/grafolean
     environment:
       - DB_HOST=db
       - DB_DATABASE=grafolean
