@@ -53,6 +53,9 @@ class JWT(object):
                 raise AuthFailedException("Signature expired")
             jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
             decoded_with_leeway = True
+        except Exception as ex:
+            raise AuthFailedException("Error decoding JWT token") from ex
+
         return cls(jwt_decoded, decoded_with_leeway)
 
     def encode_as_authorization_header(self):
