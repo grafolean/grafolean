@@ -29,8 +29,8 @@ deploy_to_docker_hub:
   only:
     # We only want master branch AND when tag looks like 'vX.Y.Z', however GitLab doesn't support conjunctive conditions yet:
     #   https://gitlab.com/gitlab-org/gitlab-ce/issues/27818
-    refs:
-      - master
+    # refs:
+    #   - master  # Yeah, that doesn't work... The job for a commit with a tag and on a master branch is not being created.
     variables:
       - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+$/
   script:
