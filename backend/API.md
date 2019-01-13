@@ -1,6 +1,10 @@
+# Grafolean backend API
 
-- ending slashes ('/') are optional, there will be no redirects if missing
+## Generic
 
+In default installation backend API is accessible on the same base URL as frontend, suffixed with `/api/`.
+
+Ending slashes ('/') are optional with all endpoints and there will be no redirects if missing.
 
 ## Authentication
 
@@ -28,10 +32,23 @@ This part of `curl` command should be used everywhere in the examples below (exc
 
 ### Refreshing tokens
 
-When the old token expires, any request with it will respond with 401. User should then obtain new token through /api/auth/refresh and repeat the request in question.
+When the old token expires, any request with it will respond with 401. Exception to this rule is /api/auth/refresh endpoint, where the token
+will still be valid for 10 minutes. This gives frontend app a chance to refresh JWT token and repeat the original request. If however more
+than 10 minutes have passed, user will need to authenticate through `/api/auth/login` endpoint again.
 
+This is a compromise which:
+
+  - allows us to avoid tokens with endless validity (so-called "refresh tokens"),
+  - avoids the need to save user access credentials in frontend app, and at the same time
+  - users don't need to re-login as long as the app is active.
 
 ## Access control (authorization)
+
+Access control is implemented on the idea that we are restricting access to resources. Since every REST(ful) interface works with resources, it seems
+natural to place restrictions on top of HTTP protocol. Thus we are restricting URLs (== resources) and methods for a specific user.
+
+Users can be either bots (authenticated via query parameters) or persons, but both kinds of users have the same access control mechanism. Note
+that both bots and persons use the same user ids, and there can be no collision between the two.
 
 System maintains a list of permissions, each of which is defined by:
 
@@ -41,12 +58,12 @@ System maintains a list of permissions, each of which is defined by:
 
 User's request is authorized if there exists a record which conforms to all of the above conditions.
 
-This allows us to implement very different protections:
+For example, this allows us to implement very different protections:
 
-  - a superuser which can access everything (like the one generated through /admin/first/)
-  - a readonly user which can access all account, but change nothing (for example, for support users)
-  - a normal user, linked to one or multiple accounts
-  - a readonly user, linked to a single account
+  - superuser which can access everything (like the one generated through /admin/first/)
+  - readonly user which can access all account, but change nothing (e.g., for support users)
+  - normal user, linked to one or multiple accounts
+  - readonly user, linked to a single account
   - resources which are publicly readable (that is, visible to every user)
 
 # Values
