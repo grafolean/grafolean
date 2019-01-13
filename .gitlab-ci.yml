@@ -1,13 +1,13 @@
-image: node:10-alpine
+image: docker:stable
 
 stages:
   - test
 
-before_script:
-  - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
-
-lint:
+frontend_lint:
   stage: test
+  image: node:10-alpine
+  before_script:
+    - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
   script:
     - cd frontend
     - yarn install
