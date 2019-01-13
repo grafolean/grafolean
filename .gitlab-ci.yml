@@ -1,7 +1,14 @@
 image: docker:stable
 
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay2
+
 stages:
   - test
+  - deploy
 
 frontend_lint:
   stage: test
@@ -15,3 +22,26 @@ frontend_lint:
     - cd frontend
     - yarn install
     - yarn lint
+
+deploy_to_docker_hub:
+  stage: deploy
+  when: manual
+  only:
+    refs:
+      # only master branch AND tag AND tag looks like 'vX.Y.Z':
+      - master
+      - tag
+      - /^v[0-9]+[.][0-9]+[.][0-9]+$/
+  script:
+    - apk add --no-cache git
+    - git tag
+    - export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | head -n 1 | tr -d '[:space:]'`
+    - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] || (echo "Tag does not denote latest known version (which is $LAST_KNOWN_VERSION), aborting!" && exit 1)'
+    - echo "Deploying..."
+    - cp ./install/docker-compose/Dockerfile .
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -t "$CI_REGISTRY_IMAGE:latest" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - docker push "$CI_REGISTRY_IMAGE:latest"
+    - docker rmi grafolean/grafolean:$CI_COMMIT_TAG
+    - docker rmi grafolean/grafolean:latest

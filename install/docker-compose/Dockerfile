@@ -4,7 +4,7 @@ WORKDIR /usr/src/app
 COPY frontend/package.json frontend/yarn.lock ./
 RUN yarn install
 COPY frontend/. ./
-ARG REACT_APP_BACKEND_ROOT_URL
+ARG REACT_APP_BACKEND_ROOT_URL=/api
 RUN yarn build
 
 
