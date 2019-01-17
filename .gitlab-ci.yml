@@ -10,14 +10,15 @@ stages:
   - test
   - deploy
 
+before_script:
+  - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
+
 frontend_lint:
   stage: test
   image: node:10-alpine
   only:
     changes:
       - frontend/**/*
-  before_script:
-    - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
   script:
     - cd frontend
     - yarn install
