@@ -48,10 +48,10 @@ Warning: please do not use this username and password if there is even a remote 
 Security Groups: http://blog.brianz.bz/post/accessing-vpc-resources-with-lambda/
 
 pipenv shell
+pipenv sync
 cd backend/
 vi zappa_settings.json
-zappa deploy dev
-zappa update dev
+zappa deploy dev || zappa update dev
 
 # CORS
 
