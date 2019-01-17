@@ -11,6 +11,7 @@ import '../form.scss';
 import './bots.scss';
 import Loading from '../Loading';
 import Button from '../Button';
+import BotToken from './BotToken';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -72,7 +73,7 @@ export default class Bots extends React.PureComponent {
                 {bots.map(bot => (
                   <tr>
                     <td>{bot.name}</td>
-                    <td>{bot.token}</td>
+                    <td><BotToken token={bot.token} /></td>
                     <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
                     <td>
                       <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
