@@ -4,13 +4,19 @@ services:
   db:
     image: postgres:9.6-alpine
     volumes:
+      # It is a good idea to save DB data to a host directory. By default this is './db/',
+      # however it probably makes sense to supply an absolute path here.
+      # Note that if you wish to copy this directory for backup, you need to stop grafolean
+      # container first.
       - ./db/:/var/lib/postgresql/data/
     environment:
+      # It is probably a good idea to change DB access credentials (before running `docker-compose up` for the first time).
+      # If you do that, you should also update DB_* environment variables.
       - POSTGRES_DB=grafolean
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h db -U admin -q"]
+      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -18,12 +24,14 @@ services:
       - grafolean
 
   grafolean:
+    # If you wish to load an explicit version, change the next line. For example:
+    #   image: grafolean/grafolean:v1.0.0
+    image: grafolean/grafolean
     build:
       context: ../../
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
-    image: grafolean/grafolean
     depends_on:
       db:
         condition: service_healthy
@@ -32,8 +40,17 @@ services:
       - DB_DATABASE=grafolean
       - DB_USERNAME=admin
       - DB_PASSWORD=admin
+      # Comma-delimited list of domains on which we allow frontend to be shown. This is an important
+      # protection agains cross-origin attacks. The domains should follow the same format as Origin
+      # header and might include port number.
+      # If the setting is incorrent then frontend will warn about it (suggesting a missing value).
+      # Example:
+      # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
       - GRAFOLEAN_CORS_DOMAINS=http://localhost
     ports:
+      # If you wish to publish Grafolean on a different port you can change the first number below.
+      # Note that HTTPS is currently no supported generically and you need to add a reverse proxy
+      # in front of docker instance (just changing the port to 443 will *not* magically enable HTTPS).
       - "80:80"
     networks:
       - grafolean
