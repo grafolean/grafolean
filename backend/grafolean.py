@@ -21,7 +21,7 @@ app = flask.Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
 
-CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').split(",")))
+CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
 
 
 @app.before_request

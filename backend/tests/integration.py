@@ -11,7 +11,9 @@ import time
 VALID_FRONTEND_ORIGINS = [
     'https://example.org:1234',
     'http://localhost:3000',
+    'http://LOCALHOST:2000',
 ]
+VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
 from grafolean import app
@@ -726,10 +728,10 @@ def test_options(app_client):
     assert dict(r.headers).get('Access-Control-Expose-Headers', None) is None
     assert dict(r.headers).get('Access-Control-Max-Age', None) is None
 
-    for origin in VALID_FRONTEND_ORIGINS:
+    for origin in VALID_FRONTEND_ORIGINS_LOWERCASED:
         r = app_client.options('/api/admin/first', headers={'Origin': origin})
         assert r.status_code == 200
-        assert dict(r.headers).get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted:
+        assert dict(r.headers).get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted
         assert dict(r.headers).get('Access-Control-Allow-Headers', None) == 'Content-Type, Authorization'
         assert dict(r.headers).get('Access-Control-Allow-Methods', None) == 'GET, POST, DELETE, PUT, OPTIONS'
         assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
@@ -754,7 +756,7 @@ def test_status_info_before_migration(app_client_db_not_migrated):
         'db_migration_needed': True,
         'db_version': 0,
         'user_exists': None,
-        'cors_domains': VALID_FRONTEND_ORIGINS,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
@@ -770,7 +772,7 @@ def test_status_info_before_migration(app_client_db_not_migrated):
         'db_migration_needed': False,
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
-        'cors_domains': VALID_FRONTEND_ORIGINS,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
     }
     assert expected == actual
 
@@ -784,7 +786,7 @@ def test_status_info_before_first(app_client):
         'db_migration_needed': False,
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
-        'cors_domains': VALID_FRONTEND_ORIGINS,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
     }
     assert expected == actual
 
@@ -797,7 +799,7 @@ def test_status_info_after_first(app_client, first_admin_exists):
         'db_migration_needed': False,
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': True,
-        'cors_domains': VALID_FRONTEND_ORIGINS,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
     }
     assert expected == actual
 
