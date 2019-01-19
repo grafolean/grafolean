@@ -10,30 +10,44 @@
     -->
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
     <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <!--
-      Notice the use of %PUBLIC_URL% in the tags above.
-      It will be replaced with the URL of the `public` folder during the build.
-      Only files inside the `public` folder can be referenced from the HTML.
 
-      Unlike "/favicon.ico" or "favicon.ico", "%PUBLIC_URL%/favicon.ico" will
-      work correctly both with client-side routing and a non-root public URL.
-      Learn how to configure a non-root public URL by running `npm run build`.
+    <!--
+      The Content-Security-Policy is set both through header (nginx config) and
+      the META tag below. Note that the *intersection* of rules is used - action
+      must be allowed by *both* sets to be valid.
+      Also, 'report-uri' is not supported in META tags so we skip it here.
+
+      When figuring out the correct set of rules it might come handy to have
+      this "allow-all" rule:
+        default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;
+
+      This the currently used setting: (and reasons for it)
+        default-src 'none';  // default policy - allow nothing unless explicitly allowed
+        style-src 'self' 'unsafe-inline';  // with React some styles are inline while some are served through local .js files
+        script-src 'self' 'unsafe-inline';  // same here
+        connect-src
+          *.amazonaws.com   // if backend is deployed to AWS, there is no CSP header - so this really allows AWS backend. If not, this is just ignored (header limits it)
+          'self';  // if backend is deployed via Docker, it is accessible at the same address as frontend
+        font-src 'self';
+        img-src 'self';
+        worker-src 'self';
+        manifest-src 'self';  // probably needed for android
     -->
+    <meta name="Content-Security-Policy" http-equiv="Content-Security-Policy" content="
+      default-src 'none';
+      style-src 'self' 'unsafe-inline';
+      script-src 'self' 'unsafe-inline';
+      connect-src *.amazonaws.com 'self';
+      font-src 'self';
+      img-src 'self';
+      worker-src 'self';
+      manifest-src 'self';
+    ">
     <title>GrafoLean</title>
   </head>
   <body>
     <div id="root">
       Loading, please wait...
     </div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
-
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
-
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
   </body>
 </html>

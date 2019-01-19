@@ -205,6 +205,13 @@ def status_sitemap_get():
     return json.dumps(result), 200
 
 
+@app.route('/api/status/cspreport', methods=['POST'])
+@noauth
+def status_cspreport():
+    log.error("CSP report received: {}".format(flask.request.data))
+    return '', 200
+
+
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
 def admin_permissions_get_post():
     if flask.request.method == 'GET':
