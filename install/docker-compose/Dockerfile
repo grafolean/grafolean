@@ -6,6 +6,9 @@ RUN yarn install
 COPY frontend/. ./
 ARG REACT_APP_BACKEND_ROOT_URL=/api
 RUN yarn build
+# until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
+# with a local copy of the file: (to avoid using CDN)
+RUN sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
 
 
 FROM python:3.6-slim-stretch as python-requirements
