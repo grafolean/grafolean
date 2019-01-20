@@ -22,6 +22,7 @@ import CORSWarningPage from '../CORSWarningPage';
 import Bots from '../Bots';
 import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
+import Changelog from '../About/Changelog';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -123,6 +124,9 @@ class SidebarContentNoStore extends React.Component {
         <div className="spacer" />
         <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
           <i className="fa fa-user-secret" /> Bots
+        </Link>
+        <Link className="button green" to="/about/changelog" onClick={onSidebarLinkClick}>
+          <i className="fa fa-list" /> Changelog
         </Link>
         <Link className="button green" to="/profile" onClick={onSidebarLinkClick}>
           <i className="fa fa-user" /> Profile
@@ -236,6 +240,7 @@ class LoggedInContent extends React.Component {
           <Switch>
             <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
             <WrappedRoute exact contentWidth={contentWidth} path="/settings/bots" component={Bots} />
+            <WrappedRoute exact contentWidth={contentWidth} path="/about/changelog" component={Changelog} />
             <WrappedRoute
               exact
               contentWidth={contentWidth}
