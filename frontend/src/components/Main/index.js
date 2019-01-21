@@ -23,6 +23,7 @@ import Bots from '../Bots';
 import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
+import WelcomePage from '../WelcomePage';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -238,6 +239,7 @@ class LoggedInContent extends React.Component {
 
         <div className="content centered">
           <Switch>
+            <WrappedRoute exact contentWidth={contentWidth} path="/" component={WelcomePage} />
             <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
             <WrappedRoute exact contentWidth={contentWidth} path="/settings/bots" component={Bots} />
             <WrappedRoute exact contentWidth={contentWidth} path="/about/changelog" component={Changelog} />
