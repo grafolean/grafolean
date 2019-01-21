@@ -52,8 +52,6 @@ const isWidget = WrappedComponent => {
       });
     };
 
-    editWidget = () => {};
-
     deleteWidget = () => {
       fetchAuth(
         `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`,
@@ -62,7 +60,7 @@ const isWidget = WrappedComponent => {
         .then(handleFetchErrors)
         .then(() => {
           store.dispatch(onSuccess('Widget successfully removed.'));
-          this.props.refreshParent();
+          this.props.onWidgetDelete();
         })
         .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
     };

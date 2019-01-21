@@ -11,6 +11,7 @@ import YAxis from './YAxis';
 import IntervalLineChart from './IntervalLineChart';
 import Legend from './Legend';
 import Grid from './Grid';
+import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
 import TooltipPopup from '../../TooltipPopup';
 
@@ -635,6 +636,7 @@ export class ChartView extends React.Component {
   }
 
   render() {
+    const { fetching, errorMsg } = this.props;
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
@@ -681,173 +683,135 @@ export class ChartView extends React.Component {
 
     return (
       <div
+        className="chart"
         style={{
-          ...this.props.style,
+          width: this.props.width,
+          height: this.props.height,
         }}
       >
-        <div
-          className="chart"
-          style={{
-            width: this.props.width,
-            height: this.props.height,
-            backgroundColor: this.props.zoomInProgress ? 'yellow' : 'white',
-            position: 'relative',
-            float: 'left',
-          }}
-        >
-          {(this.props.fetching || this.props.errorMsg) && (
-            <div
-              style={{
-                position: 'absolute',
-                right: 9,
-                top: 9,
-              }}
-            >
-              {this.props.fetching ? (
-                <i
-                  className="fa fa-circle-o-notch fa-spin"
-                  style={{
-                    color: '#666',
-                    fontSize: 30,
-                  }}
-                />
-              ) : (
-                <i
-                  className="fa fa-exclamation-triangle"
-                  style={{
-                    color: '#660000',
-                    margin: 5,
-                    fontSize: 20,
-                  }}
-                  title={this.props.errorMsg}
-                />
-              )}
-            </div>
-          )}
+        <Status fetching={fetching} errorMsg={errorMsg} />
 
-          <svg width={this.props.width} height={this.props.height}>
-            <defs>
-              <clipPath id="chartContentArea">
-                <rect x={yAxesWidth} y="0" width={this.props.width - yAxesWidth} height={yAxisHeight} />
-              </clipPath>
-            </defs>
+        <svg width={this.props.width} height={this.props.height}>
+          <defs>
+            <clipPath id="chartContentArea">
+              <rect x={yAxesWidth} y="0" width={this.props.width - yAxesWidth} height={yAxisHeight} />
+            </clipPath>
+          </defs>
 
-            {drawnUnits.map((unit, i) => (
-              <g key={i} transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}>
-                <Grid
-                  width={this.props.width - this.props.yAxisWidth * (i + 1)}
-                  height={yAxisHeight}
-                  minYValue={this.props.yAxesProperties[unit].minYValue}
-                  maxYValue={this.props.yAxesProperties[unit].maxYValue}
-                  v2y={this.props.yAxesProperties[unit].derived.v2y}
-                  yTicks={this.props.yAxesProperties[unit].derived.ticks}
-                  color={generateGridColor(i)}
-                />
-              </g>
-            ))}
-
-            <g clipPath="url(#chartContentArea)">
-              {/*
-                Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
-                only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
-              */}
-              <g
-                transform={`translate(${yAxesWidth -
-                  1 -
-                  (this.props.fromTs - this.props.minKnownTs) * this.props.scale} 0)`}
-              >
-                {this.props.fetchedIntervalsData.map((interval, intervalIndex) => (
-                  <IntervalLineChart
-                    key={`i-${this.props.aggrLevel}-${intervalIndex}`}
-                    interval={interval}
-                    yAxisHeight={yAxisHeight}
-                    scale={this.props.scale}
-                    minKnownTs={this.props.minKnownTs}
-                    isAggr={this.props.aggrLevel >= 0}
-                    drawnChartSeries={this.props.drawnChartSeries}
-                    // dict of v2y() functions per unit:
-                    v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
-                      result[unit] = this.props.yAxesProperties[unit].derived.v2y;
-                      return result;
-                    }, {})}
-                  />
-                ))}
-                {closest && (
-                  <TooltipIndicator
-                    {...closest}
-                    x={this.dt2dx(closest.point.t - this.props.minKnownTs)}
-                    y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
-                    r={this.state.overrideClosestPoint ? 5 : 4}
-                    yAxisHeight={yAxisHeight}
-                  />
-                )}
-              </g>
-            </g>
-
-            {drawnUnits.map((unit, i) => (
-              <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
-                <YAxis
-                  width={this.props.yAxisWidth}
-                  height={yAxisHeight}
-                  unit={unit}
-                  v2y={this.props.yAxesProperties[unit].derived.v2y}
-                  yTicks={this.props.yAxesProperties[unit].derived.ticks}
-                  color="#999999"
-                />
-              </g>
-            ))}
-
-            <g transform={`translate(${yAxesWidth - 1} ${xAxisTop})`}>
-              <TimestampXAxis
-                width={this.props.width - yAxesWidth}
-                height={this.props.xAxisHeight}
-                color="#999999"
-                scale={this.props.scale}
-                panX={
-                  this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
-                }
+          {drawnUnits.map((unit, i) => (
+            <g key={i} transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}>
+              <Grid
+                width={this.props.width - this.props.yAxisWidth * (i + 1)}
+                height={yAxisHeight}
+                minYValue={this.props.yAxesProperties[unit].minYValue}
+                maxYValue={this.props.yAxesProperties[unit].maxYValue}
+                v2y={this.props.yAxesProperties[unit].derived.v2y}
+                yTicks={this.props.yAxesProperties[unit].derived.ticks}
+                color={generateGridColor(i)}
               />
             </g>
-          </svg>
+          ))}
 
-          {closest && (
-            <div
-              style={{
-                position: 'absolute',
-                left: this.t2x(closest.point.t) + yAxesWidth,
-                top: this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v),
-              }}
+          <g clipPath="url(#chartContentArea)">
+            {/*
+              Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
+              only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
+            */}
+            <g
+              transform={`translate(${yAxesWidth -
+                1 -
+                (this.props.fromTs - this.props.minKnownTs) * this.props.scale} 0)`}
             >
-              <TooltipPopup
-                // if tooltip was opened by a click, it should be on top so user can select text:
-                zIndex={this.state.overrideClosestPoint ? 999999 : 1}
-              >
-                {closest.point.minv ? (
-                  <div>
-                    <p>{closest.cs.serieName}</p>
-                    <p>{closest.cs.path}</p>
-                    <p>
-                      {closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} -{' '}
-                      {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø{' '}
-                      {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})
-                    </p>
-                    <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <p>{closest.cs.serieName}</p>
-                    <p>{closest.cs.path}</p>
-                    <p>
-                      Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}
-                    </p>
-                    <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
-                  </div>
-                )}
-              </TooltipPopup>
-            </div>
-          )}
-        </div>
-        <div>{this.props.aggrLevel}</div>
+              {this.props.fetchedIntervalsData.map((interval, intervalIndex) => (
+                <IntervalLineChart
+                  key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                  interval={interval}
+                  yAxisHeight={yAxisHeight}
+                  scale={this.props.scale}
+                  minKnownTs={this.props.minKnownTs}
+                  isAggr={this.props.aggrLevel >= 0}
+                  drawnChartSeries={this.props.drawnChartSeries}
+                  // dict of v2y() functions per unit:
+                  v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
+                    result[unit] = this.props.yAxesProperties[unit].derived.v2y;
+                    return result;
+                  }, {})}
+                />
+              ))}
+              {closest && (
+                <TooltipIndicator
+                  {...closest}
+                  x={this.dt2dx(closest.point.t - this.props.minKnownTs)}
+                  y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
+                  r={this.state.overrideClosestPoint ? 5 : 4}
+                  yAxisHeight={yAxisHeight}
+                />
+              )}
+            </g>
+          </g>
+
+          {drawnUnits.map((unit, i) => (
+            <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
+              <YAxis
+                width={this.props.yAxisWidth}
+                height={yAxisHeight}
+                unit={unit}
+                v2y={this.props.yAxesProperties[unit].derived.v2y}
+                yTicks={this.props.yAxesProperties[unit].derived.ticks}
+                color="#999999"
+              />
+            </g>
+          ))}
+
+          <g transform={`translate(${yAxesWidth - 1} ${xAxisTop})`}>
+            <TimestampXAxis
+              width={this.props.width - yAxesWidth}
+              height={this.props.xAxisHeight}
+              color="#999999"
+              scale={this.props.scale}
+              panX={
+                this.props.fromTs * this.props.scale // we should pass fromTs and toTs here
+              }
+            />
+          </g>
+        </svg>
+
+        {closest && (
+          <div
+            style={{
+              position: 'absolute',
+              left: this.t2x(closest.point.t) + yAxesWidth,
+              top: this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v),
+            }}
+          >
+            <TooltipPopup
+              // if tooltip was opened by a click, it should be on top so user can select text:
+              zIndex={this.state.overrideClosestPoint ? 999999 : 1}
+            >
+              {closest.point.minv ? (
+                <div>
+                  <p>{closest.cs.serieName}</p>
+                  <p>{closest.cs.path}</p>
+                  <p>
+                    {closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} -{' '}
+                    {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø{' '}
+                    {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})
+                  </p>
+                  <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
+                </div>
+              ) : (
+                <div>
+                  <p>{closest.cs.serieName}</p>
+                  <p>{closest.cs.path}</p>
+                  <p>
+                    Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}
+                  </p>
+                  <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
+                </div>
+              )}
+            </TooltipPopup>
+          </div>
+        )}
       </div>
     );
   }

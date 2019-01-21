@@ -23,3 +23,25 @@
 .repinchy-content {
   position: relative;
 }
+
+.chart {
+  background-color: #fff;
+  position: relative;
+  float: left;
+
+  .status {
+    position: absolute;
+    right: 9px;
+    top: 9px;
+
+    i.fa-circle-o-notch {
+      color: #666;
+      font-size: 30px;
+    }
+    i.fa-exclamation-triangle {
+      color: #660000;
+      margin: 5px;
+      font-size: 20px;
+    }
+  }
+}

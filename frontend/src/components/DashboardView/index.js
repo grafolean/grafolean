@@ -121,11 +121,10 @@ class DashboardView extends React.Component {
                       width={innerWidth}
                       height={500}
                       widgetId={widget.id}
-                      widgetType={widget.type}
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      refreshParent={this.fetchDashboardDetails}
+                      onWidgetDelete={this.fetchDashboardDetails}
                     />
                   );
                 case 'chart':
@@ -135,11 +134,10 @@ class DashboardView extends React.Component {
                       width={innerWidth}
                       height={500}
                       widgetId={widget.id}
-                      widgetType={widget.type}
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       chartContent={widget.content}
-                      refreshParent={this.fetchDashboardDetails}
+                      onWidgetDelete={this.fetchDashboardDetails}
                     />
                   );
                 default:
