@@ -27,6 +27,7 @@
         script-src 'self' 'unsafe-inline';  // same here
         connect-src
           *.amazonaws.com   // if backend is deployed to AWS, there is no CSP header - so this really allows AWS backend. If not, this is just ignored (header limits it)
+          127.0.0.1:*  // same here - when developing on localhost header is not set, so this allows using 127.0.0.1:* as backend
           'self';  // if backend is deployed via Docker, it is accessible at the same address as frontend
         font-src 'self';
         img-src 'self';

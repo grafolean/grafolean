@@ -13,12 +13,12 @@ import Legend from './Legend';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
-import TooltipPopup from '../../TooltipPopup';
 
 import './index.scss';
 import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
+import ChartTooltipPopup from './ChartTooltipPopup';
 
 class GLeanChartWidget extends React.Component {
   state = {
@@ -777,35 +777,14 @@ export class ChartView extends React.Component {
         </svg>
 
         {closest && (
-          <div
-            style={{
-              position: 'absolute',
-              left: this.t2x(closest.point.t) + yAxesWidth,
-              top: this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v),
-            }}
-          >
-            <TooltipPopup
-              // if tooltip was opened by a click, it should be on top so user can select text:
-              zIndex={this.state.overrideClosestPoint ? 999999 : 1}
-            >
-              <div>
-                <p>{closest.cs.serieName}</p>
-                <p>{closest.cs.path}</p>
-                {closest.point.minv ? (
-                  <p>
-                    {closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} -{' '}
-                    {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø{' '}
-                    {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})
-                  </p>
-                ) : (
-                  <p>
-                    Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}
-                  </p>
-                )}
-                <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
-              </div>
-            </TooltipPopup>
-          </div>
+          <ChartTooltipPopup
+            left={this.t2x(closest.point.t) + yAxesWidth}
+            top={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
+            closest={closest}
+            // if tooltip was opened by a click, it should be on top so user can select text:
+            onTop={this.state.overrideClosestPoint}
+            nDecimals={this.props.nDecimals}
+          />
         )}
       </div>
     );

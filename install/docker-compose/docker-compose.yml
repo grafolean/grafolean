@@ -43,8 +43,9 @@ services:
       # Comma-delimited list of domains on which we allow frontend to be shown. This is an important
       # protection agains cross-origin attacks. The domains should follow the same format as Origin
       # header and might include port number.
-      # If the setting is incorrent then frontend will warn about it (suggesting a missing value).
-      # Example:
+      # This setting affects backend only, but frontend learns about the setting thought /admin/status/info
+      # endpoint (which allows access from all domains by design) and warns if it is not set correctly.
+      # Example setting:
       # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
       - GRAFOLEAN_CORS_DOMAINS=http://localhost
     ports:
