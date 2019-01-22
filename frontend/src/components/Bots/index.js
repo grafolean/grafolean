@@ -71,7 +71,7 @@ export default class Bots extends React.PureComponent {
                   <th />
                 </tr>
                 {bots.map(bot => (
-                  <tr>
+                  <tr key={bot.id}>
                     <td>{bot.name}</td>
                     <td>
                       <BotToken token={bot.token} />

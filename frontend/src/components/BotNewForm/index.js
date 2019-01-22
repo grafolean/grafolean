@@ -20,23 +20,44 @@ export default class BotNewForm extends React.PureComponent {
     this.setState({ [event.target.name]: event.target.value });
   };
 
-  handleSubmit = event => {
-    event.preventDefault();
-    this.setState({ loading: true });
-    const params = {
-      name: this.state.name,
-    };
-    fetchAuth(`${ROOT_URL}/admin/bots/`, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(params),
-    })
-      .then(handleFetchErrors)
-      .then(() => this.setState({ submitted: true }))
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+  handleSubmit = async event => {
+    try {
+      event.preventDefault();
+      this.setState({ loading: true });
+      const params = {
+        name: this.state.name,
+      };
+      // create bot:
+      const response = await fetchAuth(`${ROOT_URL}/admin/bots/`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+      await handleFetchErrors(response);
+      const responseJson = await response.json();
+
+      // assign permissions to bot:
+      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/permissions/`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          user_id: responseJson.id,
+          url_prefix: 'accounts/1/values',
+          methods: ['POST', 'PUT'],
+        }),
+      });
+      await handleFetchErrors(responsePermissions);
+
+      await this.setState({ submitted: true });
+    } catch (e) {
+      store.dispatch(onFailure(e.toString()));
+    }
   };
 
   render() {

@@ -82,6 +82,7 @@ def before_request():
                 method = flask.request.method,
             )
             if not is_allowed:
+                log.info("Access denied (permissions check failed)")
                 return "Access denied", 401
         except AuthFailedException:
             log.exception("Authentication failed")

@@ -689,12 +689,14 @@ class Bot(object):
         try:
             bot_token = str(BotToken(bot_token_unclean))
         except:
-            return None  # invalid format
+            log.info("Invalid bot token format")
+            return None
         # authenticate against DB:
         with db.cursor() as c:
             c.execute("SELECT user_id FROM bots WHERE token = %s;", (bot_token,))
             res = c.fetchone()
             if not res:
+                log.info("No such bot token")
                 return None
             user_id, = res
             return user_id
