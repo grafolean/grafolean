@@ -788,27 +788,22 @@ export class ChartView extends React.Component {
               // if tooltip was opened by a click, it should be on top so user can select text:
               zIndex={this.state.overrideClosestPoint ? 999999 : 1}
             >
-              {closest.point.minv ? (
-                <div>
-                  <p>{closest.cs.serieName}</p>
-                  <p>{closest.cs.path}</p>
+              <div>
+                <p>{closest.cs.serieName}</p>
+                <p>{closest.cs.path}</p>
+                {closest.point.minv ? (
                   <p>
                     {closest.point.minv.toFixed(this.props.nDecimals)} {closest.cs.unit} -{' '}
                     {closest.point.maxv.toFixed(this.props.nDecimals)} {closest.cs.unit} (Ø{' '}
                     {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit})
                   </p>
-                  <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD')}</p>
-                </div>
-              ) : (
-                <div>
-                  <p>{closest.cs.serieName}</p>
-                  <p>{closest.cs.path}</p>
+                ) : (
                   <p>
                     Value: {closest.point.v.toFixed(this.props.nDecimals)} {closest.cs.unit}
                   </p>
-                  <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
-                </div>
-              )}
+                )}
+                <p>At: {moment(closest.point.t * 1000).format('YYYY-MM-DD HH:mm:ss')}</p>
+              </div>
             </TooltipPopup>
           </div>
         )}
