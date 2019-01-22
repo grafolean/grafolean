@@ -8,8 +8,11 @@ Ending slashes ('/') are optional with all endpoints and there will be no redire
 
 ## Authentication
 
-Authentication uses JWT tokens, passed through `Authorization` header. The only exception is POST to `/api/accounts/<AccountId>/values` which
-allows authentication via API token in query parameters - the reason is that it might be difficult for bots to use regular authentication mechanism.
+There are two possible authentication methods:
+- based on JWT tokens, passed through `Authorization` header, and
+- via API token in either query parameters (`b`) or `Authorization: Token ...` header.
+
+The second form is useful for bots and similar where it might be inconvenient to use a regular authentication mechanism.
 
 ### Fetching JWT token
 
