@@ -816,3 +816,7 @@ def test_sitemap(app_client):
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected_entry in actual
+
+def test_head_method(app_client, admin_authorization_header, account_id):
+    r = app_client.head('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200

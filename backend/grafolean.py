@@ -215,7 +215,7 @@ def status_cspreport():
 
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
 def admin_permissions_get_post():
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Permission.get_list()
         return json.dumps({'list': rec}), 200
 
@@ -243,7 +243,7 @@ def admin_permission_delete(permission_id):
 
 @app.route('/api/admin/bots', methods=['GET', 'POST'])
 def admin_bots():
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get_list()
         return json.dumps({'list': rec}), 200
 
@@ -257,7 +257,7 @@ def admin_bots():
 
 @app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def admin_bot_crud(user_id):
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get(user_id)
         if not rec:
             return "No such bot", 404
@@ -328,7 +328,7 @@ def auth_refresh_post():
 
 @app.route('/api/admin/accounts', methods=['GET', 'POST'])
 def accounts_crud():
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Account.get_list()
         return json.dumps({'list': rec}), 200
 
@@ -526,7 +526,7 @@ def path_delete(account_id):
 
 @app.route("/api/accounts/<string:account_id>/dashboards", methods=['GET', 'POST'])
 def dashboards_crud(account_id):
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Dashboard.get_list(account_id)
         return json.dumps({'list': rec}), 200
 
@@ -541,7 +541,7 @@ def dashboards_crud(account_id):
 
 @app.route("/api/accounts/<string:account_id>/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
 def dashboard_crud(account_id, dashboard_slug):
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         rec = Dashboard.get(account_id, slug=dashboard_slug)
         if not rec:
             return "No such dashboard", 404
@@ -563,7 +563,7 @@ def dashboard_crud(account_id, dashboard_slug):
 
 @app.route("/api/accounts/<string:account_id>/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
 def widgets_crud(account_id, dashboard_slug):
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         try:
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:
@@ -586,7 +586,7 @@ def widget_crud(account_id, dashboard_slug, widget_id):
     except:
         raise ValidationError("Invalid widget id")
 
-    if flask.request.method == 'GET':
+    if flask.request.method in ['GET', 'HEAD']:
         try:
             paths_limit = int(flask.request.args.get('paths_limit', 200))
         except:

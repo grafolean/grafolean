@@ -599,6 +599,8 @@ class Permission(object):
 
     @staticmethod
     def is_access_allowed(user_id, url, method):
+        if method == 'HEAD':
+            method = 'GET'  # access for HEAD is the same as for GET
         with db.cursor() as c:
             # with url_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
