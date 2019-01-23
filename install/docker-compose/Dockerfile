@@ -19,6 +19,16 @@ RUN \
     pipenv lock -r > /requirements.txt
 
 
+FROM python:3.6-slim-stretch as build-backend
+WORKDIR /grafolean/backend
+COPY ./backend/ /grafolean/backend/
+RUN \
+    find ./ ! -name '*.py' -type f -exec rm '{}' ';' && \
+    rm -rf tests/ .vscode/ .pytest_cache/ __pycache__/ && \
+    python3.6 -m compileall -b ./ && \
+    find ./ -name '*.py' -exec rm '{}' ';'
+
+
 FROM python:3.6-slim-stretch
 RUN \
     apt-get update && \
@@ -28,13 +38,14 @@ RUN \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
-    rm -rf /var/lib/{apt,dpkg,cache,log}/
+    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
+    echo "alias l='ls -altr'" >> /root/.bashrc
 COPY --from=python-requirements /requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
-COPY ./backend /grafolean/backend
+COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 WORKDIR /grafolean/backend
 CMD ["/bin/bash", "-c", "service nginx start && uwsgi --ini /etc/uwsgi.ini"]
 
