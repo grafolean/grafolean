@@ -44,7 +44,7 @@ deploy_to_docker_hub:
     - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] || (echo "Tag does not denote latest known version (which is $LAST_KNOWN_VERSION), aborting!" && exit 1)'
     # automatically create frontend/src/CHANGELOG.json from GitLab tags:
     - 'curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json'
-    - 'cat /tmp/tags.json | jq ''[.[].release | select(.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .tag_name, changelog: .description }]'' > frontend/src/CHANGELOG.json'
+    - 'cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json'
     - echo "Deploying..."
     - cp ./install/docker-compose/Dockerfile .
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY

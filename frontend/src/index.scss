@@ -6,7 +6,7 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
-p, span, div, button, a {
+p, span, div, button, a, pre {
   font-family: sans-serif;
   font-size: 14px;
 }
@@ -87,3 +87,15 @@ a.button, button {
 // button:hover {
 //   background-color: #4cd074;
 // }
+
+.changelog {
+  h3 {
+    margin: 0 0 10px;
+    span.created-at {
+      font-weight: normal;
+    }
+  }
+  pre {
+    margin: 10px 10px 20px;
+  }
+}
