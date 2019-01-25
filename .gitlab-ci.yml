@@ -59,13 +59,28 @@ deploy_to_demo.grafolean.com:
   image: node:10-alpine
   stage: deploy
   when: manual
-  # only:
-  #   # only on (protected) version tags:
-  #   variables:
-  #     - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+$/
+  only:
+    # only on (protected) version tags:
+    variables:
+      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+$/
+  variables:
+    REACT_APP_BACKEND_ROOT_URL: "https://xo0y8lq3jf.execute-api.eu-central-1.amazonaws.com/dev/api"
   script:
+    # frontend:
     - cd frontend
+    - yarn install
     - CI=true yarn build
+    # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
+    # with a local copy of the file: (to avoid using CDN)
+    - sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
     - apk add --update python python-dev py-pip
     - pip install awscli
     - aws s3 sync ./build s3://demo.grafolean.com/
+
+  artifacts:
+    name: "build-$CI_COMMIT_TAG"
+    expire_in: 100 years
+    paths:
+      - frontend/build/
+
+
