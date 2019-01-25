@@ -17,16 +17,16 @@ before_script:
   - 'curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json'
   - 'cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json'
 
-# frontend_lint:
-#   stage: test
-#   image: node:10-alpine
-#   only:
-#     changes:
-#       - frontend/**/*
-#   script:
-#     - cd frontend
-#     - yarn install
-#     - yarn lint
+frontend_lint:
+  stage: test
+  image: node:10-alpine
+  only:
+    changes:
+      - frontend/**/*
+  script:
+    - cd frontend
+    - yarn install
+    - yarn lint
 
 deploy_to_docker_hub:
   stage: deploy
