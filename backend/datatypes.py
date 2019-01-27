@@ -142,8 +142,22 @@ class Timestamp(_RegexValidatedInputValue):
         return int(self.v)
 
 
-class MeasuredValue(_RegexValidatedInputValue):
-    _regex = re.compile(r'^[0-9]+([.][0-9]+)?$')
+class MeasuredValue(object):
+    def __init__(self, v):
+        if not self.is_valid(v):
+            raise ValidationError("Invalid {} format: {}".format(self.__class__.__name__, v))
+        self.v = v
+
+    @classmethod
+    def is_valid(cls, v):
+        try:
+            float(v)
+            return True
+        except ValueError:
+            return False
+
+    def __str__(self):
+        return str(self.v)
 
 
 class BotToken(_RegexValidatedInputValue):

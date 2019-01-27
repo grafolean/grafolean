@@ -145,6 +145,41 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
+    # remove entry: !!! not implemented
+    # r = app_client.delete('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891'.format(account_id), headers={'Authorization': admin_authorization_header})
+    # assert r.status_code == 200
+
+@pytest.mark.parametrize("value_str,value_float", [
+    ['0.000701', 0.000701],
+    ['7.01e-04', 0.000701],
+    ['7.01e-4', 0.000701],
+    ['"0.000701"', 0.000701],
+    ['"7.01e-04"', 0.000701],
+    ['0.0007010001234567', 0.0007010001234567],
+    ['0.0000701', 0.0000701],
+])
+def test_values_put_get_all_formats(app_client, admin_authorization_header, account_id, value_str, value_float):
+    """
+        Put a value, get a value. This time as scientific notation and as string.
+    """
+    json_body = '[{{ "p": "qqqq.wwww", "t": 1234567890.123456, "v": {} }}]'.format(value_str)
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json_body, content_type='application/json', headers={'Authorization': admin_authorization_header})
+    print(r.data.decode('utf-8'))
+    assert r.status_code == 200
+    r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'paths': {
+            'qqqq.wwww': {
+                'next_data_point': None,
+                'data': [
+                    {'t': 1234567890.123456, 'v': value_float }
+                ]
+            }
+        }
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
 
 def test_values_put_get_noaggrparam_redirect(app_client, admin_authorization_header, account_id):
     """
