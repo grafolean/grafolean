@@ -30,6 +30,18 @@ RUN \
 
 
 FROM python:3.6-slim-stretch
+ARG VERSION
+ARG VCS_REF
+ARG BUILD_DATE
+LABEL org.label-schema.vendor="Grafolean" \
+      org.label-schema.url="https://grafolean.com/" \
+      org.label-schema.name="Grafolean" \
+      org.label-schema.description="Easy to use monitoring system" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.vcs-url="https://gitlab.com/grafolean/grafolean/" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.docker.schema-version="1.0"
 RUN \
     apt-get update && \
     apt-get install --no-install-recommends -q -y nginx git && \
