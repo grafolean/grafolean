@@ -153,7 +153,7 @@ class MeasuredValue(object):
         try:
             float(v)
             return True
-        except ValueError:
+        except:
             return False
 
     def __str__(self):
