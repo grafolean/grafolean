@@ -1,5 +1,5 @@
 [Unit]
-Description=GrafoLean
+Description=Grafolean
 After=network.target
 
 [Service]
