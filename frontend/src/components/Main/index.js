@@ -70,7 +70,14 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
       {...rest}
       render={props =>
         loggedIn ? (
-          <div className={`page ${Component.name}`}>
+          // We need some className that will allow us to write CSS rules for specific pages if needed. In theory
+          // we could use `Component.name` here, but when we build for production, names are obfuscated
+          <div
+            className={`page ${rest.path
+              .replace(/[^a-z0-9A-Z]+/g, ' ')
+              .trim()
+              .replace(/[ ]/g, '-')}`}
+          >
             <Component {...props} width={contentWidth} />
           </div>
         ) : (
