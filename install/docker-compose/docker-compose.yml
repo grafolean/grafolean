@@ -56,5 +56,16 @@ services:
     networks:
       - grafolean
 
+  mosquitto:
+    image: grafolean/mosquitto
+    build:
+      context: ../mosquitto-auth/
+      dockerfile: Dockerfile
+    ports:
+      - "1883:1883"
+      - "9883:9883"
+    networks:
+      - grafolean
+
 networks:
   grafolean:
