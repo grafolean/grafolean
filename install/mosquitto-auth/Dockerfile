@@ -5,9 +5,33 @@ ENV MOSQUITTO_VERSION=v1.5.5
 # use the latest commit id instead, but we still want to pin it:
 ENV MOSQUITTO_AUTH_PLUGIN_COMMIT_ID=1bc268535d526bfabea8dafb3a43d51bc5655b22
 
+# Note that using libwebsockets from alpine (version 3.0.0-r0) doesn't work (doesn't complete handshake), so we must compile it ourselves:
+ENV LIBWEBSOCKETS_VERSION=v3.1-stable
+
 RUN \
-    apk add --no-cache --virtual .build-dependencies git libressl build-base libressl-dev util-linux-dev libwebsockets-dev c-ares-dev curl-dev && \
+    apk add --no-cache --virtual .build-dependencies git libressl build-base libressl-dev util-linux-dev c-ares-dev curl-dev cmake && \
+    apk add --no-cache libressl libuuid c-ares && \
+    apk add --no-cache curl ca-certificates && \
+    addgroup -S mosquitto && \
+    adduser -S mosquitto -G mosquitto -D -H && \
     mkdir /build && \
+    cd /build && \
+    git clone -b ${LIBWEBSOCKETS_VERSION} https://libwebsockets.org/repo/libwebsockets && \
+    cd libwebsockets && \
+    cmake . \
+      -DCMAKE_BUILD_TYPE=MinSizeRel \
+      -DLWS_IPV6=ON \
+      -DLWS_WITHOUT_CLIENT=ON \
+      -DLWS_WITHOUT_TESTAPPS=ON \
+      -DLWS_WITHOUT_EXTENSIONS=ON \
+      -DLWS_WITHOUT_BUILTIN_GETIFADDRS=ON \
+      -DLWS_WITH_ZIP_FOPS=OFF \
+      -DLWS_WITH_ZLIB=OFF \
+      -DLWS_WITH_SHARED=OFF && \
+    make && \
+    rm -rf /root/.cmake && \
+    make install && \
+    \
     cd /build && \
     git clone -b ${MOSQUITTO_VERSION} https://github.com/eclipse/mosquitto.git && \
     cd mosquitto && \
@@ -28,11 +52,6 @@ RUN \
     rm -rf /build/ && \
     apk del .build-dependencies
 
-RUN \
-    apk add --no-cache libressl libuuid libwebsockets && \
-    addgroup -S mosquitto && \
-    adduser -S mosquitto -G mosquitto -D -H
-
 ADD mosquitto.conf /etc/mosquitto/mosquitto.conf
 
 EXPOSE 1883
@@ -40,5 +59,4 @@ EXPOSE 9883
 
 USER mosquitto
 
-ENTRYPOINT ["mosquitto"]
-
+ENTRYPOINT ["mosquitto", "-c", "/etc/mosquitto/mosquitto.conf"]
