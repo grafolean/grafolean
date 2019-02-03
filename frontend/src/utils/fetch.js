@@ -1,19 +1,19 @@
 import { ROOT_URL, handleFetchErrors, onLogout } from '../store/actions';
 import store from '../store';
 
-const _addAuthHeaderToParams = init => {
-  const headers = init.headers || {};
+const _addAuthHeaderToParams = fetchOptions => {
+  const headers = fetchOptions.headers || {};
   headers['Authorization'] = window.sessionStorage['grafolean_jwt_token'];
   return {
-    ...init,
+    ...fetchOptions,
     headers: headers,
   };
 };
 
-export const fetchAuth = (input, init = {}) => {
-  const initWithAuth = _addAuthHeaderToParams(init);
+export const fetchAuth = (url, fetchOptions = {}) => {
+  const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions);
   return new Promise((resolve, reject) => {
-    fetch(input, initWithAuth)
+    fetch(url, fetchOptionsWithAuth)
       .then(response => {
         // we handle 401 errors by issuing /api/refresh, refreshing a JWT token, and issuing another request
         if (response.status !== 401) {
@@ -35,8 +35,7 @@ export const fetchAuth = (input, init = {}) => {
             // now that you have refreshed jwt token, request resource again:
             const newJwtToken = response.headers.get('X-JWT-Token');
             window.sessionStorage.setItem('grafolean_jwt_token', newJwtToken);
-            const newInit = _addAuthHeaderToParams(init);
-            fetch(input, newInit)
+            fetch(url, fetchOptionsWithAuth)
               .then(resp => resolve(resp))
               .catch(err => reject(err));
           })
