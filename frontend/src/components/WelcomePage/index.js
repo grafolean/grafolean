@@ -9,22 +9,43 @@ export default class WelcomePage extends React.PureComponent {
           This page displays information about the latest values received and provides guidance on how to post
           these values.
         </p>
-        {/* <WebSocketsTest address="wss://echo.websocket.org" /> */}
-        <WebSocketsTest address="ws://localhost:9883" />
+        <WebSocketsTest hostname="localhost" port={9883} />
       </div>
     );
   }
 }
 
 class WebSocketsTest extends React.PureComponent {
-  ws = undefined;
+  mqttClient = undefined;
 
   componentDidMount() {
-    this.ws = new WebSocket(this.props.address);
-    this.ws.onopen = this.onSocketOpen;
-    this.ws.onmessage = this.onSocketMessage;
-    this.ws.onclose = this.onSocketClose;
+    this.mqttClient = new window.Paho.MQTT.Client(this.props.hostname, Number(this.props.port), 'clientId');
+    this.mqttClient.onConnectionLost = this.onConnectionLost;
+    this.mqttClient.onMessageArrived = this.onMessageArrived;
+    this.mqttClient.connect({ onSuccess: this.onConnect });
   }
+
+  // called when the client connects
+  onConnect = () => {
+    // Once a connection has been made, make a subscription and send a message.
+    console.log('onConnect');
+    this.mqttClient.subscribe('test');
+    const message = new window.Paho.MQTT.Message('Hello');
+    message.destinationName = 'test';
+    this.mqttClient.send(message);
+  };
+
+  // called when the client loses its connection
+  onConnectionLost = responseObject => {
+    if (responseObject.errorCode !== 0) {
+      console.log('onConnectionLost:' + responseObject.errorMessage);
+    }
+  };
+
+  // called when a message arrives
+  onMessageArrived = message => {
+    console.log('onMessageArrived:' + message.payloadString);
+  };
 
   componentWillUnmount() {
     if (this.ws) {
