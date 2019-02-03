@@ -1,5 +1,6 @@
 import { ROOT_URL, handleFetchErrors, onLogout } from '../store/actions';
 import store from '../store';
+import { VERSION_INFO } from '../VERSION';
 
 const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   if (!authHeader) {
@@ -126,3 +127,60 @@ export class PeriodicFetcher {
 }
 
 export const Fetcher = new PeriodicFetcher();
+
+
+export const fetchAuthMQTT = async (
+  wsServer,
+  wsPort,
+  topic,
+  fetchOptions,
+  resultCallback,
+  errorCallback,
+) => {
+  try {
+    const url = `${ROOT_URL}/${topic}`;
+    const resp = await fetchAuth(url, fetchOptions);
+    const json = await resp.json();
+    resultCallback(json);
+  } catch (err) {
+    console.error(err);
+    errorCallback(err);
+    return;
+  }
+
+  return new Promise((resolve, reject) => {
+    const mqttClient = new window.Paho.MQTT.Client(
+      wsServer,
+      Number(wsPort),
+      `grafolean-frontend-${VERSION_INFO.ciCommitTag || 'v?.?.?'}`,
+    );
+    mqttClient.onConnectionLost = responseObject => {
+      if (responseObject.errorCode !== 0) {
+        errorCallback(responseObject.errorMessage);
+      }
+      resolve();
+    };
+    mqttClient.onMessageArrived = messageObject => {
+      resultCallback(messageObject.payloadString);
+    };
+    mqttClient.connect({
+      onSuccess: () => {
+        console.log('Ws connected.');
+        mqttClient.subscribe(topic, {
+          onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
+          onFailure: () => {
+            reject('Error subscribing to topic: ' + topic);
+            mqttClient.disconnect();
+          },
+        });
+      },
+      onFailure: () => reject('Error connecting to MQTT broker via WebSockets'),
+      timeout: 5,
+      reconnect: false, // not sure how to controll reconnect, so let's just fail for now
+      keepAliveInterval: 36000000,
+      // userName: myJWTToken,
+      // password: "not-used",
+    });
+  });
+};
+

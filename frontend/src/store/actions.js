@@ -1,4 +1,4 @@
-import { fetchAuth } from '../utils/fetch';
+import { fetchAuth, registerFetchAuth } from '../utils/fetch';
 
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL;
 
@@ -106,12 +106,24 @@ export function fetchDashboardsList() {
   return function(dispatch) {
     dispatch(onRequestDashboardsList());
     // return function that will start the request from server:
-    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`)
-      .then(handleFetchErrors)
-      .then(
-        response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
-        errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
-      );
+    return registerFetchAuth(
+      'localhost',
+      '9883',
+      'accounts/1/dashboards',
+      {},
+      json => {
+        dispatch(onReceiveDashboardsListSuccess(json));
+      },
+      err => {
+        dispatch(onReceiveDashboardsListFailure(err.toString()));
+      },
+    );
+    // return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`)
+    //   .then(handleFetchErrors)
+    //   .then(
+    //     response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
+    //     errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
+    //   );
   };
 }
 
