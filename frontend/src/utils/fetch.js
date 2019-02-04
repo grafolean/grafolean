@@ -48,3 +48,45 @@ export const fetchAuth = (url, fetchOptions = {}) => {
       .catch(err => reject(err));
   });
 };
+
+export class Fetcher {
+  timeoutHandle = null;
+  abortController = null;
+  onSuccessCallback = () => {};
+  onErrorCallback = () => {};
+
+  constructor(resource, fetchOptions, onSuccessCallback, onErrorCallback) {
+    this.url = `${ROOT_URL}/${resource}`;
+    this.fetchOptions = fetchOptions;
+    this.onSuccessCallback = onSuccessCallback;
+    this.onErrorCallback = onErrorCallback;
+
+    this._doFetch();
+  }
+
+  _doFetch = () => {
+    this.timeoutHandle = null;
+    const abortController = new window.AbortController();
+    const fetchOptionsWithAbortSignal = {
+      ...this.fetchOptions,
+      signal: abortController.signal,
+    };
+    fetchAuth(this.url, fetchOptionsWithAbortSignal)
+      .then(response => response.json())
+      .then(json => this.onSuccessCallback(json))
+      .catch(err => this.onErrorCallback(err))
+      .finally(() => {
+        this.timeoutHandle = setTimeout(this._doFetch, 30000);
+      });
+  };
+
+  stop = () => {
+    // stop triggering new fetches and abort any ongoing fetches:
+    if (this.abortController) {
+      this.abortController.abort();
+    }
+    if (this.timeoutHandle) {
+      clearTimeout(this.timeoutHandle);
+    }
+  };
+}

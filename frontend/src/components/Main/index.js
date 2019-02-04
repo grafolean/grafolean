@@ -4,7 +4,12 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, fetchDashboardsList, ROOT_URL } from '../../store/actions';
+import {
+  fetchBackendStatus,
+  ROOT_URL,
+  onReceiveDashboardsListSuccess,
+  onReceiveDashboardsListFailure,
+} from '../../store/actions';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -24,6 +29,7 @@ import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
+import { Fetcher } from '../../utils/fetch';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -94,8 +100,21 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 );
 
 class SidebarContentNoStore extends React.Component {
+  fetcher = null;
+
   componentDidMount() {
-    store.dispatch(fetchDashboardsList());
+    this.fetcher = new Fetcher(
+      'accounts/1/dashboards',
+      {},
+      json => store.dispatch(onReceiveDashboardsListSuccess(json)),
+      errorMsg => store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
+    );
+  }
+
+  componentWillUnmount() {
+    if (this.fetcher) {
+      this.fetcher.stop();
+    }
   }
 
   render() {
