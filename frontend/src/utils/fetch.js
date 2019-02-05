@@ -65,64 +65,52 @@ export class PeriodicFetcher {
     import Fetcher from 'fetch.js';
     ...
       componentDidMount() {
-        Fetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
+        this.fetchId = Fetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
       }
       componentWillUnmount() {
-        Fetcher.stop('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
+        Fetcher.stop(this.fetchId);
       }
     ...
-
-  Note: all the parameters to `stop()` should be the same as the ones for `start()`.
   */
-  timeoutHandles = {};
-  abortControllers = {};
-  onSuccessCallbacks = {};
-  onErrorCallbacks = {};
+  fetches = [];
 
   start(topic, onSuccessCallback, onErrorCallback) {
-    if (!this.onSuccessCallbacks[topic]) {
-      this.onSuccessCallbacks[topic] = [];
-      this.onErrorCallbacks[topic] = [];
-    }
-    this.onSuccessCallbacks[topic].push(onSuccessCallback);
-    this.onErrorCallbacks[topic].push(onErrorCallback);
-    this._doFetch(topic);
+    const newFetchId = this.fetches.length;
+    this.fetches.push({
+      topic: topic,
+      onSuccessCallback: onSuccessCallback,
+      onErrorCallback: onErrorCallback,
+      timeoutHandle: null,
+      abortController: null,
+    });
+    this._doFetch(newFetchId);
+    return newFetchId;
   }
 
-  _doFetch = topic => {
-    this.timeoutHandles[topic] = null;
-    const url = `${ROOT_URL}/${topic}`;
-    this.abortControllers[topic] = new window.AbortController();
-    fetchAuth(url, { signal: this.abortControllers[topic].signal })
+  _doFetch = fetchId => {
+    this.fetches[fetchId].timeoutHandle = null;
+    const url = `${ROOT_URL}/${this.fetches[fetchId].topic}`;
+    this.fetches[fetchId].abortController = new window.AbortController();
+    fetchAuth(url, { signal: this.fetches[fetchId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
-      .then(json => this.onSuccessCallbacks[topic].forEach(cb => cb(json)))
-      .catch(err => this.onErrorCallbacks[topic].forEach(cb => cb(err)))
+      .then(json => this.fetches[fetchId].onSuccessCallback(json))
+      .catch(err => this.fetches[fetchId].onErrorCallback(err))
       .finally(() => {
-        this.timeoutHandles[topic] = setTimeout(() => this._doFetch(topic), 30000);
+        this.fetches[fetchId].timeoutHandle = setTimeout(() => this._doFetch(fetchId), 30000);
       });
   };
 
-  stop(topic, onSuccessCallback, onErrorCallback) {
-    // User needs to supply the same parameters as for start(), because multiple clients
-    // could be subscribing to the same topic, and we need to know which one to unregister:
-    this.onSuccessCallbacks[topic] = this.onSuccessCallbacks[topic].filter(cb => cb !== onSuccessCallback);
-    this.onErrorCallbacks[topic] = this.onErrorCallbacks[topic].filter(cb => cb !== onErrorCallback);
-
-    if (this.onSuccessCallbacks[topic].length === 0) {
-      delete this.onSuccessCallbacks[topic];
-      delete this.onErrorCallbacks[topic];
-
-      // this was the last client, so stop triggering new fetches and abort any ongoing fetches:
-      if (this.abortControllers[topic]) {
-        this.abortControllers[topic].abort();
-        delete this.abortControllers[topic];
-      }
-      if (this.timeoutHandles[topic]) {
-        clearTimeout(this.timeoutHandles[topic]);
-        this.timeoutHandles[topic] = null;
-      }
+  stop(fetchId) {
+    // stop triggering new fetches and abort any ongoing fetches:
+    if (this.fetches[fetchId].abortController) {
+      this.fetches[fetchId].abortController.abort();
     }
+    if (this.fetches[fetchId].timeoutHandle) {
+      clearTimeout(this.fetches[fetchId].timeoutHandle);
+    }
+    // now cut out the element at fetchId from the list:
+    this.fetches.splice(fetchId, 1);
   }
 }
 
@@ -183,4 +171,3 @@ export const fetchAuthMQTT = async (
     });
   });
 };
-
