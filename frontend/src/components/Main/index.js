@@ -100,8 +100,6 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 );
 
 class SidebarContentNoStore extends React.Component {
-  fetcher = null;
-
   componentDidMount() {
     Fetcher.start(
       'accounts/1/dashboards',
