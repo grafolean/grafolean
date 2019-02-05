@@ -103,19 +103,24 @@ class SidebarContentNoStore extends React.Component {
   fetcher = null;
 
   componentDidMount() {
-    this.fetcher = new Fetcher(
+    Fetcher.start(
       'accounts/1/dashboards',
-      {},
-      json => store.dispatch(onReceiveDashboardsListSuccess(json)),
-      errorMsg => store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
+      this.onReceiveDashboardsListSuccess,
+      this.onReceiveDashboardsListFailure,
     );
   }
 
   componentWillUnmount() {
-    if (this.fetcher) {
-      this.fetcher.stop();
-    }
+    Fetcher.stop(
+      'accounts/1/dashboards',
+      this.onReceiveDashboardsListSuccess,
+      this.onReceiveDashboardsListFailure,
+    );
   }
+
+  onReceiveDashboardsListSuccess = json => store.dispatch(onReceiveDashboardsListSuccess(json));
+  onReceiveDashboardsListFailure = errorMsg =>
+    store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString()));
 
   render() {
     const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
