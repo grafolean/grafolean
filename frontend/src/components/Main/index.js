@@ -4,7 +4,12 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, fetchDashboardsList, ROOT_URL } from '../../store/actions';
+import {
+  fetchBackendStatus,
+  ROOT_URL,
+  onReceiveDashboardsListSuccess,
+  onReceiveDashboardsListFailure,
+} from '../../store/actions';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -24,6 +29,7 @@ import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
+import { Fetcher } from '../../utils/fetch';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -95,8 +101,24 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 
 class SidebarContentNoStore extends React.Component {
   componentDidMount() {
-    store.dispatch(fetchDashboardsList());
+    Fetcher.start(
+      'accounts/1/dashboards',
+      this.onReceiveDashboardsListSuccess,
+      this.onReceiveDashboardsListFailure,
+    );
   }
+
+  componentWillUnmount() {
+    Fetcher.stop(
+      'accounts/1/dashboards',
+      this.onReceiveDashboardsListSuccess,
+      this.onReceiveDashboardsListFailure,
+    );
+  }
+
+  onReceiveDashboardsListSuccess = json => store.dispatch(onReceiveDashboardsListSuccess(json));
+  onReceiveDashboardsListFailure = errorMsg =>
+    store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString()));
 
   render() {
     const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
