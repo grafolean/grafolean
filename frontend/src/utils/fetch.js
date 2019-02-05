@@ -1,9 +1,12 @@
 import { ROOT_URL, handleFetchErrors, onLogout } from '../store/actions';
 import store from '../store';
 
-const _addAuthHeaderToParams = fetchOptions => {
+const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
+  if (!authHeader) {
+    return fetchOptions;
+  }
   const headers = fetchOptions.headers || {};
-  headers['Authorization'] = window.sessionStorage['grafolean_jwt_token'];
+  headers['Authorization'] = authHeader;
   return {
     ...fetchOptions,
     headers: headers,
@@ -11,7 +14,8 @@ const _addAuthHeaderToParams = fetchOptions => {
 };
 
 export const fetchAuth = (url, fetchOptions = {}) => {
-  const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions);
+  const oldAuthHeader = window.sessionStorage.getItem('grafolean_jwt_token');
+  const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions, oldAuthHeader);
   return new Promise((resolve, reject) => {
     fetch(url, fetchOptionsWithAuth)
       .then(response => {
@@ -21,21 +25,21 @@ export const fetchAuth = (url, fetchOptions = {}) => {
           return;
         }
         // refresh jwt token:
-        const oldJwtToken = window.sessionStorage.getItem('grafolean_jwt_token');
         fetch(`${ROOT_URL}/auth/refresh`, {
           headers: {
             Accept: 'application/json',
             'Content-Type': 'application/json',
-            Authorization: oldJwtToken,
+            Authorization: oldAuthHeader,
           },
           method: 'POST',
         })
           .then(handleFetchErrors)
           .then(response => {
             // now that you have refreshed jwt token, request resource again:
-            const newJwtToken = response.headers.get('X-JWT-Token');
-            window.sessionStorage.setItem('grafolean_jwt_token', newJwtToken);
-            fetch(url, fetchOptionsWithAuth)
+            const newAuthHeader = response.headers.get('X-JWT-Token');
+            window.sessionStorage.setItem('grafolean_jwt_token', newAuthHeader);
+            const fetchOptionsWithNewAuth = _addAuthHeaderToParams(fetchOptions, newAuthHeader);
+            fetch(url, fetchOptionsWithNewAuth)
               .then(resp => resolve(resp))
               .catch(err => reject(err));
           })
