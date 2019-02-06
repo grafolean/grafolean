@@ -83,23 +83,27 @@ export class PeriodicFetcher {
       timeoutHandle: null,
       abortController: null,
     });
-    this._doFetch(newFetchId);
+    this._doFetchHttp(newFetchId);
     return newFetchId;
   }
 
-  _doFetch = fetchId => {
+  _doFetchHttp = fetchId => {
     this.fetches[fetchId].timeoutHandle = null;
     const url = `${ROOT_URL}/${this.fetches[fetchId].topic}`;
     this.fetches[fetchId].abortController = new window.AbortController();
     fetchAuth(url, { signal: this.fetches[fetchId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
-      .then(json => this.fetches[fetchId].onSuccessCallback(json))
-      .catch(err => this.fetches[fetchId].onErrorCallback(err))
+      .then(json => this.fetches[fetchId].onSuccessCallback(json, 'http'))
+      .catch(err => this.fetches[fetchId].onErrorCallback(err, 'http'))
       .finally(() => {
-        this.fetches[fetchId].timeoutHandle = setTimeout(() => this._doFetch(fetchId), 30000);
+        this._registerForUpdates(fetchId);
       });
   };
+
+  _registerForUpdates(fetchId) {
+    this.fetches[fetchId].timeoutHandle = setTimeout(() => this._doFetchHttp(fetchId), 30000);
+  }
 
   stop(fetchId) {
     // stop triggering new fetches and abort any ongoing fetches:
@@ -114,17 +118,78 @@ export class PeriodicFetcher {
   }
 }
 
-export const Fetcher = new PeriodicFetcher();
+const MQTT_BROKER_WS_HOSTNAME = 'localhost';
+const MQTT_BROKER_WS_PORT = 9883;
+export class MQTTFetcher extends PeriodicFetcher {
+  mqttClient = null;
 
+  constructor() {
+    super();
+    this.mqttClient = new window.Paho.MQTT.Client(
+      MQTT_BROKER_WS_HOSTNAME,
+      Number(MQTT_BROKER_WS_PORT),
+      `grafolean-frontend-${VERSION_INFO.ciCommitTag || 'v?.?.?'}`,
+    );
+    this.mqttClient.onConnectionLost = responseObject => {
+      if (responseObject.errorCode !== 0) {
+        console.error('MQTT connection lost!'); // !!! handling?
+      }
+    };
+    this.mqttClient.onMessageArrived = this.onMessageReceived;
+    this.mqttClient.connect({
+      onSuccess: () => console.log('MQTT connected.'),
+      onFailure: () => console.error('Error connecting to MQTT broker via WebSockets'),
+      timeout: 5,
+      reconnect: false, // not sure how to control reconnect, so let's just fail for now
+      keepAliveInterval: 36000000,
+      // userName: myJWTToken,
+      // password: "not-used",
+    });
+  }
 
-export const fetchAuthMQTT = async (
-  wsServer,
-  wsPort,
-  topic,
-  fetchOptions,
-  resultCallback,
-  errorCallback,
-) => {
+  onMessageReceived = message => {
+    console.log('Message received:', message.destinationName, message.topic, message.payloadString);
+    this.fetches.forEach(f => {
+      if (f.topic !== message.destinationName) {
+        return;
+      }
+      try {
+        // we always expect json:
+        const json = JSON.parse(message.payloadString);
+        f.onSuccessCallback(json);
+      } catch (e) {
+        console.error('Error handling MQTT message', e);
+      }
+    });
+  };
+
+  _registerForUpdates(fetchId) {
+    const { topic, onErrorCallback } = this.fetches[fetchId];
+    this.mqttClient.subscribe(topic, {
+      onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
+      onFailure: () => {
+        console.error('Error subscribing to topic: ' + topic);
+        onErrorCallback('Error subscribing to topic: ' + topic);
+        this.fetches.splice(fetchId, 1);
+      },
+    });
+  }
+
+  stop(fetchId) {
+    const { topic } = this.fetches[fetchId];
+    this.mqttClient.unsubscribe(topic);
+    super.stop(fetchId);
+  }
+
+  destroy() {
+    this.mqttClient.disconnect();
+  }
+}
+
+// export const Fetcher = new PeriodicFetcher();
+export const Fetcher = new MQTTFetcher();
+
+export const fetchAuthMQTT = async (wsServer, wsPort, topic, fetchOptions, resultCallback, errorCallback) => {
   try {
     const url = `${ROOT_URL}/${topic}`;
     const resp = await fetchAuth(url, fetchOptions);
