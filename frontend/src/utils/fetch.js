@@ -149,14 +149,14 @@ export class MQTTFetcher extends PeriodicFetcher {
 
   onMessageReceived = message => {
     console.log('Message received:', message.destinationName, message.topic, message.payloadString);
-    this.fetches.forEach(f => {
+    this.fetches.forEach((f, fetchId) => {
       if (f.topic !== message.destinationName) {
         return;
       }
       try {
-        // we always expect json:
-        const json = JSON.parse(message.payloadString);
-        f.onSuccessCallback(json);
+        // We know that the resource has changed, but we still need to re-issue REST request - MQTT
+        // only notifies us of the change, we don't get any content through it.
+        this._doFetchHttp(fetchId);
       } catch (e) {
         console.error('Error handling MQTT message', e);
       }

@@ -4,6 +4,7 @@ import flask
 from functools import wraps
 import json
 import os
+import paho.mqtt.client as mqtt
 import psycopg2
 import re
 import secrets
@@ -22,6 +23,21 @@ app.url_map.strict_slashes = False
 
 
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
+
+
+MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
+MQTT_PORT = os.environ.get('MQTT_PORT', 1883)
+mqtt_client = None
+
+
+# This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
+# when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
+# can re-issue GET to the same endpoint URL.
+def mqtt_publish_changed(*topics):
+    if not mqtt_client:
+        return
+    for topic in topics:
+        mqtt_client.publish(topic, b'1')
 
 
 @app.before_request
@@ -537,6 +553,7 @@ def dashboards_crud(account_id):
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
+        mqtt_publish_changed(f'accounts/{account_id}/dashboards')
         return json.dumps({'slug': dashboard.slug}), 201
 
 
@@ -553,12 +570,20 @@ def dashboard_crud(account_id, dashboard_slug):
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
+        mqtt_publish_changed(
+            f'accounts/{account_id}/dashboards',
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        )
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Dashboard.delete(account_id, dashboard_slug)
         if not rowcount:
             return "No such dashboard", 404
+        mqtt_publish_changed(
+            f'accounts/{account_id}/dashboards',
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        )
         return "", 200
 
 
@@ -613,4 +638,35 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 
 if __name__ == "__main__":
+
+    def mqtt_connect(server, port):
+        if not server:
+            return None
+
+        log.info(f"Connecting to MQTT, host: [{server}], port: [{port}]")
+        mqtt_connected_status = None
+        def mqtt_on_connect(client, userdata, flags, rc):
+            nonlocal mqtt_connected_status
+            mqtt_connected_status = rc
+
+        mqtt_client = mqtt.Client()
+        mqtt_client.on_connect = mqtt_on_connect
+        mqtt_client.connect(server, port, 10)
+        mqtt_client.loop_start()
+        for _ in range(120):
+            if mqtt_connected_status is not None:
+                break
+            time.sleep(0.1)
+        if mqtt_connected_status is None:
+            raise Exception("Timeout connecting to MQTT")
+        elif mqtt_connected_status == 0:
+            log.info("Connected to MQTT")
+            return mqtt_client
+        else:
+            raise Exception(f"Error connecting to MQTT: {mqtt_connected_status}")
+
+    mqtt_client = mqtt_connect(MQTT_HOSTNAME, MQTT_PORT)
     app.run()
+    if mqtt_client:
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
