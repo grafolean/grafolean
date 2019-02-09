@@ -186,53 +186,9 @@ export class MQTTFetcher extends PeriodicFetcher {
   }
 }
 
-// export const Fetcher = new PeriodicFetcher();
-export const Fetcher = new MQTTFetcher();
-
-export const fetchAuthMQTT = async (wsServer, wsPort, topic, fetchOptions, resultCallback, errorCallback) => {
-  try {
-    const url = `${ROOT_URL}/${topic}`;
-    const resp = await fetchAuth(url, fetchOptions);
-    const json = await resp.json();
-    resultCallback(json);
-  } catch (err) {
-    console.error(err);
-    errorCallback(err);
-    return;
-  }
-
-  return new Promise((resolve, reject) => {
-    const mqttClient = new window.Paho.MQTT.Client(
-      wsServer,
-      Number(wsPort),
-      `grafolean-frontend-${VERSION_INFO.ciCommitTag || 'v?.?.?'}`,
-    );
-    mqttClient.onConnectionLost = responseObject => {
-      if (responseObject.errorCode !== 0) {
-        errorCallback(responseObject.errorMessage);
-      }
-      resolve();
-    };
-    mqttClient.onMessageArrived = messageObject => {
-      resultCallback(messageObject.payloadString);
-    };
-    mqttClient.connect({
-      onSuccess: () => {
-        console.log('Ws connected.');
-        mqttClient.subscribe(topic, {
-          onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
-          onFailure: () => {
-            reject('Error subscribing to topic: ' + topic);
-            mqttClient.disconnect();
-          },
-        });
-      },
-      onFailure: () => reject('Error connecting to MQTT broker via WebSockets'),
-      timeout: 5,
-      reconnect: false, // not sure how to controll reconnect, so let's just fail for now
-      keepAliveInterval: 36000000,
-      // userName: myJWTToken,
-      // password: "not-used",
-    });
-  });
-};
+/*
+  We can use Grafolean without MQTT server, though the updating functionality works a bit differently then.
+  Instead of being notified instantly, we poll REST API. This is of course not optimal idea, but I wonder
+  if there might be cases when having an MQTT broker is not wanted?
+*/
+export const Fetcher = MQTT_WS_HOSTNAME ? new MQTTFetcher() : new PeriodicFetcher();
