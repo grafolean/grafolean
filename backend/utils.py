@@ -2,7 +2,6 @@ from colors import color
 import logging
 import os
 import psycopg2
-import psycopg2.extras
 import sys
 
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s',
