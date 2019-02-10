@@ -11,11 +11,13 @@ from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInput
 from auth import Auth
 
 
+# Lru_cache is currently disabled so that we can avoid strange caching issues when developing. We might enable it later though.
 def clear_all_lru_cache():
     # when testing, it is important to clear memoization cache in between runs, or the results will be... interesting.
-    Dashboard.get_id.cache_clear()
-    Path._get_path_id_from_db.cache_clear()
-    PathFilter._find_matching_paths_for_filter.cache_clear()
+    # Dashboard.get_id.cache_clear()
+    # Path._get_path_id_from_db.cache_clear()
+    # PathFilter._find_matching_paths_for_filter.cache_clear()
+    pass
 
 
 class ValidationError(Exception):
@@ -47,7 +49,7 @@ class Path(_RegexValidatedInputValue):
             self.path_id = Path._get_path_id_from_db(account_id, path=self.v)
 
     @staticmethod
-    @lru_cache(maxsize=256)
+    # @lru_cache(maxsize=256)
     def _get_path_id_from_db(account_id, path):
         with db.cursor() as c:
             path_cleaned = path.strip()
@@ -92,7 +94,7 @@ class PathFilter(_RegexValidatedInputValue):
         return list(all_found_paths), False
 
     @staticmethod
-    @lru_cache(maxsize=1024)
+    # @lru_cache(maxsize=1024)
     def _find_matching_paths_for_filter(account_id, path_filter, total_limit, allow_trailing_chars=False):
         found_paths = set()
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
@@ -482,7 +484,7 @@ class Dashboard(object):
         with db.cursor() as c:
             c.execute("INSERT INTO dashboards (name, account, slug) VALUES (%s, %s, %s);", (self.name, self.account_id, self.slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
-            Dashboard.get_id.cache_clear()
+            # Dashboard.get_id.cache_clear()
 
     def update(self):
         with db.cursor() as c:
@@ -494,7 +496,7 @@ class Dashboard(object):
         with db.cursor() as c:
             c.execute("DELETE FROM dashboards WHERE account = %s AND slug = %s;", (account_id, slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning the old ID instead of None:
-            Dashboard.get_id.cache_clear()
+            # Dashboard.get_id.cache_clear()
             return c.rowcount
 
     @staticmethod
@@ -523,7 +525,7 @@ class Dashboard(object):
         }
 
     @staticmethod
-    @lru_cache(maxsize=256)
+    # @lru_cache(maxsize=256)
     def get_id(account_id, slug):
         """ This is a *cached* function which returns ID based on dashboard slug. Make sure
             to invalidate lru_cache whenever one of the existing slug <-> ID relationships
