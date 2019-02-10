@@ -66,7 +66,7 @@ class Path(_RegexValidatedInputValue):
     # def get_all_paths():
     #     with db.cursor() as c:
     #         c.execute('SELECT path FROM paths ORDER BY path;')
-    #         for path, in c:
+    #         for path, in c.fetchall():
     #             yield(path)
 
     @classmethod
@@ -100,7 +100,7 @@ class PathFilter(_RegexValidatedInputValue):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
             c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, total_limit + 1,))
-            for res in c:
+            for res in c.fetchall():
                 if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
                     return found_paths, True
                 found_paths.add(res[0])
@@ -284,11 +284,11 @@ class Measurement(object):
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
                     c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
-                    for ts, value in c:
+                    for ts, value in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
                     c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
-                    for ts, vavg, vmin, vmax in c:
+                    for ts, vavg, vmin, vmax in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
@@ -389,7 +389,7 @@ class Widget(object):
         with db.cursor() as c, db.cursor() as c2:
             c.execute('SELECT id, type, title, content FROM widgets WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, content in c:
+            for widget_id, widget_type, title, content in c.fetchall():
                 # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
                 # content = []
                 # for path_filter, renaming, unit, metric_prefix in c2:
@@ -504,7 +504,7 @@ class Dashboard(object):
         with db.cursor() as c:
             ret = []
             c.execute('SELECT name, slug FROM dashboards WHERE account = %s ORDER BY name;', (account_id,))
-            for name, slug in c:
+            for name, slug in c.fetchall():
                 ret.append({'name': name, 'slug': slug})
             return ret
 
