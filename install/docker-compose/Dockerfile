@@ -5,6 +5,10 @@ COPY frontend/package.json frontend/yarn.lock ./
 RUN yarn install
 COPY frontend/. ./
 ARG REACT_APP_BACKEND_ROOT_URL=/api
+ARG REACT_APP_MQTT_WS_HOSTNAME=""
+ARG REACT_APP_MQTT_WS_PORT=9883
+ENV REACT_APP_MQTT_WS_HOSTNAME ${REACT_APP_MQTT_WS_HOSTNAME:-""}
+ENV REACT_APP_MQTT_WS_PORT ${REACT_APP_MQTT_WS_PORT:-9883}
 RUN yarn build
 # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
 # with a local copy of the file: (to avoid using CDN)
@@ -42,6 +46,10 @@ LABEL org.label-schema.vendor="Grafolean" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.docker.schema-version="1.0"
+ARG MQTT_HOSTNAME=""
+ARG MQTT_PORT=1883
+ENV MQTT_HOSTNAME=${MQTT_HOSTNAME}
+ENV MQTT_PORT=${MQTT_PORT}
 RUN \
     apt-get update && \
     apt-get install --no-install-recommends -q -y nginx git && \
@@ -58,6 +66,8 @@ COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
+RUN echo "MQTT_HOSTNAME=${MQTT_HOSTNAME}" > /grafolean/backend/.env
+RUN echo "MQTT_PORT=${MQTT_PORT}" >> /grafolean/backend/.env
 WORKDIR /grafolean/backend
 CMD ["/bin/bash", "-c", "service nginx start && uwsgi --ini /etc/uwsgi.ini"]
 

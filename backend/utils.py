@@ -54,7 +54,7 @@ def get_existing_schema_version():
             res = c.fetchone()
             existing_schema_version = res[0]
         except psycopg2.ProgrammingError:
-            db.rollback()
+            pass
     return existing_schema_version
 
 

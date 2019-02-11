@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+import atexit
 from collections import defaultdict
+from dotenv import load_dotenv
 import flask
 from functools import wraps
 import json
@@ -22,22 +24,83 @@ app = flask.Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
 
+try:
+    # It turns out that supplying os.environ vars to a script running under uWSGI is not so trivial. The
+    # easiest way is to simply write them to .env and load them here:
+    dotenv_filename = os.path.join(app.root_path, '.env')
+    load_dotenv(dotenv_filename)
+except:
+    pass
+
+
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
 
 
-MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
-MQTT_PORT = os.environ.get('MQTT_PORT', 1883)
-mqtt_client = None
+def mqtt_on_publish(client, userdata, result):
+    log.info("data published to MQTT")
+
+
+def mqtt_on_disconnect(*args, **kwargs):
+    log.error("MQTT disconnect!!!")
+    mqtt_client.reconnect()
+
+
+def mqtt_connect(server, port):
+    global mqtt_client
+    if not server:
+        log.info("Not connecting to MQTT")
+        return None
+
+    log.info(f"Connecting to MQTT, host: [{server}], port: [{port}]")
+    mqtt_connected_status = None
+    def mqtt_on_connect(client, userdata, flags, rc):
+        nonlocal mqtt_connected_status
+        mqtt_connected_status = rc
+
+    mqtt_client = mqtt.Client()
+    mqtt_client.on_connect = mqtt_on_connect
+    mqtt_client.on_disconnect = mqtt_on_disconnect
+    mqtt_client.on_publish = mqtt_on_publish
+    mqtt_client.connect(server, port, 1000)
+    mqtt_client.loop_start()
+    for _ in range(120):
+        if mqtt_connected_status is not None:
+            break
+        time.sleep(0.1)
+    if mqtt_connected_status is None:
+        raise Exception("Timeout connecting to MQTT")
+    elif mqtt_connected_status == 0:
+        log.info("Connected to MQTT")
+        mqtt_publish_changed("test/123")
+        return mqtt_client
+    else:
+        raise Exception(f"Error connecting to MQTT: {mqtt_connected_status}")
+
+@atexit.register
+def ensure_mqtt_disconnected():
+    global mqtt_client
+    if mqtt_client:
+        log.info("Disconnecting from MQTT")
+        mqtt_client.loop_stop()
+        mqtt_client.disconnect()
 
 
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
 def mqtt_publish_changed(*topics):
+    global mqtt_client
     if not mqtt_client:
+        log.warning("MQTT not connected, not publishing to: [{}]".format(topics,))
         return
+    log.warning("MQTT publishing to: [{}]".format(topics,))
     for topic in topics:
         mqtt_client.publish(topic, b'1')
+
+
+MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
+MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
+mqtt_client = mqtt_connect(MQTT_HOSTNAME, MQTT_PORT)
 
 
 @app.before_request
@@ -642,34 +705,5 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 if __name__ == "__main__":
 
-    def mqtt_connect(server, port):
-        if not server:
-            return None
-
-        log.info(f"Connecting to MQTT, host: [{server}], port: [{port}]")
-        mqtt_connected_status = None
-        def mqtt_on_connect(client, userdata, flags, rc):
-            nonlocal mqtt_connected_status
-            mqtt_connected_status = rc
-
-        mqtt_client = mqtt.Client()
-        mqtt_client.on_connect = mqtt_on_connect
-        mqtt_client.connect(server, port, 10)
-        mqtt_client.loop_start()
-        for _ in range(120):
-            if mqtt_connected_status is not None:
-                break
-            time.sleep(0.1)
-        if mqtt_connected_status is None:
-            raise Exception("Timeout connecting to MQTT")
-        elif mqtt_connected_status == 0:
-            log.info("Connected to MQTT")
-            return mqtt_client
-        else:
-            raise Exception(f"Error connecting to MQTT: {mqtt_connected_status}")
-
-    mqtt_client = mqtt_connect(MQTT_HOSTNAME, MQTT_PORT)
+    log.info("Starting main")
     app.run()
-    if mqtt_client:
-        mqtt_client.loop_stop()
-        mqtt_client.disconnect()

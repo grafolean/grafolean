@@ -32,6 +32,10 @@ services:
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
+        - MQTT_HOSTNAME=mosquitto
+        - MQTT_PORT=1883
+        - REACT_APP_MQTT_WS_HOSTNAME=localhost
+        - REACT_APP_MQTT_WS_PORT=9883
     depends_on:
       db:
         condition: service_healthy
