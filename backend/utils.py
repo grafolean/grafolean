@@ -1,7 +1,10 @@
 from colors import color
+from contextlib import contextmanager
 import logging
 import os
 import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import sys
 
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s',
@@ -15,10 +18,37 @@ log = logging.getLogger("{}.{}".format(__name__, "base"))
 # currently, we only work with a single account:
 ADMIN_ACCOUNT_ID = 1
 
-db = None
+
+db_pool = None
+
+
+# https://medium.com/@thegavrikstory/manage-raw-database-connection-pool-in-flask-b11e50cbad3
+@contextmanager
+def get_db_connection():
+    global db_pool
+    try:
+        conn = db_pool.getconn()
+        conn.autocommit = True
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        yield conn
+    finally:
+        db_pool.putconn(conn)
+
+
+@contextmanager
+def get_db_cursor(commit=False):
+    with get_db_connection() as connection:
+      cursor = connection.cursor()
+      try:
+          yield cursor
+          if commit:
+              connection.commit()
+      finally:
+          cursor.close()
+
 
 def db_connect():
-    global db
+    global db_pool
     host, dbname, user, password, connect_timeout = (
         os.environ.get('DB_HOST', 'localhost'),
         os.environ.get('DB_DATABASE', 'grafolean'),
@@ -28,19 +58,26 @@ def db_connect():
     )
     try:
         log.info("Connecting to database, host: [{}], db: [{}], user: [{}]".format(host, dbname, user))
-        db = psycopg2.connect(
-            host=host,
-            database=dbname,
-            user=user,
-            password=password,
-            connect_timeout=connect_timeout
-        )
-        db.autocommit = True
+        db_pool = ThreadedConnectionPool(1, 20,
+                              database=dbname,
+                              user=user,
+                              password=password,
+                              host=host,
+                              port=5432,
+                              connect_timeout=connect_timeout)
     except:
-        db = None
+        db_pool = None
         log.error("DB connection failed")
 
 db_connect()
+
+# This class is only needed until we replace all db.cursor() calls with get_db_cursor()
+class ThinDBWrapper(object):
+    @staticmethod
+    def cursor():
+        return get_db_cursor()
+db = ThinDBWrapper
+
 
 ###########################
 #   DB schema migration   #

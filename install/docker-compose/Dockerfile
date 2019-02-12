@@ -69,5 +69,5 @@ COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN echo "MQTT_HOSTNAME=${MQTT_HOSTNAME}" > /grafolean/backend/.env
 RUN echo "MQTT_PORT=${MQTT_PORT}" >> /grafolean/backend/.env
 WORKDIR /grafolean/backend
-CMD ["/bin/bash", "-c", "service nginx start && uwsgi --ini /etc/uwsgi.ini"]
+CMD ["/bin/bash", "-c", "service nginx start && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
 
