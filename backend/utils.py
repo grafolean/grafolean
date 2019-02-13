@@ -119,6 +119,10 @@ def migrate_if_needed():
         with db.cursor() as c:
             c.execute('UPDATE runtime_data SET schema_version = %s;', (try_migrating_to,))
         try_migrating_to += 1
+    if try_migrating_to == existing_schema_version + 1:
+        return False  # migration wasn't meeded
+    else:
+        return True
 
 
 def migration_step_1():

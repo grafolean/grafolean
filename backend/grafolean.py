@@ -6,7 +6,7 @@ import flask
 from functools import wraps
 import json
 import os
-import paho.mqtt.client as mqtt
+import paho.mqtt.publish as mqtt_publish
 import psycopg2
 import re
 import secrets
@@ -34,73 +34,21 @@ except:
 
 
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
-
-
-def mqtt_on_publish(client, userdata, result):
-    log.info("data published to MQTT")
-
-
-def mqtt_on_disconnect(*args, **kwargs):
-    log.error("MQTT disconnect!!!")
-    mqtt_client.reconnect()
-
-
-def mqtt_connect(server, port):
-    global mqtt_client
-    if not server:
-        log.info("Not connecting to MQTT")
-        return None
-
-    log.info(f"Connecting to MQTT, host: [{server}], port: [{port}]")
-    mqtt_connected_status = None
-    def mqtt_on_connect(client, userdata, flags, rc):
-        nonlocal mqtt_connected_status
-        mqtt_connected_status = rc
-
-    mqtt_client = mqtt.Client()
-    mqtt_client.on_connect = mqtt_on_connect
-    mqtt_client.on_disconnect = mqtt_on_disconnect
-    mqtt_client.on_publish = mqtt_on_publish
-    mqtt_client.connect(server, port, 1000)
-    mqtt_client.loop_start()
-    for _ in range(120):
-        if mqtt_connected_status is not None:
-            break
-        time.sleep(0.1)
-    if mqtt_connected_status is None:
-        raise Exception("Timeout connecting to MQTT")
-    elif mqtt_connected_status == 0:
-        log.info("Connected to MQTT")
-        mqtt_publish_changed("test/123")
-        return mqtt_client
-    else:
-        raise Exception(f"Error connecting to MQTT: {mqtt_connected_status}")
-
-@atexit.register
-def ensure_mqtt_disconnected():
-    global mqtt_client
-    if mqtt_client:
-        log.info("Disconnecting from MQTT")
-        mqtt_client.loop_stop()
-        mqtt_client.disconnect()
+MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
+MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
 
 
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
 def mqtt_publish_changed(*topics):
-    global mqtt_client
-    if not mqtt_client:
-        log.warning("MQTT not connected, not publishing to: [{}]".format(topics,))
+    if not MQTT_HOSTNAME:
+        log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
-    log.warning("MQTT publishing to: [{}]".format(topics,))
-    for topic in topics:
-        mqtt_client.publish(topic, b'1')
-
-
-MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
-MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
-mqtt_client = mqtt_connect(MQTT_HOSTNAME, MQTT_PORT)
+    log.debug("MQTT publishing change of: [{}]".format(topics,))
+    # https://www.eclipse.org/paho/clients/python/docs/#id2
+    msgs = [(t, '1', 1, False) for t in topics]
+    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT)
 
 
 @app.before_request
@@ -211,6 +159,7 @@ def after_request(response):
 def handle_invalid_usage(error):
     return f'Input validation failed: {str(error)}', 400
 
+
 @app.errorhandler(Exception)
 def handle_error(e):
     log.exception(e)
@@ -242,7 +191,9 @@ def noauth(func):
 @app.route('/api/admin/migratedb', methods=['POST'])
 @noauth
 def admin_migratedb_post():
-    utils.migrate_if_needed()
+    was_needed = utils.migrate_if_needed()
+    if was_needed:
+        mqtt_publish_changed('api/status/info')
     return '', 204
 
 
@@ -259,6 +210,7 @@ def admin_first_post():
     # make it a superuser:
     permission = Permission(admin_id, None, None)
     permission.insert()
+    mqtt_publish_changed('api/status/info')
     return json.dumps({
         'id': admin_id,
     }), 201
