@@ -157,7 +157,7 @@ def after_request(response):
 
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
-    return f'Input validation failed: {str(error)}', 400
+    return 'Input validation failed: {}'.format(str(error)), 400
 
 
 @app.errorhandler(Exception)
