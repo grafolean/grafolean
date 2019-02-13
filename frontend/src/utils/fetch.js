@@ -145,8 +145,13 @@ export class MQTTFetcher {
 
   onMessageReceived = message => {
     console.log('Message received:', message.destinationName, message.topic, message.payloadString);
+    if (!message.destinationName.startsWith('changed/')) {
+      console.error('Message doesn\'t start with "changed/", how did we get it?');
+      return;
+    }
+    const changedTopic = message.destinationName.substring('changed/'.length);
     this.fetches.forEach((f, fetchId) => {
-      if (f.topic !== message.destinationName) {
+      if (f.topic !== changedTopic) {
         return;
       }
       try {
@@ -161,7 +166,7 @@ export class MQTTFetcher {
 
   _subscribe = fetchId => {
     const { topic, onErrorCallback } = this.fetches[fetchId];
-    this.mqttClient.subscribe(topic, {
+    this.mqttClient.subscribe(`changed/${topic}`, {
       onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
       onFailure: () => {
         console.error('Error subscribing to topic: ' + topic);

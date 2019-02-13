@@ -47,7 +47,7 @@ def mqtt_publish_changed(*topics):
         return
     log.debug("MQTT publishing change of: [{}]".format(topics,))
     # https://www.eclipse.org/paho/clients/python/docs/#id2
-    msgs = [(t, '1', 1, False) for t in topics]
+    msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
     mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT)
 
 
