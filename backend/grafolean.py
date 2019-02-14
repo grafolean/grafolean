@@ -216,6 +216,27 @@ def admin_first_post():
     }), 201
 
 
+@app.route('/api/admin/mqtt-auth-plug/getuser', methods=['POST'])
+@noauth
+def admin_mqttauth_getuser():
+    log.info('mqtt-auth getuser: {}'.format(flask.request.get_json()))
+    return "ok", 200
+
+
+@app.route('/api/admin/mqtt-auth-plug/superuser', methods=['POST'])
+@noauth
+def admin_mqttauth_superuser():
+    log.info('mqtt-auth superuser: {}'.format(flask.request.get_json()))
+    return "ok", 200
+
+
+@app.route('/api/admin/mqtt-auth-plug/aclcheck', methods=['POST'])
+@noauth
+def admin_mqttauth_aclcheck():
+    log.info('mqtt-auth aclcheck: {}'.format(flask.request.get_json()))
+    return "ok", 200
+
+
 # Useful for determining status of backend (is it available, is the first user initialized,...)
 @app.route('/api/status/info', methods=['GET'])
 @noauth
