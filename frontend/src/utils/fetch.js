@@ -106,8 +106,8 @@ export class MQTTFetcher {
         timeout: 5,
         reconnect: false, // not sure how to control reconnect, so let's just fail for now
         keepAliveInterval: 36000000,
-        // userName: myJWTToken,
-        // password: "not-used",
+        userName: 'this.is.my.username.or.jwt.token',
+        password: 'can.be.empty',
       });
     }
   }

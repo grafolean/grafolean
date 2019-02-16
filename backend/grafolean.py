@@ -219,21 +219,21 @@ def admin_first_post():
 @app.route('/api/admin/mqtt-auth-plug/getuser', methods=['POST'])
 @noauth
 def admin_mqttauth_getuser():
-    log.info('mqtt-auth getuser: {}'.format(flask.request.get_json()))
+    log.info('mqtt-auth getuser: {}'.format(flask.request.headers.get('Authorization')))
     return "ok", 200
 
 
 @app.route('/api/admin/mqtt-auth-plug/superuser', methods=['POST'])
 @noauth
 def admin_mqttauth_superuser():
-    log.info('mqtt-auth superuser: {}'.format(flask.request.get_json()))
+    log.info('mqtt-auth superuser: {}'.format(flask.request.headers.get('Authorization')))
     return "ok", 200
 
 
 @app.route('/api/admin/mqtt-auth-plug/aclcheck', methods=['POST'])
 @noauth
 def admin_mqttauth_aclcheck():
-    log.info('mqtt-auth aclcheck: {}'.format(flask.request.get_json()))
+    log.info('mqtt-auth aclcheck: {}'.format(flask.request.headers.get('Authorization')))
     return "ok", 200
 
 
