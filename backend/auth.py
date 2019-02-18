@@ -41,6 +41,9 @@ class JWT(object):
             raise AuthFailedException("Invalid Authorization header")
 
         authorization_header = authorization_header[7:]
+        if ':' not in authorization_header:
+            log.info(authorization_header)
+            raise AuthFailedException("Invalid Authorization header - missing key id")
         key_id, jwt_token = authorization_header.split(':', 1)
         key = JWT._private_jwt_key_for_decoding(key_id)
         if key is None:
