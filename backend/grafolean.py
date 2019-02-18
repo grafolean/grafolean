@@ -38,6 +38,23 @@ MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
 MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
 
 
+class AdminJWTToken(object):
+    jwt_token = None
+    valid_until = None
+
+    @classmethod
+    def get_valid_token(cls):
+        if not cls.jwt_token or cls.valid_until < time.time() + 10.0:
+            cls._refresh_token()
+        return cls.jwt_token
+
+    @classmethod
+    def _refresh_token(cls):
+        data = {
+            "is_backend": True,
+        }
+        cls.jwt_token, cls.valid_until = JWT(data).encode_as_authorization_header()
+
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
@@ -48,7 +65,8 @@ def mqtt_publish_changed(*topics):
     log.debug("MQTT publishing change of: [{}]".format(topics,))
     # https://www.eclipse.org/paho/clients/python/docs/#id2
     msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
-    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT)
+    adminJwtToken = AdminJWTToken.get_valid_token()[len('Bearer '):]
+    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": adminJwtToken, "password": "not.used"})
 
 
 @app.before_request
@@ -219,21 +237,29 @@ def admin_first_post():
 @app.route('/api/admin/mqtt-auth-plug/getuser', methods=['POST'])
 @noauth
 def admin_mqttauth_getuser():
-    log.info('mqtt-auth getuser: {}'.format(flask.request.headers.get('Authorization')))
+    log.info('mqtt-auth getuser: {}, {}'.format(flask.request.headers.get('Authorization'), flask.request.form.to_dict()))
     return "ok", 200
 
 
 @app.route('/api/admin/mqtt-auth-plug/superuser', methods=['POST'])
 @noauth
 def admin_mqttauth_superuser():
-    log.info('mqtt-auth superuser: {}'.format(flask.request.headers.get('Authorization')))
-    return "ok", 200
+    # # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
+    authorization_header = flask.request.headers.get('Authorization')
+    # authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')  # mqtt-auth-plug urlencodes JWT tokens
+    log.info('mqtt-auth superuser called with: {}, {}'.format(authorization_header, flask.request.form.to_dict()))
+    # received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+    # is_backend = received_jwt.data.get('is_backend', False)
+    # if is_backend:
+    #     return "", 200
+    # return "", 401
+    return "", 200
 
 
 @app.route('/api/admin/mqtt-auth-plug/aclcheck', methods=['POST'])
 @noauth
 def admin_mqttauth_aclcheck():
-    log.info('mqtt-auth aclcheck: {}'.format(flask.request.headers.get('Authorization')))
+    log.info('mqtt-auth aclcheck: {}, {}'.format(flask.request.headers.get('Authorization'), flask.request.form.to_dict()))
     return "ok", 200
 
 
@@ -359,7 +385,7 @@ def auth_login_post():
         'session_id': secrets.token_hex(32),
     }
     response = flask.make_response(json.dumps(session_data), 200)
-    response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
+    response.headers['X-JWT-Token'], _ = JWT(session_data).encode_as_authorization_header()
     return response
 
 
@@ -373,7 +399,7 @@ def auth_refresh_post():
 
         old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=True)
         data = old_jwt.data.copy()
-        new_jwt = JWT(data).encode_as_authorization_header()
+        new_jwt, _ = JWT(data).encode_as_authorization_header()
 
         response = flask.make_response(json.dumps(data), 200)
         response.headers['X-JWT-Token'] = new_jwt

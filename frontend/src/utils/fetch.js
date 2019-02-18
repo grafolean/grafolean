@@ -93,6 +93,7 @@ export class MQTTFetcher {
         }
       };
       notYetConnectedClient.onMessageArrived = this.onMessageReceived;
+      const jwtToken = window.sessionStorage.getItem('grafolean_jwt_token');
       notYetConnectedClient.connect({
         onSuccess: () => {
           console.log('MQTT connected.');
@@ -106,7 +107,7 @@ export class MQTTFetcher {
         timeout: 5,
         reconnect: false, // not sure how to control reconnect, so let's just fail for now
         keepAliveInterval: 36000000,
-        userName: 'this.is.my.username.or.jwt.token',
+        userName: jwtToken ? jwtToken.substring('Bearer '.length) : '',
         password: 'can.be.empty',
       });
     }
