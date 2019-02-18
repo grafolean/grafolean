@@ -432,8 +432,11 @@ def account_get(account_id):
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])
 def values_put(account_id):
     data = flask.request.get_json()
-    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-    Measurement.save_values_data_to_db(account_id, data)
+    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
+    try:
+        Measurement.save_values_data_to_db(account_id, data)
+    except psycopg2.IntegrityError:
+        return "Invalid input format", 400
     return ""
 
 
