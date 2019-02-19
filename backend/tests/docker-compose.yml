@@ -33,5 +33,26 @@ services:
     container_name:
       mosquittopytest
 
+  grafolean:
+    # Mosquitto uses our REST API for auth, but it is not really running during pytest integration tests,
+    # so we must provide it here:
+    image: grafolean/grafolean
+    # depends_on:
+    #   dbpytest:
+    #     condition: service_healthy
+    environment:
+      - DB_HOST=dbpytest
+      - DB_DATABASE=pytest
+      - DB_USERNAME=pytest
+      - DB_PASSWORD=pytest
+    ports:
+      - "80:80"
+    volumes:
+      - ../:/grafolean/backend/
+    networks:
+      - grafoleanpytest
+    container_name:
+      grafoleanpytest
+
 networks:
   grafoleanpytest:

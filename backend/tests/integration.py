@@ -2,19 +2,19 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import json
+import pytest
+from pprint import pprint
+import time
+
 # since we are running our own environment for testing (use `docker-compose up -d` and
 # `docker-compose down`), we need to setup env vars accordingly:
 os.environ['DB_HOST'] = 'localhost'  # we expose to port 5432 on host (== localhost)
 os.environ['DB_DATABASE'] = 'pytest'
 os.environ['DB_USERNAME'] = 'pytest'
 os.environ['DB_PASSWORD'] = 'pytest'
-# os.environ['MQTT_HOSTNAME'] = 'localhost'
-# os.environ['MQTT_PORT'] = '1883'
-
-import json
-import pytest
-from pprint import pprint
-import time
+os.environ['MQTT_HOSTNAME'] = 'localhost'
+os.environ['MQTT_PORT'] = '1883'
 
 # we need to setup this env var before importing `app` so we can later test CORS headers:
 VALID_FRONTEND_ORIGINS = [
