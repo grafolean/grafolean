@@ -2,7 +2,10 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from collections import namedtuple
 import json
+import multiprocessing
+import paho.mqtt.client as paho
 import pytest
 from pprint import pprint
 import time
@@ -25,7 +28,7 @@ VALID_FRONTEND_ORIGINS = [
 VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
-from grafolean import app
+from grafolean import app, AdminJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
@@ -130,6 +133,49 @@ def person_authorization_header(app_client, admin_authorization_header, person_i
     assert auth_header[:9] == 'Bearer 1:'
     return auth_header
 
+MqttMessage = namedtuple('MqttMessage', 'topic payload')
+@pytest.fixture
+def mqtt_messages(app_client):
+    # this fixture allows us to listen for mqtt messages and assert that they are being published properly:
+    received_messages = multiprocessing.Queue()
+    def on_message(client, userdata, message):
+        print("Pytest received MQTT message: {}".format(message))
+        nonlocal received_messages
+        received_messages.put(MqttMessage(message.topic, message.payload))
+
+    finished_connecting = False
+    connected = False
+    def on_connect(client, userdata, flags, rc):
+        nonlocal finished_connecting
+        nonlocal connected
+        finished_connecting = True
+        if rc == 0:
+            connected = True
+            print("Pytest connected to broker")
+        else:
+            print("Pytest mqtt connection failed")
+
+    mqtt_client = paho.Client("pytest")
+    admin_jwt_token = AdminJWTToken.get_valid_token()
+    mqtt_client.username_pw_set(admin_jwt_token, password='not.used')
+    mqtt_client.on_message = on_message
+    mqtt_client.on_connect = on_connect
+    mqtt_client.connect(os.environ.get('MQTT_HOSTNAME'), port=int(os.environ.get('MQTT_PORT')))
+    mqtt_client.loop_start()
+    # wait until connect finishes:
+    for _ in range(100):
+        if finished_connecting == True:
+            break
+        time.sleep(0.1)
+    assert connected == True
+
+    mqtt_client.subscribe('#')
+
+    yield received_messages
+
+    # cleanup:
+    mqtt_client.disconnect()
+    mqtt_client.loop_stop()
 
 ###################################################
 
@@ -330,16 +376,22 @@ def test_paths_delete_need_auth(app_client, admin_authorization_header, account_
     r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404  # because path is not found, of course
 
-def test_dashboards_widgets_post_get(app_client, admin_authorization_header, account_id):
+def test_dashboards_widgets_post_get(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Create a dashboard, get a dashboard, create a widget, get a widget. Delete the dashboard, get 404.
     """
     DASHBOARD = 'dashboard1'
     try:
+        assert mqtt_messages.empty()
+
         WIDGET = 'chart1'
         data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
         r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201
+        # check mqtt messages:
+        mqtt_message = mqtt_messages.get(timeout=10.0)
+        assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id)
+        assert mqtt_messages.empty()
 
         r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
         expected = {
