@@ -3,12 +3,12 @@ services:
 
   db:
     image: postgres:9.6-alpine
-    volumes:
+#    volumes:
       # It is a good idea to save DB data to a host directory. By default this is './db/',
       # however it probably makes sense to supply an absolute path here.
       # Note that if you wish to copy this directory for backup, you need to stop grafolean
       # container first.
-      - ./db/:/var/lib/postgresql/data/
+#      - ./db/:/var/lib/postgresql/data/
     environment:
       # It is probably a good idea to change DB access credentials (before running `docker-compose up` for the first time).
       # If you do that, you should also update DB_* environment variables.
