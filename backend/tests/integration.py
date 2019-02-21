@@ -153,48 +153,70 @@ def person_authorization_header(app_client, admin_authorization_header, person_i
     return auth_header
 
 MqttMessage = namedtuple('MqttMessage', 'topic payload')
+
 @pytest.fixture
-def mqtt_messages(app_client):
-    # this fixture allows us to listen for mqtt messages and assert that they are being published properly:
+def mqtt_client_factory():
+    """
+        Factory fixture for generating mqtt clients, based on jwt connection tokens.
+    """
+    mqtt_clients = []
+    def gen(*jwt_tokens):
+        for i, jwt_token in enumerate(jwt_tokens):
+            finished_connecting = False
+            def on_connect(client, userdata, flags, rc):
+                nonlocal finished_connecting
+                finished_connecting = True
+                assert rc == 0
+
+            mqtt_client = paho.Client("pytest-{}".format(i))
+            mqtt_client.username_pw_set(jwt_token, password='not.used')
+            mqtt_client.on_connect = on_connect
+            mqtt_client.connect(os.environ.get('MQTT_HOSTNAME'), port=int(os.environ.get('MQTT_PORT')))
+            mqtt_client.loop_start()
+            # wait until connect finishes:
+            for _ in range(30):
+                if finished_connecting == True:
+                    break
+                time.sleep(0.1)
+            assert finished_connecting == True
+
+            yield mqtt_client
+            mqtt_clients.append(mqtt_client)
+
+    yield gen
+
+    # cleanup:
+    for mqtt_client in mqtt_clients:
+        mqtt_client.disconnect()
+        mqtt_client.loop_stop()
+
+@pytest.fixture
+def mqtt_messages(app_client, mqtt_client_factory):
+    # this fixture allows us to listen for mqtt messages (as admin) and puts in a queue those that are received:
     received_messages = multiprocessing.Queue()
     def on_message(client, userdata, message):
         print("Pytest received MQTT message: {}".format(message))
         nonlocal received_messages
         received_messages.put(MqttMessage(message.topic, message.payload))
 
-    finished_connecting = False
-    connected = False
-    def on_connect(client, userdata, flags, rc):
-        nonlocal finished_connecting
-        nonlocal connected
-        finished_connecting = True
-        if rc == 0:
-            connected = True
-            print("Pytest connected to broker")
-        else:
-            print("Pytest mqtt connection failed")
+    subscribed = False
+    def on_subscribe(client, userdata, mid, granted_qos):
+        nonlocal subscribed
+        subscribed = True
 
-    mqtt_client = paho.Client("pytest")
     admin_jwt_token = AdminJWTToken.get_valid_token('pytest')
-    mqtt_client.username_pw_set(admin_jwt_token, password='not.used')
+    mqtt_client, = mqtt_client_factory(admin_jwt_token)
     mqtt_client.on_message = on_message
-    mqtt_client.on_connect = on_connect
-    mqtt_client.connect(os.environ.get('MQTT_HOSTNAME'), port=int(os.environ.get('MQTT_PORT')))
-    mqtt_client.loop_start()
-    # wait until connect finishes:
-    for _ in range(100):
-        if finished_connecting == True:
+    mqtt_client.on_subscribe = on_subscribe
+    mqtt_client.subscribe('#')
+    for _ in range(30):
+        if subscribed == True:
             break
         time.sleep(0.1)
-    assert connected == True
+    assert subscribed == True
 
-    mqtt_client.subscribe('#')
+    return received_messages
 
-    yield received_messages
-
-    # cleanup:
-    mqtt_client.disconnect()
-    mqtt_client.loop_stop()
 
 ###################################################
 
@@ -400,100 +422,95 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
         Create a dashboard, get a dashboard, create a widget, get a widget. Delete the dashboard, get 404.
     """
     DASHBOARD = 'dashboard1'
-    try:
-        assert mqtt_messages.empty()
+    assert mqtt_messages.empty()
 
-        WIDGET = 'chart1'
-        data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
-        r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 201
-        # check mqtt messages:
-        mqtt_message = mqtt_messages.get(timeout=10.0)
-        assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id)
-        assert mqtt_messages.empty()
+    WIDGET = 'chart1'
+    data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # check mqtt messages:
+    mqtt_message = mqtt_messages.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id)
+    assert mqtt_messages.empty()
 
-        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        expected = {
-            'name': DASHBOARD + ' name',
-            'slug': DASHBOARD,
-            'widgets': [],
-        }
-        actual = json.loads(r.data.decode('utf-8'))
-        assert expected == actual
+    r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    expected = {
+        'name': DASHBOARD + ' name',
+        'slug': DASHBOARD,
+        'widgets': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
 
-        # create widget:
-        widget_post_data = {
-            'type': 'chart',
-            'title': WIDGET + ' name',
-            'content': json.dumps([
-                {
-                    'path_filter': 'do.not.match.*',
-                    'renaming': 'to.rename',
-                    'unit': 'µ',
-                    'metric_prefix': 'm',
-                }
-            ])
-        }
-        r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 201
-        widget_id = json.loads(r.data.decode('utf-8'))['id']
+    # create widget:
+    widget_post_data = {
+        'type': 'chart',
+        'title': WIDGET + ' name',
+        'content': json.dumps([
+            {
+                'path_filter': 'do.not.match.*',
+                'renaming': 'to.rename',
+                'unit': 'µ',
+                'metric_prefix': 'm',
+            }
+        ])
+    }
+    r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    widget_id = json.loads(r.data.decode('utf-8'))['id']
 
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        widget_post_data['id'] = widget_id
-        expected = {
-            'list': [
-                widget_post_data,
-            ]
-        }
-        assert r.status_code == 200
-        assert expected == actual
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    widget_post_data['id'] = widget_id
+    expected = {
+        'list': [
+            widget_post_data,
+        ]
+    }
+    assert r.status_code == 200
+    assert expected == actual
 
-        # update widget:
-        widget_post_data = {
-            'type': 'chart',
-            'title': WIDGET + ' name2',
-            'content': json.dumps([
-                {
-                    'path_filter': 'do.not.match2.*',
-                    'renaming': 'to.rename2',
-                    'unit': 'µ2',
-                    'metric_prefix': '',
-                }
-            ])
-        }
-        r = app_client.put('/api/accounts/{}/dashboards/{}/widgets/{}'.format(account_id, DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 204
+    # update widget:
+    widget_post_data = {
+        'type': 'chart',
+        'title': WIDGET + ' name2',
+        'content': json.dumps([
+            {
+                'path_filter': 'do.not.match2.*',
+                'renaming': 'to.rename2',
+                'unit': 'µ2',
+                'metric_prefix': '',
+            }
+        ])
+    }
+    r = app_client.put('/api/accounts/{}/dashboards/{}/widgets/{}'.format(account_id, DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
 
-        # make sure it was updated:
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        widget_post_data['id'] = widget_id
-        expected = {
-            'list': [
-                widget_post_data,
-            ]
-        }
-        assert r.status_code == 200
-        assert expected == actual
+    # make sure it was updated:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    widget_post_data['id'] = widget_id
+    expected = {
+        'list': [
+            widget_post_data,
+        ]
+    }
+    assert r.status_code == 200
+    assert expected == actual
 
-        # get a single widget:
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        expected = widget_post_data
-        assert r.status_code == 200
-        assert expected == actual
+    # get a single widget:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = widget_post_data
+    assert r.status_code == 200
+    assert expected == actual
 
-        # delete dashboard:
-        r = app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 200
-        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 404
+    # delete dashboard:
+    r = app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
 
-    except:
-        # if something went wrong, delete dashboard so the next run can succeed:
-        app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD))
-        raise
 
 def test_values_put_paths_get(app_client, admin_authorization_header, account_id):
     """
