@@ -33,7 +33,7 @@ class JWT(object):
         self.decoded_with_leeway = decoded_with_leeway
 
     @classmethod
-    def forge_from_authorization_header(cls, authorization_header, allow_leeway=False):
+    def forge_from_authorization_header(cls, authorization_header, allow_leeway=0):
         if authorization_header is None:
             raise AuthFailedException("No Authorization header")
 
@@ -54,7 +54,7 @@ class JWT(object):
         except jwt.ExpiredSignatureError:
             if not allow_leeway:
                 raise AuthFailedException("Signature expired")
-            jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=allow_leeway)
             decoded_with_leeway = True
         except Exception as ex:
             raise AuthFailedException("Error decoding JWT token") from ex

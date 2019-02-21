@@ -61,6 +61,7 @@ def _delete_all_from_db():
             c.execute(sql)
     # don't forget to clear memoization cache:
     clear_all_lru_cache()
+    AdminJWTToken.clear_cache()
 
 def setup_module():
     pass
@@ -156,7 +157,7 @@ def mqtt_messages(app_client):
             print("Pytest mqtt connection failed")
 
     mqtt_client = paho.Client("pytest")
-    admin_jwt_token = AdminJWTToken.get_valid_token()
+    admin_jwt_token = AdminJWTToken.get_valid_token('pytest')
     mqtt_client.username_pw_set(admin_jwt_token, password='not.used')
     mqtt_client.on_message = on_message
     mqtt_client.on_connect = on_connect

@@ -11,6 +11,7 @@ import psycopg2
 import re
 import secrets
 import time
+import urllib.parse
 from werkzeug.exceptions import HTTPException
 
 from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
@@ -39,21 +40,28 @@ MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
 
 
 class AdminJWTToken(object):
-    jwt_token = None
-    valid_until = None
+    jwt_tokens = {}
+    valid_until = {}
 
     @classmethod
-    def get_valid_token(cls):
-        if not cls.jwt_token or cls.valid_until < time.time() + 10.0:
-            cls._refresh_token()
-        return cls.jwt_token
+    def get_valid_token(cls, superuser_identifier):
+        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + 10.0:
+            cls._refresh_token(superuser_identifier)
+        return cls.jwt_tokens[superuser_identifier]
 
     @classmethod
-    def _refresh_token(cls):
+    def _refresh_token(cls, superuser_identifier):
         data = {
-            "is_backend": True,
+            "superuser": superuser_identifier,
         }
-        cls.jwt_token, cls.valid_until = JWT(data).encode_as_authorization_header()
+        token_header, valid_until = JWT(data).encode_as_authorization_header()
+        cls.jwt_tokens[superuser_identifier] = token_header[len('Bearer '):]
+        cls.valid_until[superuser_identifier] = valid_until
+
+    @classmethod
+    def clear_cache(cls):
+        cls.jwt_tokens = {}
+        cls.valid_until = {}
 
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
@@ -65,7 +73,7 @@ def mqtt_publish_changed(*topics):
     log.debug("MQTT publishing change of: [{}]".format(topics,))
     # https://www.eclipse.org/paho/clients/python/docs/#id2
     msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
-    adminJwtToken = AdminJWTToken.get_valid_token()[len('Bearer '):]
+    adminJwtToken = AdminJWTToken.get_valid_token('backend_changed_notif')
     mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": adminJwtToken, "password": "not.used"})
 
 
@@ -117,7 +125,7 @@ def before_request():
             authorization_header = flask.request.headers.get('Authorization')
             query_params_bot_token = flask.request.args.get('b')
             if authorization_header is not None:
-                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
                 flask.g.grafolean_data['jwt'] = received_jwt
                 user_id = received_jwt.data['user_id']
             elif query_params_bot_token is not None:
@@ -234,33 +242,66 @@ def admin_first_post():
     }), 201
 
 
-@app.route('/api/admin/mqtt-auth-plug/getuser', methods=['POST'])
+@app.route('/api/admin/mqtt-auth-plug/<string:check_type>', methods=['POST'])
 @noauth
-def admin_mqttauth_getuser():
-    log.info('mqtt-auth getuser: {}, {}'.format(flask.request.headers.get('Authorization'), flask.request.form.to_dict()))
-    return "ok", 200
-
-
-@app.route('/api/admin/mqtt-auth-plug/superuser', methods=['POST'])
-@noauth
-def admin_mqttauth_superuser():
-    # # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
+def admin_mqttauth_superuser(check_type):
+    # MQTT (with mqtt-auth-plug plugin) is configured to ask this endpoint about access rights, using JWT tokens (supplied
+    # as username on connect) as identification.
+    # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
     authorization_header = flask.request.headers.get('Authorization')
-    # authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')  # mqtt-auth-plug urlencodes JWT tokens
-    log.info('mqtt-auth superuser called with: {}, {}'.format(authorization_header, flask.request.form.to_dict()))
-    # received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
-    # is_backend = received_jwt.data.get('is_backend', False)
-    # if is_backend:
-    #     return "", 200
-    # return "", 401
-    return "", 200
+    authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')
+    log.info('mqtt-auth {} called with: {}, {}'.format(check_type, authorization_header, flask.request.form.to_dict()))
+    try:
+        if check_type == 'getuser':
+            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            # jwt token was successfully decoded, so we can allow for the fact that this is a valid user - we'll still see about
+            # access rights though (might be superuser, in which case everything goes, or it might be checked via aclcheck)
+            return "", 200
 
+        elif check_type == 'superuser':
+            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
+            is_backend = bool(received_jwt.data.get('superuser', False))
+            if is_backend:
+                return "", 200
+            log.info("Access denied (permissions check failed)")
+            return "Access denied", 401
 
-@app.route('/api/admin/mqtt-auth-plug/aclcheck', methods=['POST'])
-@noauth
-def admin_mqttauth_aclcheck():
-    log.info('mqtt-auth aclcheck: {}, {}'.format(flask.request.headers.get('Authorization'), flask.request.form.to_dict()))
-    return "ok", 200
+        elif check_type == 'aclcheck':
+            params = flask.request.form.to_dict()
+            # When client connects, username is jwt token. However subscribing to topics doesn't necessarily reconnect so
+            # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
+            # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+            # check user's access rights:
+            user_id = received_jwt.data['user_id']
+            if params.topic[:8] != 'changed/':
+                log.info("Access denied (wrong topic)")
+                return "Access denied", 401
+
+            is_allowed = Permission.is_access_allowed(
+                user_id = user_id,
+                url = params.topic[8:],  # remove 'changed/' from the start
+                method = 'GET',  # users can only request read access (apart from backend, which is superuser anyway)
+            )
+            if is_allowed:
+                return "", 200
+            log.info("Access denied (permissions check failed)")
+            return "Access denied", 401
+
+        else:
+            return "Invalid endpoint", 404
+
+    except AuthFailedException:
+        log.exception("Authentication failed")
+        return "Access denied", 401
+    except:
+        log.exception("Exception while checking access rights")
+        return "Access denied", 401
+    log.info("Access denied (permissions check failed)")
+    return "Access denied", 401
 
 
 # Useful for determining status of backend (is it available, is the first user initialized,...)
@@ -397,7 +438,7 @@ def auth_refresh_post():
         if not authorization_header:
             return "Access denied", 401
 
-        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=True)
+        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
         data = old_jwt.data.copy()
         new_jwt, _ = JWT(data).encode_as_authorization_header()
 
