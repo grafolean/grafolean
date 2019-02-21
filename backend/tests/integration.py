@@ -101,11 +101,29 @@ def admin_authorization_header(app_client, first_admin_exists):
     return auth_header
 
 @pytest.fixture
-def account_id(app_client, admin_authorization_header):
-    data = { 'name': 'First account' }
-    r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-    account_id = json.loads(r.data.decode('utf-8'))['id']
+def account_id_factory(app_client, admin_authorization_header):
+    """
+        Usage:
+            def test_123(account_id_factory):
+                acc1, acc2 = account_id_factory("First account", "Second account")
+                ...
+        https://github.com/pytest-dev/pytest/issues/2703#issue-251382665
+    """
+    def gen(*account_names):
+        for account_name in account_names:
+            data = { 'name': account_name }
+            r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            assert r.status_code == 201
+            account_id = json.loads(r.data.decode('utf-8'))['id']
+            yield account_id
+    yield gen
+
+@pytest.fixture
+def account_id(account_id_factory):
+    """
+        Generate just a single account_id (because this is what we want in most of the tests).
+    """
+    account_id, = account_id_factory('First account')
     return account_id
 
 @pytest.fixture
