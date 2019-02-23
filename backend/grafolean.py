@@ -89,7 +89,7 @@ def before_request():
     flask.g.grafolean_data = {}
 
     if not flask.request.endpoint in app.view_functions:
-        # Calling /api/admin/... is a common mistake, so it deserves a warning in the log:
+        # Calling /api/admin/... with GET (instead of POST) is a common mistake, so it deserves a warning in the log:
         if flask.request.path[:11] == '/api/admin/' and flask.request.method == 'GET':
             log.warning("Did you want to use POST instead of GET?")
         return "Resource not found", 404
