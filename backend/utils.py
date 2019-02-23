@@ -165,3 +165,6 @@ def migration_step_1():
 
         c.execute('CREATE TABLE widgets ({id}, dashboard INTEGER NOT NULL REFERENCES dashboards(id) ON DELETE CASCADE, type VARCHAR(50), title TEXT NOT NULL, content TEXT NOT NULL);'.format(id=ID_FIELD))
 
+def migration_step_2():
+    with db.cursor() as c:
+        c.execute('ALTER TABLE permissions RENAME COLUMN url_prefix TO resource_prefix;')

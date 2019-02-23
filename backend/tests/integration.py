@@ -687,7 +687,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
             {
                 'id': 1,
                 'user_id': EXPECTED_FIRST_ADMIN_ID,
-                'url_prefix': None,
+                'resource_prefix': None,
                 'methods': None,
             },
         ],
@@ -696,7 +696,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
 
     data = {
         'user_id': EXPECTED_FIRST_ADMIN_ID,
-        'url_prefix': 'accounts/1/',
+        'resource_prefix': 'accounts/1/',
         'methods': [ 'GET', 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -712,7 +712,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     assert new_record == {
         'id': 2,
         'user_id': data['user_id'],
-        'url_prefix': data['url_prefix'].rstrip('/'),
+        'resource_prefix': data['resource_prefix'].rstrip('/'),
         'methods': '{GET,POST}',
     }
 
@@ -781,7 +781,7 @@ def test_bots_token(app_client, admin_authorization_header, bot_token, account_i
     """
     data = {
         'user_id': EXPECTED_BOT_ID,
-        'url_prefix': 'accounts/{}/values/'.format(account_id),
+        'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -808,7 +808,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
     # grant a permission:
     data = {
         'user_id': person_id,
-        'url_prefix': 'accounts/{}'.format(account_id),
+        'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': [ 'GET' ],  # but only GET
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -824,7 +824,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
 
 def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
     """
-        If url_prefix is set to 'asdf/ghij', it should match:
+        If resource_prefix is set to 'asdf/ghij', it should match:
           - asdf/ghij
           - asdf/ghij/whatever
         But not:
@@ -838,12 +838,12 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
     r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 401
 
-    # we want to test that both versions (with an without trailing slash) of url_prefix perform the same:
-    for url_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
+    # we want to test that both versions (with an without trailing slash) of resource_prefix perform the same:
+    for resource_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
         # grant a permission:
         data = {
             'user_id': person_id,
-            'url_prefix': url_prefix,
+            'resource_prefix': resource_prefix,
             'methods': None,
         }
         r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -994,7 +994,7 @@ def test_mqtt_subscribe_changed(app_client, admin_authorization_header, account_
     # person should have read access to one of the accounts, but not to the other:
     data = {
         'user_id': person_id,
-        'url_prefix': 'accounts/{}'.format(account_id_ok),
+        'resource_prefix': 'accounts/{}'.format(account_id_ok),
         'methods': [ 'GET' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})

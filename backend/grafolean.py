@@ -364,7 +364,7 @@ def admin_permissions_get_post():
             permission_id = permission.insert()
             return json.dumps({
                 'user_id': permission.user_id,
-                'url_prefix': permission.url_prefix,
+                'resource_prefix': permission.resource_prefix,
                 'methods': permission.methods,
                 'id': permission_id,
             }), 201

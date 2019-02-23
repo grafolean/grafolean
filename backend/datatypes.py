@@ -582,10 +582,10 @@ class Account(object):
 
 
 class Permission(object):
-    def __init__(self, user_id, url_prefix, methods):
+    def __init__(self, user_id, resource_prefix, methods):
         self.user_id = user_id
-        # permission should perform the same, no matter if url_prefix ends with slash or not - so let's enforce this:
-        self.url_prefix = None if url_prefix is None else url_prefix.rstrip('/')
+        # resource_prefix always implicitly ends with a slash, so let's make sure it is always in the same format here:
+        self.resource_prefix = None if resource_prefix is None else resource_prefix.rstrip('/')
         self.methods = methods
 
     @classmethod
@@ -594,21 +594,21 @@ class Permission(object):
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-        return cls(data['user_id'], data['url_prefix'], data['methods'])
+        return cls(data['user_id'], data['resource_prefix'], data['methods'])
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, user_id, url_prefix, methods FROM permissions ORDER BY user_id, url_prefix, id;')
-            for permission_id, user_id, url_prefix, methods in c:
-                ret.append({'id': permission_id, 'user_id': user_id, 'url_prefix': url_prefix, 'methods': methods})
+            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            for permission_id, user_id, resource_prefix, methods in c:
+                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods})
             return ret
 
     def insert(self):
         with db.cursor() as c:
             methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
-            c.execute("INSERT INTO permissions (user_id, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.url_prefix, methods_array,))
+            c.execute("INSERT INTO permissions (user_id, resource_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.resource_prefix, methods_array,))
             account_id = c.fetchone()[0]
             return account_id
 
@@ -618,10 +618,10 @@ class Permission(object):
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
         with db.cursor() as c:
-            # with url_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
+            # with resource_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
                 '(user_id IS NULL OR user_id = %s) AND ' + \
-                "(url_prefix IS NULL OR url_prefix = %s OR %s LIKE url_prefix || '/%%') AND " + \
+                "(resource_prefix IS NULL OR resource_prefix = %s OR %s LIKE resource_prefix || '/%%') AND " + \
                 '(methods IS NULL OR %s = ANY(methods));',
                 (user_id, resource, resource, method,))
             res = c.fetchone()
