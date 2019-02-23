@@ -8,6 +8,7 @@ import multiprocessing
 import paho.mqtt.client as paho
 import pytest
 from pprint import pprint
+import queue
 import time
 
 # since we are running our own environment for testing (use `docker-compose up -d` and
@@ -28,7 +29,7 @@ VALID_FRONTEND_ORIGINS = [
 VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
-from grafolean import app, AdminJWTToken
+from grafolean import app, SuperuserJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
@@ -61,7 +62,7 @@ def _delete_all_from_db():
             c.execute(sql)
     # don't forget to clear memoization cache:
     clear_all_lru_cache()
-    AdminJWTToken.clear_cache()
+    SuperuserJWTToken.clear_cache()
 
 def setup_module():
     pass
@@ -152,8 +153,6 @@ def person_authorization_header(app_client, admin_authorization_header, person_i
     assert auth_header[:9] == 'Bearer 1:'
     return auth_header
 
-MqttMessage = namedtuple('MqttMessage', 'topic payload')
-
 @pytest.fixture
 def mqtt_client_factory():
     """
@@ -190,33 +189,55 @@ def mqtt_client_factory():
         mqtt_client.disconnect()
         mqtt_client.loop_stop()
 
+
+MqttMessage = namedtuple('MqttMessage', 'topic payload')
+
+
 @pytest.fixture
-def mqtt_messages(app_client, mqtt_client_factory):
-    # this fixture allows us to listen for mqtt messages (as admin) and puts in a queue those that are received:
-    received_messages = multiprocessing.Queue()
-    def on_message(client, userdata, message):
-        print("Pytest received MQTT message: {}".format(message))
-        nonlocal received_messages
-        received_messages.put(MqttMessage(message.topic, message.payload))
+def mqtt_message_queue_factory(app_client, mqtt_client_factory):
+    queues = []
+    def gen(*subscription_info):
+        jwt_tokens = [si[0] for si in subscription_info]
+        topics = [si[1] for si in subscription_info]
+        mqtt_clients = list(mqtt_client_factory(*jwt_tokens))
+        queues = [multiprocessing.Queue() for _ in mqtt_clients]
+        for i, mqtt_client in enumerate(mqtt_clients):
+            # we must use closure here so that `on_message` has access to the correct queue:
+            def on_message_closure(q):
+                def on_message(client, userdata, message):
+                    try:
+                        m = MqttMessage(message.topic, message.payload)
+                        q.put(m)
+                    except:
+                        log.exception("Error putting mqtt message to queue!")
+                return on_message
 
-    subscribed = False
-    def on_subscribe(client, userdata, mid, granted_qos):
-        nonlocal subscribed
-        subscribed = True
+            subscribed = False
+            def on_subscribe(client, userdata, mid, granted_qos):
+                nonlocal subscribed
+                subscribed = True
 
-    admin_jwt_token = AdminJWTToken.get_valid_token('pytest')
-    mqtt_client, = mqtt_client_factory(admin_jwt_token)
-    mqtt_client.on_message = on_message
-    mqtt_client.on_subscribe = on_subscribe
-    mqtt_client.subscribe('#')
-    for _ in range(30):
-        if subscribed == True:
-            break
-        time.sleep(0.1)
-    assert subscribed == True
+            mqtt_client.on_message = on_message_closure(queues[i])
+            mqtt_client.on_subscribe = on_subscribe
+            mqtt_client.subscribe(topics[i])
+            for _ in range(30):
+                if subscribed == True:
+                    break
+                time.sleep(0.1)
+            assert subscribed == True
+            yield queues[i]
 
-    return received_messages
+    yield gen
+    for q in queues:
+        q.close()
+        q.join_thread()
 
+@pytest.fixture
+def mqtt_messages(app_client, mqtt_message_queue_factory):
+    # a shorthand if you only need to listen to mqtt queue, on all messages, as superuser:
+    superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
+    message_queue, = mqtt_message_queue_factory((superuser_jwt_token, '#'))
+    return message_queue
 
 ###################################################
 
@@ -960,3 +981,58 @@ def test_sitemap(app_client):
 def test_head_method(app_client, admin_authorization_header, account_id):
     r = app_client.head('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
+
+def test_mqtt_subscribe_changed(app_client, admin_authorization_header, account_id_factory, person_id, person_authorization_header, mqtt_message_queue_factory):
+    """
+        As a client, try to subscribe to the MQTT topic using JWT token that you get as part of a normal login process. Then post a change
+        and assert that you received a message about it. Then post a change to unrelated account and make sure you don't get message about
+        it. For both cases make sure that superuser gets the messages.
+    """
+    account_id_ok, account_id_denied = account_id_factory('First account', 'Second account')
+    person_jwt_token = person_authorization_header[len('Bearer '):]
+
+    # person should have read access to one of the accounts, but not to the other:
+    data = {
+        'user_id': person_id,
+        'url_prefix': 'accounts/{}'.format(account_id_ok),
+        'methods': [ 'GET' ],
+    }
+    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
+    mqtt_messages_superuser, mqtt_messages_person, = mqtt_message_queue_factory((superuser_jwt_token, '#'), (person_jwt_token, 'changed/accounts/{}/dashboards'.format(account_id_ok)))
+
+    # create a dashboard:
+    data = {'name': 'Dashboard 1', 'slug': 'dashboard-1'}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id_ok), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # now check that both mqtt message queues received the message:
+    mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_ok)
+    assert mqtt_messages_superuser.empty()
+    mqtt_message = mqtt_messages_person.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_ok)
+    assert mqtt_messages_person.empty()
+
+    # now create a dashboard in the second account:
+    data = {'name': 'Dashboard 2', 'slug': 'dashboard-2'}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id_denied), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # superuser mqtt message queue still received the message:
+    mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_denied)
+    assert mqtt_messages_superuser.empty()
+    # but person's one didn't:
+    assert mqtt_messages_person.empty()
+
+
+# helper function for checking the contents of mqtt queues:
+def print_queue(q, name):
+    log.info("PRINTING QUEUE: {}".format(name))
+    try:
+        while True:
+            m = q.get(True, timeout=2.0)
+            log.info("  message on topic: {}".format(m.topic))
+    except queue.Empty:
+        log.info("  -- no more messages --")

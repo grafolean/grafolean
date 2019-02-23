@@ -39,7 +39,12 @@ MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
 MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
 
 
-class AdminJWTToken(object):
+class SuperuserJWTToken(object):
+    """
+        We distinguish between superuser and admin:
+        - admin is a person who has unlimited access to resources
+        - superuser is someone who is authenticated through a JWT token that has 'superuser' field set; it is only intended for internal use
+    """
     jwt_tokens = {}
     valid_until = {}
 
@@ -73,8 +78,8 @@ def mqtt_publish_changed(*topics):
     log.debug("MQTT publishing change of: [{}]".format(topics,))
     # https://www.eclipse.org/paho/clients/python/docs/#id2
     msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
-    adminJwtToken = AdminJWTToken.get_valid_token('backend_changed_notif')
-    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": adminJwtToken, "password": "not.used"})
+    superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
+    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
 
 
 @app.before_request
@@ -132,13 +137,14 @@ def before_request():
                 user_id = Bot.authenticate_token(query_params_bot_token)
 
             # check permissions:
+            resource = flask.request.path[len('/api/'):]
             is_allowed = Permission.is_access_allowed(
                 user_id = user_id,
-                url = flask.request.path,
+                resource = resource,
                 method = flask.request.method,
             )
             if not is_allowed:
-                log.info("Access denied (permissions check failed)")
+                log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
                 return "Access denied", 401
         except AuthFailedException:
             log.exception("Authentication failed")
@@ -250,7 +256,12 @@ def admin_mqttauth_superuser(check_type):
     # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
     authorization_header = flask.request.headers.get('Authorization')
     authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')
-    log.info('mqtt-auth {} called with: {}, {}'.format(check_type, authorization_header, flask.request.form.to_dict()))
+    # debugging:
+    # if authorization_header == 'Bearer secret':
+    #     log.info('--- secret account authenticated ---')
+    #     return "", 200
+    # log_received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+    # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, flask.request.form.to_dict()))
     try:
         if check_type == 'getuser':
             # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
@@ -263,10 +274,11 @@ def admin_mqttauth_superuser(check_type):
             # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
             received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
             # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
-            is_backend = bool(received_jwt.data.get('superuser', False))
-            if is_backend:
+            is_superuser = bool(received_jwt.data.get('superuser', False))
+            if is_superuser:
                 return "", 200
-            log.info("Access denied (permissions check failed)")
+
+            log.info("Access denied (not a superuser)")
             return "Access denied", 401
 
         elif check_type == 'aclcheck':
@@ -275,24 +287,30 @@ def admin_mqttauth_superuser(check_type):
             # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
             # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
             received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
-            # check user's access rights:
-            user_id = received_jwt.data['user_id']
-            if params.topic[:8] != 'changed/':
+            # superusers can do whatever they want to:
+            is_superuser = bool(received_jwt.data.get('superuser', False))
+            if is_superuser:
+                return "", 200
+
+            if params['topic'][:8] != 'changed/':
                 log.info("Access denied (wrong topic)")
                 return "Access denied", 401
 
+            # check user's access rights:
+            user_id = received_jwt.data['user_id']
+            resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
             is_allowed = Permission.is_access_allowed(
                 user_id = user_id,
-                url = params.topic[8:],  # remove 'changed/' from the start
+                resource = resource,
                 method = 'GET',  # users can only request read access (apart from backend, which is superuser anyway)
             )
             if is_allowed:
                 return "", 200
-            log.info("Access denied (permissions check failed)")
+
+            log.info("Access denied (permissions check failed for user '{}', url '{}', method 'GET')".format(user_id, resource))
             return "Access denied", 401
 
-        else:
-            return "Invalid endpoint", 404
+        return "Invalid endpoint", 404
 
     except AuthFailedException:
         log.exception("Authentication failed")
@@ -300,8 +318,6 @@ def admin_mqttauth_superuser(check_type):
     except:
         log.exception("Exception while checking access rights")
         return "Access denied", 401
-    log.info("Access denied (permissions check failed)")
-    return "Access denied", 401
 
 
 # Useful for determining status of backend (is it available, is the first user initialized,...)
