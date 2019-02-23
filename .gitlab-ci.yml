@@ -14,8 +14,8 @@ before_script:
   - 'echo "export const VERSION_INFO = { ciCommitTag: ''$CI_COMMIT_TAG'' };" > ./frontend/src/VERSION.js'
   # automatically create frontend/src/CHANGELOG.json from GitLab tags:
   - apk add --no-cache curl jq
-  - 'curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json'
-  - 'cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json'
+  - '[ -n "$GITLAB_API_ACCESS_TOKEN" ] && (curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json)'
+  - '[ -n "$GITLAB_API_ACCESS_TOKEN" ] && (cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json)'
 
 frontend_lint:
   stage: test
@@ -28,7 +28,7 @@ frontend_lint:
     - yarn install
     - yarn lint
 
-deploy_to_docker_hub:
+deploy_to_docker_hub_grafolean:
   stage: deploy
   when: manual
   only:
@@ -40,7 +40,9 @@ deploy_to_docker_hub:
     # However we can mark tags 'v*.*.*' as protected, which also allows us to (somewhat) safely use Private-Token as protected
     # CI variable.
     variables:
-      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+$/
+      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([.][^.]+)?$/
+  variables:
+    CI_REGISTRY_IMAGE: grafolean/grafolean
   script:
     - apk add --no-cache git
     # check that we are deploying the latest version:
@@ -49,11 +51,33 @@ deploy_to_docker_hub:
     - echo "Deploying..."
     - cp ./install/docker-compose/Dockerfile .
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -t "$CI_REGISTRY_IMAGE:latest" --build-arg VERSION=$CI_COMMIT_TAG --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
-    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
-    - docker push "$CI_REGISTRY_IMAGE:latest"
-    - docker rmi grafolean/grafolean:$CI_COMMIT_TAG
-    - docker rmi grafolean/grafolean:latest
+    - docker build -t "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -t "docker.io/$CI_REGISTRY_IMAGE:latest" --build-arg VERSION=$CI_COMMIT_TAG --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+    - docker push "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - docker push "docker.io/$CI_REGISTRY_IMAGE:latest"
+    - docker rmi $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    - docker rmi $CI_REGISTRY_IMAGE:latest
+
+deploy_to_docker_hub_mosquitto:
+  stage: deploy
+  when: manual
+  only:
+    variables:
+      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([.][^.]+)?$/
+  variables:
+    CI_REGISTRY_IMAGE: grafolean/mosquitto
+  script:
+    - apk add --no-cache git
+    # check that we are deploying the latest version:
+    - export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | head -n 1 | tr -d '[:space:]'`
+    - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] || (echo "Tag does not denote latest known version (which is $LAST_KNOWN_VERSION), aborting!" && exit 1)'
+    - echo "Deploying..."
+    - cd ./install/mosquitto-auth/
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -t "docker.io/$CI_REGISTRY_IMAGE:latest" --build-arg VERSION=$CI_COMMIT_TAG --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+    - docker push "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
+    - docker push "docker.io/$CI_REGISTRY_IMAGE:latest"
+    - docker rmi $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
+    - docker rmi $CI_REGISTRY_IMAGE:latest
 
 deploy_to_demo.grafolean.com:
   image: node:10-alpine
@@ -62,7 +86,7 @@ deploy_to_demo.grafolean.com:
   only:
     # only on (protected) version tags:
     variables:
-      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+$/
+      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([.][^.]+)?$/
   variables:
     REACT_APP_BACKEND_ROOT_URL: "https://xo0y8lq3jf.execute-api.eu-central-1.amazonaws.com/dev/api"
   script:
