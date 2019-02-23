@@ -10,11 +10,13 @@ python-slugify = "*"
 flask-sockets = "*"
 jsonschema = "*"
 wtforms = "*"
-"psycopg2" = "*"
-flask-inputs = {ref = "9d7d32902fe04ceb5a6344edaa35b070cf93a6dc", git = "https://github.com/nathancahill/flask-inputs.git", editable = true}
+flask-inputs = {ref = "9d7d32902fe04ceb5a6344edaa35b070cf93a6dc",git = "https://github.com/nathancahill/flask-inputs.git",editable = true}
 passlib = "*"
 bcrypt = "*"
 pyjwt = "*"
+paho-mqtt = "*"
+python-dotenv = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 pytest = "*"

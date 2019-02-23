@@ -33,7 +33,7 @@ class JWT(object):
         self.decoded_with_leeway = decoded_with_leeway
 
     @classmethod
-    def forge_from_authorization_header(cls, authorization_header, allow_leeway=False):
+    def forge_from_authorization_header(cls, authorization_header, allow_leeway=0):
         if authorization_header is None:
             raise AuthFailedException("No Authorization header")
 
@@ -41,6 +41,9 @@ class JWT(object):
             raise AuthFailedException("Invalid Authorization header")
 
         authorization_header = authorization_header[7:]
+        if ':' not in authorization_header:
+            log.info(authorization_header)
+            raise AuthFailedException("Invalid Authorization header - missing key id")
         key_id, jwt_token = authorization_header.split(':', 1)
         key = JWT._private_jwt_key_for_decoding(key_id)
         if key is None:
@@ -51,7 +54,7 @@ class JWT(object):
         except jwt.ExpiredSignatureError:
             if not allow_leeway:
                 raise AuthFailedException("Signature expired")
-            jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=allow_leeway)
             decoded_with_leeway = True
         except Exception as ex:
             raise AuthFailedException("Error decoding JWT token") from ex
@@ -64,7 +67,7 @@ class JWT(object):
         enriched_data['exp'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT.TOKEN_VALID_FOR)
         jwt_encoded = jwt.encode(enriched_data, key, algorithm='HS256')
         header = 'Bearer {}:{}'.format(key_id, jwt_encoded.decode("utf-8"))
-        return header
+        return header, enriched_data['exp']
 
     @classmethod
     def _private_jwt_key_for_decoding(cls, key_id):

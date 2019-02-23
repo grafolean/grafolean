@@ -11,11 +11,13 @@ from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInput
 from auth import Auth
 
 
+# Lru_cache is currently disabled so that we can avoid strange caching issues when developing. We might enable it later though.
 def clear_all_lru_cache():
     # when testing, it is important to clear memoization cache in between runs, or the results will be... interesting.
-    Dashboard.get_id.cache_clear()
-    Path._get_path_id_from_db.cache_clear()
-    PathFilter._find_matching_paths_for_filter.cache_clear()
+    # Dashboard.get_id.cache_clear()
+    # Path._get_path_id_from_db.cache_clear()
+    # PathFilter._find_matching_paths_for_filter.cache_clear()
+    pass
 
 
 class ValidationError(Exception):
@@ -47,7 +49,7 @@ class Path(_RegexValidatedInputValue):
             self.path_id = Path._get_path_id_from_db(account_id, path=self.v)
 
     @staticmethod
-    @lru_cache(maxsize=256)
+    # @lru_cache(maxsize=256)
     def _get_path_id_from_db(account_id, path):
         with db.cursor() as c:
             path_cleaned = path.strip()
@@ -64,7 +66,7 @@ class Path(_RegexValidatedInputValue):
     # def get_all_paths():
     #     with db.cursor() as c:
     #         c.execute('SELECT path FROM paths ORDER BY path;')
-    #         for path, in c:
+    #         for path, in c.fetchall():
     #             yield(path)
 
     @classmethod
@@ -92,13 +94,13 @@ class PathFilter(_RegexValidatedInputValue):
         return list(all_found_paths), False
 
     @staticmethod
-    @lru_cache(maxsize=1024)
+    # @lru_cache(maxsize=1024)
     def _find_matching_paths_for_filter(account_id, path_filter, total_limit, allow_trailing_chars=False):
         found_paths = set()
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
             c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, total_limit + 1,))
-            for res in c:
+            for res in c.fetchall():
                 if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
                     return found_paths, True
                 found_paths.add(res[0])
@@ -282,11 +284,11 @@ class Measurement(object):
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
                     c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
-                    for ts, value in c:
+                    for ts, value in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
                     c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
-                    for ts, vavg, vmin, vmax in c:
+                    for ts, vavg, vmin, vmax in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
@@ -387,7 +389,7 @@ class Widget(object):
         with db.cursor() as c, db.cursor() as c2:
             c.execute('SELECT id, type, title, content FROM widgets WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, content in c:
+            for widget_id, widget_type, title, content in c.fetchall():
                 # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
                 # content = []
                 # for path_filter, renaming, unit, metric_prefix in c2:
@@ -482,7 +484,7 @@ class Dashboard(object):
         with db.cursor() as c:
             c.execute("INSERT INTO dashboards (name, account, slug) VALUES (%s, %s, %s);", (self.name, self.account_id, self.slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning None instead of new ID:
-            Dashboard.get_id.cache_clear()
+            # Dashboard.get_id.cache_clear()
 
     def update(self):
         with db.cursor() as c:
@@ -494,7 +496,7 @@ class Dashboard(object):
         with db.cursor() as c:
             c.execute("DELETE FROM dashboards WHERE account = %s AND slug = %s;", (account_id, slug,))
             # we must invalidate get_id()'s lru_cache, otherwise it will keep returning the old ID instead of None:
-            Dashboard.get_id.cache_clear()
+            # Dashboard.get_id.cache_clear()
             return c.rowcount
 
     @staticmethod
@@ -502,7 +504,7 @@ class Dashboard(object):
         with db.cursor() as c:
             ret = []
             c.execute('SELECT name, slug FROM dashboards WHERE account = %s ORDER BY name;', (account_id,))
-            for name, slug in c:
+            for name, slug in c.fetchall():
                 ret.append({'name': name, 'slug': slug})
             return ret
 
@@ -523,7 +525,7 @@ class Dashboard(object):
         }
 
     @staticmethod
-    @lru_cache(maxsize=256)
+    # @lru_cache(maxsize=256)
     def get_id(account_id, slug):
         """ This is a *cached* function which returns ID based on dashboard slug. Make sure
             to invalidate lru_cache whenever one of the existing slug <-> ID relationships
@@ -580,10 +582,10 @@ class Account(object):
 
 
 class Permission(object):
-    def __init__(self, user_id, url_prefix, methods):
+    def __init__(self, user_id, resource_prefix, methods):
         self.user_id = user_id
-        # permission should perform the same, no matter if url_prefix ends with slash or not - so let's enforce this:
-        self.url_prefix = None if url_prefix is None else url_prefix.rstrip('/')
+        # resource_prefix always implicitly ends with a slash, so let's make sure it is always in the same format here:
+        self.resource_prefix = None if resource_prefix is None else resource_prefix.rstrip('/')
         self.methods = methods
 
     @classmethod
@@ -592,37 +594,36 @@ class Permission(object):
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-        return cls(data['user_id'], data['url_prefix'], data['methods'])
+        return cls(data['user_id'], data['resource_prefix'], data['methods'])
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, user_id, url_prefix, methods FROM permissions ORDER BY user_id, url_prefix, id;')
-            for permission_id, user_id, url_prefix, methods in c:
-                ret.append({'id': permission_id, 'user_id': user_id, 'url_prefix': url_prefix, 'methods': methods})
+            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            for permission_id, user_id, resource_prefix, methods in c:
+                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods})
             return ret
 
     def insert(self):
         with db.cursor() as c:
             methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
-            c.execute("INSERT INTO permissions (user_id, url_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.url_prefix, methods_array,))
+            c.execute("INSERT INTO permissions (user_id, resource_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.resource_prefix, methods_array,))
             account_id = c.fetchone()[0]
             return account_id
 
 
     @staticmethod
-    def is_access_allowed(user_id, url, method):
+    def is_access_allowed(user_id, resource, method):
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
         with db.cursor() as c:
-            # with url_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
+            # with resource_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
                 '(user_id IS NULL OR user_id = %s) AND ' + \
-                "(url_prefix IS NULL OR %s LIKE '/api/' || url_prefix OR %s LIKE '/api/' || url_prefix || '/%%') AND " + \
-                '(methods IS NULL OR %s = ANY(methods)) ' + \
-                'ORDER BY user_id, url_prefix, id;',
-                (user_id, url, url, method,))
+                "(resource_prefix IS NULL OR resource_prefix = %s OR %s LIKE resource_prefix || '/%%') AND " + \
+                '(methods IS NULL OR %s = ANY(methods));',
+                (user_id, resource, resource, method,))
             res = c.fetchone()
             if res:
                 return True

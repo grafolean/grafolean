@@ -38,13 +38,14 @@
       default-src 'none';
       style-src 'self' 'unsafe-inline';
       script-src 'self' 'unsafe-inline';
-      connect-src 127.0.0.1:* *.amazonaws.com 'self';
+      connect-src 127.0.0.1:* *.amazonaws.com 'self' wss://localhost:9883 ws://localhost:9883;
       font-src 'self';
       img-src 'self';
       worker-src 'self';
       manifest-src 'self';
     ">
     <title>Grafolean</title>
+    <script src="%PUBLIC_URL%/paho-mqtt-min.js" type="text/javascript"></script>
   </head>
   <body>
     <div id="root">

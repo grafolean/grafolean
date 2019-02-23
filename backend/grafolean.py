@@ -1,13 +1,17 @@
 #!/usr/bin/env python
+import atexit
 from collections import defaultdict
+from dotenv import load_dotenv
 import flask
 from functools import wraps
 import json
 import os
+import paho.mqtt.publish as mqtt_publish
 import psycopg2
 import re
 import secrets
 import time
+import urllib.parse
 from werkzeug.exceptions import HTTPException
 
 from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
@@ -21,7 +25,61 @@ app = flask.Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
 
+try:
+    # It turns out that supplying os.environ vars to a script running under uWSGI is not so trivial. The
+    # easiest way is to simply write them to .env and load them here:
+    dotenv_filename = os.path.join(app.root_path, '.env')
+    load_dotenv(dotenv_filename)
+except:
+    pass
+
+
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
+MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
+MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
+
+
+class SuperuserJWTToken(object):
+    """
+        We distinguish between superuser and admin:
+        - admin is a person who has unlimited access to resources
+        - superuser is someone who is authenticated through a JWT token that has 'superuser' field set; it is only intended for internal use
+    """
+    jwt_tokens = {}
+    valid_until = {}
+
+    @classmethod
+    def get_valid_token(cls, superuser_identifier):
+        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + 10.0:
+            cls._refresh_token(superuser_identifier)
+        return cls.jwt_tokens[superuser_identifier]
+
+    @classmethod
+    def _refresh_token(cls, superuser_identifier):
+        data = {
+            "superuser": superuser_identifier,
+        }
+        token_header, valid_until = JWT(data).encode_as_authorization_header()
+        cls.jwt_tokens[superuser_identifier] = token_header[len('Bearer '):]
+        cls.valid_until[superuser_identifier] = valid_until
+
+    @classmethod
+    def clear_cache(cls):
+        cls.jwt_tokens = {}
+        cls.valid_until = {}
+
+# This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
+# when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
+# can re-issue GET to the same endpoint URL.
+def mqtt_publish_changed(*topics):
+    if not MQTT_HOSTNAME:
+        log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
+        return
+    log.debug("MQTT publishing change of: [{}]".format(topics,))
+    # https://www.eclipse.org/paho/clients/python/docs/#id2
+    msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
+    superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
+    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
 
 
 @app.before_request
@@ -31,6 +89,9 @@ def before_request():
     flask.g.grafolean_data = {}
 
     if not flask.request.endpoint in app.view_functions:
+        # Calling /api/admin/... with GET (instead of POST) is a common mistake, so it deserves a warning in the log:
+        if flask.request.path[:11] == '/api/admin/' and flask.request.method == 'GET':
+            log.warning("Did you want to use POST instead of GET?")
         return "Resource not found", 404
 
     # Browser might (if frontend and backend are not on the same origin) send a pre-flight OPTIONS request to get the
@@ -69,20 +130,21 @@ def before_request():
             authorization_header = flask.request.headers.get('Authorization')
             query_params_bot_token = flask.request.args.get('b')
             if authorization_header is not None:
-                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=False)
+                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
                 flask.g.grafolean_data['jwt'] = received_jwt
                 user_id = received_jwt.data['user_id']
             elif query_params_bot_token is not None:
                 user_id = Bot.authenticate_token(query_params_bot_token)
 
             # check permissions:
+            resource = flask.request.path[len('/api/'):]
             is_allowed = Permission.is_access_allowed(
                 user_id = user_id,
-                url = flask.request.path,
+                resource = resource,
                 method = flask.request.method,
             )
             if not is_allowed:
-                log.info("Access denied (permissions check failed)")
+                log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
                 return "Access denied", 401
         except AuthFailedException:
             log.exception("Authentication failed")
@@ -127,7 +189,8 @@ def after_request(response):
 
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
-    return str(error), 400
+    return 'Input validation failed: {}'.format(str(error)), 400
+
 
 @app.errorhandler(Exception)
 def handle_error(e):
@@ -160,7 +223,9 @@ def noauth(func):
 @app.route('/api/admin/migratedb', methods=['POST'])
 @noauth
 def admin_migratedb_post():
-    utils.migrate_if_needed()
+    was_needed = utils.migrate_if_needed()
+    if was_needed:
+        mqtt_publish_changed('api/status/info')
     return '', 204
 
 
@@ -177,9 +242,82 @@ def admin_first_post():
     # make it a superuser:
     permission = Permission(admin_id, None, None)
     permission.insert()
+    mqtt_publish_changed('api/status/info')
     return json.dumps({
         'id': admin_id,
     }), 201
+
+
+@app.route('/api/admin/mqtt-auth-plug/<string:check_type>', methods=['POST'])
+@noauth
+def admin_mqttauth_superuser(check_type):
+    # MQTT (with mqtt-auth-plug plugin) is configured to ask this endpoint about access rights, using JWT tokens (supplied
+    # as username on connect) as identification.
+    # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
+    authorization_header = flask.request.headers.get('Authorization')
+    authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')
+    # debugging:
+    # if authorization_header == 'Bearer secret':
+    #     log.info('--- secret account authenticated ---')
+    #     return "", 200
+    # log_received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+    # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, flask.request.form.to_dict()))
+    try:
+        if check_type == 'getuser':
+            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            # jwt token was successfully decoded, so we can allow for the fact that this is a valid user - we'll still see about
+            # access rights though (might be superuser, in which case everything goes, or it might be checked via aclcheck)
+            return "", 200
+
+        elif check_type == 'superuser':
+            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
+            is_superuser = bool(received_jwt.data.get('superuser', False))
+            if is_superuser:
+                return "", 200
+
+            log.info("Access denied (not a superuser)")
+            return "Access denied", 401
+
+        elif check_type == 'aclcheck':
+            params = flask.request.form.to_dict()
+            # When client connects, username is jwt token. However subscribing to topics doesn't necessarily reconnect so
+            # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
+            # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+            # superusers can do whatever they want to:
+            is_superuser = bool(received_jwt.data.get('superuser', False))
+            if is_superuser:
+                return "", 200
+
+            if params['topic'][:8] != 'changed/':
+                log.info("Access denied (wrong topic)")
+                return "Access denied", 401
+
+            # check user's access rights:
+            user_id = received_jwt.data['user_id']
+            resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
+            is_allowed = Permission.is_access_allowed(
+                user_id = user_id,
+                resource = resource,
+                method = 'GET',  # users can only request read access (apart from backend, which is superuser anyway)
+            )
+            if is_allowed:
+                return "", 200
+
+            log.info("Access denied (permissions check failed for user '{}', url '{}', method 'GET')".format(user_id, resource))
+            return "Access denied", 401
+
+        return "Invalid endpoint", 404
+
+    except AuthFailedException:
+        log.exception("Authentication failed")
+        return "Access denied", 401
+    except:
+        log.exception("Exception while checking access rights")
+        return "Access denied", 401
 
 
 # Useful for determining status of backend (is it available, is the first user initialized,...)
@@ -226,7 +364,7 @@ def admin_permissions_get_post():
             permission_id = permission.insert()
             return json.dumps({
                 'user_id': permission.user_id,
-                'url_prefix': permission.url_prefix,
+                'resource_prefix': permission.resource_prefix,
                 'methods': permission.methods,
                 'id': permission_id,
             }), 201
@@ -304,7 +442,7 @@ def auth_login_post():
         'session_id': secrets.token_hex(32),
     }
     response = flask.make_response(json.dumps(session_data), 200)
-    response.headers['X-JWT-Token'] = JWT(session_data).encode_as_authorization_header()
+    response.headers['X-JWT-Token'], _ = JWT(session_data).encode_as_authorization_header()
     return response
 
 
@@ -316,9 +454,9 @@ def auth_refresh_post():
         if not authorization_header:
             return "Access denied", 401
 
-        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=True)
+        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
         data = old_jwt.data.copy()
-        new_jwt = JWT(data).encode_as_authorization_header()
+        new_jwt, _ = JWT(data).encode_as_authorization_header()
 
         response = flask.make_response(json.dumps(data), 200)
         response.headers['X-JWT-Token'] = new_jwt
@@ -351,8 +489,11 @@ def account_get(account_id):
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])
 def values_put(account_id):
     data = flask.request.get_json()
-    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
-    Measurement.save_values_data_to_db(account_id, data)
+    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
+    try:
+        Measurement.save_values_data_to_db(account_id, data)
+    except psycopg2.IntegrityError:
+        return "Invalid input format", 400
     return ""
 
 
@@ -537,6 +678,7 @@ def dashboards_crud(account_id):
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
+        mqtt_publish_changed(f'accounts/{account_id}/dashboards')
         return json.dumps({'slug': dashboard.slug}), 201
 
 
@@ -553,12 +695,20 @@ def dashboard_crud(account_id, dashboard_slug):
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
+        mqtt_publish_changed(
+            f'accounts/{account_id}/dashboards',
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        )
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Dashboard.delete(account_id, dashboard_slug)
         if not rowcount:
             return "No such dashboard", 404
+        mqtt_publish_changed(
+            f'accounts/{account_id}/dashboards',
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        )
         return "", 200
 
 
@@ -613,4 +763,6 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 
 if __name__ == "__main__":
+
+    log.info("Starting main")
     app.run()

@@ -101,24 +101,16 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 
 class SidebarContentNoStore extends React.Component {
   componentDidMount() {
-    Fetcher.start(
+    this.fetchId = Fetcher.start(
       'accounts/1/dashboards',
-      this.onReceiveDashboardsListSuccess,
-      this.onReceiveDashboardsListFailure,
+      json => store.dispatch(onReceiveDashboardsListSuccess(json)),
+      errorMsg => store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
     );
   }
 
   componentWillUnmount() {
-    Fetcher.stop(
-      'accounts/1/dashboards',
-      this.onReceiveDashboardsListSuccess,
-      this.onReceiveDashboardsListFailure,
-    );
+    Fetcher.stop(this.fetchId);
   }
-
-  onReceiveDashboardsListSuccess = json => store.dispatch(onReceiveDashboardsListSuccess(json));
-  onReceiveDashboardsListFailure = errorMsg =>
-    store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString()));
 
   render() {
     const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;

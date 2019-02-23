@@ -1,0 +1,58 @@
+version: '2.1'
+services:
+
+  # This file helps set up postgres and mosquitto so that they can be used for integration tests
+  # (`pytest -v integration.py`). The assumption is that `grafolean/mosquitto` has been built and
+  # is available locally (at the moment it is not yet available through docker hub).
+
+  dbpytest:
+    image: postgres:9.6-alpine
+    environment:
+      - POSTGRES_DB=pytest
+      - POSTGRES_USER=pytest
+      - POSTGRES_PASSWORD=pytest
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "5432:5432"
+    networks:
+      - grafoleanpytest
+    container_name:
+      dbpytest
+
+  mosquittopytest:
+    image: grafolean/mosquitto
+    ports:
+      - "1883:1883"
+      # - "9883:9883"  # no need to expose websockets interface, python backend doesn't use it anyway
+    networks:
+      - grafoleanpytest
+    container_name:
+      mosquittopytest
+
+  grafolean:
+    # Mosquitto uses our REST API for auth, but it is not really running during pytest integration tests,
+    # so we must provide it here:
+    image: grafolean/grafolean
+    # depends_on:
+    #   dbpytest:
+    #     condition: service_healthy
+    environment:
+      - DB_HOST=dbpytest
+      - DB_DATABASE=pytest
+      - DB_USERNAME=pytest
+      - DB_PASSWORD=pytest
+    ports:
+      - "80:80"
+    volumes:
+      - ../:/grafolean/backend/
+    networks:
+      - grafoleanpytest
+    container_name:
+      grafoleanpytest
+
+networks:
+  grafoleanpytest:

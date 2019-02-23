@@ -2,10 +2,23 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from collections import namedtuple
 import json
+import multiprocessing
+import paho.mqtt.client as paho
 import pytest
 from pprint import pprint
+import queue
 import time
+
+# since we are running our own environment for testing (use `docker-compose up -d` and
+# `docker-compose down`), we need to setup env vars accordingly:
+os.environ['DB_HOST'] = 'localhost'  # we expose to port 5432 on host (== localhost)
+os.environ['DB_DATABASE'] = 'pytest'
+os.environ['DB_USERNAME'] = 'pytest'
+os.environ['DB_PASSWORD'] = 'pytest'
+os.environ['MQTT_HOSTNAME'] = 'localhost'
+os.environ['MQTT_PORT'] = '1883'
 
 # we need to setup this env var before importing `app` so we can later test CORS headers:
 VALID_FRONTEND_ORIGINS = [
@@ -16,7 +29,7 @@ VALID_FRONTEND_ORIGINS = [
 VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
-from grafolean import app
+from grafolean import app, SuperuserJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
@@ -49,6 +62,7 @@ def _delete_all_from_db():
             c.execute(sql)
     # don't forget to clear memoization cache:
     clear_all_lru_cache()
+    SuperuserJWTToken.clear_cache()
 
 def setup_module():
     pass
@@ -88,11 +102,29 @@ def admin_authorization_header(app_client, first_admin_exists):
     return auth_header
 
 @pytest.fixture
-def account_id(app_client, admin_authorization_header):
-    data = { 'name': 'First account' }
-    r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-    account_id = json.loads(r.data.decode('utf-8'))['id']
+def account_id_factory(app_client, admin_authorization_header):
+    """
+        Usage:
+            def test_123(account_id_factory):
+                acc1, acc2 = account_id_factory("First account", "Second account")
+                ...
+        https://github.com/pytest-dev/pytest/issues/2703#issue-251382665
+    """
+    def gen(*account_names):
+        for account_name in account_names:
+            data = { 'name': account_name }
+            r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            assert r.status_code == 201
+            account_id = json.loads(r.data.decode('utf-8'))['id']
+            yield account_id
+    yield gen
+
+@pytest.fixture
+def account_id(account_id_factory):
+    """
+        Generate just a single account_id (because this is what we want in most of the tests).
+    """
+    account_id, = account_id_factory('First account')
     return account_id
 
 @pytest.fixture
@@ -121,6 +153,91 @@ def person_authorization_header(app_client, admin_authorization_header, person_i
     assert auth_header[:9] == 'Bearer 1:'
     return auth_header
 
+@pytest.fixture
+def mqtt_client_factory():
+    """
+        Factory fixture for generating mqtt clients, based on jwt connection tokens.
+    """
+    mqtt_clients = []
+    def gen(*jwt_tokens):
+        for i, jwt_token in enumerate(jwt_tokens):
+            finished_connecting = False
+            def on_connect(client, userdata, flags, rc):
+                nonlocal finished_connecting
+                finished_connecting = True
+                assert rc == 0
+
+            mqtt_client = paho.Client("pytest-{}".format(i))
+            mqtt_client.username_pw_set(jwt_token, password='not.used')
+            mqtt_client.on_connect = on_connect
+            mqtt_client.connect(os.environ.get('MQTT_HOSTNAME'), port=int(os.environ.get('MQTT_PORT')))
+            mqtt_client.loop_start()
+            # wait until connect finishes:
+            for _ in range(30):
+                if finished_connecting == True:
+                    break
+                time.sleep(0.1)
+            assert finished_connecting == True
+
+            yield mqtt_client
+            mqtt_clients.append(mqtt_client)
+
+    yield gen
+
+    # cleanup:
+    for mqtt_client in mqtt_clients:
+        mqtt_client.disconnect()
+        mqtt_client.loop_stop()
+
+
+MqttMessage = namedtuple('MqttMessage', 'topic payload')
+
+
+@pytest.fixture
+def mqtt_message_queue_factory(app_client, mqtt_client_factory):
+    queues = []
+    def gen(*subscription_info):
+        jwt_tokens = [si[0] for si in subscription_info]
+        topics = [si[1] for si in subscription_info]
+        mqtt_clients = list(mqtt_client_factory(*jwt_tokens))
+        queues = [multiprocessing.Queue() for _ in mqtt_clients]
+        for i, mqtt_client in enumerate(mqtt_clients):
+            # we must use closure here so that `on_message` has access to the correct queue:
+            def on_message_closure(q):
+                def on_message(client, userdata, message):
+                    try:
+                        m = MqttMessage(message.topic, message.payload)
+                        q.put(m)
+                    except:
+                        log.exception("Error putting mqtt message to queue!")
+                return on_message
+
+            subscribed = False
+            def on_subscribe(client, userdata, mid, granted_qos):
+                nonlocal subscribed
+                subscribed = True
+
+            mqtt_client.on_message = on_message_closure(queues[i])
+            mqtt_client.on_subscribe = on_subscribe
+            mqtt_client.subscribe(topics[i])
+            for _ in range(30):
+                if subscribed == True:
+                    break
+                time.sleep(0.1)
+            assert subscribed == True
+            yield queues[i]
+
+    yield gen
+    for q in queues:
+        q.close()
+        q.join_thread()
+
+@pytest.fixture
+def mqtt_messages(app_client, mqtt_message_queue_factory):
+    # a shorthand if you only need to listen to mqtt queue, on all messages, as superuser:
+    superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
+    message_queue, = mqtt_message_queue_factory((superuser_jwt_token, '#'))
+    return message_queue
 
 ###################################################
 
@@ -321,99 +438,100 @@ def test_paths_delete_need_auth(app_client, admin_authorization_header, account_
     r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404  # because path is not found, of course
 
-def test_dashboards_widgets_post_get(app_client, admin_authorization_header, account_id):
+def test_dashboards_widgets_post_get(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Create a dashboard, get a dashboard, create a widget, get a widget. Delete the dashboard, get 404.
     """
     DASHBOARD = 'dashboard1'
-    try:
-        WIDGET = 'chart1'
-        data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
-        r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 201
+    assert mqtt_messages.empty()
 
-        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        expected = {
-            'name': DASHBOARD + ' name',
-            'slug': DASHBOARD,
-            'widgets': [],
-        }
-        actual = json.loads(r.data.decode('utf-8'))
-        assert expected == actual
+    WIDGET = 'chart1'
+    data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # check mqtt messages:
+    mqtt_message = mqtt_messages.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id)
+    assert mqtt_messages.empty()
 
-        # create widget:
-        widget_post_data = {
-            'type': 'chart',
-            'title': WIDGET + ' name',
-            'content': json.dumps([
-                {
-                    'path_filter': 'do.not.match.*',
-                    'renaming': 'to.rename',
-                    'unit': 'µ',
-                    'metric_prefix': 'm',
-                }
-            ])
-        }
-        r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 201
-        widget_id = json.loads(r.data.decode('utf-8'))['id']
+    r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    expected = {
+        'name': DASHBOARD + ' name',
+        'slug': DASHBOARD,
+        'widgets': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
 
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        widget_post_data['id'] = widget_id
-        expected = {
-            'list': [
-                widget_post_data,
-            ]
-        }
-        assert r.status_code == 200
-        assert expected == actual
+    # create widget:
+    widget_post_data = {
+        'type': 'chart',
+        'title': WIDGET + ' name',
+        'content': json.dumps([
+            {
+                'path_filter': 'do.not.match.*',
+                'renaming': 'to.rename',
+                'unit': 'µ',
+                'metric_prefix': 'm',
+            }
+        ])
+    }
+    r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    widget_id = json.loads(r.data.decode('utf-8'))['id']
 
-        # update widget:
-        widget_post_data = {
-            'type': 'chart',
-            'title': WIDGET + ' name2',
-            'content': json.dumps([
-                {
-                    'path_filter': 'do.not.match2.*',
-                    'renaming': 'to.rename2',
-                    'unit': 'µ2',
-                    'metric_prefix': '',
-                }
-            ])
-        }
-        r = app_client.put('/api/accounts/{}/dashboards/{}/widgets/{}'.format(account_id, DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 204
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    widget_post_data['id'] = widget_id
+    expected = {
+        'list': [
+            widget_post_data,
+        ]
+    }
+    assert r.status_code == 200
+    assert expected == actual
 
-        # make sure it was updated:
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        widget_post_data['id'] = widget_id
-        expected = {
-            'list': [
-                widget_post_data,
-            ]
-        }
-        assert r.status_code == 200
-        assert expected == actual
+    # update widget:
+    widget_post_data = {
+        'type': 'chart',
+        'title': WIDGET + ' name2',
+        'content': json.dumps([
+            {
+                'path_filter': 'do.not.match2.*',
+                'renaming': 'to.rename2',
+                'unit': 'µ2',
+                'metric_prefix': '',
+            }
+        ])
+    }
+    r = app_client.put('/api/accounts/{}/dashboards/{}/widgets/{}'.format(account_id, DASHBOARD, widget_id), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
 
-        # get a single widget:
-        r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
-        expected = widget_post_data
-        assert r.status_code == 200
-        assert expected == actual
+    # make sure it was updated:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    widget_post_data['id'] = widget_id
+    expected = {
+        'list': [
+            widget_post_data,
+        ]
+    }
+    assert r.status_code == 200
+    assert expected == actual
 
-        # delete dashboard:
-        r = app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 200
-        r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 404
+    # get a single widget:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = widget_post_data
+    assert r.status_code == 200
+    assert expected == actual
 
-    except:
-        # if something went wrong, delete dashboard so the next run can succeed:
-        app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD))
-        raise
+    # delete dashboard:
+    r = app_client.delete('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
+
 
 def test_values_put_paths_get(app_client, admin_authorization_header, account_id):
     """
@@ -569,7 +687,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
             {
                 'id': 1,
                 'user_id': EXPECTED_FIRST_ADMIN_ID,
-                'url_prefix': None,
+                'resource_prefix': None,
                 'methods': None,
             },
         ],
@@ -578,7 +696,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
 
     data = {
         'user_id': EXPECTED_FIRST_ADMIN_ID,
-        'url_prefix': 'accounts/1/',
+        'resource_prefix': 'accounts/1/',
         'methods': [ 'GET', 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -594,7 +712,7 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     assert new_record == {
         'id': 2,
         'user_id': data['user_id'],
-        'url_prefix': data['url_prefix'].rstrip('/'),
+        'resource_prefix': data['resource_prefix'].rstrip('/'),
         'methods': '{GET,POST}',
     }
 
@@ -663,7 +781,7 @@ def test_bots_token(app_client, admin_authorization_header, bot_token, account_i
     """
     data = {
         'user_id': EXPECTED_BOT_ID,
-        'url_prefix': 'accounts/{}/values/'.format(account_id),
+        'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -690,7 +808,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
     # grant a permission:
     data = {
         'user_id': person_id,
-        'url_prefix': 'accounts/{}'.format(account_id),
+        'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': [ 'GET' ],  # but only GET
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -706,7 +824,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
 
 def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
     """
-        If url_prefix is set to 'asdf/ghij', it should match:
+        If resource_prefix is set to 'asdf/ghij', it should match:
           - asdf/ghij
           - asdf/ghij/whatever
         But not:
@@ -720,12 +838,12 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
     r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 401
 
-    # we want to test that both versions (with an without trailing slash) of url_prefix perform the same:
-    for url_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
+    # we want to test that both versions (with an without trailing slash) of resource_prefix perform the same:
+    for resource_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
         # grant a permission:
         data = {
             'user_id': person_id,
-            'url_prefix': url_prefix,
+            'resource_prefix': resource_prefix,
             'methods': None,
         }
         r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -863,3 +981,58 @@ def test_sitemap(app_client):
 def test_head_method(app_client, admin_authorization_header, account_id):
     r = app_client.head('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
+
+def test_mqtt_subscribe_changed(app_client, admin_authorization_header, account_id_factory, person_id, person_authorization_header, mqtt_message_queue_factory):
+    """
+        As a client, try to subscribe to the MQTT topic using JWT token that you get as part of a normal login process. Then post a change
+        and assert that you received a message about it. Then post a change to unrelated account and make sure you don't get message about
+        it. For both cases make sure that superuser gets the messages.
+    """
+    account_id_ok, account_id_denied = account_id_factory('First account', 'Second account')
+    person_jwt_token = person_authorization_header[len('Bearer '):]
+
+    # person should have read access to one of the accounts, but not to the other:
+    data = {
+        'user_id': person_id,
+        'resource_prefix': 'accounts/{}'.format(account_id_ok),
+        'methods': [ 'GET' ],
+    }
+    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
+    mqtt_messages_superuser, mqtt_messages_person, = mqtt_message_queue_factory((superuser_jwt_token, '#'), (person_jwt_token, 'changed/accounts/{}/dashboards'.format(account_id_ok)))
+
+    # create a dashboard:
+    data = {'name': 'Dashboard 1', 'slug': 'dashboard-1'}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id_ok), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # now check that both mqtt message queues received the message:
+    mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_ok)
+    assert mqtt_messages_superuser.empty()
+    mqtt_message = mqtt_messages_person.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_ok)
+    assert mqtt_messages_person.empty()
+
+    # now create a dashboard in the second account:
+    data = {'name': 'Dashboard 2', 'slug': 'dashboard-2'}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id_denied), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # superuser mqtt message queue still received the message:
+    mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
+    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id_denied)
+    assert mqtt_messages_superuser.empty()
+    # but person's one didn't:
+    assert mqtt_messages_person.empty()
+
+
+# helper function for checking the contents of mqtt queues:
+def print_queue(q, name):
+    log.info("PRINTING QUEUE: {}".format(name))
+    try:
+        while True:
+            m = q.get(True, timeout=2.0)
+            log.info("  message on topic: {}".format(m.topic))
+    except queue.Empty:
+        log.info("  -- no more messages --")
