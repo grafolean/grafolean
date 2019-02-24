@@ -1,7 +1,10 @@
+import React from 'react';
+import { connect } from 'react-redux';
 import moment from 'moment';
 
-import { ROOT_URL, handleFetchErrors, onLogout } from '../store/actions';
+import { ROOT_URL, handleFetchErrors, onLogout, onFailure } from '../store/actions';
 import store from '../store';
+
 import { VERSION_INFO } from '../VERSION';
 
 const MQTT_WS_HOSTNAME = process.env.REACT_APP_MQTT_WS_HOSTNAME || null;
@@ -59,20 +62,20 @@ export const fetchAuth = (url, fetchOptions = {}) => {
   });
 };
 
-export class MQTTFetcher {
+class MQTTFetcher {
   /*
   This class allows fetching data from sources which might change over time. Instead of just requesting a
   resource (===topic), client also subscribes to the topic on MQTT broker via WebSockets.
 
   Example usage:
 
-    import Fetcher from 'fetch.js';
+    import PersistentFetcher from 'fetch.js';
     ...
       componentDidMount() {
-        this.fetchId = Fetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
+        this.fetchId = PersistentFetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
       }
       componentWillUnmount() {
-        Fetcher.stop(this.fetchId);
+        PersistentFetcher.stop(this.fetchId);
       }
     ...
   */
@@ -80,8 +83,11 @@ export class MQTTFetcher {
   mqttClient = null;
   fetches = [];
 
-  constructor() {
-    if (MQTT_WS_HOSTNAME) {
+  connect = (hostname, port, isSSL) => {
+    if (!hostname) {
+      return null;
+    }
+    return new Promise((resolve, reject) => {
       let notYetConnectedClient = new window.Paho.MQTT.Client(
         MQTT_WS_HOSTNAME,
         Number(MQTT_WS_PORT),
@@ -98,20 +104,20 @@ export class MQTTFetcher {
         onSuccess: () => {
           console.log('MQTT connected.');
           this.mqttClient = notYetConnectedClient;
-          // if there were some requests for subscribing that were not handled yet, handle them now:
-          this.fetches.forEach((f, i) => {
-            this._subscribe(i);
-          });
+          resolve();
         },
-        onFailure: () => console.error('Error connecting to MQTT broker via WebSockets'),
+        onFailure: () => {
+          console.error('Error connecting to MQTT broker via WebSockets');
+          reject();
+        },
         timeout: 5,
-        reconnect: false, // not sure how to control reconnect, so let's just fail for now
+        reconnect: true, // not sure how to control reconnect?
         keepAliveInterval: 36000000,
         userName: jwtToken ? jwtToken.substring('Bearer '.length) : '',
         password: 'can.be.empty',
       });
-    }
-  }
+    });
+  };
 
   isConnected = () => {
     return Boolean(this.mqttClient);
@@ -126,10 +132,7 @@ export class MQTTFetcher {
       abortController: null,
     });
     this._doFetchHttp(newFetchId).finally(() => {
-      if (this.isConnected()) {
-        // if not, we will subscribe when the connect succeeds
-        this._subscribe(newFetchId);
-      }
+      this._subscribe(newFetchId);
     });
     return newFetchId;
   };
@@ -167,6 +170,10 @@ export class MQTTFetcher {
 
   _subscribe = fetchId => {
     const { topic, onErrorCallback } = this.fetches[fetchId];
+    if (!this.isConnected()) {
+      console.warn(`Not connected to MQTT, not subscribing to [${topic}]`);
+      return;
+    }
     this.mqttClient.subscribe(`changed/${topic}`, {
       onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
       onFailure: () => {
@@ -178,6 +185,10 @@ export class MQTTFetcher {
   };
 
   stop = fetchId => {
+    if (!this.fetches[fetchId]) {
+      console.warn(`This fetch id does not exist, can't stop it: [${fetchId}]`);
+      return;
+    }
     const { topic } = this.fetches[fetchId];
     if (this.mqttClient) {
       // if client component stops listening before we even connected, this.mqttClient could be null
@@ -197,9 +208,40 @@ export class MQTTFetcher {
   };
 }
 
-/*
-  We can use Grafolean without MQTT server, though the updating functionality works a bit differently then.
-  Instead of being notified instantly, we poll REST API. This is of course not optimal idea, but I wonder
-  if there might be cases when having an MQTT broker is not wanted?
-*/
-export const Fetcher = new MQTTFetcher();
+const MQTTFetcherSingleton = new MQTTFetcher();
+
+class PersistentFetcher extends React.PureComponent {
+  componentDidMount() {
+    this.subscribe();
+  }
+
+  subscribe = async () => {
+    if (!MQTTFetcherSingleton.isConnected()) {
+      const { mqtt_ws_hostname, mqtt_ws_port, mqtt_ws_ssl } = this.props.backendStatus;
+      await MQTTFetcherSingleton.connect(
+        mqtt_ws_hostname,
+        mqtt_ws_port,
+        mqtt_ws_ssl,
+      );
+    }
+
+    this.fetchId = MQTTFetcherSingleton.start(
+      this.props.resource,
+      json => this.props.onUpdate(json),
+      errorMsg => store.dispatch(onFailure(errorMsg.toString())),
+    );
+  };
+
+  componentWillUnmount() {
+    MQTTFetcherSingleton.stop(this.fetchId);
+  }
+
+  render() {
+    return null;
+  }
+}
+
+const mapBackendStatusToProps = store => ({
+  backendStatus: store.backendStatus,
+});
+export default connect(mapBackendStatusToProps)(PersistentFetcher);

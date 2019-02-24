@@ -4,12 +4,7 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import {
-  fetchBackendStatus,
-  ROOT_URL,
-  onReceiveDashboardsListSuccess,
-  onReceiveDashboardsListFailure,
-} from '../../store/actions';
+import { fetchBackendStatus, ROOT_URL, onReceiveDashboardsListSuccess } from '../../store/actions';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -29,7 +24,7 @@ import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
-import { Fetcher } from '../../utils/fetch';
+import PersistentFetcher from '../../utils/fetch';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -100,36 +95,26 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 );
 
 class SidebarContentNoStore extends React.Component {
-  componentDidMount() {
-    this.fetchId = Fetcher.start(
-      'accounts/1/dashboards',
-      json => store.dispatch(onReceiveDashboardsListSuccess(json)),
-      errorMsg => store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
-    );
-  }
-
-  componentWillUnmount() {
-    Fetcher.stop(this.fetchId);
-  }
+  onDashboardsListUpdate = json => {
+    store.dispatch(onReceiveDashboardsListSuccess(json));
+  };
 
   render() {
     const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
-    if (fetching) {
-      return <Loading />;
-    }
-    if (!valid) {
-      return (
-        <div>
-          <i className="fa fa-exclamation-triangle" />
-        </div>
-      );
-    }
-
     return (
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
-        {dashboards &&
+        <PersistentFetcher resource="accounts/1/dashboards" onUpdate={this.onDashboardsListUpdate} />
+
+        {fetching ? (
+          <Loading />
+        ) : !valid ? (
+          <div>
+            <i className="fa fa-exclamation-triangle" />
+          </div>
+        ) : (
+          dashboards &&
           dashboards.map(dash => (
             <Link
               key={dash.slug}
@@ -139,7 +124,9 @@ class SidebarContentNoStore extends React.Component {
             >
               <i className="fa fa-dashboard" /> {dash.name}
             </Link>
-          ))}
+          ))
+        )}
+
         <Link className="button green" to="/dashboards/new" onClick={onSidebarLinkClick}>
           <i className="fa fa-plus" /> Add dashboard
         </Link>

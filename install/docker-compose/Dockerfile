@@ -66,8 +66,8 @@ COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
-RUN echo "MQTT_HOSTNAME=${MQTT_HOSTNAME}" > /grafolean/backend/.env
-RUN echo "MQTT_PORT=${MQTT_PORT}" >> /grafolean/backend/.env
+COPY ./install/docker-compose/uwsgi_env.sh /grafolean/uwsgi_env.sh
+RUN chmod +x /grafolean/uwsgi_env.sh
 WORKDIR /grafolean/backend
-CMD ["/bin/bash", "-c", "service nginx start && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
+CMD ["/bin/bash", "-c", "service nginx start && /grafolean/uwsgi_env.sh && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
 

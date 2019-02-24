@@ -37,6 +37,9 @@ except:
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
 MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
 MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
+MQTT_WS_HOSTNAME = os.environ.get('MQTT_WS_HOSTNAME', MQTT_HOSTNAME)
+MQTT_WS_PORT = int(os.environ.get('MQTT_WS_PORT', 9001))
+MQTT_WS_SSL = True if os.environ.get('MQTT_WS_SSL', '').lower() in ['true', '1', 'yes', 'on'] else False
 
 
 class SuperuserJWTToken(object):
@@ -331,6 +334,9 @@ def status_info_get():
         'db_version': utils.get_existing_schema_version(),
         'user_exists': Auth.first_user_exists() if not db_migration_needed else None,
         'cors_domains': CORS_DOMAINS,
+        'mqtt_ws_hostname': MQTT_WS_HOSTNAME,
+        'mqtt_ws_port': MQTT_WS_PORT,
+        'mqtt_ws_ssl': MQTT_WS_SSL,
     }
     return json.dumps(result), 200
 
