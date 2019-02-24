@@ -51,7 +51,7 @@
   ],
   "devDependencies": {
     "@storybook/react": "^4.1.13",
-    "babel-loader": "^8.0.5",
+    "babel-loader": "8.0.4",
     "eslint-config-prettier": "^3.3.0",
     "eslint-config-react-app": "^3.0.6",
     "eslint-plugin-flowtype": "^3.2.0",

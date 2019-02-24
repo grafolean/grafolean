@@ -1,7 +1,7 @@
 import { configure } from '@storybook/react';
 
 function loadStories() {
-  require('./index.js');
+  require('./IntervalLineChart.js');
   // You can require as many stories as you need.
 }
 

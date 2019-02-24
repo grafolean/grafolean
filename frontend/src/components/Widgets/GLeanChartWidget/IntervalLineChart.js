@@ -57,7 +57,7 @@ export default class IntervalLineChart extends React.Component {
                 ? pathPoints.map((p, pi) => (
                     // points:
                     <circle
-                      key={`p-${cs.ndex}-${pi}`}
+                      key={`p-${cs.index}-${pi}`}
                       cx={p.x}
                       cy={p.y}
                       r={1}

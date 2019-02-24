@@ -726,7 +726,7 @@ export class ChartView extends React.Component {
                 <IntervalLineChart
                   key={`i-${this.props.aggrLevel}-${intervalIndex}`}
                   interval={interval}
-                  yAxisHeight={yAxisHeight}
+                  //yAxisHeight={yAxisHeight}
                   scale={this.props.scale}
                   minKnownTs={this.props.minKnownTs}
                   isAggr={this.props.aggrLevel >= 0}
