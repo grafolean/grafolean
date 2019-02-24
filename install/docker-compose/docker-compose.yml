@@ -32,8 +32,6 @@ services:
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
-        - MQTT_HOSTNAME=mosquitto
-        - MQTT_PORT=1883
         - REACT_APP_MQTT_WS_HOSTNAME=localhost
         - REACT_APP_MQTT_WS_PORT=9883
     depends_on:
@@ -44,6 +42,11 @@ services:
       - DB_DATABASE=grafolean
       - DB_USERNAME=admin
       - DB_PASSWORD=admin
+      - MQTT_HOSTNAME=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_WS_HOSTNAME=mosquitto
+      - MQTT_WS_PORT=9883
+      - MQTT_WS_SSL=false
       # Comma-delimited list of domains on which we allow frontend to be shown. This is an important
       # protection agains cross-origin attacks. The domains should follow the same format as Origin
       # header and might include port number.
