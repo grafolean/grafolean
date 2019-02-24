@@ -59,20 +59,20 @@ export const fetchAuth = (url, fetchOptions = {}) => {
   });
 };
 
-export class MQTTFetcher {
+class MQTTFetcher {
   /*
   This class allows fetching data from sources which might change over time. Instead of just requesting a
   resource (===topic), client also subscribes to the topic on MQTT broker via WebSockets.
 
   Example usage:
 
-    import Fetcher from 'fetch.js';
+    import PersistentFetcher from 'fetch.js';
     ...
       componentDidMount() {
-        this.fetchId = Fetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
+        this.fetchId = PersistentFetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
       }
       componentWillUnmount() {
-        Fetcher.stop(this.fetchId);
+        PersistentFetcher.stop(this.fetchId);
       }
     ...
   */
@@ -197,9 +197,4 @@ export class MQTTFetcher {
   };
 }
 
-/*
-  We can use Grafolean without MQTT server, though the updating functionality works a bit differently then.
-  Instead of being notified instantly, we poll REST API. This is of course not optimal idea, but I wonder
-  if there might be cases when having an MQTT broker is not wanted?
-*/
-export const Fetcher = new MQTTFetcher();
+export const PersistentFetcher = new MQTTFetcher();

@@ -29,7 +29,7 @@ import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
-import { Fetcher } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -101,7 +101,7 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
 
 class SidebarContentNoStore extends React.Component {
   componentDidMount() {
-    this.fetchId = Fetcher.start(
+    this.fetchId = PersistentFetcher.start(
       'accounts/1/dashboards',
       json => store.dispatch(onReceiveDashboardsListSuccess(json)),
       errorMsg => store.dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
@@ -109,7 +109,7 @@ class SidebarContentNoStore extends React.Component {
   }
 
   componentWillUnmount() {
-    Fetcher.stop(this.fetchId);
+    PersistentFetcher.stop(this.fetchId);
   }
 
   render() {
