@@ -19,7 +19,7 @@ export default class IntervalLineChart extends React.Component {
     return (
       <g>
         {/* draw every path: */}
-        {this.props.drawnChartSeries.map(cs => {
+        {this.props.drawnChartSeries.map((cs, cs_index) => {
           if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
             return null;
           }
@@ -37,7 +37,7 @@ export default class IntervalLineChart extends React.Component {
           const areaMaxPointsReversed = pathPoints.map(p => `${p.x},${p.maxY}`).reverse();
           const serieColor = generateSerieColor(cs.path, cs.index);
           return (
-            <g key={`g-${cs.index}`}>
+            <g key={`g-${cs_index}`}>
               <path
                 d={`M${areaMinPoints.join('L')}L${areaMaxPointsReversed}`}
                 style={{
@@ -57,7 +57,7 @@ export default class IntervalLineChart extends React.Component {
                 ? pathPoints.map((p, pi) => (
                     // points:
                     <circle
-                      key={`p-${cs.index}-${pi}`}
+                      key={`p-${cs_index}-${pi}`}
                       cx={p.x}
                       cy={p.y}
                       r={1}

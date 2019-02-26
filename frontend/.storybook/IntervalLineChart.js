@@ -2,6 +2,7 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { Button } from '@storybook/react/demo';
 import IntervalLineChart from '../src/components/Widgets/GLeanChartWidget/IntervalLineChart';
+import IntervalLineChartCanvas from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
 
 const stories = storiesOf('IntervalLineChart', module);
 
@@ -24,6 +25,7 @@ const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxi
 stories.add('random data', () => {
   return (
     <>
+    <p>SVG:</p>
     <svg width={500} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
@@ -60,10 +62,13 @@ stories.add('random data', () => {
 
     <hr />
 
+    <p>Canvas:</p>
     <svg width={500} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChart
+      <IntervalLineChartCanvas
+        width={500}
+        height={230}
         drawnChartSeries={[
           {
             path: 'dummy.sin.1min',
