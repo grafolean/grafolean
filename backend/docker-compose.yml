@@ -14,6 +14,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    volumes:
+      - /tmp/db/:/var/lib/postgresql/data/
+
     networks:
       - grafolean
 

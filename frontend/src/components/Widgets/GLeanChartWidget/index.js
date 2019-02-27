@@ -8,7 +8,7 @@ import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from '.
 import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import IntervalLineChart from './IntervalLineChart';
+import IntervalLineChartCanvas from './IntervalLineChartCanvas';
 import Legend from './Legend';
 import Grid from './Grid';
 import Status from './Status';
@@ -723,8 +723,10 @@ export class ChartView extends React.Component {
                 (this.props.fromTs - this.props.minKnownTs) * this.props.scale} 0)`}
             >
               {this.props.fetchedIntervalsData.map((interval, intervalIndex) => (
-                <IntervalLineChart
+                <IntervalLineChartCanvas
                   key={`i-${this.props.aggrLevel}-${intervalIndex}`}
+                  width={this.props.width - this.props.yAxisWidth * drawnUnits.length}
+                  height={yAxisHeight}
                   interval={interval}
                   //yAxisHeight={yAxisHeight}
                   scale={this.props.scale}
