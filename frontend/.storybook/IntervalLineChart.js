@@ -8,8 +8,8 @@ const stories = storiesOf('IntervalLineChart', module);
 
 stories.add('random data - raw', () => {
   // test data:
-  const timeTo = 1551147882;
   const timeFrom = 1550926131;
+  const timeTo = 1551147882;
   const pathsDataRandom = [];
   const pathsDataSin = [];
   for (let t = timeFrom, i=0; t <= timeTo; t +=60.0, i++) {
@@ -21,10 +21,17 @@ stories.add('random data - raw', () => {
   const minY = 0.0;
   const maxY = 10.0;
   const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY)
+  const scale = 0.061930808018780474;
+  const width = 600;
 
   // both should have the same props:
   const props = {
-    width: 500,
+    timeFrom: timeFrom,
+    timeTo: timeFrom + width / scale,
+    scale: scale,
+    //width: 500, // derived from timeFrom/To and scale
+    // scale: 0.3130274288565287,
+
     height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: [
       {
@@ -47,28 +54,27 @@ stories.add('random data - raw', () => {
       }
     },
     isAggr: false,
-    minKnownTs: timeFrom,
-    scale: 0.061930808018780474,
-    // scale: 0.3130274288565287,
     v2y: {
       "": v2y_empty_unit,
     },
-    //yAxisHeight: yAxisHeight,
   }
 
   return (
     <>
     <p>SVG:</p>
-    <svg width={props.width} height={props.height} style={{
+    <svg width={width} height={props.height} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChart {...props} />
+      <IntervalLineChart
+        {...props}
+        minKnownTs={timeFrom}
+      />
     </svg>
 
     <hr />
 
     <p>Canvas:</p>
-    <svg width={props.width} height={props.height} style={{
+    <svg width={width} height={props.height} style={{
       border: '1px solid #eee',
     }}>
       <IntervalLineChartCanvas {...props} />
@@ -80,8 +86,9 @@ stories.add('random data - raw', () => {
 
 stories.add('random data - aggregated', () => {
   // test data:
-  const timeTo = 1551147882;
   const timeFrom = 1550926131;
+  const timeTo = 1551147882;
+  const width = 600;
   const pathsDataRandom = [];
   const pathsDataSin = [];
   for (let t = timeFrom, i=0; t <= timeTo; t += 600.0, i++) {
@@ -105,11 +112,16 @@ stories.add('random data - aggregated', () => {
   const minY = 0.0;
   const maxY = 10.0;
   const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY)
+  const scale = 0.061930808018780474;
 
   // both should have the same props:
   const props = {
-    width: 500,
-    height: 230,
+    timeFrom: timeFrom,
+    timeTo: timeFrom + width / scale,
+    scale: scale,
+    //width: width, // derived from timeFrom/To and scale
+
+    height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: [
       {
         path: 'dummy.sin.1min',
@@ -131,27 +143,27 @@ stories.add('random data - aggregated', () => {
       }
     },
     isAggr: true,
-    minKnownTs: timeFrom,
-    scale: 0.061930808018780474,
     v2y: {
       "": v2y_empty_unit,
     },
-    // yAxisHeight: yAxisHeight,
   };
 
   return (
     <>
     <p>SVG:</p>
-    <svg width={500} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
+    <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChart {...props} />
+      <IntervalLineChart
+        {...props}
+        minKnownTs={timeFrom}
+      />
     </svg>
 
     <hr />
 
     <p>Canvas:</p>
-    <svg width={500} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
+    <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
       <IntervalLineChartCanvas {...props} />

@@ -30,8 +30,12 @@ export default class IntervalLineChartCanvas extends React.Component {
 
   drawOnCanvas() {
     const ctx = this.canvasContext;
-    const ts2x = ts => (ts - this.props.minKnownTs) * this.props.scale;
+    const { timeFrom, scale } = this.props;
+    const ts2x = ts => (ts - timeFrom) * scale;
     ctx.clearRect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
+    ctx.strokeStyle = '#ff6600';
+    ctx.rect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
+    ctx.stroke();
     this.props.drawnChartSeries.forEach(cs => {
       if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
         return;
@@ -73,23 +77,8 @@ export default class IntervalLineChartCanvas extends React.Component {
   }
 
   render() {
-    const ts2x = ts => (ts - this.props.minKnownTs) * this.props.scale;
-    // find the width for canvas element:
-    let maxTs = null;
-    let minTs = null;
-    this.props.drawnChartSeries.forEach(cs => {
-      const points = this.props.interval.pathsData[cs.path];
-      if (minTs === null) {
-        minTs = points[0].t;
-        maxTs = points[points.length - 1].t;
-        return;
-      }
-      minTs = Math.min(minTs, points[0].t);
-      maxTs = Math.max(maxTs, points[points.length - 1].t);
-    });
-
-    const width = ts2x(maxTs) - ts2x(minTs) + 10;
-    const { height } = this.props;
+    const { timeFrom, timeTo, scale, height } = this.props;
+    const width = (timeTo - timeFrom) * scale;
     return (
       <foreignObject width={width} height={height}>
         <canvas ref={this.canvasRef} width={width} height={height} />
