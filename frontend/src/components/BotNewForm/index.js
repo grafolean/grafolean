@@ -48,7 +48,7 @@ export default class BotNewForm extends React.PureComponent {
         method: 'POST',
         body: JSON.stringify({
           user_id: responseJson.id,
-          url_prefix: 'accounts/1/values',
+          resource_prefix: 'accounts/1/values',
           methods: ['POST', 'PUT'],
         }),
       });

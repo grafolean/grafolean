@@ -8,7 +8,7 @@ import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from '.
 import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import IntervalLineChart from './IntervalLineChart';
+import IntervalLineChartCanvas from './IntervalLineChartCanvas';
 import Legend from './Legend';
 import Grid from './Grid';
 import Status from './Status';
@@ -465,7 +465,7 @@ export class ChartContainer extends React.Component {
         fetching={this.state.fetching}
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
-        aggrLevel={this.state.aggrLevel}
+        isAggr={this.state.aggrLevel >= 0}
         minKnownTs={this.getMinKnownTs()}
         yAxesProperties={this.yAxesProperties}
       />
@@ -484,7 +484,7 @@ export class ChartView extends React.Component {
     nDecimals: 2,
     scale: 1,
     zoomInProgress: false,
-    aggrLevel: null,
+    isAggr: false,
     registerMouseMoveHandler: handler => {},
     registerClickHandler: handler => {},
     fetchedIntervalsData: [],
@@ -717,31 +717,34 @@ export class ChartView extends React.Component {
               Always draw all intervals which are available in your state. Each of intervals is its own element (with its identifying key) and is
               only transposed; this way there is no need to re-render interval unless the data has changed, we just move it around.
             */}
-            <g
-              transform={`translate(${yAxesWidth -
-                1 -
-                (this.props.fromTs - this.props.minKnownTs) * this.props.scale} 0)`}
-            >
-              {this.props.fetchedIntervalsData.map((interval, intervalIndex) => (
-                <IntervalLineChart
-                  key={`i-${this.props.aggrLevel}-${intervalIndex}`}
-                  interval={interval}
-                  yAxisHeight={yAxisHeight}
-                  scale={this.props.scale}
-                  minKnownTs={this.props.minKnownTs}
-                  isAggr={this.props.aggrLevel >= 0}
-                  drawnChartSeries={this.props.drawnChartSeries}
-                  // dict of v2y() functions per unit:
-                  v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
-                    result[unit] = this.props.yAxesProperties[unit].derived.v2y;
-                    return result;
-                  }, {})}
-                />
-              ))}
+            <g transform={`translate(${yAxesWidth} 0)`}>
+              {this.props.fetchedIntervalsData.map((interval, intervalIndex) => {
+                const timeTo = (this.props.width - yAxesWidth) / this.props.scale + this.props.fromTs;
+                return (
+                  <IntervalLineChartCanvas
+                    key={`i-${this.props.aggrLevel}-${intervalIndex}-${this.props.fromTs}`}
+                    // width={this.props.width - this.props.yAxisWidth * drawnUnits.length}
+                    timeFrom={this.props.fromTs}
+                    timeTo={timeTo}
+                    height={yAxisHeight}
+                    interval={interval}
+                    //yAxisHeight={yAxisHeight}
+                    scale={this.props.scale}
+                    //minKnownTs={this.props.minKnownTs}
+                    isAggr={this.props.isAggr}
+                    drawnChartSeries={this.props.drawnChartSeries}
+                    // dict of v2y() functions per unit:
+                    v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
+                      result[unit] = this.props.yAxesProperties[unit].derived.v2y;
+                      return result;
+                    }, {})}
+                  />
+                );
+              })}
               {closest && (
                 <TooltipIndicator
                   {...closest}
-                  x={this.dt2dx(closest.point.t - this.props.minKnownTs)}
+                  x={this.dt2dx(closest.point.t - this.props.fromTs)}
                   y={this.props.yAxesProperties[closest.cs.unit].derived.v2y(closest.point.v)}
                   r={this.state.overrideClosestPoint ? 5 : 4}
                   yAxisHeight={yAxisHeight}

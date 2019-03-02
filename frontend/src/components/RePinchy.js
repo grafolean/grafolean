@@ -244,8 +244,8 @@ export default class RePinchy extends React.Component {
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
     this.log('Wheel CTRL!', event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
-    const event_offsetX = event.pageX - currentTargetRect.left;
-    const event_offsetY = event.pageY - currentTargetRect.top;
+    const event_offsetX = event.pageX - currentTargetRect.left + this.props.activeArea.x;
+    const event_offsetY = event.pageY - currentTargetRect.top + this.props.activeArea.y;
 
     this.zoomInProgress = true;
     this.setState({

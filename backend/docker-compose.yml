@@ -1,0 +1,32 @@
+version: '2.1'
+services:
+
+  db:
+    image: postgres:9.6-alpine
+    environment:
+      - POSTGRES_DB=grafolean
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - /tmp/db/:/var/lib/postgresql/data/
+
+    networks:
+      - grafolean
+
+  mosquitto:
+    image: grafolean/mosquitto
+    ports:
+      - "1883:1883"
+      - "9883:9883"
+    networks:
+      - grafolean
+
+networks:
+  grafolean:

@@ -29,6 +29,7 @@
     "lint": "eslint --max-warnings 0 --ext .js src/",
     "prettier": "prettier --write \"src/**/*.js\"",
     "test": "react-scripts test --env=jsdom",
+    "storybook": "start-storybook -p 9001 -c .storybook",
     "eject": "echo 'Bad idea.'"
   },
   "eslintConfig": {
@@ -49,6 +50,8 @@
     "not op_mini all"
   ],
   "devDependencies": {
+    "@storybook/react": "^4.1.13",
+    "babel-loader": "8.0.4",
     "eslint-config-prettier": "^3.3.0",
     "eslint-config-react-app": "^3.0.6",
     "eslint-plugin-flowtype": "^3.2.0",
