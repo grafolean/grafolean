@@ -33,9 +33,10 @@ export default class IntervalLineChartCanvas extends React.Component {
     const { timeFrom, scale } = this.props;
     const ts2x = ts => (ts - timeFrom) * scale;
     ctx.clearRect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
-    ctx.strokeStyle = '#ff6600';
-    ctx.rect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
-    ctx.stroke();
+    // debugging:
+    // ctx.strokeStyle = '#ff6600';
+    // ctx.rect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
+    // ctx.stroke();
     this.props.drawnChartSeries.forEach(cs => {
       if (!this.props.interval.pathsData.hasOwnProperty(cs.path)) {
         return;
