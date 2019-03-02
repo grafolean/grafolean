@@ -1,10 +1,9 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import IntervalLineChart from '../src/components/Widgets/GLeanChartWidget/IntervalLineChart';
 import IntervalLineChartCanvas from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
 import { ChartView } from '../src/components/Widgets/GLeanChartWidget';
 
-const stories = storiesOf('IntervalLineChart', module);
+const stories = storiesOf('IntervalLineChartCanvas', module);
 
 // test data:
 const timeFrom = 1550926131;
@@ -78,18 +77,6 @@ stories.add('random data - raw', () => {
 
   return (
     <>
-    <p>SVG:</p>
-    <svg width={width} height={props.height} style={{
-      border: '1px solid #eee',
-    }}>
-      <IntervalLineChart
-        {...props}
-        minKnownTs={timeFrom}
-      />
-    </svg>
-
-    <hr />
-
     <p>Canvas:</p>
     <svg width={width} height={props.height} style={{
       border: '1px solid #eee',
@@ -129,18 +116,6 @@ stories.add('random data - aggregated', () => {
 
   return (
     <>
-    <p>SVG:</p>
-    <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
-      border: '1px solid #eee',
-    }}>
-      <IntervalLineChart
-        {...props}
-        minKnownTs={timeFrom}
-      />
-    </svg>
-
-    <hr />
-
     <p>Canvas:</p>
     <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
