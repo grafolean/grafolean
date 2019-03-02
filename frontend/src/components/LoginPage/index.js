@@ -1,12 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
-
-import { onLoginSuccess, ROOT_URL } from '../../store/actions';
-import store from '../../store';
 import Redirect from 'react-router-dom/Redirect';
+
+import store from '../../store';
+import { onLoginSuccess, ROOT_URL } from '../../store/actions';
 
 import './LoginPage.scss';
 import Button from '../Button';
+import { VERSION_INFO } from '../../VERSION';
 
 export class LoginPage extends React.Component {
   formValues = {};
@@ -143,6 +144,8 @@ export class LoginPage extends React.Component {
             )}
           </div>
         </div>
+
+        <div className="version">Grafolean version: {VERSION_INFO.ciCommitTag || 'unknown'}</div>
       </div>
     );
   }

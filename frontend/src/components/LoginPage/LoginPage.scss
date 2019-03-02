@@ -56,6 +56,12 @@
     }
 
   }
+
+  .version {
+    position: fixed;
+    right: 10px;
+    bottom: 3px;
+  }
 }
 
 @media screen and (max-width: 700px) {
