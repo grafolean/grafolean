@@ -4,6 +4,7 @@ import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 
 import Button from '../Button';
+import EditableLabel from '../EditableLabel';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget';
@@ -15,30 +16,28 @@ class DashboardView extends React.Component {
   state = {
     loading: false,
     valid: true,
+    name: '',
     widgets: [],
     newChartFormOpened: false,
   };
-  abortController = null;
+  abortController = new window.AbortController();
 
   componentDidMount() {
     this.fetchDashboardDetails();
   }
 
   componentWillUnmount() {
-    if (this.abortController !== null) {
-      this.abortController.abort();
-    }
+    this.abortController.abort();
   }
 
   fetchDashboardDetails = () => {
-    if (this.abortController !== null) {
+    if (this.state.loading) {
       return; // fetching already in progress, abort
     }
 
     this.setState({
       loading: true,
     });
-    this.abortController = new window.AbortController();
     fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.match.params.slug}`, {
       signal: this.abortController.signal,
     })
@@ -56,18 +55,17 @@ class DashboardView extends React.Component {
             valid: true,
             loading: false,
           });
-          this.abortController = null;
         }),
       )
       .catch(errorMsg => {
-        if (!errorMsg.name || errorMsg.name !== 'AbortError') {
-          store.dispatch(onFailure(errorMsg.toString()));
-          this.setState({
-            valid: false,
-            loading: false,
-          });
-          this.abortController = null;
+        if (errorMsg.name && errorMsg.name === 'AbortError') {
+          return;
         }
+        store.dispatch(onFailure(errorMsg.toString()));
+        this.setState({
+          valid: false,
+          loading: false,
+        });
       });
   };
 
@@ -92,6 +90,25 @@ class DashboardView extends React.Component {
     });
   };
 
+  setDashboardName = async name => {
+    const dashboardSlug = this.props.match.params.slug;
+    const params = {
+      name: name,
+    };
+    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${dashboardSlug}`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+      body: JSON.stringify(params),
+    }).then(handleFetchErrors);
+
+    this.setState({
+      name: name,
+    });
+  };
+
   render() {
     const { valid, loading } = this.state;
     const dashboardSlug = this.props.match.params.slug;
@@ -106,7 +123,9 @@ class DashboardView extends React.Component {
     return (
       <div>
         <div className="frame dashboard-info">
-          Dashboard: {this.state.name}{' '}
+          <span>
+            Dashboard: <EditableLabel label={this.state.name} onChange={this.setDashboardName} />
+          </span>
           {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}
         </div>
 
