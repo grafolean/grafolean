@@ -25,13 +25,13 @@ export class LineChartCanvas extends React.PureComponent {
     const { fromTsAligned, toTsAligned } = this.getIntervalAlignment(timeFrom, timeTo);
     return (
       <g transform={`translate(${(fromTsAligned - timeFrom) * this.props.scale} 0)`}>
-        <IntervalLineChartCanvas {...rest} timeFrom={fromTsAligned} timeTo={toTsAligned} />
+        <LineChartCanvasUnaligned {...rest} timeFrom={fromTsAligned} timeTo={toTsAligned} />
       </g>
     );
   }
 }
 
-export class IntervalLineChartCanvas extends React.Component {
+class LineChartCanvasUnaligned extends React.Component {
   constructor(props) {
     super(props);
     this.canvasRef = React.createRef();

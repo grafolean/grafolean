@@ -8,7 +8,7 @@ import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from '.
 import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import { LineChartCanvas } from './IntervalLineChartCanvas';
+import { LineChartCanvas } from './LineChartCanvas';
 import Legend from './Legend';
 import Grid from './Grid';
 import Status from './Status';

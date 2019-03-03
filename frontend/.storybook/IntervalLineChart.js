@@ -1,9 +1,9 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { IntervalLineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
+import { LineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
 import { ChartView } from '../src/components/Widgets/GLeanChartWidget';
 
-const stories = storiesOf('IntervalLineChartCanvas', module);
+const stories = storiesOf('LineChartCanvas', module);
 
 // test data:
 const timeFrom = 1550926131;
@@ -83,7 +83,7 @@ stories.add('random data - raw', () => {
     <svg width={width} height={props.height} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChartCanvas {...props} />
+      <LineChartCanvas {...props} />
     </svg>
 
     </>
@@ -124,7 +124,7 @@ stories.add('random data - aggregated', () => {
     <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChartCanvas {...props} />
+      <LineChartCanvas {...props} />
     </svg>
 
     </>
