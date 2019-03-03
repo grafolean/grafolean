@@ -1,9 +1,9 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import IntervalLineChartCanvas from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
+import { LineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
 import { ChartView } from '../src/components/Widgets/GLeanChartWidget';
 
-const stories = storiesOf('IntervalLineChartCanvas', module);
+const stories = storiesOf('LineChartCanvas', module);
 
 // test data:
 const timeFrom = 1550926131;
@@ -61,14 +61,16 @@ stories.add('random data - raw', () => {
 
     height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: drawnChartSeries,
-    interval: {
-      fromTs: timeFrom,
-      toTs: timeTo,
-      pathsData: {
-        'dummy.random.1min': pathsDataRandomRaw,
-        'dummy.sin.1min': pathsDataSinRaw,
-      }
-    },
+    intervals: [
+      {
+        fromTs: timeFrom,
+        toTs: timeTo,
+        pathsData: {
+          'dummy.random.1min': pathsDataRandomRaw,
+          'dummy.sin.1min': pathsDataSinRaw,
+        }
+      },
+    ],
     isAggr: false,
     v2y: {
       "": v2y_empty_unit,
@@ -81,7 +83,7 @@ stories.add('random data - raw', () => {
     <svg width={width} height={props.height} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChartCanvas {...props} />
+      <LineChartCanvas {...props} />
     </svg>
 
     </>
@@ -100,14 +102,16 @@ stories.add('random data - aggregated', () => {
 
     height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: drawnChartSeries,
-    interval: {
-      fromTs: timeFrom,
-      toTs: timeTo,
-      pathsData: {
-        'dummy.random.1min': pathsDataRandom,
-        'dummy.sin.1min': pathsDataSin,
-      }
-    },
+    intervals: [
+      {
+        fromTs: timeFrom,
+        toTs: timeTo,
+        pathsData: {
+          'dummy.random.1min': pathsDataRandom,
+          'dummy.sin.1min': pathsDataSin,
+        }
+      },
+    ],
     isAggr: true,
     v2y: {
       "": v2y_empty_unit,
@@ -120,7 +124,7 @@ stories.add('random data - aggregated', () => {
     <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
       border: '1px solid #eee',
     }}>
-      <IntervalLineChartCanvas {...props} />
+      <LineChartCanvas {...props} />
     </svg>
 
     </>
