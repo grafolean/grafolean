@@ -42,7 +42,8 @@ export class LoginPage extends React.Component {
     this.changeFormValue('password', e.target.value);
   };
 
-  onLoginClick = () => {
+  handleLoginSubmit = ev => {
+    ev.preventDefault();
     const params = {
       username: this.formValues.username,
       password: this.formValues.password,
@@ -112,7 +113,7 @@ export class LoginPage extends React.Component {
     }
     return (
       <div className="login-page">
-        <div className="login-box">
+        <form className="login-box" onSubmit={this.handleLoginSubmit}>
           <div className="grafolean">
             <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
           </div>
@@ -128,8 +129,8 @@ export class LoginPage extends React.Component {
             </div>
 
             <Button
+              type="submit"
               isLoading={processingLogin}
-              onClick={this.onLoginClick}
               disabled={username.length === 0 || password.length === 0}
             >
               Login
@@ -143,7 +144,7 @@ export class LoginPage extends React.Component {
               </div>
             )}
           </div>
-        </div>
+        </form>
 
         <div className="version">Grafolean version: {VERSION_INFO.ciCommitTag || 'unknown'}</div>
       </div>
