@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import IntervalLineChartCanvas from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
+import { IntervalLineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/IntervalLineChartCanvas';
 import { ChartView } from '../src/components/Widgets/GLeanChartWidget';
 
 const stories = storiesOf('IntervalLineChartCanvas', module);
@@ -61,14 +61,16 @@ stories.add('random data - raw', () => {
 
     height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: drawnChartSeries,
-    interval: {
-      fromTs: timeFrom,
-      toTs: timeTo,
-      pathsData: {
-        'dummy.random.1min': pathsDataRandomRaw,
-        'dummy.sin.1min': pathsDataSinRaw,
-      }
-    },
+    intervals: [
+      {
+        fromTs: timeFrom,
+        toTs: timeTo,
+        pathsData: {
+          'dummy.random.1min': pathsDataRandomRaw,
+          'dummy.sin.1min': pathsDataSinRaw,
+        }
+      },
+    ],
     isAggr: false,
     v2y: {
       "": v2y_empty_unit,
@@ -100,14 +102,16 @@ stories.add('random data - aggregated', () => {
 
     height: yAxisHeight + YAXIS_TOP_PADDING,
     drawnChartSeries: drawnChartSeries,
-    interval: {
-      fromTs: timeFrom,
-      toTs: timeTo,
-      pathsData: {
-        'dummy.random.1min': pathsDataRandom,
-        'dummy.sin.1min': pathsDataSin,
-      }
-    },
+    intervals: [
+      {
+        fromTs: timeFrom,
+        toTs: timeTo,
+        pathsData: {
+          'dummy.random.1min': pathsDataRandom,
+          'dummy.sin.1min': pathsDataSin,
+        }
+      },
+    ],
     isAggr: true,
     v2y: {
       "": v2y_empty_unit,
