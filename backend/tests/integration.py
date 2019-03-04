@@ -85,7 +85,7 @@ def app_client_db_not_migrated():
 
 @pytest.fixture
 def first_admin_exists(app_client):
-    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@example.com' }
+    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@grafolean.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
@@ -138,7 +138,7 @@ def bot_token(app_client, admin_authorization_header):
 
 @pytest.fixture
 def person_id(app_client, admin_authorization_header):
-    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@example.com' }
+    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
     r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     user_id = json.loads(r.data.decode('utf-8'))['id']
@@ -581,14 +581,14 @@ def test_accounts(app_client):
     """
         Create first admin, login, make sure you get X-JWT-Token. Try to create another first admin, fail.
     """
-    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'test@example.com' }
+    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'test@grafolean.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
     assert int(admin_id) == EXPECTED_FIRST_ADMIN_ID
 
     # next fails:
-    data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@example.com' }
+    data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@grafolean.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 401
 
@@ -912,14 +912,17 @@ def test_status_info_cors(app_client_db_not_migrated):
 def test_status_info_before_migration(app_client_db_not_migrated):
     r = app_client_db_not_migrated.get('/api/status/info')
     assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'alive': True,
         'db_migration_needed': True,
         'db_version': 0,
         'user_exists': None,
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+        'mqtt_ws_ssl': actual['mqtt_ws_ssl'],
     }
-    actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
     r = app_client_db_not_migrated.post('/api/admin/migratedb')
@@ -934,6 +937,9 @@ def test_status_info_before_migration(app_client_db_not_migrated):
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+        'mqtt_ws_ssl': actual['mqtt_ws_ssl'],
     }
     assert expected == actual
 
@@ -948,6 +954,9 @@ def test_status_info_before_first(app_client):
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+        'mqtt_ws_ssl': actual['mqtt_ws_ssl'],
     }
     assert expected == actual
 
@@ -961,6 +970,9 @@ def test_status_info_after_first(app_client, first_admin_exists):
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': True,
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+        'mqtt_ws_ssl': actual['mqtt_ws_ssl'],
     }
     assert expected == actual
 
@@ -1036,3 +1048,22 @@ def print_queue(q, name):
             log.info("  message on topic: {}".format(m.topic))
     except queue.Empty:
         log.info("  -- no more messages --")
+
+
+def test_persons(app_client, admin_authorization_header, account_id):
+    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@nonexistentdomain.qwewertdfsgsdfgsdfg.com' }
+    r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 400
+
+    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
+    r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    # user_id = json.loads(r.data.decode('utf-8'))['id']
+
+    # r = app_client.get('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    # assert r.status_code == 201
+    # user_id = json.loads(r.data.decode('utf-8'))['id']
+
+    # r = app_client.get('/api/accounts/{}/persons'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    # assert r.status_code == 201
+    # user_id = json.loads(r.data.decode('utf-8'))['id']

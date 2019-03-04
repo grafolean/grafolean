@@ -17,6 +17,7 @@ pyjwt = "*"
 paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
+dnspython = "*"
 
 [dev-packages]
 pytest = "*"
