@@ -45,6 +45,11 @@ services:
       - DB_DATABASE=pytest
       - DB_USERNAME=pytest
       - DB_PASSWORD=pytest
+      - MQTT_HOSTNAME=mosquittopytest
+      - MQTT_PORT=1883
+      - MQTT_WS_HOSTNAME=mosquittopytest
+      - MQTT_WS_PORT=9883
+      - MQTT_WS_SSL=false
     ports:
       - "80:80"
     volumes:

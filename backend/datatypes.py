@@ -1,5 +1,6 @@
 import calendar
 from collections import defaultdict
+import dns
 from functools import lru_cache
 import math
 import psycopg2.extras
@@ -164,6 +165,27 @@ class MeasuredValue(object):
 
 class BotToken(_RegexValidatedInputValue):
     _regex = re.compile(r'^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$')
+
+
+class EmailAddress(object):
+    def __init__(self, v):
+        if not self.is_valid(str(v)):
+            raise ValidationError("Invalid email format: {}".format(str(v)))
+        self.v = str(v)
+
+    @classmethod
+    def is_valid(cls, v):
+        if '@' not in v:
+            return False
+        domain = v.rsplit('@', 1)[-1]
+        try:
+            dns_records = dns.resolver.query(domain, 'MX')
+            return len(dns_records) > 0
+        except:
+            return False
+
+    def __str__(self):
+        return self.v
 
 
 class Aggregation(object):
@@ -722,7 +744,7 @@ class Bot(object):
 class Person(object):
     def __init__(self, name, email, username, password):
         self.name = name
-        self.email = email
+        self.email = EmailAddress(email)
         self.username = username
         self.password = password
 
@@ -744,7 +766,7 @@ class Person(object):
             c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
             user_id, = c.fetchone()
             pass_hash = Auth.password_hash(self.password)
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, self.email, self.username, pass_hash,))
+            c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, str(self.email), self.username, pass_hash,))
             return user_id
 
 
