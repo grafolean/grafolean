@@ -1050,7 +1050,7 @@ def print_queue(q, name):
         log.info("  -- no more messages --")
 
 
-def test_persons(app_client, admin_authorization_header, account_id):
+def test_persons_email_validation(app_client, admin_authorization_header, account_id):
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@nonexistentdomain.qwewertdfsgsdfgsdfg.com' }
     r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 400
@@ -1058,12 +1058,3 @@ def test_persons(app_client, admin_authorization_header, account_id):
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
     r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    # user_id = json.loads(r.data.decode('utf-8'))['id']
-
-    # r = app_client.get('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    # assert r.status_code == 201
-    # user_id = json.loads(r.data.decode('utf-8'))['id']
-
-    # r = app_client.get('/api/accounts/{}/persons'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    # assert r.status_code == 201
-    # user_id = json.loads(r.data.decode('utf-8'))['id']
