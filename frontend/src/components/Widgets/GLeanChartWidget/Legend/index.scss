@@ -1,20 +1,29 @@
 input { border: 1px solid #ccc; background-color: #fff; padding: 1px 5px; }
 
-div.path-filter { margin-bottom: 3px; }
-  div.path-filter input { margin: 0; width: calc(100% - 12px); }
-  div.path-filter .clear-input { width: 28px; height: 12px; text-align: center; }
-  div.path-filter .clear-input span.triangle { border: 6px solid transparent; border-right: 6px solid #000000; display: block; height: 0; float: left; }
-  div.path-filter .clear-input button { border: none; background-color: #000000; display: block; width: 14px; height: 12px; line-height: 9px; padding-right: 2px; }
-    div.path-filter .clear-input i.fa.fa-close { color: #ffffff; font-size: 12px; }
-  div.path-filter .input-with-clear { position: relative; }
-    div.path-filter .input-with-clear .clear-input { position: absolute; right: 2px; top: 4px; }
+div.path-filter {
+  margin-bottom: 3px;
+  position: relative;
 
-div.legend div.path-checkbox-parent { position: relative; min-height: 18px; }
-  div.legend div.path-checkbox-parent.all { margin-bottom: 10px; }
-    div.legend div.path-checkbox-parent.all i.fa.fa-check { color: #009900; font-size: 10px; }
-div.legend div.path-checkbox { padding: 1px; background-color: #ffffff; position: absolute; left: 15px; top: 4px; border: 1px solid #ff6600; }
-  div.legend div.path-checkbox > div { width: 10px; height: 10px; }
-div.legend div.path-checkbox-parent > div.checkbox-label { padding-left: 35px; margin-bottom: 5px; }
-div.legend div.path-filter-noresults { font-size: 12px; font-style: italic; padding: 5px 20px; }
+  input {
+    margin: 0;
+    width: calc(100% - 42px);
+    padding-right: 30px;
+  }
+  i.fa-backspace {
+    position: absolute;
+    right: 10px;
+    top: 6px;
+  }
+}
+
+div.legend {
+  div.path-checkbox-parent { position: relative; min-height: 18px; }
+  div.path-checkbox-parent.all { margin-bottom: 10px; }
+  div.path-checkbox-parent.all i.fa.fa-check { color: #009900; font-size: 10px; }
+  div.path-checkbox { padding: 1px; background-color: #ffffff; position: absolute; left: 15px; top: 4px; border: 1px solid #ff6600; }
+  div.path-checkbox > div { width: 10px; height: 10px; }
+  div.path-checkbox-parent > div.checkbox-label { padding-left: 35px; margin-bottom: 5px; }
+  div.path-filter-noresults { font-size: 12px; font-style: italic; padding: 5px 20px; }
+}
 
 span.legend-label { font-size: 10px; overflow-wrap: break-word; }
