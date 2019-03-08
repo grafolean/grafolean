@@ -3,16 +3,7 @@ import React from 'react';
 const InputWithClear = props => (
   <div className="input-with-clear">
     <input type="text" name="pathFilter" value={props.value} onChange={props.onChange} />
-    <ClearField onClick={props.onClear} />
-  </div>
-);
-
-const ClearField = props => (
-  <div className="clear-input">
-    <span className="triangle" />
-    <button className="link-button" onClick={props.onClick}>
-      <i className="fa fa-close" />
-    </button>
+    <i className="fas fa-backspace" onClick={props.onClear} />
   </div>
 );
 
