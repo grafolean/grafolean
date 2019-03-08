@@ -1,5 +1,3 @@
-import seedrandom from 'seedrandom';
-
 export const MAX_AGGR_LEVEL = 6;
 
 const GOOGLE_CHART_COLOR_LIST = [
@@ -24,12 +22,12 @@ const GOOGLE_CHART_COLOR_LIST = [
   '#5574A6',
   '#3B3EAC',
 ];
-export const generateSerieColor = (path, index = null) => {
+export const generateSerieColor = (path, index) => {
   // if index is not defined, use the random generator - which doesn't work quite as well as curated lists
-  if (index === null) {
-    var rng = seedrandom(path);
-    return `hsl(${rng() * 255}, 100%, 50%)`;
-  }
+  // if (index === null) {
+  //   var rnd = getHash(path);
+  //   return `hsl(${rnd}, 100%, 50%)`;
+  // }
   return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };
 
