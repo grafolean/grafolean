@@ -218,11 +218,7 @@ class PersistentFetcher extends React.PureComponent {
   subscribe = async () => {
     if (!MQTTFetcherSingleton.isConnected()) {
       const { mqtt_ws_hostname, mqtt_ws_port, mqtt_ws_ssl } = this.props.backendStatus;
-      await MQTTFetcherSingleton.connect(
-        mqtt_ws_hostname,
-        mqtt_ws_port,
-        mqtt_ws_ssl,
-      );
+      await MQTTFetcherSingleton.connect(mqtt_ws_hostname, mqtt_ws_port, mqtt_ws_ssl);
     }
 
     this.fetchId = MQTTFetcherSingleton.start(

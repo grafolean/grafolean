@@ -28,8 +28,8 @@ export default class TooltipPopup extends React.Component {
         ? `0 0 ${arrowHeight}px ${arrowWidth}px`
         : `0 ${arrowWidth}px ${arrowHeight}px 0`
       : isArrowOnRight
-        ? `${arrowHeight}px 0 0 ${arrowWidth}px`
-        : `${arrowHeight}px ${arrowWidth}px 0 0`;
+      ? `${arrowHeight}px 0 0 ${arrowWidth}px`
+      : `${arrowHeight}px ${arrowWidth}px 0 0`;
     return (
       <div
         style={{
