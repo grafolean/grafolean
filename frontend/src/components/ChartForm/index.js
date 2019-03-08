@@ -200,30 +200,28 @@ export default class ChartForm extends React.Component {
                 />
               </div>
 
-              {sg.unit &&
-                (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '') && (
-                  <div className="form-item">
-                    <label>Metric prefix: (optional)</label>
-                    <Select
-                      value={sg.metricPrefix || ''}
-                      placeholder={`-- none [1${sg.unit}] --`}
-                      onChange={selectedOption =>
-                        this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)
-                      }
-                      options={METRIC_PREFIXES.filter(
-                        p =>
-                          !(sg.unit in KNOWN_UNITS) ||
-                          KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix),
-                      ).map(p => ({
-                        value: p.prefix,
-                        // no need for label because we specify optionRenderer; but we must supply additional info to it:
-                        ...p,
-                      }))}
-                      optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
-                      valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
-                    />
-                  </div>
-                )}
+              {sg.unit && (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '') && (
+                <div className="form-item">
+                  <label>Metric prefix: (optional)</label>
+                  <Select
+                    value={sg.metricPrefix || ''}
+                    placeholder={`-- none [1${sg.unit}] --`}
+                    onChange={selectedOption =>
+                      this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)
+                    }
+                    options={METRIC_PREFIXES.filter(
+                      p =>
+                        !(sg.unit in KNOWN_UNITS) || KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix),
+                    ).map(p => ({
+                      value: p.prefix,
+                      // no need for label because we specify optionRenderer; but we must supply additional info to it:
+                      ...p,
+                    }))}
+                    optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
+                    valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
+                  />
+                </div>
+              )}
             </div>
           ))}
           <Button onClick={this.handleAddEmptySerie}>+</Button>
