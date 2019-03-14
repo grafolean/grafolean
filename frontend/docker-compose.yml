@@ -1,0 +1,60 @@
+version: '2.1'
+services:
+
+  # This file helps set up backend (and other services) so that we can run frontend locally.
+  # The assumption is that the services have already been built.
+
+  db:
+    image: postgres:9.6-alpine
+    environment:
+      - POSTGRES_DB=grafoleandev
+      - POSTGRES_USER=grafoleandev
+      - POSTGRES_PASSWORD=grafoleandev
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "5432:5432"
+    networks:
+      - grafoleandev
+    container_name:
+      dbdev
+
+  mosquitto:
+    image: grafolean/mosquitto
+    ports:
+      - "1883:1883"
+      - "9883:9883"
+    networks:
+      - grafoleandev
+    container_name:
+      mosquittodev
+
+  grafolean:
+    # Actually, this service also provides another frontend, but we will ignore it and access only the backend.
+    image: grafolean/grafolean
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=dbdev
+      - DB_DATABASE=grafoleandev
+      - DB_USERNAME=grafoleandev
+      - DB_PASSWORD=grafoleandev
+      - MQTT_HOSTNAME=mosquittodev
+      - MQTT_PORT=1883
+      - MQTT_WS_HOSTNAME=mosquittodev
+      - MQTT_WS_PORT=9883
+      - MQTT_WS_SSL=false
+      - GRAFOLEAN_CORS_DOMAINS=http://localhost:3000
+    ports:
+      - "5000:80"
+    networks:
+      - grafoleandev
+    container_name:
+      grafoleandev
+
+networks:
+  grafoleandev:
