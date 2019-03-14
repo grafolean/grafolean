@@ -30,12 +30,24 @@ class Main extends React.Component {
   componentDidMount() {
     store.dispatch(fetchBackendStatus());
   }
+  backendIsCrossOrigin() {
+    const backendUrl = new URL(ROOT_URL, window.location); // if ROOT_URL is relative, use window.location as base url
+    return backendUrl.origin !== window.location.origin;
+  }
   render() {
     const { backendStatus } = this.props;
     if (!backendStatus) {
       return <Loading overlayParent={true} message={`Trying to connect to backend at: ${ROOT_URL}`} />;
     }
-    if (!backendStatus.cors_domains.includes(window.location.origin.toLowerCase())) {
+    // We want to be nice and display a warning when we are reaching a backend that we do not have access to (due
+    // to CORS). For this reason /api/status/info abckend endpoint is accessible from anywhere, and we can check
+    // if our domain is in the list of CORS allowed domains, before we even request any CORS-protected resource.
+    // This of course applies only if backend really is on a different domain (which it is not, for example, if
+    // backend and frontend are behind the same nginx reverse proxy).
+    if (
+      this.backendIsCrossOrigin() &&
+      !backendStatus.cors_domains.includes(window.location.origin.toLowerCase())
+    ) {
       return <CORSWarningPage />;
     }
     if (backendStatus.db_migration_needed === true) {

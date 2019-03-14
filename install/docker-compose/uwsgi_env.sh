@@ -10,3 +10,4 @@ echo "MQTT_PORT=${MQTT_PORT}" >> /grafolean/backend/.env
 echo "MQTT_WS_HOSTNAME=${MQTT_WS_HOSTNAME}" >> /grafolean/backend/.env
 echo "MQTT_WS_PORT=${MQTT_WS_PORT}" >> /grafolean/backend/.env
 echo "MQTT_WS_SSL=${MQTT_WS_SSL}" >> /grafolean/backend/.env
+echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env

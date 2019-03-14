@@ -116,8 +116,11 @@ def before_request():
         # To combat this, we still check Origin header and explicitly deny non-whitelisted requests:
         origin_header = flask.request.headers.get('Origin', None)
         if origin_header:  # is it a cross-origin request?
-            if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
-                return 'CORS not allowed for this origin', 403
+            # still, we sometimes get origin header even if it is not a cross-origin request, so let's double check that we
+            # indeed are doing CORS:
+            if flask.request.url_root.rstrip('/') != origin_header:
+                if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
+                    return 'CORS not allowed for this origin', 403
 
     if utils.db is None:
         utils.db_connect()

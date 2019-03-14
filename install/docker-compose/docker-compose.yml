@@ -32,8 +32,6 @@ services:
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
-        - REACT_APP_MQTT_WS_HOSTNAME=localhost
-        - REACT_APP_MQTT_WS_PORT=9883
     depends_on:
       db:
         condition: service_healthy
@@ -54,10 +52,13 @@ services:
       # endpoint (which allows access from all domains by design) and warns if it is not set correctly.
       # Example setting:
       # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
-      - GRAFOLEAN_CORS_DOMAINS=http://localhost
+      #
+      # However, in this particular case (backend and frontend on the same origin - protocol+domain+port) we
+      # are not really doing CORS, so we can skip this setting:
+      # - GRAFOLEAN_CORS_DOMAINS=http://localhost
     ports:
       # If you wish to publish Grafolean on a different port you can change the first number below.
-      # Note that HTTPS is currently no supported generically and you need to add a reverse proxy
+      # Note that HTTPS is currently not supported generically and you need to add a reverse proxy
       # in front of docker instance (just changing the port to 443 will *not* magically enable HTTPS).
       - "80:80"
     networks:

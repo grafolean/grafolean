@@ -1,15 +1,11 @@
 FROM node:10.15-jessie-slim as build-frontend
 WORKDIR /usr/src/app
 # first copy just package.json & lock, so we don't re-install packages on every change:
-COPY frontend/package.json frontend/yarn.lock ./
-RUN yarn install
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 COPY frontend/. ./
 ARG REACT_APP_BACKEND_ROOT_URL=/api
-ARG REACT_APP_MQTT_WS_HOSTNAME=""
-ARG REACT_APP_MQTT_WS_PORT=9883
-ENV REACT_APP_MQTT_WS_HOSTNAME ${REACT_APP_MQTT_WS_HOSTNAME:-""}
-ENV REACT_APP_MQTT_WS_PORT ${REACT_APP_MQTT_WS_PORT:-9883}
-RUN yarn build
+RUN npm run build
 # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
 # with a local copy of the file: (to avoid using CDN)
 RUN sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js

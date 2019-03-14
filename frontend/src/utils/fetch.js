@@ -7,9 +7,6 @@ import store from '../store';
 
 import { VERSION_INFO } from '../VERSION';
 
-const MQTT_WS_HOSTNAME = process.env.REACT_APP_MQTT_WS_HOSTNAME || null;
-const MQTT_WS_PORT = process.env.REACT_APP_MQTT_WS_PORT || 9883;
-
 const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   if (!authHeader) {
     return fetchOptions;
@@ -89,8 +86,8 @@ class MQTTFetcher {
     }
     return new Promise((resolve, reject) => {
       let notYetConnectedClient = new window.Paho.MQTT.Client(
-        MQTT_WS_HOSTNAME,
-        Number(MQTT_WS_PORT),
+        hostname,
+        Number(port),
         `grafolean-frontend-${VERSION_INFO.ciCommitTag || 'v?.?.?'}-${moment().format('x')}`,
       );
       notYetConnectedClient.onConnectionLost = responseObject => {
@@ -115,6 +112,7 @@ class MQTTFetcher {
         keepAliveInterval: 36000000,
         userName: jwtToken ? jwtToken.substring('Bearer '.length) : '',
         password: 'can.be.empty',
+        useSSL: isSSL,
       });
     });
   };
