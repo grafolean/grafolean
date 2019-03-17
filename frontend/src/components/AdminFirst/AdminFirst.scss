@@ -13,8 +13,12 @@ div.admin_first {
       font-weight: bold;
     }
 
-    .fa-exclamation-triangle {
-      color: #660000;
+
+    &.error {
+      margin: 10px 0 10px;
+      .fa-exclamation-triangle {
+        color: #660000;
+      }
     }
   }
 }

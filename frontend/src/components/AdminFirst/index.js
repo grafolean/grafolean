@@ -2,7 +2,7 @@ import React from 'react';
 
 import './AdminFirst.scss';
 import Button from '../Button';
-import { handleFetchErrors, ROOT_URL, onSuccess, onFailure, fetchBackendStatus } from '../../store/actions';
+import { ROOT_URL, onSuccess, fetchBackendStatus } from '../../store/actions';
 import store from '../../store';
 
 class AdminFirst extends React.Component {
@@ -15,6 +15,7 @@ class AdminFirst extends React.Component {
       email: '',
     },
     userCreated: false,
+    errorMsg: null,
   };
 
   changeFormValue(fieldName, value) {
@@ -40,69 +41,82 @@ class AdminFirst extends React.Component {
     this.changeFormValue('email', e.target.value);
   };
 
-  handleSubmit = ev => {
+  handleSubmit = async ev => {
     ev.preventDefault();
-    const params = JSON.stringify({
-      username: this.formValues.username,
-      password: this.formValues.password,
-      email: this.formValues.email,
-      name: this.formValues.name,
+    this.setState({
+      errorMsg: null,
     });
-    fetch(`${ROOT_URL}/admin/first`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: params,
-    })
-      .then(handleFetchErrors)
+    try {
+      // create first admin:
+      const paramsFirst = JSON.stringify({
+        username: this.formValues.username,
+        password: this.formValues.password,
+        email: this.formValues.email,
+        name: this.formValues.name,
+      });
+      const responseFirst = await fetch(`${ROOT_URL}/admin/first`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: paramsFirst,
+      });
+      if (!responseFirst.ok) {
+        throw await responseFirst.text();
+      }
+
       // login temporarily, but forget jwt token: (user must login explicitly)
-      .then(() => {
-        const params = {
-          username: this.formValues.username,
-          password: this.formValues.password,
-        };
-        return fetch(`${ROOT_URL}/auth/login`, {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          method: 'POST',
-          body: JSON.stringify(params),
-        });
-      })
-      .then(handleFetchErrors)
-      .then(response => {
-        const jwtToken = response.headers.get('X-JWT-Token');
-        const params = {
-          name: 'First account',
-        };
-        fetch(`${ROOT_URL}/admin/accounts/`, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: jwtToken,
-          },
-          method: 'POST',
-          body: JSON.stringify(params),
-        })
-          .then(handleFetchErrors)
-          .then(() => {
-            store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
-            this.setState({
-              userCreated: true,
-            });
-            // we are done here, trigger fetching of backend status so that Main component learns about our work:
-            store.dispatch(fetchBackendStatus());
-          })
-          .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
-      })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+      const paramsLogin = {
+        username: this.formValues.username,
+        password: this.formValues.password,
+      };
+      const responseLogin = await fetch(`${ROOT_URL}/auth/login`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify(paramsLogin),
+      });
+      if (!responseLogin.ok) {
+        throw await responseLogin.text();
+      }
+
+      // create a first account:
+      const jwtToken = responseLogin.headers.get('X-JWT-Token');
+      const paramsAccount = {
+        name: 'First account',
+      };
+      const responseAccount = await fetch(`${ROOT_URL}/admin/accounts/`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: jwtToken,
+        },
+        method: 'POST',
+        body: JSON.stringify(paramsAccount),
+      });
+      if (!responseAccount.ok) {
+        throw await responseAccount.text();
+      }
+
+      store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
+      this.setState({
+        userCreated: true,
+      });
+      // we are done here, trigger fetching of backend status so that Main component learns about our work:
+      store.dispatch(fetchBackendStatus());
+    } catch (errorMsg) {
+      this.setState({
+        errorMsg: errorMsg.toString(),
+      });
+    }
   };
 
   render() {
     const {
       formValues: { username, password, name, email },
       userCreated,
+      errorMsg,
     } = this.state;
     if (userCreated) {
       return null;
@@ -112,8 +126,8 @@ class AdminFirst extends React.Component {
         <form>
           <h3>Add first (admin) user:</h3>
           <div className="info">
-            This will insert the first user (which will have administrator privileges). It will not be
-            possible to insert another user in such way, so it is important that you{' '}
+            This will insert the first user (which will have administrator privileges). It willnot be possible
+            to insert another user in such way, so it is important that you{' '}
             <strong>remember the credentials</strong>!
           </div>
           <div className="field">
@@ -132,6 +146,11 @@ class AdminFirst extends React.Component {
             <label>First and last name:</label>
             <input type="text" value={name} onChange={this.changeName} />
           </div>
+          {errorMsg && (
+            <div className="error info">
+              <i className="fa fa-exclamation-triangle" /> {errorMsg}
+            </div>
+          )}
           <Button onClick={this.handleSubmit}>Create first user</Button>
         </form>
       </div>
