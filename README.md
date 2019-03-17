@@ -1,19 +1,19 @@
 # About Grafolean
 
-Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and (optionally) Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it should be easy to install on any Linux platform (and probably elsewhere). It can also run on AWS (Lambda + S3 + RDS + ... [^2]) and probably other cloud platforms.
+Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and (optionally) Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it should be easy to install on any Linux platform (and probably elsewhere). It can also run on AWS (Lambda + S3 + RDS + ... [^2]).
+
+This is still an early stage software, with many features still in planning and development. We would encourage you to grab a copy and give it a spin, and to tell us if you miss something via [Issues](https://gitlab.com/grafolean/grafolean/issues). Bug reports (or simply questions) are of course also welcome there.
 
 [^1]: though running any software that writes to SD card often is in general not a good idea due to SD card reliability issues (on power failure)
 [^2]: note that AWS IOT is not a suitable replacement for Mosquitto in this case, because it uses a different authentication mechanism
 
 # License
 
-Grafolean is licensed under Fair Source 20 license (see `LICENSE.md`). This licence means that Grafolean is *not* open source (as per [OSI definition](https://opensource.org/osd-annotated)), nor is it free software (as per [FSF definition](https://www.gnu.org/philosophy/free-sw.en.html)).
+Grafolean is licensed under Fair Source 20 license (see `LICENSE.md`), which means that the number of users per organization is limited to 20, otherwise the usage must be paid for [^3].
 
-The main reason for incompatibility is that the Fair Source 20 license puts a constraint on the number of users of software to 20 or less. Usage about that limit must be paid for [^3].
+This licence means that Grafolean is *not* open source (as per [OSI definition](https://opensource.org/osd-annotated)), nor is it free software (as per [FSF definition](https://www.gnu.org/philosophy/free-sw.en.html)). We understand (and regret) that this might not be acceptable to some potential users or contributors. However we believe this compromise keeps the best properties of free / open source, while also aligning incentives of developers and users - to have a monitoring system with the best possible user experience, freely available to small entities, with active and ongoing development.
 
-We understand (and regret) that this might not be acceptable to some potential users or contributors. However we believe this compromise keeps the best properties of free open source while also aligning incentives of developers and users - to have a monitoring system with the best possible user experience, freely available to small entities, with active and ongoing development.
-
-[^3]: commercial licenses are currently not (yet?) available - contact us if this presents a problem for you and we will try to find a suitable solution
+[^3]: commercial licenses are currently not (yet) available - contact us if you hit the limit and we will find a suitable solution
 
 # Install
 
@@ -25,6 +25,16 @@ This is the easiest way, because it installs and runs all the services necessary
 2) (optional, but recommended) edit `docker-compose.yml` and change the path where the DB data will be saved locally (`/grafolean/db/` by default), DB admin credentials and similar
 3) run: `docker-compose up -d`
 4) point your browser to http://localhost/ and follow post-installation instructions
+
+# Sending values
+
+To send values to Grafolean, you first need to create a bot account (via UI) and obtain its bot token. Then you can use a regular POST request to send values:
+
+```bash
+$ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=just.some.path&v=12.345&b=<BotAPIToken>'
+```
+
+Please consult API.md for more info.
 
 # Development
 
@@ -46,8 +56,6 @@ $ docker-compose down
 
 ## Backend
 
-In short:
-
 ```bash
 $ cd backend/
 $ docker-compose up -d
@@ -59,7 +67,7 @@ $ pipenv shell
 
 This assumes you are running the frontend at `http://localhost:3000/`. If this is not the case, fix `GRAFOLEAN_CORS_DOMAINS` accordingly.
 
-To exit:
+To exit, press `Control+C`, then exit pipenv shell and stop the services:
 ```
 ... $ exit
 $ docker-compose down
