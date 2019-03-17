@@ -6,10 +6,13 @@ div.admin_first {
 
   div.info {
     color: #222;
+    margin-bottom: 20px;
 
-    button {
-      margin-bottom: 20px;
+    strong {
+      font-style: italic;
+      font-weight: bold;
     }
+
     .fa-exclamation-triangle {
       color: #660000;
     }
