@@ -16,6 +16,7 @@ class AdminFirst extends React.Component {
     },
     userCreated: false,
     errorMsg: null,
+    posting: false,
   };
 
   changeFormValue(fieldName, value) {
@@ -45,6 +46,7 @@ class AdminFirst extends React.Component {
     ev.preventDefault();
     this.setState({
       errorMsg: null,
+      posting: true,
     });
     try {
       // create first admin:
@@ -109,6 +111,10 @@ class AdminFirst extends React.Component {
       this.setState({
         errorMsg: errorMsg.toString(),
       });
+    } finally {
+      this.setState({
+        posting: false,
+      });
     }
   };
 
@@ -117,6 +123,7 @@ class AdminFirst extends React.Component {
       formValues: { username, password, name, email },
       userCreated,
       errorMsg,
+      posting,
     } = this.state;
     if (userCreated) {
       return null;
@@ -151,7 +158,9 @@ class AdminFirst extends React.Component {
               <i className="fa fa-exclamation-triangle" /> {errorMsg}
             </div>
           )}
-          <Button onClick={this.handleSubmit}>Create first user</Button>
+          <Button isLoading={posting} onClick={this.handleSubmit}>
+            Create first user
+          </Button>
         </form>
       </div>
     );
