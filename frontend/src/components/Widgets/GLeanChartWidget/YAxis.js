@@ -15,42 +15,42 @@ class YAxisUnit extends React.PureComponent {
   render() {
     const { label, ...rest } = this.props;
     return (
-      <foreignObject className="y-axis-unit" {...rest}>
-        <div>
-          <button>{label}</button>
-        </div>
-      </foreignObject>
+      <text className="y-axis-unit" {...rest}>
+        {label}
+      </text>
     );
   }
 }
 export default class YAxis extends React.Component {
   render() {
+    const { width, height, color, unit, yTicks, v2y } = this.props;
     return (
       <g>
         <line
-          x1={this.props.width - 1}
+          x1={width - 1}
           y1={15}
-          x2={this.props.width - 1}
-          y2={this.props.height}
+          x2={width - 1}
+          y2={height}
           shapeRendering="crispEdges"
-          stroke={this.props.color}
+          stroke={color}
           strokeWidth="1"
         />
-        <YAxisUnit x={7} y={0} width={this.props.width - 9} height={30} label={this.props.unit} />
 
-        {this.props.yTicks !== null &&
-          this.props.yTicks.map(v => {
-            const y = this.props.v2y(v);
+        <YAxisUnit x={width - 7} y={10} label={unit} />
+
+        {yTicks !== null &&
+          yTicks.map(v => {
+            const y = v2y(v);
             return (
               <g key={v}>
-                <YAxisTickLabel x={this.props.width - 7} y={y + 5} label={v} />
+                <YAxisTickLabel x={width - 7} y={y + 5} label={v} />
                 <line
-                  x1={this.props.width - 4}
+                  x1={width - 4}
                   y1={y}
-                  x2={this.props.width}
+                  x2={width}
                   y2={y}
                   shapeRendering="crispEdges"
-                  stroke={this.props.color}
+                  stroke={color}
                   strokeWidth="1"
                 />
               </g>

@@ -54,16 +54,11 @@
   }
 
   .y-axis-unit {
-    div {
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-end;
-
-      button {
-        background-color: #eee;
-        color: #222 !important;
-        font-size: 13px;
-      }
-    }
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 13px;
+    text-anchor: end;
+    fill: #333333;
+    stroke: none;
+    font-weight: bold;
   }
 }
