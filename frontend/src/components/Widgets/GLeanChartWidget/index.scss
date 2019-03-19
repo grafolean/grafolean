@@ -61,4 +61,16 @@
     stroke: none;
     font-weight: bold;
   }
+  .yaxis-minmax-adjuster {
+    path {
+      fill: #4cd074;
+      stroke: #4cd074;
+      // larger click area:
+      stroke-width: 20;
+      stroke-opacity: 0.00001;
+      stroke-linecap: square;
+      stroke-linejoin: miter;
+      shape-rendering: crispEdges;
+    }
+  }
 }

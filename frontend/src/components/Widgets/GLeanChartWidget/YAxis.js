@@ -21,6 +21,7 @@ class YAxisUnit extends React.PureComponent {
     );
   }
 }
+
 export default class YAxis extends React.Component {
   render() {
     const { width, height, color, unit, yTicks, v2y } = this.props;
@@ -43,7 +44,7 @@ export default class YAxis extends React.Component {
             const y = v2y(v);
             return (
               <g key={v}>
-                <YAxisTickLabel x={width - 7} y={y + 5} label={v} />
+                <YAxisTickLabel x={width - 12} y={y + 5} label={v} />
                 <line
                   x1={width - 4}
                   y1={y}

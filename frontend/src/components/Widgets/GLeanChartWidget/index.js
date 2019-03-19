@@ -19,6 +19,7 @@ import MatchingPaths from '../../ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 import ChartTooltipPopup from './ChartTooltipPopup';
+import YAxisMinMaxAdjuster from './YAxisMinMaxAdjuster';
 
 class GLeanChartWidget extends React.Component {
   state = {
@@ -751,6 +752,8 @@ export class ChartView extends React.Component {
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
                 color="#999999"
+                defaultMinYValue={this.props.yAxesProperties[unit].minYValue}
+                defaultMaxYValue={this.props.yAxesProperties[unit].maxYValue}
               />
             </g>
           ))}
@@ -766,6 +769,17 @@ export class ChartView extends React.Component {
               }
             />
           </g>
+
+          {drawnUnits.map((unit, i) => (
+            <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
+              <YAxisMinMaxAdjuster
+                x={this.props.yAxisWidth - 1}
+                v2y={this.props.yAxesProperties[unit].derived.v2y}
+                defaultMinYValue={this.props.yAxesProperties[unit].minYValue}
+                defaultMaxYValue={this.props.yAxesProperties[unit].maxYValue}
+              />
+            </g>
+          ))}
         </svg>
 
         {closest && (
