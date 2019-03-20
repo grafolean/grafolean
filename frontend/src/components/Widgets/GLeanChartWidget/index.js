@@ -258,7 +258,7 @@ export class ChartContainer extends React.Component {
     this.ensureData(this.props.fromTs, this.props.toTs);
   }
 
-  componentDidUpdate(prevProps, prevState, snapshot) {
+  componentDidUpdate(prevProps) {
     if (
       prevProps.chartSeries !== this.props.chartSeries ||
       prevProps.fromTs !== this.props.fromTs ||
@@ -267,7 +267,7 @@ export class ChartContainer extends React.Component {
       this.paths = this.props.chartSeries.map(cs => cs.path);
       this.ensureData(this.props.fromTs, this.props.toTs);
     }
-    this.updateYAxisDerivedProperties(this.props);
+    this.updateYAxisDerivedProperties();
   }
 
   ensureData(fromTs, toTs) {
@@ -276,10 +276,10 @@ export class ChartContainer extends React.Component {
     }
     const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * this.props.width) / 100;
     const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1); // -1 for no aggregation
-    this.setState(oldState => ({
+    this.setState({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
-    }));
+    });
     const existingIntervals = [
       // anything that we might have already fetched for this aggrLevel:
       ...(this.fetchedData[`${aggrLevel}`] || []),
@@ -368,23 +368,31 @@ export class ChartContainer extends React.Component {
 
     // now that you have updated minYValue and maxYValue for each unit, prepare some of the data that you
     // will need often in cache - minY, maxY, ticks, v2y() and y2v():
-    this.updateYAxisDerivedProperties(this.props);
+    this.updateYAxisDerivedProperties();
 
-    this.setState(oldState => ({
+    this.setState({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
-    }));
+    });
   }
 
-  updateYAxisDerivedProperties = props => {
-    const yAxisHeight = props.height - props.xAxisHeight - this.YAXIS_TOP_PADDING;
+  updateYAxisDerivedProperties = () => {
+    const { height, xAxisHeight } = this.props;
+    const yAxisHeight = height - xAxisHeight - this.YAXIS_TOP_PADDING;
     for (let unit in this.yAxesProperties) {
-      const ticks = ChartView.getYTicks(
-        this.yAxesProperties[unit].minYValue,
-        this.yAxesProperties[unit].maxYValue,
-      );
+      const minYValueEffective =
+        this.yAxesProperties[unit].minYValueUserSet !== undefined
+          ? this.yAxesProperties[unit].minYValueUserSet
+          : this.yAxesProperties[unit].minYValue;
+      const maxYValueEffective =
+        this.yAxesProperties[unit].maxYValueUserSet !== undefined
+          ? this.yAxesProperties[unit].maxYValueUserSet
+          : this.yAxesProperties[unit].maxYValue;
+      const ticks = ChartView.getYTicks(minYValueEffective, maxYValueEffective);
       const minY = parseFloat(ticks[0]);
       const maxY = parseFloat(ticks[ticks.length - 1]);
       this.yAxesProperties[unit].derived = {
+        minYValueEffective: minYValueEffective,
+        maxYValueEffective: maxYValueEffective,
         minY: minY,
         maxY: maxY,
         ticks: ticks,
@@ -459,6 +467,18 @@ export class ChartContainer extends React.Component {
     return this.fetchedData[this.state.aggrLevel][0].fromTs;
   }
 
+  onMinYChange = (unit, y) => {
+    const v = this.yAxesProperties[unit].derived.y2v(y);
+    this.yAxesProperties[unit].minYValueUserSet = v;
+    this.updateYAxisDerivedProperties();
+  };
+
+  onMaxYChange = (unit, y) => {
+    const v = this.yAxesProperties[unit].derived.y2v(y);
+    this.yAxesProperties[unit].maxYValueUserSet = v;
+    this.updateYAxisDerivedProperties();
+  };
+
   render() {
     return (
       <ChartView
@@ -469,6 +489,8 @@ export class ChartContainer extends React.Component {
         isAggr={this.state.aggrLevel >= 0}
         minKnownTs={this.getMinKnownTs()}
         yAxesProperties={this.yAxesProperties}
+        onMinYChange={this.onMinYChange}
+        onMaxYChange={this.onMaxYChange}
       />
     );
   }
@@ -704,8 +726,8 @@ export class ChartView extends React.Component {
               <Grid
                 width={this.props.width - this.props.yAxisWidth * (i + 1)}
                 height={yAxisHeight}
-                minYValue={this.props.yAxesProperties[unit].minYValue}
-                maxYValue={this.props.yAxesProperties[unit].maxYValue}
+                minYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
+                maxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
                 color={generateGridColor(i)}
@@ -752,8 +774,8 @@ export class ChartView extends React.Component {
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
                 color="#999999"
-                defaultMinYValue={this.props.yAxesProperties[unit].minYValue}
-                defaultMaxYValue={this.props.yAxesProperties[unit].maxYValue}
+                defaultMinYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
+                defaultMaxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
               />
             </g>
           ))}
@@ -775,8 +797,10 @@ export class ChartView extends React.Component {
               <YAxisMinMaxAdjuster
                 x={this.props.yAxisWidth - 1}
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
-                defaultMinYValue={this.props.yAxesProperties[unit].minYValue}
-                defaultMaxYValue={this.props.yAxesProperties[unit].maxYValue}
+                defaultMinYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
+                defaultMaxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
+                onMinYChange={y => this.props.onMinYChange(unit, y)}
+                onMaxYChange={y => this.props.onMaxYChange(unit, y)}
               />
             </g>
           ))}

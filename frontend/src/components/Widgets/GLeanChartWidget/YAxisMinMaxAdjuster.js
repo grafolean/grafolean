@@ -1,40 +1,63 @@
 import React from 'react';
 
-class AdjusterMark extends React.PureComponent {
-  initialY = this.props.y;
+export class AdjusterMark extends React.PureComponent {
+  static defaultProps = {
+    startY: 10,
+    x: 10,
+    shadowWidth: 200,
+    topLimit: 10,
+    bottomLimit: 100,
+  };
+  state = {
+    y: this.props.startY,
+    handleY: this.props.startY,
+  };
+
   dragging = false;
+  initialPageY = null;
 
   startDrag = ev => {
     this.dragging = true;
-    this.initialEventY = ev.pageY;
+    this.initialPageY = ev.pageY;
     // make sure we follow the pointermove events, even if they are not over our component:
     ev.target.setPointerCapture(ev.pointerId);
   };
 
   endDrag = () => {
     this.dragging = false;
+    this.props.onChangeEnd(this.state.handleY);
   };
 
   moveDrag = ev => {
     if (!this.dragging) {
       return;
     }
-    const diffY = ev.pageY - this.initialEventY;
-    this.props.onChange(this.initialY + diffY);
+    const { bottomLimit, topLimit } = this.props;
+    const newY = this.props.startY + ev.pageY - this.initialPageY;
+    this.setState(({ y }) => ({
+      y: newY,
+      handleY: Math.min(bottomLimit, Math.max(topLimit, newY)),
+    }));
   };
 
   render() {
-    const { x, y } = this.props;
+    const { x, startY } = this.props;
+    const { handleY } = this.state;
     const A = 4; // half of mark height
     const B = 2; // width of rectangle
     return (
-      <path
-        d={`M${x},${y} l${-A},${A} l${-B},0 l0,${-2 * A} l${+B},0 l${A},${A}`}
-        onPointerDown={this.startDrag}
-        onPointerUp={this.endDrag}
-        onPointerCancel={this.endDrag}
-        onPointerMoveCapture={this.moveDrag}
-      />
+      <>
+        {this.dragging && (
+          <rect x={x} y={Math.min(handleY, startY)} width={500} height={Math.abs(handleY - startY)} />
+        )}
+        <path
+          d={`M${x},${handleY} l${-A},${A} l${-B},0 l0,${-2 * A} l${+B},0 l${A},${A}`}
+          onPointerDown={this.startDrag}
+          onPointerUp={this.endDrag}
+          onPointerCancel={this.endDrag}
+          onPointerMoveCapture={this.moveDrag}
+        />
+      </>
     );
   }
 }
@@ -53,23 +76,12 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
     adjusting: false,
   };
 
-  adjustStart = () => {
-    this.setState({ adjusting: true });
-  };
-  adjustEnd = () => {
-    this.setState({ adjusting: false });
-  };
   changeMinY = y => {
-    const { v2y, defaultMinYValue, minYDiff } = this.props;
-    this.setState(({ maxY }) => ({
-      minY: Math.min(v2y(defaultMinYValue), Math.max(maxY + minYDiff, y)),
-    }));
+    this.props.onMinYChange(y);
   };
+
   changeMaxY = y => {
-    const { v2y, defaultMaxYValue, minYDiff } = this.props;
-    this.setState(({ minY }) => ({
-      maxY: Math.max(v2y(defaultMaxYValue), Math.min(minY - minYDiff, y)),
-    }));
+    this.props.onMaxYChange(y);
   };
 
   render() {
@@ -79,18 +91,20 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
     return (
       <g className="yaxis-minmax-adjuster">
         <AdjusterMark
+          startY={maxY}
           x={x}
-          y={minY}
-          onDragStart={this.adjustStart}
-          onChange={this.changeMinY}
-          onDragEnd={this.adjustEnd}
+          shadowWidth={200}
+          topLimit={maxY}
+          bottomLimit={minY - 10}
+          onChangeEnd={this.changeMaxY}
         />
         <AdjusterMark
+          startY={minY}
           x={x}
-          y={maxY}
-          onDragStart={this.adjustStart}
-          onChange={this.changeMaxY}
-          onDragEnd={this.adjustEnd}
+          shadowWidth={200}
+          topLimit={maxY + 10}
+          bottomLimit={minY}
+          onChangeEnd={this.changeMinY}
         />
       </g>
     );

@@ -62,6 +62,11 @@
     font-weight: bold;
   }
   .yaxis-minmax-adjuster {
+    rect {
+      fill: #000;
+      stroke-width: 0;
+      opacity: 0.2;
+    }
     path {
       fill: #4cd074;
       stroke: #4cd074;
