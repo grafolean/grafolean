@@ -26,6 +26,10 @@ export class AdjusterMark extends React.PureComponent {
   endDrag = () => {
     this.dragging = false;
     this.props.onChangeEnd(this.state.handleY);
+    this.setState({
+      handleY: this.props.startY,
+      y: this.props.startY,
+    });
   };
 
   moveDrag = ev => {

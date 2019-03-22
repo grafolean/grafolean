@@ -31,7 +31,7 @@ export class LineChartCanvas extends React.PureComponent {
   }
 }
 
-class LineChartCanvasUnaligned extends React.Component {
+class LineChartCanvasUnaligned extends React.PureComponent {
   constructor(props) {
     super(props);
     this.canvasRef = React.createRef();
@@ -44,17 +44,6 @@ class LineChartCanvasUnaligned extends React.Component {
 
   componentDidUpdate() {
     this.drawOnCanvas();
-  }
-
-  shouldComponentUpdate(nextProps) {
-    for (let propName in this.props) {
-      // this.props.v2y is anonymous function and changes every time parent rerenders, so
-      // we ignore it as a signal for update:
-      if (this.props[propName] !== nextProps[propName] && propName !== 'v2y') {
-        return true;
-      }
-    }
-    return false;
   }
 
   drawOnCanvas() {
@@ -71,7 +60,7 @@ class LineChartCanvasUnaligned extends React.Component {
         if (!interval.pathsData.hasOwnProperty(cs.path)) {
           return;
         }
-        const v2y = this.props.v2y[cs.unit];
+        const v2y = this.props.yAxesProperties[cs.unit].derived.v2y;
         const pathPoints = interval.pathsData[cs.path].map(p => ({
           x: ts2x(p.t),
           y: v2y(p.v),

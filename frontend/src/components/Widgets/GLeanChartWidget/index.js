@@ -224,6 +224,7 @@ export class ChartContainer extends React.Component {
   state = {
     fetchedIntervalsData: [],
     errorMsg: null,
+    yAxesProperties: {},
   };
   requestsInProgress = [
     // {
@@ -267,7 +268,6 @@ export class ChartContainer extends React.Component {
       this.paths = this.props.chartSeries.map(cs => cs.path);
       this.ensureData(this.props.fromTs, this.props.toTs);
     }
-    this.updateYAxisDerivedProperties();
   }
 
   ensureData(fromTs, toTs) {
@@ -402,6 +402,12 @@ export class ChartContainer extends React.Component {
         dv2dy: dv => (dv * yAxisHeight) / (maxY - minY),
       };
     }
+    // It would be nice if we had a single source of truth for yAxesProperties - but unfortunately
+    // we added it to `this`, so we need to have a duplicate in `this.state` if we want rendering
+    // to work. The next line triggers the rerender of children whenever yAxesProperties are updated:
+    this.setState({
+      yAxesProperties: { ...this.yAxesProperties },
+    });
   };
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -488,7 +494,7 @@ export class ChartContainer extends React.Component {
         errorMsg={this.state.errorMsg}
         isAggr={this.state.aggrLevel >= 0}
         minKnownTs={this.getMinKnownTs()}
-        yAxesProperties={this.yAxesProperties}
+        yAxesProperties={this.state.yAxesProperties}
         onMinYChange={this.onMinYChange}
         onMaxYChange={this.onMaxYChange}
       />
@@ -746,11 +752,7 @@ export class ChartView extends React.Component {
                 scale={this.props.scale}
                 isAggr={this.props.isAggr}
                 drawnChartSeries={this.props.drawnChartSeries}
-                // dict of v2y() functions per unit: (each unit has its own v2y())
-                v2y={Object.keys(this.props.yAxesProperties).reduce((result, unit) => {
-                  result[unit] = this.props.yAxesProperties[unit].derived.v2y;
-                  return result;
-                }, {})}
+                yAxesProperties={this.props.yAxesProperties}
               />
 
               {closest && (
