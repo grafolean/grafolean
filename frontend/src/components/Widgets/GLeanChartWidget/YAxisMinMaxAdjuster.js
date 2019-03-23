@@ -13,6 +13,7 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
   };
   state = {
     draggedToY: null,
+    isReset: false,
   };
 
   dragging = false; // not sure if we need this - it makes sure that moveDrag doesn't happen after endDrag
@@ -29,10 +30,12 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
   };
 
   endDrag = () => {
+    const { draggedToY, isReset } = this.state;
     this.dragging = false;
-    this.props.onChangeEnd(this.state.draggedToY);
+    this.props.onChangeEnd(isReset ? undefined : draggedToY);
     this.setState({
       draggedToY: null,
+      isReset: false,
     });
   };
 
@@ -44,12 +47,13 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
     const newY = startY + ev.pageY - this.initialPageY;
     this.setState({
       draggedToY: Math.min(bottomLimit, Math.max(topLimit, newY)),
+      isReset: (startY === topLimit && newY < topLimit) || (startY === bottomLimit && newY > bottomLimit),
     });
   };
 
   render() {
-    const { x, startY, shadowWidth } = this.props;
-    const { draggedToY } = this.state;
+    const { x, startY, shadowWidth, topLimit } = this.props;
+    const { draggedToY, isReset } = this.state;
     const A = 4; // half of mark height
     const B = 2; // width of rectangle
     return (
@@ -62,14 +66,18 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
             height={Math.abs(draggedToY - startY)}
           />
         )}
-        <path
-          d={`M${x},${draggedToY ? draggedToY : startY} l${-A},${A} l${-B},0 l0,${-2 *
-            A} l${+B},0 l${A},${A}`}
+        <g
           onPointerDown={this.startDrag}
           onPointerUp={this.endDrag}
           onPointerCancel={this.endDrag}
           onPointerMoveCapture={this.moveDrag}
-        />
+          transform={`translate(${x},${draggedToY ? draggedToY : startY})`}
+        >
+          <path
+            className={`handle ${isReset ? 'reset' : ''} ${startY === topLimit ? 'top' : 'bottom'}`}
+            d={`M0,0 l${-A},${A} l${-B},0 l0,${-2 * A} l${+B},0 l${A},${A}`}
+          />
+        </g>
       </g>
     );
   }

@@ -474,7 +474,7 @@ export class ChartContainer extends React.Component {
 
   onMinYChange = (unit, y) => {
     this.setState(prevState => {
-      const v = prevState.yAxesProperties[unit].derived.y2v(y);
+      const v = y === undefined ? undefined : prevState.yAxesProperties[unit].derived.y2v(y);
       const newYAxesProperties = { ...prevState.yAxesProperties };
       newYAxesProperties[unit].minYValueUserSet = v;
       this.updateYAxisDerivedProperties(newYAxesProperties);
@@ -486,7 +486,7 @@ export class ChartContainer extends React.Component {
 
   onMaxYChange = (unit, y) => {
     this.setState(prevState => {
-      const v = prevState.yAxesProperties[unit].derived.y2v(y);
+      const v = y === undefined ? undefined : prevState.yAxesProperties[unit].derived.y2v(y);
       const newYAxesProperties = { ...prevState.yAxesProperties };
       newYAxesProperties[unit].maxYValueUserSet = v;
       this.updateYAxisDerivedProperties(newYAxesProperties);

@@ -13,5 +13,12 @@
     stroke-linecap: square;
     stroke-linejoin: miter;
     shape-rendering: crispEdges;
+
+    &.handle.reset.top {
+      transform: rotate(-90deg);
+    }
+    &.handle.reset.bottom {
+      transform: rotate(90deg);
+    }
   }
 }
