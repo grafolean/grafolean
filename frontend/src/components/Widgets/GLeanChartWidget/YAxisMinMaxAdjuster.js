@@ -9,7 +9,6 @@ export class AdjusterMark extends React.PureComponent {
     bottomLimit: 100,
   };
   state = {
-    y: this.props.startY,
     handleY: this.props.startY,
   };
 
@@ -28,7 +27,6 @@ export class AdjusterMark extends React.PureComponent {
     this.props.onChangeEnd(this.state.handleY);
     this.setState({
       handleY: this.props.startY,
-      y: this.props.startY,
     });
   };
 
@@ -39,7 +37,6 @@ export class AdjusterMark extends React.PureComponent {
     const { bottomLimit, topLimit } = this.props;
     const newY = this.props.startY + ev.pageY - this.initialPageY;
     this.setState(({ y }) => ({
-      y: newY,
       handleY: Math.min(bottomLimit, Math.max(topLimit, newY)),
     }));
   };
