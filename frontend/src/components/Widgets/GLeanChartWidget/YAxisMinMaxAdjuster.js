@@ -66,46 +66,33 @@ export class AdjusterMark extends React.PureComponent {
 export default class YAxisMinMaxAdjuster extends React.PureComponent {
   static defaultProps = {
     minYDiff: 10,
-    defaultMinYValue: 0,
-    defaultMaxYValue: 10,
-    v2y: v => null,
-    x: 0,
+    defaultMinYValue: null,
+    defaultMaxYValue: null,
+    v2y: () => {},
+    x: null,
   };
-  state = {
-    minY: this.props.v2y(this.props.defaultMinYValue),
-    maxY: this.props.v2y(this.props.defaultMaxYValue),
-    adjusting: false,
-  };
-
-  changeMinY = y => {
-    this.props.onMinYChange(y);
-  };
-
-  changeMaxY = y => {
-    this.props.onMaxYChange(y);
-  };
+  minY = this.props.v2y(this.props.defaultMinYValue);
+  maxY = this.props.v2y(this.props.defaultMaxYValue);
 
   render() {
     const { x, shadowWidth } = this.props;
-    const { minY, maxY } = this.state;
-
     return (
       <g className="yaxis-minmax-adjuster">
         <AdjusterMark
-          startY={maxY}
+          startY={this.maxY}
           x={x}
           shadowWidth={shadowWidth}
-          topLimit={maxY}
-          bottomLimit={minY - 10}
-          onChangeEnd={this.changeMaxY}
+          topLimit={this.maxY}
+          bottomLimit={this.minY - 10}
+          onChangeEnd={this.props.onMaxYChange}
         />
         <AdjusterMark
-          startY={minY}
+          startY={this.minY}
           x={x}
           shadowWidth={shadowWidth}
-          topLimit={maxY + 10}
-          bottomLimit={minY}
-          onChangeEnd={this.changeMinY}
+          topLimit={this.maxY + 10}
+          bottomLimit={this.minY}
+          onChangeEnd={this.props.onMinYChange}
         />
       </g>
     );
