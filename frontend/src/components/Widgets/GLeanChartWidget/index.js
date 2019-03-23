@@ -251,7 +251,6 @@ export class ChartContainer extends React.Component {
     */
   };
   paths = null;
-  yAxesProperties = {};
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
@@ -349,48 +348,56 @@ export class ChartContainer extends React.Component {
     ];
 
     // while you are saving data, update min/max value:
-    for (let cs of this.props.chartSeries) {
-      if (!this.yAxesProperties.hasOwnProperty(cs.unit)) {
-        this.yAxesProperties[cs.unit] = {
-          minYValue: 0,
-          maxYValue: Number.NEGATIVE_INFINITY,
-        };
-      }
-      this.yAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce(
-        (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
-        this.yAxesProperties[cs.unit].minYValue,
-      );
-      this.yAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce(
-        (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
-        this.yAxesProperties[cs.unit].maxYValue,
-      );
-    }
+    this.setState(prevState => {
+      const newYAxesProperties = { ...prevState.yAxesProperties };
 
-    // now that you have updated minYValue and maxYValue for each unit, prepare some of the data that you
-    // will need often in cache - minY, maxY, ticks, v2y() and y2v():
-    this.updateYAxisDerivedProperties();
+      for (let cs of this.props.chartSeries) {
+        if (!newYAxesProperties.hasOwnProperty(cs.unit)) {
+          newYAxesProperties[cs.unit] = {
+            minYValue: 0,
+            maxYValue: Number.NEGATIVE_INFINITY,
+          };
+        }
+        newYAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce(
+          (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
+          newYAxesProperties[cs.unit].minYValue,
+        );
+        newYAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce(
+          (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
+          newYAxesProperties[cs.unit].maxYValue,
+        );
+      }
+
+      // now that you have updated minYValue and maxYValue for each unit, prepare some of the derived data that you
+      // will need often - minY, maxY, ticks, v2y(), y2v(), ticks and similar:
+      this.updateYAxisDerivedProperties(newYAxesProperties);
+      return {
+        yAxesProperties: newYAxesProperties,
+      };
+    });
 
     this.setState({
       fetchedIntervalsData: this.fetchedData[aggrLevel],
     });
   }
 
-  updateYAxisDerivedProperties = () => {
+  // in-place updates yAxesProperties derived properties (v2y and similar)
+  updateYAxisDerivedProperties = yAxesProperties => {
     const { height, xAxisHeight } = this.props;
     const yAxisHeight = height - xAxisHeight - this.YAXIS_TOP_PADDING;
-    for (let unit in this.yAxesProperties) {
+    for (let unit in yAxesProperties) {
       const minYValueEffective =
-        this.yAxesProperties[unit].minYValueUserSet !== undefined
-          ? this.yAxesProperties[unit].minYValueUserSet
-          : this.yAxesProperties[unit].minYValue;
+        yAxesProperties[unit].minYValueUserSet !== undefined
+          ? yAxesProperties[unit].minYValueUserSet
+          : yAxesProperties[unit].minYValue;
       const maxYValueEffective =
-        this.yAxesProperties[unit].maxYValueUserSet !== undefined
-          ? this.yAxesProperties[unit].maxYValueUserSet
-          : this.yAxesProperties[unit].maxYValue;
+        yAxesProperties[unit].maxYValueUserSet !== undefined
+          ? yAxesProperties[unit].maxYValueUserSet
+          : yAxesProperties[unit].maxYValue;
       const ticks = ChartView.getYTicks(minYValueEffective, maxYValueEffective);
       const minY = parseFloat(ticks[0]);
       const maxY = parseFloat(ticks[ticks.length - 1]);
-      this.yAxesProperties[unit].derived = {
+      yAxesProperties[unit].derived = {
         minYValueEffective: minYValueEffective,
         maxYValueEffective: maxYValueEffective,
         minY: minY,
@@ -402,12 +409,6 @@ export class ChartContainer extends React.Component {
         dv2dy: dv => (dv * yAxisHeight) / (maxY - minY),
       };
     }
-    // It would be nice if we had a single source of truth for yAxesProperties - but unfortunately
-    // we added it to `this`, so we need to have a duplicate in `this.state` if we want rendering
-    // to work. The next line triggers the rerender of children whenever yAxesProperties are updated:
-    this.setState({
-      yAxesProperties: { ...this.yAxesProperties },
-    });
   };
 
   startFetchRequest(fromTs, toTs, aggrLevel) {
@@ -474,15 +475,27 @@ export class ChartContainer extends React.Component {
   }
 
   onMinYChange = (unit, y) => {
-    const v = this.yAxesProperties[unit].derived.y2v(y);
-    this.yAxesProperties[unit].minYValueUserSet = v;
-    this.updateYAxisDerivedProperties();
+    this.setState(prevState => {
+      const v = prevState.yAxesProperties[unit].derived.y2v(y);
+      const newYAxesProperties = { ...prevState.yAxesProperties };
+      newYAxesProperties[unit].minYValueUserSet = v;
+      this.updateYAxisDerivedProperties(newYAxesProperties);
+      return {
+        yAxesProperties: newYAxesProperties,
+      };
+    });
   };
 
   onMaxYChange = (unit, y) => {
-    const v = this.yAxesProperties[unit].derived.y2v(y);
-    this.yAxesProperties[unit].maxYValueUserSet = v;
-    this.updateYAxisDerivedProperties();
+    this.setState(prevState => {
+      const v = prevState.yAxesProperties[unit].derived.y2v(y);
+      const newYAxesProperties = { ...prevState.yAxesProperties };
+      newYAxesProperties[unit].maxYValueUserSet = v;
+      this.updateYAxisDerivedProperties(newYAxesProperties);
+      return {
+        yAxesProperties: newYAxesProperties,
+      };
+    });
   };
 
   render() {
