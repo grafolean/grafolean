@@ -807,19 +807,32 @@ export class ChartView extends React.Component {
             />
           </g>
 
-          {drawnUnits.map((unit, i) => (
-            <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
-              <YAxisMinMaxAdjuster
-                x={this.props.yAxisWidth - 1}
-                shadowWidth={this.props.width - (i + 1) * this.props.yAxisWidth}
-                v2y={this.props.yAxesProperties[unit].derived.v2y}
-                defaultMinYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
-                defaultMaxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
-                onMinYChange={y => this.props.onMinYChange(unit, y)}
-                onMaxYChange={y => this.props.onMaxYChange(unit, y)}
-              />
-            </g>
-          ))}
+          {drawnUnits.map((unit, i) => {
+            const v2y = this.props.yAxesProperties[unit].derived.v2y;
+            const minY = v2y(this.props.yAxesProperties[unit].derived.minYValueEffective);
+            const maxY = v2y(this.props.yAxesProperties[unit].derived.maxYValueEffective);
+            const shadowWidth = this.props.width - (i + 1) * this.props.yAxisWidth;
+            return (
+              <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
+                <YAxisMinMaxAdjuster
+                  startY={maxY}
+                  x={this.props.yAxisWidth - 1}
+                  shadowWidth={shadowWidth}
+                  topLimit={maxY}
+                  bottomLimit={minY - 10}
+                  onChangeEnd={y => this.props.onMaxYChange(unit, y)}
+                />
+                <YAxisMinMaxAdjuster
+                  startY={minY}
+                  x={this.props.yAxisWidth - 1}
+                  shadowWidth={shadowWidth}
+                  topLimit={maxY + 10}
+                  bottomLimit={minY}
+                  onChangeEnd={y => this.props.onMinYChange(unit, y)}
+                />
+              </g>
+            );
+          })}
         </svg>
 
         {closest && (
