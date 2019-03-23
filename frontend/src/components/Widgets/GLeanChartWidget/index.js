@@ -811,6 +811,7 @@ export class ChartView extends React.Component {
             <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
               <YAxisMinMaxAdjuster
                 x={this.props.yAxisWidth - 1}
+                shadowWidth={this.props.width - (i + 1) * this.props.yAxisWidth}
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 defaultMinYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
                 defaultMaxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}

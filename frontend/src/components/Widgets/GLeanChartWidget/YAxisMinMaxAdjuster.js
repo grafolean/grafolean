@@ -45,14 +45,14 @@ export class AdjusterMark extends React.PureComponent {
   };
 
   render() {
-    const { x, startY } = this.props;
+    const { x, startY, shadowWidth } = this.props;
     const { handleY } = this.state;
     const A = 4; // half of mark height
     const B = 2; // width of rectangle
     return (
       <>
         {this.dragging && (
-          <rect x={x} y={Math.min(handleY, startY)} width={500} height={Math.abs(handleY - startY)} />
+          <rect x={x} y={Math.min(handleY, startY)} width={shadowWidth} height={Math.abs(handleY - startY)} />
         )}
         <path
           d={`M${x},${handleY} l${-A},${A} l${-B},0 l0,${-2 * A} l${+B},0 l${A},${A}`}
@@ -89,7 +89,7 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
   };
 
   render() {
-    const { x } = this.props;
+    const { x, shadowWidth } = this.props;
     const { minY, maxY } = this.state;
 
     return (
@@ -97,7 +97,7 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
         <AdjusterMark
           startY={maxY}
           x={x}
-          shadowWidth={200}
+          shadowWidth={shadowWidth}
           topLimit={maxY}
           bottomLimit={minY - 10}
           onChangeEnd={this.changeMaxY}
@@ -105,7 +105,7 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
         <AdjusterMark
           startY={minY}
           x={x}
-          shadowWidth={200}
+          shadowWidth={shadowWidth}
           topLimit={maxY + 10}
           bottomLimit={minY}
           onChangeEnd={this.changeMinY}
