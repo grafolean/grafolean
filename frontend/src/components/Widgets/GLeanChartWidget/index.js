@@ -398,9 +398,7 @@ export class ChartContainer extends React.Component {
       const minY = parseFloat(ticks[0]);
       const maxY = parseFloat(ticks[ticks.length - 1]);
       yAxesProperties[unit].derived = {
-        minYValueEffective: minYValueEffective,
-        maxYValueEffective: maxYValueEffective,
-        minY: minY,
+        minY: minY, // !!! misnomer: minYValue
         maxY: maxY,
         ticks: ticks,
         v2y: v => this.YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY),
@@ -744,9 +742,6 @@ export class ChartView extends React.Component {
             <g key={i} transform={`translate(${this.props.yAxisWidth * (i + 1)} 0)`}>
               <Grid
                 width={this.props.width - this.props.yAxisWidth * (i + 1)}
-                height={yAxisHeight}
-                minYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
-                maxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
                 color={generateGridColor(i)}
@@ -789,8 +784,6 @@ export class ChartView extends React.Component {
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
                 color="#999999"
-                defaultMinYValue={this.props.yAxesProperties[unit].derived.minYValueEffective}
-                defaultMaxYValue={this.props.yAxesProperties[unit].derived.maxYValueEffective}
               />
             </g>
           ))}
@@ -809,8 +802,8 @@ export class ChartView extends React.Component {
 
           {drawnUnits.map((unit, i) => {
             const v2y = this.props.yAxesProperties[unit].derived.v2y;
-            const minY = v2y(this.props.yAxesProperties[unit].derived.minYValueEffective);
-            const maxY = v2y(this.props.yAxesProperties[unit].derived.maxYValueEffective);
+            const minY = v2y(this.props.yAxesProperties[unit].derived.minY);
+            const maxY = v2y(this.props.yAxesProperties[unit].derived.maxY);
             const shadowWidth = this.props.width - (i + 1) * this.props.yAxisWidth;
             return (
               <g key={`${i}`} transform={`translate(${this.props.yAxisWidth * i} 0)`}>
