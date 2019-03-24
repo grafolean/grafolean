@@ -10,7 +10,7 @@ const timeFrom = 1550926131;
 const timeTo = 1551147882;
 const pathsDataRandom = [];
 const pathsDataSin = [];
-for (let t = timeFrom, i=0; t <= timeTo; t += 600.0, i++) {
+for (let t = timeFrom, i = 0; t <= timeTo; t += 600.0, i++) {
   const vRand = Math.random() * 10.0;
   pathsDataRandom.push({
     t: t,
@@ -45,7 +45,7 @@ const YAXIS_TOP_PADDING = 30;
 const yAxisHeight = 200;
 const minY = 0.0;
 const maxY = 10.0;
-const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY)
+const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY);
 const width = 600;
 
 stories.add('random data - raw', () => {
@@ -68,26 +68,29 @@ stories.add('random data - raw', () => {
         pathsData: {
           'dummy.random.1min': pathsDataRandomRaw,
           'dummy.sin.1min': pathsDataSinRaw,
-        }
+        },
       },
     ],
     isAggr: false,
     v2y: {
-      "": v2y_empty_unit,
+      '': v2y_empty_unit,
     },
-  }
+  };
 
   return (
     <>
-    <p>Canvas:</p>
-    <svg width={width} height={props.height} style={{
-      border: '1px solid #eee',
-    }}>
-      <LineChartCanvas {...props} />
-    </svg>
-
+      <p>Canvas:</p>
+      <svg
+        width={width}
+        height={props.height}
+        style={{
+          border: '1px solid #eee',
+        }}
+      >
+        <LineChartCanvas {...props} />
+      </svg>
     </>
-  )
+  );
 });
 
 stories.add('random data - aggregated', () => {
@@ -109,26 +112,29 @@ stories.add('random data - aggregated', () => {
         pathsData: {
           'dummy.random.1min': pathsDataRandom,
           'dummy.sin.1min': pathsDataSin,
-        }
+        },
       },
     ],
     isAggr: true,
     v2y: {
-      "": v2y_empty_unit,
+      '': v2y_empty_unit,
     },
   };
 
   return (
     <>
-    <p>Canvas:</p>
-    <svg width={width} height={yAxisHeight + YAXIS_TOP_PADDING} style={{
-      border: '1px solid #eee',
-    }}>
-      <LineChartCanvas {...props} />
-    </svg>
-
+      <p>Canvas:</p>
+      <svg
+        width={width}
+        height={yAxisHeight + YAXIS_TOP_PADDING}
+        style={{
+          border: '1px solid #eee',
+        }}
+      >
+        <LineChartCanvas {...props} />
+      </svg>
     </>
-  )
+  );
 });
 
 stories.add('whole chart', () => {
@@ -165,21 +171,15 @@ stories.add('whole chart', () => {
         minYValue: minY,
         maxYValue: maxY,
         derived: {
-          ticks: [
-            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-          ],
+          ticks: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
           v2y: v2y_empty_unit,
-        }
-      }
+        },
+      },
     },
     yAxisHeight: yAxisHeight,
     yAxisWidth: 70,
     zoomInProgress: false,
   };
 
-  return (
-    <ChartView
-      {...props}
-    />
-  )
+  return <ChartView {...props} />;
 });
