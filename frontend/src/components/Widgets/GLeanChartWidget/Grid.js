@@ -2,20 +2,21 @@ import React from 'react';
 
 export default class Grid extends React.Component {
   render() {
+    const { yTicks, v2y, width, color } = this.props;
     return (
       <g>
-        {this.props.yTicks !== null &&
-          this.props.yTicks.map(v => {
-            const y = this.props.v2y(v);
+        {yTicks !== null &&
+          yTicks.map(v => {
+            const y = v2y(v);
             return (
               <line
                 key={v}
                 x1={0}
                 y1={y}
-                x2={this.props.width}
+                x2={width}
                 y2={y}
                 shapeRendering="crispEdges"
-                stroke={this.props.color}
+                stroke={color}
                 strokeWidth="1"
               />
             );

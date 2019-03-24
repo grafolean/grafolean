@@ -1,0 +1,24 @@
+.yaxis-minmax-adjuster {
+  rect {
+    fill: #000;
+    stroke-width: 0;
+    opacity: 0.2;
+  }
+  path {
+    fill: #4cd074;
+    stroke: #4cd074;
+    // larger click area:
+    stroke-width: 20;
+    stroke-opacity: 0.00001;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    shape-rendering: crispEdges;
+
+    &.handle.reset.top {
+      transform: rotate(-90deg);
+    }
+    &.handle.reset.bottom {
+      transform: rotate(90deg);
+    }
+  }
+}

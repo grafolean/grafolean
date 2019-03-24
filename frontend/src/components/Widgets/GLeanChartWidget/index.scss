@@ -44,4 +44,21 @@
       font-size: 20px;
     }
   }
+
+  .y-axis-label {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 13px;
+    text-anchor: end;
+    fill: #333333;
+    stroke: none;
+  }
+
+  .y-axis-unit {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 13px;
+    text-anchor: end;
+    fill: #333333;
+    stroke: none;
+    font-weight: bold;
+  }
 }
