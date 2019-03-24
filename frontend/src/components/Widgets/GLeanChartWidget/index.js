@@ -175,7 +175,7 @@ class GLeanChartWidget extends React.Component {
               x: yAxesWidth,
               y: 0,
               w: chartWidth - yAxesWidth,
-              h: this.props.height - xAxisHeight,
+              h: this.props.height,
             }}
             kidnapScroll={this.props.isFullscreen}
             initialState={{
