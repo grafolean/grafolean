@@ -2,7 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
 
-import XAxisTick from './xaxistick';
+import XAxisTick from './XAxisTick';
 
 const _x2ts = (x, scale) => {
   return x / scale;
@@ -176,6 +176,7 @@ export default class TimestampXAxis extends React.Component {
         x: _ts2x(ts, scale) - panX,
         isMajor: _isMajorTick,
         label: tickLabelCallback(m, _isMajorTick),
+        isInterval: scale > 0.00138 ? false : true, // days, months and years are drawn a bit to the side, because they are intervals, not points in time
       });
     }
     return ret;
@@ -184,7 +185,7 @@ export default class TimestampXAxis extends React.Component {
   render() {
     const tickInfos = this._getXTicksPositions(this.props.panX, this.props.scale, this.props.width);
     return (
-      <g>
+      <g className="timestamp-x-axis">
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
         <Line x1={0} y1={0} x2={this.props.width} y2={0} />
 

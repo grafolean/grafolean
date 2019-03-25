@@ -1,0 +1,25 @@
+g.timestamp-x-axis {
+  line.minor-tick {
+    shape-rendering: crispEdges;
+    stroke: #999999;
+    stroke-width: 1;
+  }
+
+  line.major-tick {
+    shape-rendering: crispEdges;
+    stroke: #999999;
+    stroke-width: 1;
+  }
+
+  text.label {
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 12px;
+    text-anchor: middle;
+    fill: #333333;
+    stroke: none;
+
+    &.interval {
+      text-anchor: start;
+    }
+  }
+}
