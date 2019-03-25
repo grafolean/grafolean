@@ -1,8 +1,7 @@
 import React from 'react';
-import styled from 'styled-components';
 import moment from 'moment';
 
-import XAxisTick from './XAxisTick';
+import './TimestampXAxis.scss';
 
 const _x2ts = (x, scale) => {
   return x / scale;
@@ -11,12 +10,22 @@ const _ts2x = (ts, scale) => {
   return ts * scale;
 };
 
-const Line = styled.line`
-  shape-rendering: crispEdges;
-  stroke: #999999;
-  stroke-width: 1;
-`;
-Line.displayName = 'Line';
+class XAxisTick extends React.Component {
+  render() {
+    const { isMajor, x, label, isInterval } = this.props;
+    const tickSize = isMajor ? (isInterval ? 10 : 5) : 3;
+    return (
+      <g>
+        <line className={`${isMajor ? 'major' : 'minor'}-tick`} x1={x} y1={0} x2={x} y2={tickSize} />
+        {label && (
+          <text className={`label ${isInterval ? 'interval' : 'point'}`} x={isInterval ? x + 5 : x} y={18}>
+            {label}
+          </text>
+        )}
+      </g>
+    );
+  }
+}
 
 export default class TimestampXAxis extends React.Component {
   /*
@@ -187,7 +196,7 @@ export default class TimestampXAxis extends React.Component {
     return (
       <g className="timestamp-x-axis">
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
-        <Line x1={0} y1={0} x2={this.props.width} y2={0} />
+        <line x1={0} y1={0} x2={this.props.width} y2={0} />
 
         {tickInfos.map(tickInfo => (
           <XAxisTick key={tickInfo.ts} {...tickInfo} />

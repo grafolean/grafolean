@@ -1,4 +1,8 @@
-g.timestamp-x-axis {
+.timestamp-x-axis {
+  shape-rendering: crispEdges;
+  stroke: #999999;
+  stroke-width: 1;
+
   line.minor-tick {
     shape-rendering: crispEdges;
     stroke: #999999;
