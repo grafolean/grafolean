@@ -30,25 +30,25 @@ class Legend extends React.Component {
     width: 200,
     height: 300,
     chartSeries: [],
-    onDrawnChartSeriesChange: selectedChartSeries => {},
+    onDrawnChartSeriesChange: selectedChartSeriesSet => {},
   };
   state = {
-    selectedChartSeries: null, // this.props.chartSeries is not populated yet, so we will set selectedChartSeries once we get them
+    selectedChartSeriesSet: null, // this.props.chartSeries is not populated yet, so we will set selectedChartSeriesSet once we get them
     filter: '',
   };
 
   static getDerivedStateFromProps(props, state) {
-    // initialize this.state.selectedChartSeries:
-    if (state.selectedChartSeries === null && props.chartSeries.length > 0) {
+    // initialize this.state.selectedChartSeriesSet:
+    if (state.selectedChartSeriesSet === null && props.chartSeries.length > 0) {
       return {
-        selectedChartSeries: new Set(props.chartSeries),
+        selectedChartSeriesSet: new Set(props.chartSeries),
       };
     }
     return null;
   }
 
   handleDrawnPathsChange = filter => {
-    const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeries], filter);
+    const drawnChartSeries = Legend.getFilteredChartSeries([...this.state.selectedChartSeriesSet], filter);
     this.props.onDrawnChartSeriesChange(drawnChartSeries);
     this.setState({
       filter: filter,
@@ -58,14 +58,14 @@ class Legend extends React.Component {
   toggleChartSerieSelected(cs, filter) {
     this.setState(
       oldState => {
-        const newSelectedChartSeries = new Set(oldState.selectedChartSeries);
-        if (newSelectedChartSeries.has(cs)) {
-          newSelectedChartSeries.delete(cs);
+        const newSelectedChartSeriesSet = new Set(oldState.selectedChartSeriesSet);
+        if (newSelectedChartSeriesSet.has(cs)) {
+          newSelectedChartSeriesSet.delete(cs);
         } else {
-          newSelectedChartSeries.add(cs);
+          newSelectedChartSeriesSet.add(cs);
         }
         return {
-          selectedChartSeries: newSelectedChartSeries,
+          selectedChartSeriesSet: newSelectedChartSeriesSet,
         };
       },
       () => this.handleDrawnPathsChange(filter),
@@ -73,18 +73,18 @@ class Legend extends React.Component {
   }
 
   toggleAll(enable, filter) {
-    // remove from / add to state.selectedChartSeries all series which correspond to filter
+    // remove from / add to state.selectedChartSeriesSet all series which correspond to filter
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, filter);
     this.setState(
       oldState => {
-        const newSelectedChartSeries = new Set(oldState.selectedChartSeries);
+        const newSelectedChartSeriesSet = new Set(oldState.selectedChartSeriesSet);
         if (enable) {
-          filteredChartSeries.forEach(cs => newSelectedChartSeries.add(cs));
+          filteredChartSeries.forEach(cs => newSelectedChartSeriesSet.add(cs));
         } else {
-          filteredChartSeries.forEach(cs => newSelectedChartSeries.delete(cs));
+          filteredChartSeries.forEach(cs => newSelectedChartSeriesSet.delete(cs));
         }
         return {
-          selectedChartSeries: newSelectedChartSeries,
+          selectedChartSeriesSet: newSelectedChartSeriesSet,
         };
       },
       () => this.handleDrawnPathsChange(filter),
@@ -109,9 +109,9 @@ class Legend extends React.Component {
       return null;
     }
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, this.state.filter);
-    // are all filteredChartSeries in selectedChartSeries?
-    const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeries.has(cs));
-    const noneChecked = filteredChartSeries.every(cs => !this.state.selectedChartSeries.has(cs));
+    // are all filteredChartSeries in selectedChartSeriesSet?
+    const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeriesSet.has(cs));
+    const noneChecked = filteredChartSeries.every(cs => !this.state.selectedChartSeriesSet.has(cs));
     return (
       <div
         className="legend"
@@ -122,13 +122,19 @@ class Legend extends React.Component {
       >
         <Filter width={this.props.width} onChange={this.handleDrawnPathsChange} />
 
-        <div
-          className="path-checkbox-parent all"
-          onClick={() => this.toggleAll(allChecked ? false : true, this.state.filter)}
-        >
-          <Checkbox color="#666" checked={allChecked ? true : noneChecked ? false : null} />
-          <div className="checkbox-label">
-            <i className="fa fa-check" />
+        <div className="header-controls">
+          <div
+            className="path-checkbox-parent all"
+            onClick={() => this.toggleAll(allChecked ? false : true, this.state.filter)}
+          >
+            <Checkbox color="#666" checked={allChecked ? true : noneChecked ? false : null} />
+            <div className="checkbox-label">
+              <i className="fa fa-check" />
+            </div>
+          </div>
+
+          <div className="path-exchange-parent">
+            <i className={`fa fa-exchange ${allChecked || noneChecked ? 'disabled' : ''}`} />
           </div>
         </div>
 
@@ -143,7 +149,7 @@ class Legend extends React.Component {
             >
               <Checkbox
                 color={generateSerieColor(cs.path, cs.index)}
-                checked={this.state.selectedChartSeries.has(cs)}
+                checked={this.state.selectedChartSeriesSet.has(cs)}
               />
               <div className="checkbox-label">
                 <span className="legend-label">
