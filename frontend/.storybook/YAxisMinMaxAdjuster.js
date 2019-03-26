@@ -6,9 +6,13 @@ const stories = storiesOf('YAxisMinMaxAdjuster', module);
 
 stories.add('min / max', () => {
   return (
-    <svg width={500} height={400} style={{
-      border: '1px solid #eee',
-    }}>
+    <svg
+      width={500}
+      height={400}
+      style={{
+        border: '1px solid #eee',
+      }}
+    >
       <YAxisMinMaxAdjuster
         startY={10}
         x={10}
@@ -18,6 +22,5 @@ stories.add('min / max', () => {
         onChangeEnd={y => console.log('New y is: ' + y)}
       />
     </svg>
-  )
+  );
 });
-

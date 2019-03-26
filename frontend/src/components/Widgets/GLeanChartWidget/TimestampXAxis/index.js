@@ -1,8 +1,7 @@
 import React from 'react';
-import styled from 'styled-components';
 import moment from 'moment';
 
-import XAxisTick from './xaxistick';
+import './TimestampXAxis.scss';
 
 const _x2ts = (x, scale) => {
   return x / scale;
@@ -11,12 +10,58 @@ const _ts2x = (ts, scale) => {
   return ts * scale;
 };
 
-const Line = styled.line`
-  shape-rendering: crispEdges;
-  stroke: #999999;
-  stroke-width: 1;
-`;
-Line.displayName = 'Line';
+class XAxisTick extends React.Component {
+  render() {
+    const { isMajor, x, label, isInterval } = this.props;
+    const tickSize = isMajor ? (isInterval ? 10 : 5) : 3;
+    return (
+      <g>
+        <line className={`${isMajor ? 'major' : 'minor'}-tick`} x1={x} y1={0} x2={x} y2={tickSize} />
+        {label && (
+          <text className={`label ${isInterval ? 'interval' : 'point'}`} x={isInterval ? x + 5 : x} y={18}>
+            {label}
+          </text>
+        )}
+      </g>
+    );
+  }
+}
+
+class XAxisSecondaryInterval extends React.Component {
+  render() {
+    const { label, fromX, toX, isFirst } = this.props;
+    const diffX = toX - fromX;
+    return (
+      <g>
+        {isFirst ? (
+          <>
+            {diffX > 150 && (
+              <text className="label secondary-interval left" x={fromX + 5} y={40}>
+                {label}
+              </text>
+            )}
+            <text className="label secondary-interval right" x={toX - 5} y={40}>
+              {label}
+            </text>
+          </>
+        ) : (
+          <>
+            <line className="secondary-tick" x1={fromX} y1={22} x2={fromX} y2={40} />
+
+            <text className="label secondary-interval left" x={fromX + 5} y={40}>
+              {label}
+            </text>
+            {diffX > 150 && (
+              <text className="label secondary-interval right" x={toX - 5} y={40}>
+                {label}
+              </text>
+            )}
+          </>
+        )}
+      </g>
+    );
+  }
+}
 
 export default class TimestampXAxis extends React.Component {
   /*
@@ -25,7 +70,8 @@ export default class TimestampXAxis extends React.Component {
     https://www.highcharts.com/demo/line-boost/dark-unica
   */
 
-  _getXTicksPositions(panX, scale, width) {
+  getXTicksPositions() {
+    const { panX, scale, width } = this.props;
     // depending on scale, we use different label formatting, spacing,... to display ticks. First set
     // the vars for every possible scale:
     let minorTickDurationUnit, isMajorTickCallback, tickLabelCallback; // http://momentjs.com/docs/#/parsing/string-format/
@@ -119,19 +165,19 @@ export default class TimestampXAxis extends React.Component {
     } else if (scale > 0.000049) {
       minorTickDurationUnit = 'day';
       isMajorTickCallback = m => m.date() === 1;
-      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM YYYY') : null);
+      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM') : null);
     } else if (scale > 0.000033) {
       minorTickDurationUnit = 'month';
       isMajorTickCallback = m => true;
-      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM YYYY') : null);
+      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM') : null);
     } else if (scale > 0.000015) {
       minorTickDurationUnit = 'month';
       isMajorTickCallback = m => m.month() % 2 === 0;
-      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM YYYY') : null);
+      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM') : null);
     } else if (scale > 0.0000089) {
       minorTickDurationUnit = 'month';
       isMajorTickCallback = m => m.month() % 6 === 0;
-      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM YYYY') : null);
+      tickLabelCallback = (m, isMajorTick) => (isMajorTick ? m.format('MMM') : null);
     } else if (scale > 0.0000028) {
       minorTickDurationUnit = 'month';
       isMajorTickCallback = m => m.month() === 0;
@@ -157,10 +203,10 @@ export default class TimestampXAxis extends React.Component {
     }
 
     // now that you know how, display the ticks and labels:
-    let ret = [];
+    let ticks = [];
     const tsMin = _x2ts(panX, scale);
     const tsMax = _x2ts(panX + width, scale);
-    let minorTickDuration = moment.duration(minorTickDurationQuantity, minorTickDurationUnit + 's'); // not sure if 's' is needed - moment.js documentation indicates so: http://momentjs.com/docs/#/durations/
+    let minorTickDuration = moment.duration(minorTickDurationQuantity, minorTickDurationUnit);
     // make sure that start is aligned with minorTickDurationQuantity times minorTickDurationUnit:
     const start = moment(tsMin * 1000).startOf(minorTickDurationUnit);
     let maybeUnrounded = start.get(minorTickDurationUnit);
@@ -168,28 +214,74 @@ export default class TimestampXAxis extends React.Component {
       .set(minorTickDurationUnit, maybeUnrounded - (maybeUnrounded % minorTickDurationQuantity))
       .add(minorTickDuration);
     const end = moment(tsMax * 1000).endOf(minorTickDurationUnit);
-    for (let m = start; m.isBefore(end); m.add(minorTickDuration)) {
-      let ts = m.unix();
-      let _isMajorTick = isMajorTickCallback(m);
-      ret.push({
-        ts,
+    for (let m = start.clone(); m.isBefore(end); m.add(minorTickDuration)) {
+      const ts = m.unix();
+      const isMajorTick = isMajorTickCallback(m);
+      ticks.push({
+        ts: ts,
         x: _ts2x(ts, scale) - panX,
-        isMajor: _isMajorTick,
-        label: tickLabelCallback(m, _isMajorTick),
+        isMajor: isMajorTick,
+        label: tickLabelCallback(m, isMajorTick),
+        isInterval: scale > 0.00138 ? false : true, // days, months and years are drawn a bit to the side, because they are intervals, not points in time
       });
     }
-    return ret;
+
+    // sometimes it makes sense to display the larger interval in the second line (when
+    // there are only hours displayed, show they day; with only days, show the year)
+    let secondaryIntervalDurationUnit;
+    let secondaryIntervalLabelFormat;
+    if (scale > 0.00138) {
+      secondaryIntervalDurationUnit = 'day';
+      secondaryIntervalLabelFormat = 'D.M.YY';
+    } else if (scale > 0.0000089) {
+      secondaryIntervalDurationUnit = 'year';
+      secondaryIntervalLabelFormat = 'YYYY';
+    } else {
+      secondaryIntervalDurationUnit = null;
+    }
+    let secondaryIntervals = [];
+    const endRight = moment(tsMax * 1000);
+    if (secondaryIntervalDurationUnit) {
+      // first interval is special in that it needs to reach the end of whatever unit is used:
+      const unalignedStart = moment(tsMin * 1000);
+      const nextStart = unalignedStart
+        .clone()
+        .add(1, secondaryIntervalDurationUnit)
+        .startOf(secondaryIntervalDurationUnit);
+      secondaryIntervals.push({
+        label: unalignedStart.format(secondaryIntervalLabelFormat),
+        fromX: _ts2x(unalignedStart.unix(), scale) - panX,
+        toX: _ts2x(moment.min(nextStart, endRight).unix(), scale) - panX,
+      });
+      for (let m = nextStart; m.isBefore(endRight); m.add(1, secondaryIntervalDurationUnit)) {
+        secondaryIntervals.push({
+          label: m.format(secondaryIntervalLabelFormat),
+          fromX: _ts2x(m.unix(), scale) - panX,
+          toX:
+            _ts2x(moment.min(m.clone().add(1, secondaryIntervalDurationUnit), endRight).unix(), scale) - panX,
+        });
+      }
+    }
+
+    return {
+      ticks: ticks,
+      secondaryIntervals: secondaryIntervals,
+    };
   }
 
   render() {
-    const tickInfos = this._getXTicksPositions(this.props.panX, this.props.scale, this.props.width);
+    const { ticks, secondaryIntervals } = this.getXTicksPositions();
     return (
-      <g>
+      <g className="timestamp-x-axis">
         <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
-        <Line x1={0} y1={0} x2={this.props.width} y2={0} />
+        <line x1={0} y1={0} x2={this.props.width} y2={0} />
 
-        {tickInfos.map(tickInfo => (
+        {ticks.map(tickInfo => (
           <XAxisTick key={tickInfo.ts} {...tickInfo} />
+        ))}
+
+        {secondaryIntervals.map((interval, i) => (
+          <XAxisSecondaryInterval key={`${interval.label}`} isFirst={i === 0} {...interval} />
         ))}
       </g>
     );
