@@ -6,7 +6,7 @@ Licensor: Anže Škerlavaj
 
 Software: Grafolean
 
-Use Limitation: 20 users
+Use Limitation: 10 users
 
 License Grant. Licensor hereby grants to each recipient of the
 Software ("you") a non-exclusive, non-transferable, royalty-free and

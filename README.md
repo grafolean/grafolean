@@ -9,11 +9,11 @@ This is still an early stage software, with many features still in planning and 
 
 # License
 
-Grafolean is licensed under Fair Source 20 license (see `LICENSE.md`), which means that the number of users per organization is limited to 20, otherwise the usage must be paid for [^3].
+Grafolean is licensed under Fair Source 10 license (see `LICENSE.md`), which means that the number of users per organization is limited to 10, otherwise the usage must be paid for [^3].
 
 This licence means that Grafolean is *not* open source (as per [OSI definition](https://opensource.org/osd-annotated)), nor is it free software (as per [FSF definition](https://www.gnu.org/philosophy/free-sw.en.html)). We understand (and regret) that this might not be acceptable to some potential users or contributors. However we believe this compromise keeps the best properties of free / open source, while also aligning incentives of developers and users - to have a monitoring system with the best possible user experience, freely available to small entities, with active and ongoing development.
 
-[^3]: commercial licenses are currently not (yet) available - contact us if you hit the limit and we will find a suitable solution
+[^3]: commercial licenses are not yet available - contact us if you hit the limit and we will find a suitable solution
 
 # Install
 
