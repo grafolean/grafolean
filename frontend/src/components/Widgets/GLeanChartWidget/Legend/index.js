@@ -72,7 +72,7 @@ class Legend extends React.Component {
     );
   }
 
-  toggleAll(enable, filter) {
+  setEnabledAll(enable, filter) {
     // remove from / add to state.selectedChartSeriesSet all series which correspond to filter
     const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, filter);
     this.setState(
@@ -83,6 +83,27 @@ class Legend extends React.Component {
         } else {
           filteredChartSeries.forEach(cs => newSelectedChartSeriesSet.delete(cs));
         }
+        return {
+          selectedChartSeriesSet: newSelectedChartSeriesSet,
+        };
+      },
+      () => this.handleDrawnPathsChange(filter),
+    );
+  }
+
+  toggleAll(filter) {
+    // remove from / add to state.selectedChartSeriesSet all series which correspond to filter
+    const filteredChartSeries = Legend.getFilteredChartSeries(this.props.chartSeries, filter);
+    this.setState(
+      oldState => {
+        const newSelectedChartSeriesSet = new Set(oldState.selectedChartSeriesSet);
+        filteredChartSeries.forEach(cs => {
+          if (newSelectedChartSeriesSet.has(cs)) {
+            newSelectedChartSeriesSet.delete(cs);
+          } else {
+            newSelectedChartSeriesSet.add(cs);
+          }
+        });
         return {
           selectedChartSeriesSet: newSelectedChartSeriesSet,
         };
@@ -112,6 +133,7 @@ class Legend extends React.Component {
     // are all filteredChartSeries in selectedChartSeriesSet?
     const allChecked = filteredChartSeries.every(cs => this.state.selectedChartSeriesSet.has(cs));
     const noneChecked = filteredChartSeries.every(cs => !this.state.selectedChartSeriesSet.has(cs));
+    const exchangeAllowed = !allChecked && !noneChecked;
     return (
       <div
         className="legend"
@@ -125,7 +147,7 @@ class Legend extends React.Component {
         <div className="header-controls">
           <div
             className="path-checkbox-parent all"
-            onClick={() => this.toggleAll(allChecked ? false : true, this.state.filter)}
+            onClick={() => this.setEnabledAll(allChecked ? false : true, this.state.filter)}
           >
             <Checkbox color="#666" checked={allChecked ? true : noneChecked ? false : null} />
             <div className="checkbox-label">
@@ -133,8 +155,11 @@ class Legend extends React.Component {
             </div>
           </div>
 
-          <div className="path-exchange-parent">
-            <i className={`fa fa-exchange ${allChecked || noneChecked ? 'disabled' : ''}`} />
+          <div
+            className="path-exchange-parent"
+            onClick={() => exchangeAllowed && this.toggleAll(this.state.filter)}
+          >
+            <i className={`fa fa-exchange ${!exchangeAllowed ? 'disabled' : ''}`} />
           </div>
         </div>
 
