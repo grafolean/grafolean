@@ -38,7 +38,7 @@ stories.add('list of possible scales', () => {
     0.00000074,
     0.00000042,
   ];
-  const fromTs = 1551646675;
+  const fromTs = 1545946675;
   return (
     <div>
       <svg

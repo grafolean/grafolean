@@ -25,5 +25,11 @@
     &.interval {
       text-anchor: start;
     }
+    &.secondary-interval.right {
+      text-anchor: end;
+    }
+    &.secondary-interval.left {
+      text-anchor: start;
+    }
   }
 }
