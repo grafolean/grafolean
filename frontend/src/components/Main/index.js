@@ -20,6 +20,7 @@ import PageNotFound from '../PageNotFound';
 import Profile from '../Profile';
 import CORSWarningPage from '../CORSWarningPage';
 import Bots from '../Bots';
+import Persons from '../Persons/Persons';
 import BotNewForm from '../BotNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
@@ -144,7 +145,10 @@ class SidebarContentNoStore extends React.Component {
         </Link>
         <div className="spacer" />
         <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
-          <i className="fa fa-user-secret" /> Bots
+          <i className="fa fa-robot" /> Bots
+        </Link>
+        <Link className="button green" to="/settings/users" onClick={onSidebarLinkClick}>
+          <i className="fa fa-users" /> Users
         </Link>
         <Link className="button green" to="/about/changelog" onClick={onSidebarLinkClick}>
           <i className="fa fa-list" /> Changelog
@@ -262,6 +266,7 @@ class LoggedInContent extends React.Component {
             <WrappedRoute exact contentWidth={contentWidth} path="/" component={WelcomePage} />
             <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
             <WrappedRoute exact contentWidth={contentWidth} path="/settings/bots" component={Bots} />
+            <WrappedRoute exact contentWidth={contentWidth} path="/settings/users" component={Persons} />
             <WrappedRoute exact contentWidth={contentWidth} path="/about/changelog" component={Changelog} />
             <WrappedRoute
               exact

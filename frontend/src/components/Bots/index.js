@@ -34,14 +34,14 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  handleDelete = (ev, bot_id) => {
+  handleDelete = (ev, botId) => {
     ev.preventDefault();
-    const bot = this.state.bots.find(bot => bot.id === bot_id);
+    const bot = this.state.bots.find(bot => bot.id === botId);
     if (!window.confirm(`Are you sure you want to delete bot "${bot.name}" ? This can't be undone!`)) {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/bots/${bot_id}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/admin/bots/${botId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .then(() =>
         this.setState(

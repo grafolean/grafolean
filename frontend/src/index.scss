@@ -99,3 +99,14 @@ a.button, button {
     margin: 10px 10px 20px;
   }
 }
+
+// generic list - for bots, persons and similar:
+table.list {
+  border-collapse: collapse;
+  margin-bottom: 20px;
+
+  td, th {
+    border: 1px solid #ccc;
+    padding: 10px 20px;
+  }
+}
