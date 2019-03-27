@@ -12,3 +12,5 @@ echo "" > /grafolean/backend/.env
 [ -n "${MQTT_WS_PORT}" ] && echo "MQTT_WS_PORT=${MQTT_WS_PORT}" >> /grafolean/backend/.env
 [ -n "${MQTT_WS_SSL}" ] && echo "MQTT_WS_SSL=${MQTT_WS_SSL}" >> /grafolean/backend/.env
 [ -n "${GRAFOLEAN_CORS_DOMAINS}" ] && echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env
+
+exit 0

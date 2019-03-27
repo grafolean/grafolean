@@ -403,6 +403,7 @@ def admin_bots():
             'token': bot_token,
         }), 201
 
+
 @app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def admin_bot_crud(user_id):
     if flask.request.method in ['GET', 'HEAD']:
@@ -425,13 +426,40 @@ def admin_bot_crud(user_id):
         return "", 200
 
 
-@app.route('/api/admin/persons', methods=['POST'])
-def admin_persons_post():
-    person = Person.forge_from_input(flask.request)
-    user_id = person.insert()
-    return json.dumps({
-        'id': user_id,
-    }), 201
+@app.route('/api/admin/persons', methods=['GET', 'POST'])
+def admin_persons():
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Person.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        person = Person.forge_from_input(flask.request)
+        user_id = person.insert()
+        return json.dumps({
+            'id': user_id,
+        }), 201
+
+
+@app.route('/api/admin/persons/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
+def admin_person_crud(user_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Person.get(user_id)
+        if not rec:
+            return "No such person", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        person = Person.forge_from_input(flask.request, force_id=user_id)
+        rowcount = person.update()
+        if not rowcount:
+            return "No such person", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        rowcount = Person.delete(user_id)
+        if not rowcount:
+            return "No such person", 404
+        return "", 200
 
 
 # --------------

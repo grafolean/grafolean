@@ -797,6 +797,62 @@ def test_bots_token(app_client, admin_authorization_header, bot_token, account_i
     assert r.status_code == 401
 
 
+def test_persons_crud(app_client, admin_authorization_header):
+    """
+        Create a person, make sure it is in the list... and so on.
+    """
+    data = { 'name': 'Person 1', 'username': 'person1', 'email': 'test@grafolean.com', 'password': 'hello' }
+    r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    j = json.loads(r.data.decode('utf-8'))
+    person_id = j['id']
+
+    r = app_client.get('/api/admin/persons', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'list': [
+            actual['list'][0],  # admin is already in the list
+            {
+                'user_id': person_id,
+                'name': data['name'],
+                'username': data['username'],
+                'email': data['email'],
+            },
+        ],
+    }
+    assert actual == expected
+
+    # individual GET:
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = expected['list'][1]
+    assert actual == expected
+
+    # PUT:
+    data = { 'name': 'Person 1 - altered', 'username': 'person1b', 'email': 'test2@grafolean.com' }
+    r = app_client.put('/api/admin/persons/{}'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == data['name']
+    assert actual['username'] == data['username']
+    assert actual['email'] == data['email']
+
+    # DELETE:
+    r = app_client.delete('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
+    r = app_client.get('/api/admin/persons', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert len(actual['list']) == 1
+    assert actual['list'][0]['username'] == USERNAME_ADMIN
+
+
 def test_auth_grant_permission(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
     """
         - user can't access anything (test with a few endpoints)
