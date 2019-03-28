@@ -43,7 +43,7 @@ export default class Persons extends React.PureComponent {
           {
             persons: null,
           },
-          this.fetchBots,
+          this.fetchPersons,
         ),
       )
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
@@ -87,7 +87,7 @@ export default class Persons extends React.PureComponent {
             </table>
           )
         )}
-        <Link className="button green" to="/settings/persons/new">
+        <Link className="button green" to="/settings/users/new">
           <i className="fa fa-plus" /> Add person
         </Link>
       </div>

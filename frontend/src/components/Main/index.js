@@ -22,6 +22,7 @@ import CORSWarningPage from '../CORSWarningPage';
 import Bots from '../Bots';
 import Persons from '../Persons/Persons';
 import BotNewForm from '../BotNewForm';
+import PersonNewForm from '../PersonNewForm/PersonNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
@@ -273,6 +274,12 @@ class LoggedInContent extends React.Component {
               contentWidth={contentWidth}
               path="/settings/bots/new"
               component={BotNewForm}
+            />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/settings/users/new"
+              component={PersonNewForm}
             />
 
             <WrappedRoute
