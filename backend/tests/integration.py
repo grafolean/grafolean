@@ -827,8 +827,24 @@ def test_persons_crud(app_client, admin_authorization_header):
     r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    expected = expected['list'][1]
-    assert actual == expected
+    expected_single = expected['list'][1]
+    expected_single['permissions'] = []
+    assert actual == expected_single
+    # individual GET for the first (admin) user:
+    r = app_client.get('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected_single = expected['list'][0]
+    # make sure the permissions are there:
+    expected_single['permissions'] = [
+        {
+            'id': 1,
+            'user_id': EXPECTED_FIRST_ADMIN_ID,
+            'resource_prefix': None,
+            'methods': None,
+        }
+    ]
+    assert actual == expected_single
 
     # PUT:
     data = { 'name': 'Person 1 - altered', 'username': 'person1b', 'email': 'test2@grafolean.com' }

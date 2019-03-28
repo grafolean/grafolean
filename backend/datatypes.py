@@ -619,10 +619,13 @@ class Permission(object):
         return cls(data['user_id'], data['resource_prefix'], data['methods'])
 
     @staticmethod
-    def get_list():
+    def get_list(user_id=None):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            if user_id is None:
+                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            else:
+                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
             for permission_id, user_id, resource_prefix, methods in c:
                 ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods})
             return ret

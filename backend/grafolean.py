@@ -446,6 +446,7 @@ def admin_person_crud(user_id):
         rec = Person.get(user_id)
         if not rec:
             return "No such person", 404
+        rec['permissions'] = Permission.get_list(user_id)
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
