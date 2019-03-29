@@ -72,9 +72,9 @@ export default class Persons extends React.PureComponent {
                     <td>{person.name}</td>
                     <td>{person.email}</td>
                     <td>
-                      <Button className="green">
+                      <Link className="button green" to={`/settings/users/${person.user_id}/permissions`}>
                         <i className="fa fa-user-lock" /> Permissions
-                      </Button>
+                      </Link>
                     </td>
                     <td>
                       <Button className="red" onClick={ev => this.handleDelete(ev, person.user_id)}>

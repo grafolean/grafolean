@@ -5,6 +5,7 @@ import Sidebar from 'react-sidebar';
 
 import store from '../../store';
 import { fetchBackendStatus, ROOT_URL, onReceiveDashboardsListSuccess } from '../../store/actions';
+import PersistentFetcher from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -26,7 +27,7 @@ import PersonNewForm from '../PersonNewForm/PersonNewForm';
 import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
-import PersistentFetcher from '../../utils/fetch';
+import UserPermissions from '../UserPermissions/UserPermissions';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -280,6 +281,12 @@ class LoggedInContent extends React.Component {
               contentWidth={contentWidth}
               path="/settings/users/new"
               component={PersonNewForm}
+            />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/settings/users/:userId/permissions"
+              component={UserPermissions}
             />
 
             <WrappedRoute
