@@ -371,6 +371,10 @@ def admin_permissions_get_post():
         permission = Permission.forge_from_input(flask.request)
         try:
             permission_id = permission.insert()
+            mqtt_publish_changed(
+                f'admin/persons/{permission.user_id}',
+                f'admin/bots/{permission.user_id}',
+            )
             return json.dumps({
                 'user_id': permission.user_id,
                 'resource_prefix': permission.resource_prefix,
@@ -386,6 +390,10 @@ def admin_permission_delete(permission_id):
     rowcount = Permission.delete(permission_id)
     if not rowcount:
         return "No such permission", 404
+    mqtt_publish_changed(
+        f'admin/persons/{permission_id}',
+        f'admin/bots/{permission_id}',
+    )
     return "", 200
 
 

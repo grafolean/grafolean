@@ -675,10 +675,12 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-def test_permissions_post_get(app_client, admin_authorization_header):
+def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messages):
     """
         Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
+    assert mqtt_messages.empty()
+
     r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
@@ -703,6 +705,12 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     assert r.status_code == 201
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['id'] == 2
+    # check mqtt:
+    m = mqtt_messages.get(timeout=3.0)
+    assert m.topic == 'changed/admin/persons/{}'.format(data['user_id'])
+    m = mqtt_messages.get(timeout=3.0)
+    assert m.topic == 'changed/admin/bots/{}'.format(data['user_id'])
+    assert mqtt_messages.empty()
 
     r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
