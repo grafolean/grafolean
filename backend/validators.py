@@ -43,7 +43,7 @@ class WidgetSchemaInputs(Inputs):
     })]
 
 
-class PersonSchemaInputs(Inputs):
+class PersonSchemaInputsPOST(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,  # do not allow fields which are not specified in schema
@@ -54,6 +54,18 @@ class PersonSchemaInputs(Inputs):
             'password': {'type': 'string'},
         },
         'required': ['username', 'name', 'email', 'password'],
+    })]
+
+class PersonSchemaInputsPUT(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'properties': {
+            'username': {'type': 'string'},
+            'name': {'type': 'string'},
+            'email': {'type': 'string'},
+            'password': {'type': 'string'},
+        },
     })]
 
 

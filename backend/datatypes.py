@@ -8,7 +8,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputs, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -619,10 +619,13 @@ class Permission(object):
         return cls(data['user_id'], data['resource_prefix'], data['methods'])
 
     @staticmethod
-    def get_list():
+    def get_list(user_id=None):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            if user_id is None:
+                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
+            else:
+                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
             for permission_id, user_id, resource_prefix, methods in c:
                 ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods})
             return ret
@@ -742,24 +745,39 @@ class Bot(object):
 
 
 class Person(object):
-    def __init__(self, name, email, username, password):
+    def __init__(self, name, email, username, password, force_id=None):
         self.name = name
         self.email = EmailAddress(email)
         self.username = username
         self.password = password
+        self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request):
-        inputs = PersonSchemaInputs(flask_request)
+    def forge_from_input(cls, flask_request, force_id=None):
+        inputs = PersonSchemaInputsPOST(flask_request) if force_id is None else PersonSchemaInputsPUT(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
 
-        name = data['name']
-        email = data['email']
-        username = data['username']
-        password = data['password']
-        return cls(name, email, username, password)
+        name = data.get('name', None)
+        email = data.get('email', None)
+        username = data.get('username', None)
+        password = data.get('password', None)
+        return cls(name, email, username, password, force_id)
+
+    @staticmethod
+    def get_list():
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT user_id, name, email, username FROM persons ORDER BY username ASC;')
+            for user_id, name, email, username in c:
+                ret.append({
+                    'user_id': user_id,
+                    'name': name,
+                    'email': email,
+                    'username': username,
+                })
+            return ret
 
     def insert(self):
         with db.cursor() as c:
@@ -768,6 +786,42 @@ class Person(object):
             pass_hash = Auth.password_hash(self.password)
             c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, str(self.email), self.username, pass_hash,))
             return user_id
+
+    def update(self):
+        if self.force_id is None:
+            raise ValidationError("Invalid user id")  # this should never happen
+        with db.cursor() as c:
+            if self.name:
+                c.execute("UPDATE persons SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
+            if self.username:
+                c.execute("UPDATE persons SET username = %s WHERE user_id = %s;", (self.username, self.force_id,))
+            if self.email:
+                c.execute("UPDATE persons SET email = %s WHERE user_id = %s;", (str(self.email), self.force_id,))
+            if self.password:
+                pass_hash = Auth.password_hash(self.password)
+                c.execute("UPDATE persons SET passhash = %s WHERE user_id = %s;", (pass_hash, self.force_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(user_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM users WHERE id = %s and user_type = 'person';", (user_id,))  # record from persons will be removed automatically (cascade)
+            return c.rowcount
+
+    @staticmethod
+    def get(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT user_id, name, email, username FROM persons WHERE user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            user_id, name, email, username = res
+        return {
+            'user_id': user_id,
+            'name': name,
+            'email': email,
+            'username': username,
+        }
 
 
 class PersonCredentials(object):

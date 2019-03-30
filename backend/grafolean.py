@@ -152,6 +152,8 @@ def before_request():
             if not is_allowed:
                 log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
                 return "Access denied", 401
+
+            flask.g.grafolean_data['user_id'] = user_id
         except AuthFailedException:
             log.exception("Authentication failed")
             return "Access denied", 401
@@ -371,6 +373,10 @@ def admin_permissions_get_post():
         permission = Permission.forge_from_input(flask.request)
         try:
             permission_id = permission.insert()
+            mqtt_publish_changed(
+                f'admin/persons/{permission.user_id}',
+                f'admin/bots/{permission.user_id}',
+            )
             return json.dumps({
                 'user_id': permission.user_id,
                 'resource_prefix': permission.resource_prefix,
@@ -386,6 +392,10 @@ def admin_permission_delete(permission_id):
     rowcount = Permission.delete(permission_id)
     if not rowcount:
         return "No such permission", 404
+    mqtt_publish_changed(
+        f'admin/persons/{permission_id}',
+        f'admin/bots/{permission_id}',
+    )
     return "", 200
 
 
@@ -402,6 +412,7 @@ def admin_bots():
             'id': user_id,
             'token': bot_token,
         }), 201
+
 
 @app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def admin_bot_crud(user_id):
@@ -425,13 +436,44 @@ def admin_bot_crud(user_id):
         return "", 200
 
 
-@app.route('/api/admin/persons', methods=['POST'])
-def admin_persons_post():
-    person = Person.forge_from_input(flask.request)
-    user_id = person.insert()
-    return json.dumps({
-        'id': user_id,
-    }), 201
+@app.route('/api/admin/persons', methods=['GET', 'POST'])
+def admin_persons():
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Person.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        person = Person.forge_from_input(flask.request)
+        user_id = person.insert()
+        return json.dumps({
+            'id': user_id,
+        }), 201
+
+
+@app.route('/api/admin/persons/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
+def admin_person_crud(user_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Person.get(user_id)
+        if not rec:
+            return "No such person", 404
+        rec['permissions'] = Permission.get_list(user_id)
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        person = Person.forge_from_input(flask.request, force_id=user_id)
+        rowcount = person.update()
+        if not rowcount:
+            return "No such person", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        # user should not be able to delete himself, otherwise they could lock themselves out:
+        if int(flask.g.grafolean_data['user_id']) == int(user_id):
+            return "Can't delete yourself", 403
+        rowcount = Person.delete(user_id)
+        if not rowcount:
+            return "No such person", 404
+        return "", 200
 
 
 # --------------

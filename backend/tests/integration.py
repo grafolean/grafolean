@@ -675,10 +675,12 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-def test_permissions_post_get(app_client, admin_authorization_header):
+def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messages):
     """
         Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
+    assert mqtt_messages.empty()
+
     r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
@@ -703,6 +705,12 @@ def test_permissions_post_get(app_client, admin_authorization_header):
     assert r.status_code == 201
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['id'] == 2
+    # check mqtt:
+    m = mqtt_messages.get(timeout=3.0)
+    assert m.topic == 'changed/admin/persons/{}'.format(data['user_id'])
+    m = mqtt_messages.get(timeout=3.0)
+    assert m.topic == 'changed/admin/bots/{}'.format(data['user_id'])
+    assert mqtt_messages.empty()
 
     r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -795,6 +803,82 @@ def test_bots_token(app_client, admin_authorization_header, bot_token, account_i
     assert r.status_code == 200
     r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no&b={}'.format(account_id, bot_token))
     assert r.status_code == 401
+
+
+def test_persons_crud(app_client, admin_authorization_header):
+    """
+        Create a person, make sure it is in the list... and so on.
+    """
+    data = { 'name': 'Person 1', 'username': 'person1', 'email': 'test@grafolean.com', 'password': 'hello' }
+    r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    j = json.loads(r.data.decode('utf-8'))
+    person_id = j['id']
+
+    r = app_client.get('/api/admin/persons', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'list': [
+            actual['list'][0],  # admin is already in the list
+            {
+                'user_id': person_id,
+                'name': data['name'],
+                'username': data['username'],
+                'email': data['email'],
+            },
+        ],
+    }
+    assert actual == expected
+
+    # individual GET:
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected_single = expected['list'][1]
+    expected_single['permissions'] = []
+    assert actual == expected_single
+    # individual GET for the first (admin) user:
+    r = app_client.get('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected_single = expected['list'][0]
+    # make sure the permissions are there:
+    expected_single['permissions'] = [
+        {
+            'id': 1,
+            'user_id': EXPECTED_FIRST_ADMIN_ID,
+            'resource_prefix': None,
+            'methods': None,
+        }
+    ]
+    assert actual == expected_single
+
+    # PUT:
+    data = { 'name': 'Person 1 - altered', 'username': 'person1b', 'email': 'test2@grafolean.com' }
+    r = app_client.put('/api/admin/persons/{}'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == data['name']
+    assert actual['username'] == data['username']
+    assert actual['email'] == data['email']
+
+    # DELETE:
+    r = app_client.delete('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
+    r = app_client.get('/api/admin/persons', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert len(actual['list']) == 1
+    assert actual['list'][0]['username'] == USERNAME_ADMIN
+
+    # can't delete yourself though:
+    r = app_client.delete('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 403
 
 
 def test_auth_grant_permission(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):

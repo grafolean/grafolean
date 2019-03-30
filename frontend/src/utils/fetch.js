@@ -222,7 +222,8 @@ class PersistentFetcher extends React.PureComponent {
     this.fetchId = MQTTFetcherSingleton.start(
       this.props.resource,
       json => this.props.onUpdate(json),
-      errorMsg => store.dispatch(onFailure(errorMsg.toString())),
+      errorMsg =>
+        this.props.onError ? this.props.onError(errorMsg) : store.dispatch(onFailure(errorMsg.toString())),
     );
   };
 
