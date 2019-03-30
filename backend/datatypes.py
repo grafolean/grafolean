@@ -804,8 +804,6 @@ class Person(object):
 
     @staticmethod
     def delete(user_id):
-        # make sure you are not deleting yourself, and that this is not the last user:
-        # !!!
         with db.cursor() as c:
             c.execute("DELETE FROM users WHERE id = %s and user_type = 'person';", (user_id,))  # record from persons will be removed automatically (cascade)
             return c.rowcount

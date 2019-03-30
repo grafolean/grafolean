@@ -876,6 +876,10 @@ def test_persons_crud(app_client, admin_authorization_header):
     assert len(actual['list']) == 1
     assert actual['list'][0]['username'] == USERNAME_ADMIN
 
+    # can't delete yourself though:
+    r = app_client.delete('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 403
+
 
 def test_auth_grant_permission(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
     """

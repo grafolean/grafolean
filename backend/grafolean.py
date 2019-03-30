@@ -152,6 +152,8 @@ def before_request():
             if not is_allowed:
                 log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
                 return "Access denied", 401
+
+            flask.g.grafolean_data['user_id'] = user_id
         except AuthFailedException:
             log.exception("Authentication failed")
             return "Access denied", 401
@@ -465,6 +467,9 @@ def admin_person_crud(user_id):
         return "", 204
 
     elif flask.request.method == 'DELETE':
+        # user should not be able to delete himself, otherwise they could lock themselves out:
+        if int(flask.g.grafolean_data['user_id']) == int(user_id):
+            return "Can't delete yourself", 403
         rowcount = Person.delete(user_id)
         if not rowcount:
             return "No such person", 404
