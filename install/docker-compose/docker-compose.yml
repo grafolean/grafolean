@@ -3,12 +3,11 @@ services:
 
   db:
     image: postgres:9.6-alpine
-#    volumes:
-      # It is a good idea to save DB data to a host directory. By default this is './db/',
-      # however it probably makes sense to supply an absolute path here.
-      # Note that if you wish to copy this directory for backup, you need to stop grafolean
-      # container first.
-#      - ./db/:/var/lib/postgresql/data/
+    volumes:
+      # It is a good idea to save DB data to a host directory. By default this is '/grafolean/db/'.
+      # Note that if you ever wish to copy this directory as backup, you need to stop grafolean
+      # container first. For alternative backup approaches consult PostgreSQL documentation.
+      - /grafolean/db/:/var/lib/postgresql/data/
     environment:
       # It is probably a good idea to change DB access credentials (before running `docker-compose up` for the first time).
       # If you do that, you should also update DB_* environment variables.
@@ -69,9 +68,11 @@ services:
     build:
       context: ../mosquitto-auth/
       dockerfile: Dockerfile
-    ports:
-      - "1883:1883"
-      - "9883:9883"
+    # It is not really necessary to publish ports, as nginx acts as reverse proxy for MQTT WS, and MQTT itself
+    # is currently only used by grafolean backend.
+    # ports:
+    #   - "1883:1883"
+    #   - "9883:9883"
     networks:
       - grafolean
 

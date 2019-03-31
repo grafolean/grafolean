@@ -62,8 +62,8 @@ COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
-COPY ./install/docker-compose/uwsgi_env.sh /grafolean/uwsgi_env.sh
-RUN chmod +x /grafolean/uwsgi_env.sh
+COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
+RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
-CMD ["/bin/bash", "-c", "service nginx start && /grafolean/uwsgi_env.sh && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
+CMD ["/bin/bash", "-c", "/grafolean/apply_env.sh && service nginx start && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
 

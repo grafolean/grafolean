@@ -4,7 +4,6 @@
 # backend. To fix this we run this script in entrypoint and save the env vars to .env file,
 # from where we load them in the Python code itself (using dotenv package).
 # The env vars must not be empty - if they are present, they must contain some value.
-
 echo "" > /grafolean/backend/.env
 [ -n "${MQTT_HOSTNAME}" ] && echo "MQTT_HOSTNAME=${MQTT_HOSTNAME}" >> /grafolean/backend/.env
 [ -n "${MQTT_PORT}" ] && echo "MQTT_PORT=${MQTT_PORT}" >> /grafolean/backend/.env
@@ -13,4 +12,8 @@ echo "" > /grafolean/backend/.env
 [ -n "${MQTT_WS_SSL}" ] && echo "MQTT_WS_SSL=${MQTT_WS_SSL}" >> /grafolean/backend/.env
 [ -n "${GRAFOLEAN_CORS_DOMAINS}" ] && echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env
 
+# nginx doesn't (easily) support env vars in its config files, so we must replace them on startup:
+sed -i "s/[$]MQTT_HOSTNAME/${MQTT_HOSTNAME}/g" /etc/nginx/nginx.conf
+
+# whatever we do, we must exit with status code 0, or container won't start:
 exit 0
