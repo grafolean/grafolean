@@ -213,10 +213,24 @@ class PersistentFetcher extends React.PureComponent {
     this.subscribe();
   }
 
+  componentDidUpdate(prevProps) {
+    // backendStatus might not be available when this component mounts, so we listen for change and subscribe when we get the data:
+    if (!prevProps.backendStatus && !!this.props.backendStatus) {
+      this.subscribe();
+    }
+  }
+
   subscribe = async () => {
+    if (!this.props.backendStatus) {
+      return;
+    }
     if (!MQTTFetcherSingleton.isConnected()) {
-      const { mqtt_ws_hostname, mqtt_ws_port, mqtt_ws_ssl } = this.props.backendStatus;
-      await MQTTFetcherSingleton.connect(mqtt_ws_hostname, mqtt_ws_port, mqtt_ws_ssl);
+      const { backendStatus } = this.props;
+      // by default, mqtt websockets connection is proxied through nginx, so it is available under the same hostname and port as this frontend:
+      const mqttWsHostname = backendStatus.mqtt_ws_hostname || window.location.hostname;
+      const mqttWsSsl = window.location.protocol === 'https'; // why not a separate setting? Because we would need numerous other settings too. It is much easier to just proxy mqtt through nginx and not set anything, if one wants wss.
+      const mqttWsPort = backendStatus.mqtt_ws_port || window.location.port || (mqttWsSsl ? 443 : 80);
+      await MQTTFetcherSingleton.connect(mqttWsHostname, mqttWsPort, mqttWsSsl);
     }
 
     this.fetchId = MQTTFetcherSingleton.start(
