@@ -54,7 +54,10 @@ function notifications(state = [], action) {
 function user(state = null, action) {
   switch (action.type) {
     case ON_LOGIN_SUCCESS:
-      return action.userData;
+      return {
+        ...action.userData,
+        jwtToken: action.jwtToken,
+      };
     case ON_LOGOUT:
       return null;
     default:

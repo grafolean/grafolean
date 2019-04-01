@@ -3,10 +3,11 @@ import { fetchAuth } from '../utils/fetch';
 export const ROOT_URL = process.env.REACT_APP_BACKEND_ROOT_URL || `${window.location.origin}/api`;
 
 export const ON_LOGIN_SUCCESS = 'ON_LOGIN_SUCCESS';
-export function onLoginSuccess(userData) {
+export function onLoginSuccess(userData, jwtToken) {
   return {
     type: ON_LOGIN_SUCCESS,
     userData,
+    jwtToken,
   };
 }
 
