@@ -71,12 +71,12 @@ export class LoginPage extends React.Component {
         if (!response.ok) {
           throw new Error(`Error ${response.status} - ${response.statusText}`);
         }
-        const jwtToken = response.headers.get('X-JWT-Token');
+        const jwtToken = response.headers.get('X-JWT-Token').substring('Bearer '.length);
         response
           .json()
           .then(json => {
             window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
-            store.dispatch(onLoginSuccess(json));
+            store.dispatch(onLoginSuccess(json, jwtToken));
             this.setState({
               redirectToReferrer: true,
             });

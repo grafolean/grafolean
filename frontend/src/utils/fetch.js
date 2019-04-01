@@ -20,7 +20,7 @@ const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
 };
 
 export const fetchAuth = (url, fetchOptions = {}) => {
-  const oldAuthHeader = window.sessionStorage.getItem('grafolean_jwt_token');
+  const oldAuthHeader = 'Bearer ' + window.sessionStorage.getItem('grafolean_jwt_token');
   const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions, oldAuthHeader);
   return new Promise((resolve, reject) => {
     fetch(url, fetchOptionsWithAuth)
@@ -80,7 +80,7 @@ class MQTTFetcher {
   mqttClient = null;
   fetches = [];
 
-  connect = (hostname, port, isSSL) => {
+  connect = (hostname, port, isSSL, jwtToken) => {
     if (!hostname) {
       return null;
     }
@@ -96,7 +96,6 @@ class MQTTFetcher {
         }
       };
       notYetConnectedClient.onMessageArrived = this.onMessageReceived;
-      const jwtToken = window.sessionStorage.getItem('grafolean_jwt_token');
       notYetConnectedClient.connect({
         onSuccess: () => {
           console.log('MQTT connected.');
@@ -110,7 +109,7 @@ class MQTTFetcher {
         timeout: 5,
         reconnect: true, // not sure how to control reconnect?
         keepAliveInterval: 36000000,
-        userName: jwtToken ? jwtToken.substring('Bearer '.length) : '',
+        userName: jwtToken,
         password: 'can.be.empty',
         useSSL: isSSL,
       });
@@ -209,28 +208,34 @@ class MQTTFetcher {
 const MQTTFetcherSingleton = new MQTTFetcher();
 
 class PersistentFetcher extends React.PureComponent {
+  fetchId = null;
+
   componentDidMount() {
     this.subscribe();
   }
 
   componentDidUpdate(prevProps) {
-    // backendStatus might not be available when this component mounts, so we listen for change and subscribe when we get the data:
-    if (!prevProps.backendStatus && !!this.props.backendStatus) {
+    // backendStatus or jwtToken might not be available when this component mounts, so we listen for change and subscribe when we get the data:
+    if (
+      (!prevProps.backendStatus && !!this.props.backendStatus) ||
+      (!prevProps.jwtToken && !!this.props.jwtToken)
+    ) {
       this.subscribe();
     }
   }
 
   subscribe = async () => {
-    if (!this.props.backendStatus) {
+    // make sure all the data you need to connect is here, otherwise return and we will try again later:
+    if (!this.props.backendStatus || !this.props.jwtToken) {
       return;
     }
     if (!MQTTFetcherSingleton.isConnected()) {
-      const { backendStatus } = this.props;
+      const { backendStatus, jwtToken } = this.props;
       // by default, mqtt websockets connection is proxied through nginx, so it is available under the same hostname and port as this frontend:
       const mqttWsHostname = backendStatus.mqtt_ws_hostname || window.location.hostname;
       const mqttWsSsl = window.location.protocol === 'https'; // why not a separate setting? Because we would need numerous other settings too. It is much easier to just proxy mqtt through nginx and not set anything, if one wants wss.
       const mqttWsPort = backendStatus.mqtt_ws_port || window.location.port || (mqttWsSsl ? 443 : 80);
-      await MQTTFetcherSingleton.connect(mqttWsHostname, mqttWsPort, mqttWsSsl);
+      await MQTTFetcherSingleton.connect(mqttWsHostname, mqttWsPort, mqttWsSsl, jwtToken);
     }
 
     this.fetchId = MQTTFetcherSingleton.start(
@@ -242,7 +247,9 @@ class PersistentFetcher extends React.PureComponent {
   };
 
   componentWillUnmount() {
-    MQTTFetcherSingleton.stop(this.fetchId);
+    if (this.fetchId !== null) {
+      MQTTFetcherSingleton.stop(this.fetchId);
+    }
   }
 
   render() {
@@ -250,7 +257,8 @@ class PersistentFetcher extends React.PureComponent {
   }
 }
 
-const mapBackendStatusToProps = store => ({
+const mapStoreToProps = store => ({
   backendStatus: store.backendStatus,
+  jwtToken: store.user ? store.user.jwtToken : undefined,
 });
-export default connect(mapBackendStatusToProps)(PersistentFetcher);
+export default connect(mapStoreToProps)(PersistentFetcher);
