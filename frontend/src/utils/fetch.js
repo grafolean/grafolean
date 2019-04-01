@@ -233,7 +233,7 @@ class PersistentFetcher extends React.PureComponent {
       const { backendStatus, jwtToken } = this.props;
       // by default, mqtt websockets connection is proxied through nginx, so it is available under the same hostname and port as this frontend:
       const mqttWsHostname = backendStatus.mqtt_ws_hostname || window.location.hostname;
-      const mqttWsSsl = window.location.protocol === 'https'; // why not a separate setting? Because we would need numerous other settings too. It is much easier to just proxy mqtt through nginx and not set anything, if one wants wss.
+      const mqttWsSsl = window.location.protocol === 'https:'; // why not a separate setting? Because we would need numerous other settings too. It is much easier to just proxy mqtt through nginx and not set anything, if one wants wss.
       const mqttWsPort = backendStatus.mqtt_ws_port || window.location.port || (mqttWsSsl ? 443 : 80);
       await MQTTFetcherSingleton.connect(mqttWsHostname, mqttWsPort, mqttWsSsl, jwtToken);
     }
