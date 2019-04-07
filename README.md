@@ -32,6 +32,27 @@ This is the easiest way, because it installs and runs all the services necessary
 3) run: `docker-compose up -d`
 4) point your browser to http://localhost/ (or other appropriate URL) and follow post-installation instructions
 
+## SSL
+
+By default, Grafolean is being served through unencrypted HTTP (port 80). Additional steps need to be taken to protect the traffic with SSL/TLS, however they are unfortunately manual. Since all traffic is going through Nginx (including websockets) in the default installation, it is enough to install certificate there. The guide below assumes we will be using LetsEncrypt certificates (there are many alternatives, but this is probably the easiest one).
+
+1) install `certbot` on the host machine. On Debian / Ubuntu:
+  ```
+    add-apt-repository ppa:certbot/certbot
+    apt install certbot python-certbot-nginx
+  ```
+
+2) ...? certbot certonly --webroot -d demo2.grafolean.com ?
+
+3) renewing:
+  ```
+    vi /etc/cron.daily/certbot-renew
+     #!/bin/sh
+     /usr/bin/certbot renew --webroot -n --post-hook "docker exec -ti grafolean_grafolean_1 service nginx reload"
+    chmod 755 certbot-renew
+  ```
+  // !!! containers should be named
+
 # Sending values
 
 To send values to Grafolean, you first need to create a bot account (via UI) and obtain its bot token. Then you can use a regular POST request to send values:
