@@ -34,7 +34,9 @@ This is the easiest and currently the only officially supported way. All the ser
 
 ### HTTPS
 
-By default, Grafolean is being served through unencrypted HTTP (port 80) and additional steps need to be taken to protect the traffic with SSL/TLS. In default configuration all traffic (including websockets) is going through Nginx, so it is enough to install certificate there. The guide below assumes we will be using LetsEncrypt certificates.
+By default, Grafolean is being served through unencrypted HTTP (port 80) and additional steps need to be taken to protect the traffic with SSL/TLS. In default configuration all traffic (including websockets) is going through Nginx, so it is enough to install certificate there.
+
+If you have your own certificates and wish to renew them manually, it is enough to expose port `443` and mount certificates as indicated in `docker-compose.yml`. The guide below however assumes we will be using LetsEncrypt certificates by installing  `certbot` on host computer.
 
 IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Port 80 is important for (re)issuing certificates, so make sure you don't block it.
 
@@ -55,7 +57,7 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   (replace `yourdomain.example.org` with the actual domain or IP address)
 
-4) (maybe not needed?)
+3.b) (maybe not needed?)
   ```bash
     $ sudo mkdir -p /etc/letsencrypt/acme-challenge
   ```
@@ -81,7 +83,7 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
 6) Important final step - setup automatic certificate renewing. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
   ```
     #!/bin/sh
-    /usr/bin/certbot renew --webroot -n --post-hook "docker exec -ti grafolean service nginx reload"
+    /usr/bin/certbot renew --webroot --webroot-path /etc/letsencrypt/acme-challenge/ -n --post-hook "docker exec -ti grafolean service nginx reload"
   ```
   Also make the file executable:
   ```bash
