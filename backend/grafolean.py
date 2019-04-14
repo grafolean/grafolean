@@ -387,12 +387,12 @@ def admin_permissions_get_post():
 
 @app.route('/api/admin/permissions/<string:permission_id>', methods=['DELETE'])
 def admin_permission_delete(permission_id):
-    rowcount = Permission.delete(permission_id)
+    rowcount, user_id = Permission.delete(permission_id)
     if not rowcount:
         return "No such permission", 404
     mqtt_publish_changed(
-        f'admin/persons/{permission_id}',
-        f'admin/bots/{permission_id}',
+        f'admin/persons/{user_id}',
+        f'admin/bots/{user_id}',
     )
     return "", 200
 
