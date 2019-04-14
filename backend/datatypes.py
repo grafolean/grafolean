@@ -658,8 +658,10 @@ class Permission(object):
     @staticmethod
     def delete(permission_id):
         with db.cursor() as c:
-            c.execute('DELETE FROM permissions WHERE id = %s;', (permission_id,))
-            return c.rowcount
+            c.execute('DELETE FROM permissions WHERE id = %s RETURNING user_id;', (permission_id,))
+            num_deleted = c.rowcount
+            user_id = c.fetchone()[0]
+            return num_deleted, user_id
 
 
 class Bot(object):

@@ -1,8 +1,11 @@
 import React from 'react';
 
-import PersistentFetcher from '../../utils/fetch';
+import PersistentFetcher, { fetchAuth } from '../../utils/fetch';
+import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
+import store from '../../store';
 
 import Loading from '../Loading';
+import Button from '../Button';
 
 export default class UserPermissions extends React.PureComponent {
   static defaultProps = {
@@ -20,6 +23,17 @@ export default class UserPermissions extends React.PureComponent {
     });
   };
 
+  handleDelete = (ev, permissionId) => {
+    ev.preventDefault();
+    if (!window.confirm('Are you sure you want to delete this permission?')) {
+      return;
+    }
+
+    fetchAuth(`${ROOT_URL}/admin/permissions/${permissionId}`, { method: 'DELETE' })
+      .then(handleFetchErrors)
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+  };
+
   renderInner() {
     const { user, loading } = this.state;
     if (loading) {
@@ -35,6 +49,7 @@ export default class UserPermissions extends React.PureComponent {
             <tr>
               <th>Resource prefix</th>
               <th>Access</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -43,6 +58,11 @@ export default class UserPermissions extends React.PureComponent {
                 <tr key={p.id}>
                   <td>{p.resource_prefix === null ? '/' : p.resource_prefix}</td>
                   <td>{p.methods === null ? '*' : p.methods.join(', ')}</td>
+                  <td>
+                    <Button className="red" onClick={ev => this.handleDelete(ev, p.id)}>
+                      <i className="fa fa-trash" /> Delete
+                    </Button>
+                  </td>
                 </tr>
               ))}
           </tbody>
