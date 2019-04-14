@@ -1,0 +1,20 @@
+div.checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+
+  div.checkbox-inner {
+    padding: 1px;
+    background-color: #ffffff;
+    border: 1px solid #ff6600;
+    width: 10px;
+    height: 10px;
+    margin-right: 3px;
+
+    & > div {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+}

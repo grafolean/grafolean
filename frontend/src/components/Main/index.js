@@ -28,6 +28,7 @@ import VersionInfo from './VersionInfo';
 import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
 import UserPermissions from '../UserPermissions/UserPermissions';
+import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -287,6 +288,12 @@ class LoggedInContent extends React.Component {
               contentWidth={contentWidth}
               path="/settings/users/:userId/permissions"
               component={UserPermissions}
+            />
+            <WrappedRoute
+              exact
+              contentWidth={contentWidth}
+              path="/settings/users/:userId/permissions/new"
+              component={UserPermissionsNewForm}
             />
 
             <WrappedRoute

@@ -627,7 +627,8 @@ class Permission(object):
             else:
                 c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
             for permission_id, user_id, resource_prefix, methods in c:
-                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods})
+                methods_as_list = None if not methods else [m.strip('{ }') for m in methods.split(',')]  # not sure why, but we get what we inserted (string instead of a list)... this is workaround
+                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
             return ret
 
     def insert(self):

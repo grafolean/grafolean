@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 import PersistentFetcher, { fetchAuth } from '../../utils/fetch';
 import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
@@ -76,7 +77,12 @@ export default class UserPermissions extends React.PureComponent {
     return (
       <div className="user-permissions frame">
         <PersistentFetcher resource={`admin/persons/${userId}`} onUpdate={this.onUserUpdate} />
+
         {this.renderInner()}
+
+        <Link className="button green" to={`/settings/users/${userId}/permissions/new`}>
+          <i className="fa fa-plus" /> Add permission
+        </Link>
       </div>
     );
   }
