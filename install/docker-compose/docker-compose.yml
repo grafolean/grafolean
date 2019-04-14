@@ -1,80 +1,25 @@
 version: '2.1'
 services:
 
+  # This docker-compose.yml is used for building the docker images (grafolean and mosquitto-auth)
+
   db:
     image: postgres:9.6-alpine
-    volumes:
-      # It is a good idea to save DB data to a host directory. By default this is '/grafolean/db/'.
-      # Note that if you ever wish to copy this directory as backup, you need to stop grafolean
-      # container first. For alternative backup approaches consult PostgreSQL documentation.
-      - /grafolean/db/:/var/lib/postgresql/data/
-    environment:
-      # It is probably a good idea to change DB access credentials (before running `docker-compose up` for the first time).
-      # If you do that, you should also update DB_* environment variables.
-      - POSTGRES_DB=grafolean
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=admin
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    networks:
-      - grafolean
 
   grafolean:
-    # If you wish to load an explicit version, change the next line. For example:
-    #   image: grafolean/grafolean:v1.0.0
     image: grafolean/grafolean
     build:
       context: ../../
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      - DB_HOST=db
-      - DB_DATABASE=grafolean
-      - DB_USERNAME=admin
-      - DB_PASSWORD=admin
-      - MQTT_HOSTNAME=mosquitto
-      - MQTT_PORT=1883
-      - MQTT_WS_HOSTNAME=mosquitto
-      - MQTT_WS_PORT=9883
-      - MQTT_WS_SSL=false
-      # Comma-delimited list of domains on which we allow frontend to be shown. This is an important
-      # protection agains cross-origin attacks. The domains should follow the same format as Origin
-      # header and might include port number.
-      # This setting affects backend only, but frontend learns about the setting thought /admin/status/info
-      # endpoint (which allows access from all domains by design) and warns if it is not set correctly.
-      # Example setting:
-      # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
-      #
-      # However, in this particular case (backend and frontend on the same origin - protocol+domain+port) we
-      # are not really doing CORS, so we can skip this setting:
-      # - GRAFOLEAN_CORS_DOMAINS=http://localhost
-    ports:
-      # If you wish to publish Grafolean on a different port you can change the first number below.
-      # Note that HTTPS is currently not supported generically and you need to add a reverse proxy
-      # in front of docker instance (just changing the port to 443 will *not* magically enable HTTPS).
-      - "80:80"
-    networks:
-      - grafolean
 
   mosquitto:
+    # regular Mosquitto, but with auth plugin installed.
     image: grafolean/mosquitto
     build:
       context: ../mosquitto-auth/
       dockerfile: Dockerfile
-    # It is not really necessary to publish ports, as nginx acts as reverse proxy for MQTT WS, and MQTT itself
-    # is currently only used by grafolean backend.
-    # ports:
-    #   - "1883:1883"
-    #   - "9883:9883"
-    networks:
-      - grafolean
 
 networks:
   grafolean:

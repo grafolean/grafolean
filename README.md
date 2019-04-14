@@ -34,24 +34,59 @@ This is the easiest way, because it installs and runs all the services necessary
 
 ## SSL
 
-By default, Grafolean is being served through unencrypted HTTP (port 80). Additional steps need to be taken to protect the traffic with SSL/TLS, however they are unfortunately manual. Since all traffic is going through Nginx (including websockets) in the default installation, it is enough to install certificate there. The guide below assumes we will be using LetsEncrypt certificates (there are many alternatives, but this is probably the easiest one).
+By default, Grafolean is being served through unencrypted HTTP (port 80) and additional steps need to be taken to protect the traffic with SSL/TLS. In default configuration all traffic (including websockets) is going through Nginx, so it is enough to install certificate there. The guide below assumes we will be using LetsEncrypt certificates.
 
-1) install `certbot` on the host machine. On Debian / Ubuntu:
-  ```
-    add-apt-repository ppa:certbot/certbot
-    apt install certbot python-certbot-nginx
+IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Port 80 is important for (re)issuing certificates, so make sure you don't block it.
+
+1) Install `certbot` on the host machine. On Debian / Ubuntu:
+  ```bash
+    $ sudo add-apt-repository ppa:certbot/certbot
+    $ sudo apt install certbot
   ```
 
-2) ...? certbot certonly --webroot -d demo2.grafolean.com ?
+2) If Grafolean is already running, stop it:
+  ```bash
+    $ sudo docker-compose down
+  ```
 
-3) renewing:
+3) Create a valid certificate using `certbot`:
+  ```bash
+    $ sudo certbot certonly --standalone -d yourdomain.example.org
   ```
-    vi /etc/cron.daily/certbot-renew
-     #!/bin/sh
-     /usr/bin/certbot renew --webroot -n --post-hook "docker exec -ti grafolean_grafolean_1 service nginx reload"
-    chmod 755 certbot-renew
+  (replace `yourdomain.example.org` with the actual domain or IP address)
+
+4) (maybe not needed?)
+  ```bash
+    $ sudo mkdir -p /etc/letsencrypt/acme-challenge
   ```
-  // !!! containers should be named
+
+4) Edit `docker-compose.yml` and make sure all of the following lines are enabled in `grafolean` service:
+  ```
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt/acme-challenge:/var/www/acme-challenge
+      - /etc/letsencrypt/live/yourdomain.example.org/fullchain.pem:/etc/certs/cert.crt
+      - /etc/letsencrypt/live/yourdomain.example.org/privkey.pem:/etc/certs/cert.key
+  ```
+  (replace `yourdomain.example.org` with the actual domain or IP address)
+
+5) Run Grafolean:
+  ```bash
+    $ sudo docker-compose up -d
+  ```
+  If everything went according to plan, you should now be able to access the service at `https://yourdomain.example.org/`.
+
+6) Important final step - setup automatic certificate renewing. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
+  ```
+    #!/bin/sh
+    /usr/bin/certbot renew --webroot -n --post-hook "docker exec -ti grafolean service nginx reload"
+  ```
+  Also make the file executable:
+  ```bash
+    $ sudo chmod 755 certbot-renew
+  ```
 
 # Sending values
 

@@ -1,0 +1,79 @@
+version: '2.1'
+services:
+
+  #
+  # Welcome to Grafolean!
+  #
+  # This file should be modified to suit your running environment. Please check the comments and change
+  # the settings appropriately.
+  #
+
+  db:
+    image: postgres:9.6-alpine
+    container_name: postgres
+    volumes:
+      # You should always save DB data to a host directory unless you are prepared to lose it. By default
+      # this the location of data is '/grafolean/db/'.
+      # Note that if you ever wish to copy this directory as backup, you need to stop grafolean
+      # container first. For alternative backup approaches consult PostgreSQL documentation.
+      - /grafolean/db/:/var/lib/postgresql/data/
+    environment:
+      # It is probably a good idea to change DB access credentials (before running `docker-compose up` for the first time).
+      # If you do that, you should also update corresponding DB_* environment variables on grafolean service below.
+      - POSTGRES_DB=grafolean
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - grafolean
+
+  grafolean:
+    # If you wish to load an explicit version, change the next line. For example:
+    #   image: grafolean/grafolean:v1.0.0
+    image: grafolean/grafolean
+    container_name: grafolean
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=grafolean
+      - DB_USERNAME=admin
+      - DB_PASSWORD=admin
+      - MQTT_HOSTNAME=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_WS_HOSTNAME=
+      - MQTT_WS_PORT=
+      # In default setting (where backend API is proxied through nginx, and is thus available on the same
+      # domain) GRAFOLEAN_CORS_DOMAINS can be ignored. It is only needed if you want to install
+      # Grafolean backend on a different origin than frontend.
+      # GRAFOLEAN_CORS_DOMAINS: Comma-delimited list of domains on which we allow frontend to be shown. The
+      # domains should follow the same format as Origin header and may include port number.
+      # This setting affects backend only, but frontend learns about the setting through /admin/status/info
+      # endpoint (which allows access from all domains by design) and warns if it is not set correctly.
+      # Example setting:
+      # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
+    ports:
+      # If you wish to enable HTTPS, you need to both enable port 443 and supply a valid certificate. This
+      # installation helps you with this - please see README for installation instructions.
+      - "80:80"
+      # - "443:443"
+    # volumes:
+    #   - /etc/letsencrypt/acme-challenge:/var/www/acme-challenge
+    #   - /etc/letsencrypt/live/yourdomain.example.org/fullchain.pem:/etc/certs/cert.crt
+    #   - /etc/letsencrypt/live/yourdomain.example.org/privkey.pem:/etc/certs/cert.key
+    networks:
+      - grafolean
+
+  mosquitto:
+    image: grafolean/mosquitto
+    container_name: mosquitto
+    networks:
+      - grafolean
+
+networks:
+  grafolean:
