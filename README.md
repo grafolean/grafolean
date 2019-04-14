@@ -98,7 +98,7 @@ To send values to Grafolean, you first need to create a bot account (via UI) and
 $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=just.some.path&v=12.345&b=<BotAPIToken>'
 ```
 
-Please consult API.md for more info.
+Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
 
 # Development
 
