@@ -25,14 +25,14 @@ The goal is to provide *polished* experience while still allowing users to make 
 
 ## Docker (docker-compose)
 
-This is the easiest way, because it installs and runs all the services necessary with a few simple steps:
+This is the easiest and currently the only officially supported way. All the services necessary can be run with a few simple steps:
 
-1) save [docker-compose.yml](https://grafolean.com/docker-compose.yml) to a local file
-2) (recommended) edit `docker-compose.yml` and change the path where the DB data will be saved locally (`/grafolean/db/` by default), DB admin credentials and similar
+1) save [install/docker-compose.yml](https://gitlab.com/grafolean/grafolean/raw/master/install/docker-compose.yml) to a local file
+2) edit `docker-compose.yml` and change the path where the DB data will be saved locally (`/grafolean/db/` by default), DB admin credentials, hostname and similar
 3) run: `docker-compose up -d`
 4) point your browser to http://localhost/ (or other appropriate URL) and follow post-installation instructions
 
-## SSL
+### HTTPS
 
 By default, Grafolean is being served through unencrypted HTTP (port 80) and additional steps need to be taken to protect the traffic with SSL/TLS. In default configuration all traffic (including websockets) is going through Nginx, so it is enough to install certificate there. The guide below assumes we will be using LetsEncrypt certificates.
 
@@ -85,7 +85,7 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   Also make the file executable:
   ```bash
-    $ sudo chmod 755 certbot-renew
+    $ sudo chmod 755 /etc/cron.daily/certbot-renew
   ```
 
 # Sending values
