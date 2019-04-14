@@ -46,11 +46,15 @@ services:
       - DB_PASSWORD=admin
       - MQTT_HOSTNAME=mosquitto
       - MQTT_PORT=1883
+      # MQTT_WS_HOSTNAME must be set to domain (or IP address) under which Mosquitto websockets will be available.
+      # In default configuration this is the same hostname as used for everything else (backend and frontend) because
+      # Mosquitto is served through nginx. Port can be ignored in default configuration.
       - MQTT_WS_HOSTNAME=
       - MQTT_WS_PORT=
       # In default setting (where backend API is proxied through nginx, and is thus available on the same
       # domain) GRAFOLEAN_CORS_DOMAINS can be ignored. It is only needed if you want to install
-      # Grafolean backend on a different origin than frontend.
+      # Grafolean backend on a different origin than frontend. You will also be warned if this needs to be changed.
+      #
       # GRAFOLEAN_CORS_DOMAINS: Comma-delimited list of domains on which we allow frontend to be shown. The
       # domains should follow the same format as Origin header and may include port number.
       # This setting affects backend only, but frontend learns about the setting through /admin/status/info
