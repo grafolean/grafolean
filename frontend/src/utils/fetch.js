@@ -43,7 +43,8 @@ export const fetchAuth = (url, fetchOptions = {}) => {
           .then(response => {
             // now that you have refreshed jwt token, request resource again:
             const newAuthHeader = response.headers.get('X-JWT-Token');
-            window.sessionStorage.setItem('grafolean_jwt_token', newAuthHeader);
+            const jwtToken = newAuthHeader.substring('Bearer '.length);
+            window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
             const fetchOptionsWithNewAuth = _addAuthHeaderToParams(fetchOptions, newAuthHeader);
             fetch(url, fetchOptionsWithNewAuth)
               .then(resp => resolve(resp))
