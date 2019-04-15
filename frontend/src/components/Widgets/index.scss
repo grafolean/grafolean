@@ -1,5 +1,4 @@
 .widget {
-  border: 1px solid #eeeeee;
 
   &.fullscreen {
     position: fixed;
@@ -12,9 +11,8 @@
   }
 
   .widget-title {
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid #ddd;
     padding: 5px 20px;
-    background-color: #ffffee;
     display: flex;
     font-size: 14px;
 
