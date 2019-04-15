@@ -1,5 +1,9 @@
 # Grafolean backend API
 
+```
+WARNING: API is not final yet and is subject to change.
+```
+
 ## Generic
 
 In default installation backend API is accessible on the same base URL as frontend, suffixed with `/api/`.
