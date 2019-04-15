@@ -60,8 +60,8 @@ export default class UserPermissionsNewForm extends React.PureComponent {
         method: 'POST',
         body: JSON.stringify({
           user_id: Number(userId),
-          resource_prefix: formValues.resource_prefix,
-          methods: formValues.methods,
+          resource_prefix: formValues.resource_prefix === '/' ? null : formValues.resource_prefix,
+          methods: formValues.methods.length === this.ALL_METHODS.length ? null : formValues.methods,
         }),
       });
       if (!responsePermissions.ok) {
