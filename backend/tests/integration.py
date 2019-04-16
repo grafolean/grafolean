@@ -1063,15 +1063,18 @@ def test_status_info_after_first(app_client, first_admin_exists):
 def test_sitemap(app_client):
     r = app_client.get('/api/status/sitemap')
     assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+
     expected_entry = {
         "url": "/api/status/sitemap",
-        "methods": [
-            "GET",
-            "HEAD",
-            "OPTIONS",
-        ],
+        "methods": ["GET"],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    assert expected_entry in actual
+
+    expected_entry = {
+        "url": "/api/admin/bots/<string:user_id>",
+        "methods": ["DELETE", "GET", "PUT"],
+    }
     assert expected_entry in actual
 
 def test_head_method(app_client, admin_authorization_header, account_id):

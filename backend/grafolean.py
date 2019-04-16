@@ -347,10 +347,11 @@ def status_info_get():
 @app.route('/api/status/sitemap', methods=['GET'])
 @noauth
 def status_sitemap_get():
+    ignored_methods = set(['HEAD', 'OPTIONS'])
     rules = defaultdict(set)
     for rule in app.url_map.iter_rules():
         rules[str(rule)] |= rule.methods
-    result = [{ 'url': k, 'methods': sorted(list(v))} for k, v in rules.items()]
+    result = [{ 'url': k, 'methods': sorted(list(v - ignored_methods))} for k, v in rules.items()]
     return json.dumps(result), 200
 
 
