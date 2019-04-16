@@ -201,12 +201,14 @@ class MQTTFetcher {
     //this.fetches.splice(fetchId, 1); // don't do this, other ids will change then...
   };
 
-  destroy = () => {
+  disconnect = () => {
     this.mqttClient.disconnect();
+    this.mqttClient = null;
+    this.fetches = [];
   };
 }
 
-const MQTTFetcherSingleton = new MQTTFetcher();
+export const MQTTFetcherSingleton = new MQTTFetcher();
 
 class PersistentFetcher extends React.PureComponent {
   fetchId = null;
