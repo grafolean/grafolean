@@ -73,7 +73,7 @@ class SuperuserJWTToken(object):
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
-def mqtt_publish_changed(*topics):
+def mqtt_publish_changed(topics):
     if not MQTT_HOSTNAME:
         log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
@@ -232,7 +232,7 @@ def noauth(func):
 def admin_migratedb_post():
     was_needed = utils.migrate_if_needed()
     if was_needed:
-        mqtt_publish_changed('api/status/info')
+        mqtt_publish_changed(['api/status/info'])
     return '', 204
 
 
@@ -249,7 +249,7 @@ def admin_first_post():
     # make it a superuser:
     permission = Permission(admin_id, None, None)
     permission.insert()
-    mqtt_publish_changed('api/status/info')
+    mqtt_publish_changed(['api/status/info'])
     return json.dumps({
         'id': admin_id,
     }), 201
@@ -372,10 +372,10 @@ def admin_permissions_get_post():
         permission = Permission.forge_from_input(flask.request)
         try:
             permission_id = permission.insert()
-            mqtt_publish_changed(
+            mqtt_publish_changed([
                 f'admin/persons/{permission.user_id}',
                 f'admin/bots/{permission.user_id}',
-            )
+            ])
             return json.dumps({
                 'user_id': permission.user_id,
                 'resource_prefix': permission.resource_prefix,
@@ -391,10 +391,10 @@ def admin_permission_delete(permission_id):
     rowcount, user_id = Permission.delete(permission_id)
     if not rowcount:
         return "No such permission", 404
-    mqtt_publish_changed(
+    mqtt_publish_changed([
         f'admin/persons/{user_id}',
         f'admin/bots/{user_id}',
-    )
+    ])
     return "", 200
 
 
@@ -728,7 +728,7 @@ def dashboards_crud(account_id):
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
-        mqtt_publish_changed(f'accounts/{account_id}/dashboards')
+        mqtt_publish_changed([f'accounts/{account_id}/dashboards'])
         return json.dumps({'slug': dashboard.slug}), 201
 
 
@@ -745,20 +745,20 @@ def dashboard_crud(account_id, dashboard_slug):
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
-        mqtt_publish_changed(
+        mqtt_publish_changed([
             f'accounts/{account_id}/dashboards',
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        )
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Dashboard.delete(account_id, dashboard_slug)
         if not rowcount:
             return "No such dashboard", 404
-        mqtt_publish_changed(
+        mqtt_publish_changed([
             f'accounts/{account_id}/dashboards',
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        )
+        ])
         return "", 200
 
 
