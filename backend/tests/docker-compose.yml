@@ -11,7 +11,7 @@ services:
       - POSTGRES_USER=pytest
       - POSTGRES_PASSWORD=pytest
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      test: ["CMD-SHELL", "pg_isready -h dbpytest -t 1 -q"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -36,9 +36,9 @@ services:
     # Mosquitto uses our REST API for auth, but it is not really running during pytest integration tests,
     # so we must provide it here:
     image: grafolean/grafolean
-    # depends_on:
-    #   dbpytest:
-    #     condition: service_healthy
+    depends_on:
+      dbpytest:
+        condition: service_healthy
     environment:
       - DB_HOST=dbpytest
       - DB_DATABASE=pytest
