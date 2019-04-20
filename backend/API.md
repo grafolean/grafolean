@@ -143,7 +143,7 @@ curl 'https://grafolean.com/api/accounts/<AccountId>/values/?p=<Path0[,Path1...]
 
 or:
 ```
-curl 'https://grafolean.com/api/accounts/<AccountId>/values/<Path0[,Path1...]>/?t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>&sort=<SortAscDesc>&limit=<MaxResults>'
+curl 'https://grafolean.com/api/accounts/<AccountId>/values/<Path>/?t0=<TimestampFrom>&t1=<TimestampTo>&a=<AggregationLevel>&sort=<SortAscDesc>&limit=<MaxResults>'
 ```
 
 Parameters:

@@ -585,10 +585,14 @@ def values_post(account_id):
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['GET'])
-@app.route("/api/accounts/<string:account_id>/values/<string:paths_input>", methods=['GET'])
-def values_get(account_id, paths_input=None):
+@app.route("/api/accounts/<string:account_id>/values/<string:path_input>", methods=['GET'])
+def values_get(account_id, path_input=None):
     # validate and convert input parameters:
-    if not paths_input:
+    if path_input:
+        if "," in path_input:
+            return "Only a single path is allowed as part of URL\n\n", 400
+        paths_input = path_input
+    else:
         paths_input = flask.request.args.get('p')
     if paths_input is None:
         return "Path(s) not specified\n\n", 400
