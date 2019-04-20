@@ -27,9 +27,7 @@ The goal is to provide *polished* experience while still allowing users to make 
 
 [^3]: this being early stage software, commercial licenses are not yet available. [Contact us](info@grafolean.com) if you hit the limit and we will find a suitable solution.
 
-# Install
-
-## Docker (docker-compose)
+# Install (docker / docker-compose)
 
 This is the easiest and currently the only officially supported way. All the services necessary can be run with a few simple steps:
 
@@ -38,7 +36,12 @@ This is the easiest and currently the only officially supported way. All the ser
 3) run: `docker-compose up -d`
 4) point your browser to http://localhost/ (or other appropriate URL) and follow post-installation instructions
 
-### HTTPS
+## Upgrade
+
+1) `docker-compose pull`
+2) `docker-compose down && sleep 1 && docker-compose up -d`
+
+## HTTPS
 
 If you follow default installation (docker), setting up Grafolean for HTTPS should be easy. All traffic (including websockets) is going through Nginx, so it is enough to install certificate there.
 
