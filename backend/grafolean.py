@@ -73,13 +73,13 @@ class SuperuserJWTToken(object):
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
-def mqtt_publish_changed(*topics):
+def mqtt_publish_changed(topics, payload='1'):
     if not MQTT_HOSTNAME:
         log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
     log.debug("MQTT publishing change of: [{}]".format(topics,))
     # https://www.eclipse.org/paho/clients/python/docs/#id2
-    msgs = [('changed/{}'.format(t), '1', 1, False) for t in topics]
+    msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
     superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
     mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
 
@@ -232,7 +232,7 @@ def noauth(func):
 def admin_migratedb_post():
     was_needed = utils.migrate_if_needed()
     if was_needed:
-        mqtt_publish_changed('api/status/info')
+        mqtt_publish_changed(['status/info'])
     return '', 204
 
 
@@ -249,7 +249,7 @@ def admin_first_post():
     # make it a superuser:
     permission = Permission(admin_id, None, None)
     permission.insert()
-    mqtt_publish_changed('api/status/info')
+    mqtt_publish_changed(['status/info'])
     return json.dumps({
         'id': admin_id,
     }), 201
@@ -372,10 +372,10 @@ def admin_permissions_get_post():
         permission = Permission.forge_from_input(flask.request)
         try:
             permission_id = permission.insert()
-            mqtt_publish_changed(
+            mqtt_publish_changed([
                 f'admin/persons/{permission.user_id}',
                 f'admin/bots/{permission.user_id}',
-            )
+            ])
             return json.dumps({
                 'user_id': permission.user_id,
                 'resource_prefix': permission.resource_prefix,
@@ -391,10 +391,10 @@ def admin_permission_delete(permission_id):
     rowcount, user_id = Permission.delete(permission_id)
     if not rowcount:
         return "No such permission", 404
-    mqtt_publish_changed(
+    mqtt_publish_changed([
         f'admin/persons/{user_id}',
         f'admin/bots/{user_id}',
-    )
+    ])
     return "", 200
 
 
@@ -542,6 +542,8 @@ def values_put(account_id):
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         Measurement.save_values_data_to_db(account_id, data)
+        for d in data:
+            mqtt_publish_changed(['accounts/{}/values/{}'.format(account_id, d['p'])], { 'v': d['v'], 't': d['t'] })
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
     return ""
@@ -575,21 +577,29 @@ def values_post(account_id):
     if not data:
         return "Missing data", 400
 
-    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flash will return error response:
+    # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     Measurement.save_values_data_to_db(account_id, data)
+    for d in data:
+        mqtt_publish_changed(['accounts/{}/values/{}'.format(account_id, d['p'])], { 'v': d['v'], 't': d['t'] })
     return ""
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['GET'])
-def values_get(account_id):
+@app.route("/api/accounts/<string:account_id>/values/<string:path_input>", methods=['GET'])
+def values_get(account_id, path_input=None):
     # validate and convert input parameters:
-    paths_input = flask.request.args.get('p')
+    if path_input:
+        if "," in path_input:
+            return "Only a single path is allowed as part of URL\n\n", 400
+        paths_input = path_input
+    else:
+        paths_input = flask.request.args.get('p')
     if paths_input is None:
-        return "Missing parameter: p\n\n", 400
+        return "Path(s) not specified\n\n", 400
     try:
         paths = [Path(account_id, p) for p in paths_input.split(',')]
     except:
-        return "Invalid parameter: p\n\n", 400
+        return "Path(s) not specified correctly\n\n", 400
 
     t_from_input = flask.request.args.get('t0')
     if t_from_input:
@@ -728,7 +738,7 @@ def dashboards_crud(account_id):
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
-        mqtt_publish_changed(f'accounts/{account_id}/dashboards')
+        mqtt_publish_changed([f'accounts/{account_id}/dashboards'])
         return json.dumps({'slug': dashboard.slug}), 201
 
 
@@ -745,20 +755,20 @@ def dashboard_crud(account_id, dashboard_slug):
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
-        mqtt_publish_changed(
+        mqtt_publish_changed([
             f'accounts/{account_id}/dashboards',
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        )
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Dashboard.delete(account_id, dashboard_slug)
         if not rowcount:
             return "No such dashboard", 404
-        mqtt_publish_changed(
+        mqtt_publish_changed([
             f'accounts/{account_id}/dashboards',
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        )
+        ])
         return "", 200
 
 

@@ -241,10 +241,12 @@ def mqtt_messages(app_client, mqtt_message_queue_factory):
 
 ###################################################
 
-def test_values_put_get_simple(app_client, admin_authorization_header, account_id):
+def test_values_put_get_simple(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Put a value, get a value.
     """
+    assert mqtt_messages.empty()
+
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -262,6 +264,12 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
+
+    mqtt_message = mqtt_messages.get(timeout=10.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
+    assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
+    assert mqtt_messages.empty()
+
     # remove entry: !!! not implemented
     # r = app_client.delete('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891'.format(account_id), headers={'Authorization': admin_authorization_header})
     # assert r.status_code == 200
