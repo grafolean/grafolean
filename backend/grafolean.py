@@ -585,15 +585,17 @@ def values_post(account_id):
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['GET'])
-def values_get(account_id):
+@app.route("/api/accounts/<string:account_id>/values/<string:paths_input>", methods=['GET'])
+def values_get(account_id, paths_input=None):
     # validate and convert input parameters:
-    paths_input = flask.request.args.get('p')
+    if not paths_input:
+        paths_input = flask.request.args.get('p')
     if paths_input is None:
-        return "Missing parameter: p\n\n", 400
+        return "Path(s) not specified\n\n", 400
     try:
         paths = [Path(account_id, p) for p in paths_input.split(',')]
     except:
-        return "Invalid parameter: p\n\n", 400
+        return "Path(s) not specified correctly\n\n", 400
 
     t_from_input = flask.request.args.get('t0')
     if t_from_input:
