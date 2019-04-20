@@ -7,6 +7,12 @@ This is still an early stage software, with many features still in planning and 
 [^1]: though running any software that writes to SD card often is in general not a good idea due to SD card reliability issues (on power failure)
 [^2]: note that AWS IOT is not a suitable replacement for Mosquitto in this case, because it uses a different authentication mechanism. However running backend on Lambda is possible.
 
+# Demo
+
+https://demo.grafolean.com/
+
+Username: `demo`, password: `demo`.
+
 # License
 
 Grafolean is licensed under Fair Source 10 license (see `LICENSE.md`).
