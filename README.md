@@ -18,8 +18,8 @@ Username: `demo`, password: `demo`.
 Grafolean is licensed under Fair Source 10 license (see `LICENSE.md`).
 
 In short:
-- source available
 - free to use for up to 10 users per organization [^3]
+- source available
 
 This licence means that Grafolean is *not* open source (as per [OSI definition](https://opensource.org/osd-annotated)), nor is it free software (as per [FSF definition](https://www.gnu.org/philosophy/free-sw.en.html)). We understand (and regret) that this might not be acceptable to some potential users or contributors. However we believe this compromise keeps the best properties of free / open source, while also aligning incentives of developers and users - to have a monitoring system with the best possible user experience, freely available to small entities, with active and ongoing development.
 
@@ -40,11 +40,21 @@ This is the easiest and currently the only officially supported way. All the ser
 
 ### HTTPS
 
-By default, Grafolean is being served through unencrypted HTTP (port 80) and additional steps need to be taken to protect the traffic with SSL/TLS. In default configuration all traffic (including websockets) is going through Nginx, so it is enough to install certificate there.
+If you follow default installation (docker), setting up Grafolean for HTTPS should be easy. All traffic (including websockets) is going through Nginx, so it is enough to install certificate there.
 
-If you have your own certificates and wish to renew them manually, it is enough to expose port `443` and mount certificates as indicated in `docker-compose.yml`. The guide below however assumes we will be using LetsEncrypt certificates by installing  `certbot` on host computer.
+#### Existing certificates
 
-IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Port 80 is important for (re)issuing certificates, so make sure you don't block it.
+If you have your own certificates and will renew them manually, it is enough to expose port `443` and mount certificates (as indicated in `docker-compose.yml`). When changing the certificates you also need to restart nginx:
+
+```bash
+docker exec -ti grafolean service nginx reload`
+```
+
+#### Configuring certbot (LetsEncrypt certificates)
+
+The guide below describes how to setup `certbot` on host computer, so that it correctly manages SSL/TLS certificates.
+
+IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Port 80 is important for (re)issuing certificates (make sure you don't block it).
 
 1) Install `certbot` on the host machine. On Debian / Ubuntu:
   ```bash
@@ -63,12 +73,12 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   (replace `yourdomain.example.org` with the actual domain or IP address)
 
-3.b) (maybe not needed?)
+3.b) (might not be needed?)
   ```bash
     $ sudo mkdir -p /etc/letsencrypt/acme-challenge
   ```
 
-4) Edit `docker-compose.yml` and make sure all of the following lines are enabled in `grafolean` service:
+4) Edit `docker-compose.yml` and make sure the following lines are enabled in `grafolean` service:
   ```
     ports:
       - "80:80"
@@ -84,9 +94,9 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```bash
     $ sudo docker-compose up -d
   ```
-  If everything went according to plan, you should now be able to access the service at `https://yourdomain.example.org/`.
+  If everything went according to plan, you should now be able to access the service at `https://yourdomain.example.org/`. Congratulations!
 
-6) Important final step - setup automatic certificate renewing. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
+6) Important final step - setup automatic certificate renewal process. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
   ```
     #!/bin/sh
     /usr/bin/certbot renew --webroot --webroot-path /etc/letsencrypt/acme-challenge/ -n --post-hook "docker exec -ti grafolean service nginx reload"
@@ -101,7 +111,7 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
 To send values to Grafolean, you first need to create a bot account (via UI) and obtain its bot token. Then you can use a regular POST request to send values:
 
 ```bash
-$ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=just.some.path&v=12.345&b=<BotAPIToken>'
+$ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
 ```
 
 Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
