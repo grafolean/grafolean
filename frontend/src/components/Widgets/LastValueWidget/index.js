@@ -1,11 +1,8 @@
 import React from 'react';
 import moment from 'moment';
-import { stringify } from 'qs';
-
-import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 
 import isWidget from '../isWidget';
-import { fetchAuth } from '../../../utils/fetch';
+import PersistentFetcher from '../../../utils/fetch';
 
 class LastValueWidget extends React.Component {
   state = {
@@ -14,49 +11,54 @@ class LastValueWidget extends React.Component {
     lastValue: null,
     lastValueTime: null,
   };
-  fetchAbortController = null;
 
-  componentDidMount() {
-    this.fetchData();
-  }
+  onNotification = mqttPayload => {
+    this.setState(prevState => {
+      if (prevState.lastValueTime > mqttPayload.t) {
+        return; // nothing to update, we have a more recent value already
+      }
+      return {
+        lastValue: mqttPayload.v,
+        lastValueTime: mqttPayload.t,
+      };
+    });
+    // do not trigger fetch, we got all the information we need:
+    return false;
+  };
 
-  fetchData = () => {
-    if (this.fetchAbortController !== null) {
-      return; // fetch is already in progress
-    }
-    this.fetchAbortController = new window.AbortController();
-    const query_params = {
-      p: this.props.content.path,
+  onFetchError = errorMsg => {
+    console.error(errorMsg);
+    this.setState({
+      fetchingError: true,
+      loading: false,
+    });
+  };
+
+  onUpdateData = json => {
+    this.setState({
+      lastValue: json.paths[this.props.content.path].data[0].v,
+      lastValueTime: json.paths[this.props.content.path].data[0].t,
+      loading: false,
+    });
+  };
+
+  render() {
+    const { path } = this.props.content;
+    const queryParams = {
       a: 'no',
       sort: 'desc',
       limit: 1,
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/values/?${stringify(query_params)}`, {
-      signal: this.fetchAbortController.signal,
-    })
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json => {
-        this.setState({
-          lastValue: json.paths[this.props.content.path].data[0].v,
-          lastValueTime: json.paths[this.props.content.path].data[0].t,
-          loading: false,
-        });
-      })
-      .catch(errorMsg => {
-        this.setState({
-          fetchingError: true,
-          loading: false,
-        });
-      })
-      .then(() => {
-        this.fetchPathsAbortController = null;
-      });
-  };
 
-  render() {
     return (
       <div className="last-value">
+        <PersistentFetcher
+          resource={`accounts/1/values/${path}`}
+          queryParams={queryParams}
+          onNotification={this.onNotification}
+          onUpdate={this.onUpdateData}
+          onError={this.onFetchError}
+        />
         {this.state.lastValue} (at {moment(this.state.lastValueTime * 1000).format('YYYY-MM-DD HH:mm:ss')})
       </div>
     );

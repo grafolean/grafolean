@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import moment from 'moment';
+import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors, onLogout, onFailure } from '../store/actions';
 import store from '../store';
@@ -121,12 +122,14 @@ class MQTTFetcher {
     return Boolean(this.mqttClient);
   };
 
-  start = (topic, onSuccessCallback, onErrorCallback) => {
+  start = (topic, queryParams, onFetchCallback, onErrorCallback, onNotification) => {
     const newFetchId = this.fetches.length;
     this.fetches.push({
       topic: topic,
-      onSuccessCallback: onSuccessCallback,
+      queryParams: queryParams,
+      onFetchCallback: onFetchCallback,
       onErrorCallback: onErrorCallback,
+      onNotification: onNotification,
       abortController: null,
     });
     this._doFetchHttp(newFetchId).finally(() => {
@@ -136,12 +139,15 @@ class MQTTFetcher {
   };
 
   _doFetchHttp = async fetchId => {
-    const url = `${ROOT_URL}/${this.fetches[fetchId].topic}`;
+    const paramsString = this.fetches[fetchId].queryParams
+      ? `?${stringify(this.fetches[fetchId].queryParams)}`
+      : '';
+    const url = `${ROOT_URL}/${this.fetches[fetchId].topic}${paramsString}`;
     this.fetches[fetchId].abortController = new window.AbortController();
     await fetchAuth(url, { signal: this.fetches[fetchId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
-      .then(json => this.fetches[fetchId].onSuccessCallback(json))
+      .then(json => this.fetches[fetchId].onFetchCallback(json))
       .catch(err => this.fetches[fetchId].onErrorCallback(err));
   };
 
@@ -158,7 +164,16 @@ class MQTTFetcher {
       }
       try {
         // We know that the resource has changed, but we still need to re-issue REST request - MQTT
-        // only notifies us of the change, we don't get any content through it.
+        // mostly just  notifies us of the change.
+        if (f.onNotification) {
+          // But - for those topics that need parameters, MQTT gives us additional data that lets
+          // us decide if we wish to fetch new data or not (for example, when observing values, we
+          // could decide based on timestamp if we wish to refetch data or not)
+          const shouldContinueWithFetch = f.onNotification(JSON.parse(message.payloadString));
+          if (!shouldContinueWithFetch) {
+            return;
+          }
+        }
         this._doFetchHttp(fetchId);
       } catch (e) {
         console.error('Error handling MQTT message', e);
@@ -243,9 +258,11 @@ class PersistentFetcher extends React.PureComponent {
 
     this.fetchId = MQTTFetcherSingleton.start(
       this.props.resource,
-      json => this.props.onUpdate(json),
+      this.props.queryParams,
+      this.props.onUpdate,
       errorMsg =>
         this.props.onError ? this.props.onError(errorMsg) : store.dispatch(onFailure(errorMsg.toString())),
+      this.props.onNotification,
     );
   };
 
