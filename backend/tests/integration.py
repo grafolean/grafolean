@@ -1149,3 +1149,16 @@ def test_persons_email_validation(app_client, admin_authorization_header, accoun
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
     r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
+
+
+def test_profile_permissions_get(app_client, admin_authorization_header):
+    """ As admin, fetch your own permissions """
+    r = app_client.get('/api/profile/permissions', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'list': [
+            {'id': 1, 'user_id': EXPECTED_FIRST_ADMIN_ID, 'resource_prefix': None, 'methods': None},
+        ]
+    }
+    assert expected == actual
