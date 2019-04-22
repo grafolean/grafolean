@@ -42,60 +42,52 @@ export class LoginPage extends React.Component {
     this.changeFormValue('password', e.target.value);
   };
 
-  handleLoginSubmit = ev => {
+  handleLoginSubmit = async ev => {
     ev.preventDefault();
-    const params = {
-      username: this.formValues.username,
-      password: this.formValues.password,
-    };
     this.setState({
       processingLogin: true,
       loginError: undefined,
     });
-    fetch(`${ROOT_URL}/auth/login`, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify(params),
-    })
-      .then(response => {
-        if (response.status === 401) {
-          this.setState({
-            loginError: 'Invalid credentials!',
-            processingLogin: false,
-          });
-          return;
-        }
-        if (!response.ok) {
-          throw new Error(`Error ${response.status} - ${response.statusText}`);
-        }
-        const jwtToken = response.headers.get('X-JWT-Token').substring('Bearer '.length);
-        response
-          .json()
-          .then(json => {
-            window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
-            store.dispatch(onLoginSuccess(json, jwtToken));
-            this.setState({
-              redirectToReferrer: true,
-            });
-          })
-          .catch(errorMsg => {
-            console.error(errorMsg.toString());
-            this.setState({
-              loginError: errorMsg.toString(),
-              processingLogin: false,
-            });
-          });
-      })
-      .catch(errorMsg => {
-        console.error(errorMsg.toString());
-        this.setState({
-          loginError: errorMsg.toString(),
-          processingLogin: false,
-        });
+
+    try {
+      const response = await fetch(`${ROOT_URL}/auth/login`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          username: this.formValues.username,
+          password: this.formValues.password,
+        }),
       });
+      if (response.status === 401) {
+        this.setState({
+          loginError: 'Invalid credentials!',
+        });
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`Error ${response.status} - ${response.statusText}`);
+      }
+
+      const jwtToken = response.headers.get('X-JWT-Token').substring('Bearer '.length);
+      const json = await response.json();
+      window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
+      store.dispatch(onLoginSuccess(json, jwtToken));
+      this.setState({
+        redirectToReferrer: true,
+      });
+    } catch (errorMsg) {
+      console.error(errorMsg.toString());
+      this.setState({
+        loginError: errorMsg.toString(),
+      });
+    } finally {
+      this.setState({
+        processingLogin: false,
+      });
+    }
   };
 
   render() {
