@@ -62,6 +62,11 @@ function user(state = null, action) {
         ...action.userData,
         jwtToken: action.jwtToken,
       };
+    case ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS:
+      return {
+        ...state,
+        permissions: action.json.list,
+      };
     case ON_LOGOUT:
       return null;
     default:
@@ -81,19 +86,9 @@ function backendStatus(state = null, action) {
   }
 }
 
-function profilePermissions(state = null, action) {
-  switch (action.type) {
-    case ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS:
-      return action.json;
-    default:
-      return state;
-  }
-}
-
 const grafoleanApp = combineReducers({
   user,
   backendStatus,
-  profilePermissions,
   dashboards: combineReducers({
     list: dashboardsList,
   }),
