@@ -362,6 +362,13 @@ def status_cspreport():
     return '', 200
 
 
+@app.route('/api/profile/permissions', methods=['GET'])
+def profile_permissions():
+    user_id = flask.g.grafolean_data['user_id']
+    rec = Permission.get_list(user_id)
+    return json.dumps({'list': rec}), 200
+
+
 @app.route('/api/admin/permissions', methods=['GET', 'POST'])
 def admin_permissions_get_post():
     if flask.request.method in ['GET', 'HEAD']:
@@ -490,6 +497,7 @@ def auth_login_post():
     session_data = {
         'user_id': user_id,
         'session_id': secrets.token_hex(32),
+        'permissions': Permission.get_list(user_id),
     }
     response = flask.make_response(json.dumps(session_data), 200)
     response.headers['X-JWT-Token'], _ = JWT(session_data).encode_as_authorization_header()
@@ -813,7 +821,6 @@ def widget_crud(account_id, dashboard_slug, widget_id):
         if not rowcount:
             return "No such widget", 404
         return "", 204
-
 
     elif flask.request.method == 'DELETE':
         rowcount = Widget.delete(account_id, dashboard_slug, widget_id)

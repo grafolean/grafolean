@@ -5,7 +5,7 @@ import Sidebar from 'react-sidebar';
 
 import store from '../../store';
 import { fetchBackendStatus, ROOT_URL, onReceiveDashboardsListSuccess } from '../../store/actions';
-import PersistentFetcher from '../../utils/fetch';
+import PersistentFetcher, { havePermission } from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -116,7 +116,15 @@ class SidebarContentNoStore extends React.Component {
   };
 
   render() {
-    const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, dashboards, fetching, valid } = this.props;
+    const {
+      sidebarDocked,
+      onSidebarXClick,
+      onSidebarLinkClick,
+      dashboards,
+      fetching,
+      valid,
+      user,
+    } = this.props;
     return (
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
@@ -147,12 +155,16 @@ class SidebarContentNoStore extends React.Component {
           <i className="fa fa-plus" /> Add dashboard
         </Link>
         <div className="spacer" />
-        <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
-          <i className="fa fa-robot" /> Bots
-        </Link>
-        <Link className="button green" to="/settings/users" onClick={onSidebarLinkClick}>
-          <i className="fa fa-users" /> Users
-        </Link>
+        {user && havePermission('admin/bots', 'GET', user.permissions) && (
+          <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
+            <i className="fa fa-robot" /> Bots
+          </Link>
+        )}
+        {user && havePermission('admin/persons', 'GET', user.permissions) && (
+          <Link className="button green" to="/settings/users" onClick={onSidebarLinkClick}>
+            <i className="fa fa-users" /> Users
+          </Link>
+        )}
         <Link className="button green" to="/about/changelog" onClick={onSidebarLinkClick}>
           <i className="fa fa-list" /> Changelog
         </Link>
@@ -168,6 +180,7 @@ const mapDashboardsListToProps = store => ({
   dashboards: store.dashboards.list.data,
   fetching: store.dashboards.list.fetching,
   valid: store.dashboards.list.valid,
+  user: store.user,
 });
 const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentNoStore);
 

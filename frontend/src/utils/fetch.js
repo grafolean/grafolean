@@ -61,6 +61,20 @@ export const fetchAuth = (url, fetchOptions = {}) => {
   });
 };
 
+export const havePermission = (resource, method, permissions) => {
+  for (let p of permissions) {
+    if (
+      (p.resource_prefix === null ||
+        resource === p.resource_prefix ||
+        resource.startsWith(p.resource_prefix + '/')) &&
+      (p.methods === null || p.methods.includes(method))
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
 class MQTTFetcher {
   /*
   This class allows fetching data from sources which might change over time. Instead of just requesting a

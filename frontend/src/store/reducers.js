@@ -13,6 +13,7 @@ import {
   REMOVE_NOTIFICATION,
   ON_LOGIN_SUCCESS,
   ON_LOGOUT,
+  CLEAR_NOTIFICATIONS,
 } from './actions';
 
 function dashboardsList(
@@ -46,6 +47,8 @@ function notifications(state = [], action) {
       return [{ type: 'info', message: action.msg, id: uniqueId('notif-') }, ...state];
     case REMOVE_NOTIFICATION:
       return state.filter(n => n.id !== action.notificationId);
+    case CLEAR_NOTIFICATIONS:
+      return [];
     default:
       return state;
   }
