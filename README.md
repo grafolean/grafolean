@@ -1,10 +1,13 @@
 # About Grafolean
 
-Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on any Linux platform (and probably elsewhere). It can also run on AWS (EC2 + RDS). [^2]).
+Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on any Linux platform (and probably elsewhere). With some work it can also run on AWS (EC2 + RDS). [^2]).
 
-This is still an early stage software, with many features still in planning and development. We would encourage you to grab a copy and give it a spin, and to tell us if you miss something via [Issues](https://gitlab.com/grafolean/grafolean/issues). Bug reports (or simply questions) are of course also welcome there.
+** THIS IS ALPHA SOFTWARE - USE AT YOUR OWN RISK! **
 
-[^1]: though running any software that writes to SD card often is in general not a good idea due to SD card reliability issues (on power failure)
+Many features are still planned or in development and there might be bugs. Feel free to test it and to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you find a problem.
+
+
+[^1]: though running any software that writes to SD card is in general not a good idea due to SD cards' reliability issues (especially on power failure)
 [^2]: note that AWS IOT is not a suitable replacement for Mosquitto in this case, because it uses a different authentication mechanism. However running backend on Lambda is possible.
 
 # Demo
@@ -15,17 +18,9 @@ Username: `demo`, password: `demo`.
 
 # License
 
-Grafolean is licensed under Fair Source 10 license (see `LICENSE.md`).
+License is Commons Clause license (on top of Apache 2.0) - similar to open source, but you can't sell it (you can use it for free though, even for commercial purposes). See [LICENSE.md](https://gitlab.com/grafolean/grafolean/blob/master/LICENSE.md) for details.
 
-In short:
-- free to use for up to 10 users per organization [^3]
-- source available
-
-This licence means that Grafolean is *not* open source (as per [OSI definition](https://opensource.org/osd-annotated)), nor is it free software (as per [FSF definition](https://www.gnu.org/philosophy/free-sw.en.html)). We understand (and regret) that this might not be acceptable to some potential users or contributors. However we believe this compromise keeps the best properties of free / open source, while also aligning incentives of developers and users - to have a monitoring system with the best possible user experience, freely available to small entities, with active and ongoing development.
-
-The goal is to provide *polished* experience while still allowing users to make modifications as they see fit.
-
-[^3]: this being early stage software, commercial licenses are not yet available. [Contact us](info@grafolean.com) if you hit the limit and we will find a suitable solution.
+If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issues) to get further clarification.
 
 # Install (docker / docker-compose)
 
@@ -57,7 +52,7 @@ docker exec -ti grafolean service nginx reload`
 
 The guide below describes how to setup `certbot` on host computer, so that it correctly manages SSL/TLS certificates.
 
-IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Port 80 is important for (re)issuing certificates (make sure you don't block it).
+IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide with some domain or IP address that actually leads to your host, both on port 80 and 443. Make sure you don't block port 80, because it is important for (re)issuing certificates.
 
 1) Install `certbot` on the host machine. On Debian / Ubuntu:
   ```bash
@@ -120,6 +115,10 @@ $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroo
 Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
 
 # Development
+
+## Contributing
+
+To contribute to this repository, CLA needs to be signed. Please open an issue before submitting a pull request.
 
 ## Frontend
 
