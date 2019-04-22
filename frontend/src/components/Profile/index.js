@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import { onLogout } from '../../store/actions';
+import { onLogout, clearNotifications } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
 import { MQTTFetcherSingleton } from '../../utils/fetch';
@@ -10,6 +10,7 @@ class Profile extends React.Component {
   onLogoutClick = () => {
     window.sessionStorage.removeItem('grafolean_jwt_token');
     MQTTFetcherSingleton.disconnect();
+    store.dispatch(clearNotifications());
     store.dispatch(onLogout());
   };
 
