@@ -64,14 +64,6 @@ export function onReceiveBackendStatusFailure(errMsg) {
   };
 }
 
-export const ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS = 'ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS';
-export function onReceiveProfilePermissionsSuccess(json) {
-  return {
-    type: ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS,
-    json: json,
-  };
-}
-
 export const ON_FAILURE = 'ON_FAILURE';
 export function onFailure(msg) {
   return {

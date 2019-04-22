@@ -8,7 +8,6 @@ import {
   ON_REQUEST_BACKEND_STATUS,
   ON_RECEIVE_BACKEND_STATUS_SUCCESS,
   ON_RECEIVE_BACKEND_STATUS_FAILURE,
-  ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS,
   ON_FAILURE,
   ON_SUCCESS,
   REMOVE_NOTIFICATION,
@@ -61,11 +60,6 @@ function user(state = null, action) {
       return {
         ...action.userData,
         jwtToken: action.jwtToken,
-      };
-    case ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS:
-      return {
-        ...state,
-        permissions: action.json.list,
       };
     case ON_LOGOUT:
       return null;
