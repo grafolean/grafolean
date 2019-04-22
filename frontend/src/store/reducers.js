@@ -8,6 +8,7 @@ import {
   ON_REQUEST_BACKEND_STATUS,
   ON_RECEIVE_BACKEND_STATUS_SUCCESS,
   ON_RECEIVE_BACKEND_STATUS_FAILURE,
+  ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS,
   ON_FAILURE,
   ON_SUCCESS,
   REMOVE_NOTIFICATION,
@@ -77,9 +78,19 @@ function backendStatus(state = null, action) {
   }
 }
 
+function profilePermissions(state = null, action) {
+  switch (action.type) {
+    case ON_RECEIVE_PROFILE_PERMISSIONS_SUCCESS:
+      return action.json;
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
   user,
   backendStatus,
+  profilePermissions,
   dashboards: combineReducers({
     list: dashboardsList,
   }),

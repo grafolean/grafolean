@@ -3,11 +3,18 @@ import { connect } from 'react-redux';
 import Redirect from 'react-router-dom/Redirect';
 
 import store from '../../store';
-import { onLoginSuccess, ROOT_URL } from '../../store/actions';
+import {
+  onLoginSuccess,
+  ROOT_URL,
+  handleFetchErrors,
+  onReceiveProfilePermissionsSuccess,
+  onFailure,
+} from '../../store/actions';
 
 import './LoginPage.scss';
 import Button from '../Button';
 import { VERSION_INFO } from '../../VERSION';
+import { fetchAuth } from '../../utils/fetch';
 
 export class LoginPage extends React.Component {
   formValues = {};
@@ -40,6 +47,16 @@ export class LoginPage extends React.Component {
   };
   changePassword = e => {
     this.changeFormValue('password', e.target.value);
+  };
+
+  fetchProfilePermissions = () => {
+    // get profile permissions so we can change UI based on hasPermission() checks: (no need to
+    // display controls that the user doesn't have access rights for)
+    fetchAuth(`${ROOT_URL}/profile/permissions`)
+      .then(handleFetchErrors)
+      .then(response => response.json())
+      .then(json => store.dispatch(onReceiveProfilePermissionsSuccess(json)))
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   handleLoginSubmit = async ev => {
@@ -75,6 +92,9 @@ export class LoginPage extends React.Component {
       const json = await response.json();
       window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
       store.dispatch(onLoginSuccess(json, jwtToken));
+
+      await this.fetchProfilePermissions();
+
       this.setState({
         redirectToReferrer: true,
       });
