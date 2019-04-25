@@ -38,15 +38,16 @@ button.link-button {
 }
 
 /* try to make links look like buttons: (because this is what Link creates) */
-a.button, button {
+a.button, button, a.button:visited {
   padding: 5px 10px;
   background-color: #4cd074;
-  color: #fff !important;
+  color: #fff;
   text-decoration: none;
   margin: 0px;
-  border: none !important;
+  border: none;
   border-radius: 3px;
   line-height: 14px;  // important to make buttons look exactly the same as (button-ified) links
+  cursor: pointer;
 
   &.orange {
     background-color: #ec932f;

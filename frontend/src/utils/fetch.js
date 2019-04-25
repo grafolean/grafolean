@@ -231,7 +231,9 @@ class MQTTFetcher {
   };
 
   disconnect = () => {
-    this.mqttClient.disconnect();
+    if (this.mqttClient) {
+      this.mqttClient.disconnect();
+    }
     this.mqttClient = null;
     this.fetches = [];
   };
