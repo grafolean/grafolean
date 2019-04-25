@@ -62,3 +62,16 @@
     font-weight: bold;
   }
 }
+
+.time-interval-selector {
+  position: absolute;
+  top: 0;
+  z-index: 2; // just above repinchy
+
+  button {
+    margin-left: 10px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    color: #000;
+  }
+}
