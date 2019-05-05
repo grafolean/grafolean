@@ -7,6 +7,7 @@ export default class TimeIntervalSelector extends React.PureComponent {
   static defaultProps = {
     options: {
       '1y': moment.duration(1, 'year'),
+      '3m': moment.duration(3, 'month'),
       '1m': moment.duration(1, 'month'),
       '7d': moment.duration(7, 'day'),
       '24h': moment.duration(24, 'hour'),
