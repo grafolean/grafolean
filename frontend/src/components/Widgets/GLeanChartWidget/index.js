@@ -20,6 +20,7 @@ import isWidget from '../isWidget';
 import { fetchAuth } from '../../../utils/fetch';
 import ChartTooltipPopup from './ChartTooltipPopup';
 import YAxisMinMaxAdjuster from './YAxisMinMaxAdjuster';
+import TimeIntervalSelector from './TimeIntervalSelector';
 
 class GLeanChartWidget extends React.Component {
   state = {
@@ -167,54 +168,64 @@ class GLeanChartWidget extends React.Component {
           width: this.props.width,
         }}
       >
-        <div>
-          <RePinchy
-            width={this.props.width}
-            height={this.props.height}
-            activeArea={{
-              x: yAxesWidth,
-              y: 0,
-              w: chartWidth - yAxesWidth,
-              h: this.props.height,
-            }}
-            kidnapScroll={this.props.isFullscreen}
-            initialState={{
-              x: initialPanX,
-              y: 0.0,
-              scale: initialScale,
-            }}
-            handleMouseMove={this.handleRePinchyMouseMove}
-            handleClick={this.handleRePinchyClick}
-          >
-            {(x, y, scale, zoomInProgress, pointerPosition) => (
-              <div className="repinchy-content">
-                <ChartContainer
-                  chartSeries={this.state.allChartSeries}
-                  drawnChartSeries={this.state.drawnChartSeries}
-                  width={chartWidth}
+        <RePinchy
+          width={this.props.width}
+          height={this.props.height}
+          activeArea={{
+            x: yAxesWidth,
+            y: 0,
+            w: chartWidth - yAxesWidth,
+            h: this.props.height,
+          }}
+          kidnapScroll={this.props.isFullscreen}
+          initialState={{
+            x: initialPanX,
+            y: 0.0,
+            scale: initialScale,
+          }}
+          handleMouseMove={this.handleRePinchyMouseMove}
+          handleClick={this.handleRePinchyClick}
+        >
+          {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
+            <div className="repinchy-content">
+              <ChartContainer
+                chartSeries={this.state.allChartSeries}
+                drawnChartSeries={this.state.drawnChartSeries}
+                width={chartWidth}
+                height={this.props.height}
+                fromTs={Math.round(-(x - yAxesWidth) / scale)}
+                toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
+                scale={scale}
+                zoomInProgress={zoomInProgress}
+                xAxisHeight={xAxisHeight}
+                yAxisWidth={yAxisWidth}
+                registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
+                registerClickHandler={this.registerRePinchyClickHandler}
+              />
+              <div style={legendPositionStyle}>
+                <Legend
+                  dockingEnabled={legendIsDockable}
+                  width={legendWidth}
                   height={this.props.height}
-                  fromTs={Math.round(-(x - yAxesWidth) / scale)}
-                  toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
-                  scale={scale}
-                  zoomInProgress={zoomInProgress}
-                  xAxisHeight={xAxisHeight}
-                  yAxisWidth={yAxisWidth}
-                  registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
-                  registerClickHandler={this.registerRePinchyClickHandler}
+                  chartSeries={this.state.allChartSeries}
+                  onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                 />
-                <div style={legendPositionStyle}>
-                  <Legend
-                    dockingEnabled={legendIsDockable}
-                    width={legendWidth}
-                    height={this.props.height}
-                    chartSeries={this.state.allChartSeries}
-                    onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
-                  />
-                </div>
               </div>
-            )}
-          </RePinchy>
-        </div>
+              <TimeIntervalSelector
+                style={{ right: legendWidth }}
+                onChange={intervalDuration => {
+                  const toTs = moment().unix();
+                  const fromTs = moment()
+                    .subtract(intervalDuration)
+                    .unix();
+                  const scale = chartWidth / (toTs - fromTs);
+                  const panX = -fromTs * scale;
+                  setXYScale(panX, 0, scale);
+                }}
+              />
+            </div>
+          )}
+        </RePinchy>
       </div>
     );
   }

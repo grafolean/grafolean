@@ -441,6 +441,19 @@ export default class RePinchy extends React.Component {
     });
   };
 
+  // this function is called when our child component wants to override the x/y/scale, for example when user
+  // selects "Last 30 days" button or similar:
+  setXYScale = (x, y, scale) => {
+    this.x = x;
+    this.y = y;
+    this.scale = scale;
+    this.setState({
+      x: x,
+      y: y,
+      scale: scale,
+    });
+  };
+
   render() {
     return (
       <div
@@ -484,6 +497,7 @@ export default class RePinchy extends React.Component {
             this.state.scale,
             this.state.zoomInProgress,
             this.state.pointerPosition,
+            this.setXYScale,
           )}
         </div>
         {this.state.overlay.shown
