@@ -125,10 +125,6 @@ class GLeanChartWidget extends React.Component {
     });
   };
 
-  handleTimeIntervalSelect = intervalDuration => {
-    console.log({ intervalDuration });
-  };
-
   render() {
     const MAX_YAXIS_WIDTH = 70;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
@@ -190,7 +186,7 @@ class GLeanChartWidget extends React.Component {
           handleMouseMove={this.handleRePinchyMouseMove}
           handleClick={this.handleRePinchyClick}
         >
-          {(x, y, scale, zoomInProgress, pointerPosition) => (
+          {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
             <div className="repinchy-content">
               <ChartContainer
                 chartSeries={this.state.allChartSeries}
@@ -215,16 +211,21 @@ class GLeanChartWidget extends React.Component {
                   onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                 />
               </div>
+              <TimeIntervalSelector
+                style={{ right: legendWidth }}
+                onChange={intervalDuration => {
+                  const toTs = moment().unix();
+                  const fromTs = moment()
+                    .subtract(intervalDuration)
+                    .unix();
+                  const scale = chartWidth / (toTs - fromTs);
+                  const panX = -fromTs * scale;
+                  setXYScale(panX, 0, scale);
+                }}
+              />
             </div>
           )}
         </RePinchy>
-
-        <TimeIntervalSelector
-          style={{
-            right: legendWidth,
-          }}
-          onChange={this.handleTimeIntervalSelect}
-        />
       </div>
     );
   }
