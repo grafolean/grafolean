@@ -265,7 +265,7 @@ def admin_first_post():
             admin access (with name, email and password). Later requests to the same endpoint will fail.
           parameters:
             - name: "body"
-              in: "body"
+              in: body
               description: "First admin data and credentials"
               required: true
               schema:
@@ -466,7 +466,7 @@ def admin_permissions_get_post():
 
           parameters:
             - name: "body"
-              in: "body"
+              in: body
               description: "Permission to be granted"
               required: true
               schema:
@@ -541,7 +541,7 @@ def admin_permission_delete(permission_id):
               description: "Permission id"
               required: true
               schema:
-                type: "integer"
+                type: integer
           responses:
             204:
               description: Permission removed successfully
@@ -602,7 +602,7 @@ def admin_bots():
 
           parameters:
             - name: "body"
-              in: "body"
+              in: body
               description: "Bot data"
               required: true
               schema:
