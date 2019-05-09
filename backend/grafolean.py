@@ -578,27 +578,13 @@ def admin_bots():
                       list:
                         type: array
                         items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: "User id"
-                            name:
-                              type: string
-                              description: "Bot name"
-                            token:
-                              type: string
-                              format: uuid
-                              description: "Bot authentication token"
-                            insert_time:
-                              type: integer
-                              description: "Insert time (UNIX timestamp)"
+                          "$ref": '#/components/schemas/BotGET'
         post:
           summary: Create a bot
           tags:
             - admin
           description:
-            Creates a bot. By default (as any user) bot is without permissions, so they must be granted to it before it can do anything useful.
+            Creates a bot. By default (as any user) a bot is without permissions, so they must be granted to it before it can do anything useful.
 
           parameters:
             - name: "body"
@@ -606,21 +592,13 @@ def admin_bots():
               description: "Bot data"
               required: true
               schema:
-                "$ref": '#/components/schemas/Bot'
+                "$ref": '#/components/schemas/BotPOST'
           responses:
             201:
               content:
                 application/json:
                   schema:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: "User id"
-                      token:
-                        type: string
-                        format: uuid
-                        description: "Bot authentication token"
+                    "$ref": '#/components/schemas/BotGET'
     """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get_list()
@@ -629,14 +607,80 @@ def admin_bots():
     elif flask.request.method == 'POST':
         bot = Bot.forge_from_input(flask.request)
         user_id, bot_token = bot.insert()
-        return json.dumps({
-            'id': user_id,
-            'token': bot_token,
-        }), 201
+        rec = Bot.get(user_id)
+        return json.dumps(rec), 201
 
 
 @app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def admin_bot_crud(user_id):
+    """
+        ---
+        get:
+          summary: Get bot data
+          tags:
+            - admin
+          description:
+            Returns bot data.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    "$ref": '#/components/schemas/BotGET'
+            404:
+              description: No such bot
+        put:
+          summary: Update the bot
+          tags:
+            - admin
+          description:
+            Updates bot name. Note that all other fields are handled automatically (they can't be changed).
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+              type: integer
+            - name: "body"
+              in: body
+              description: "Bot data"
+              required: true
+              schema:
+                "$ref": '#/components/schemas/BotPOST'
+          responses:
+            204:
+              description: Update successful
+            404:
+              description: No such bot
+        delete:
+          summary: Remove the bot
+          tags:
+            - admin
+          description:
+            Removes the bot. Also removes its permissions, if any.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            204:
+              description: Bot removed successfully
+            403:
+              description: Can't remove yourself
+            404:
+              description: No such bot
+    """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get(user_id)
         if not rec:
@@ -662,6 +706,48 @@ def admin_bot_crud(user_id):
 
 @app.route('/api/admin/persons', methods=['GET', 'POST'])
 def admin_persons():
+    """
+        ---
+        get:
+          summary: Get all persons
+          tags:
+            - admin
+          description:
+            Returns a list of all persons. The list is returned in a single array (no pagination).
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          "$ref": '#/components/schemas/PersonGET'
+        post:
+          summary: Create a person account
+          tags:
+            - admin
+          description:
+            Creates a person account. By default (as any user) a person is without permissions, so they must be granted to it before it can do anything useful.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Person data"
+              required: true
+              schema:
+                "$ref": '#/components/schemas/PersonPOST'
+          responses:
+            201:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+    """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Person.get_list()
         return json.dumps({'list': rec}), 200
@@ -676,6 +762,74 @@ def admin_persons():
 
 @app.route('/api/admin/persons/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
 def admin_person_crud(user_id):
+    """
+        ---
+        get:
+          summary: Get person data
+          tags:
+            - admin
+          description:
+            Returns person data.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    "$ref": '#/components/schemas/PersonGETWithPermissions'
+            404:
+              description: No such person
+        put:
+          summary: Update the bot
+          tags:
+            - admin
+          description:
+            Updates person data.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+                type: integer
+            - name: "body"
+              in: body
+              description: "Person data"
+              required: true
+              schema:
+                "$ref": '#/components/schemas/PersonPOST'
+          responses:
+            204:
+              description: Update successful
+            404:
+              description: No such person
+        delete:
+          summary: Remove the person data
+          tags:
+            - admin
+          description:
+            Removes the person data. Also removes user's permissions, if any.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            204:
+              description: Person data removed successfully
+            403:
+              description: Can't remove yourself
+            404:
+              description: No such person
+    """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Person.get(user_id)
         if not rec:
@@ -1101,14 +1255,77 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 if __name__ == "__main__":
 
+    import copy
     apidoc = APISpec(
         title="Grafolean API",
         version="0.0.32",
         openapi_version="3.0.2",
         plugins=[FlaskPlugin()],
     )
+    apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
+    botGETSchema = {
+        'type': 'object',
+        'properties': {
+            'id': {
+                'type': 'integer',
+                'description': "User id",
+                'example': 123,
+            },
+            'name': {
+                'type': 'string',
+                'description': "Bot name",
+                'example': 'My Bot',
+            },
+            'token': {
+                'type': 'string',
+                'format': 'uuid',
+                'description': "Bot authentication token",
+            },
+            'insert_time': {
+                'type': 'integer',
+                'description': "Insert time (UNIX timestamp)",
+                'example': 1234567890,
+            },
+        },
+        'required': ['id', 'name', 'token', 'insert_time'],
+    }
+    apidoc.components.schema("BotGET", botGETSchema)
+
+    personGETSchema = {
+        'type': 'object',
+        'properties': {
+            'user_id': {
+                'type': 'integer',
+                'description': "User id",
+                'example': 123,
+            },
+            'username': {
+                'type': 'string',
+                'description': "Username",
+                'example': 'myusername',
+            },
+            'name': {
+                'type': 'string',
+                'description': "Name",
+                'example': 'Grafo Lean',
+            },
+            'email': {
+                'type': 'string',
+                'format': 'email',
+                'description': "someone@example.org",
+            },
+        },
+    }
+    apidoc.components.schema("PersonGET", personGETSchema)
+
+    personGETWithPermissionsSchema = copy.deepcopy(personGETSchema)
+    personGETWithPermissionsSchema['properties']['permissions'] = {
+        'type': 'array',
+        'items': validators.PermissionSchemaInputs.json[0].schema,
+    }
+    apidoc.components.schema("PersonGETWithPermissions", personGETWithPermissionsSchema)
     apidoc.components.schema("PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema)
-    apidoc.components.schema("Bot", validators.BotSchemaInputs.json[0].schema)
+
     apidoc.components.schema("Permission", validators.PermissionSchemaInputs.json[0].schema)
 
     with app.test_request_context():
