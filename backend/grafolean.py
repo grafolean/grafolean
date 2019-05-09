@@ -522,7 +522,7 @@ def admin_permissions_get_post():
                 'id': permission_id,
             }), 201
         except psycopg2.IntegrityError:
-            return "Account with this name already exists", 400
+            return "Invalid parameters", 400
 
 
 @app.route('/api/admin/permissions/<string:permission_id>', methods=['DELETE'])
@@ -555,7 +555,7 @@ def admin_permission_delete(permission_id):
         f'admin/persons/{user_id}',
         f'admin/bots/{user_id}',
     ])
-    return "", 200
+    return "", 204
 
 
 @app.route('/api/admin/bots', methods=['GET', 'POST'])
@@ -651,10 +651,13 @@ def admin_bot_crud(user_id):
         return "", 204
 
     elif flask.request.method == 'DELETE':
+        # bot should not be able to delete himself, otherwise they could lock themselves out:
+        if int(flask.g.grafolean_data['user_id']) == int(user_id):
+            return "Can't delete yourself", 403
         rowcount = Bot.delete(user_id)
         if not rowcount:
             return "No such bot", 404
-        return "", 200
+        return "", 204
 
 
 @app.route('/api/admin/persons', methods=['GET', 'POST'])
@@ -694,7 +697,7 @@ def admin_person_crud(user_id):
         rowcount = Person.delete(user_id)
         if not rowcount:
             return "No such person", 404
-        return "", 200
+        return "", 204
 
 
 # --------------
