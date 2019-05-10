@@ -18,6 +18,8 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
+apispec = "*"
+apispec-webframeworks = "*"
 
 [dev-packages]
 pytest = "*"
