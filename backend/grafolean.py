@@ -1253,8 +1253,7 @@ def widget_crud(account_id, dashboard_slug, widget_id):
         return "", 200
 
 
-if __name__ == "__main__":
-
+def generate_api_docs(filename):
     import copy
     apidoc = APISpec(
         title="Grafolean API",
@@ -1333,8 +1332,18 @@ if __name__ == "__main__":
             view = app.view_functions.get(rule.endpoint)
             apidoc.path(view=view)
 
-    with open('/tmp/api_docs/openapi.yaml', 'w') as openapi_yaml_file:
+    with open(filename, 'w') as openapi_yaml_file:
         openapi_yaml_file.write(apidoc.to_yaml())
+
+
+if __name__ == "__main__":
+
+    # When docs are generated, they can be served via Swagger-UI:
+    #  $ docker run -d --rm -p 9000:8080 --name swagger-ui -e SWAGGER_JSON=/api_docs/openapi.yaml -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
+    # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
+
+    # Generate the docs:
+    # generate_api_docs('/tmp/api_docs/openapi.yaml')
 
     log.info("Starting main")
     app.run()
