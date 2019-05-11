@@ -3,6 +3,7 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from collections import namedtuple
+import copy
 import json
 import multiprocessing
 import paho.mqtt.client as paho
@@ -709,7 +710,7 @@ def test_permissions_post_get(app_client, first_admin_id, admin_authorization_he
 
     data = {
         'user_id': first_admin_id,
-        'resource_prefix': 'accounts/1/',
+        'resource_prefix': 'accounts/123',
         'methods': [ 'GET', 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -1154,7 +1155,7 @@ def test_persons_email_validation(app_client, admin_authorization_header, accoun
     assert r.status_code == 201
 
 
-def test_profile_permissions_get(app_client, first_admin_id, admin_authorization_header):
+def test_profile_permissions_get_as_admin(app_client, first_admin_id, admin_authorization_header):
     """ As admin, fetch your own permissions """
     r = app_client.get('/api/profile/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -1167,6 +1168,66 @@ def test_profile_permissions_get(app_client, first_admin_id, admin_authorization
                 'resource_prefix': None,
                 'methods': None,
             },
-        ]
+        ],
     }
     assert expected == actual
+
+
+def test_profile_permissions_get_as_unauthorized(app_client):
+    """ Unauthorized users can't fetch their permissions """
+    r = app_client.get('/api/profile/permissions')
+    assert r.status_code == 401
+
+
+def test_profile_accounts_get(app_client, account_id_factory, admin_authorization_header, person_id, person_authorization_header):
+    """ As admin / normal person, fetch the accounts that you have read permissions for """
+    # initially the list of accounts should be empty:
+    r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected_empty = {
+        'list': [],
+    }
+    assert expected_empty == actual
+
+    # create new accounts and make sure they become available to admin, but not to person:
+    expected = copy.deepcopy(expected_empty)
+    for acc_nr in range(3):
+        # create new account:
+        new_account_name = "Account {}".format(acc_nr)
+        new_account_id, = account_id_factory(new_account_name)
+        expected['list'].append({
+            'id': new_account_id,
+            'name': new_account_name,
+        })
+
+        # make sure it becomes available to admin:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        assert expected == actual
+
+        # but not to person:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        assert expected_empty == actual
+
+    # now add a specific permission for each account and make sure it appears in the list:
+    accounts = copy.deepcopy(expected['list'])
+    expected = copy.deepcopy(expected_empty)
+    for account in accounts:
+        data = {
+            'user_id': person_id,
+            'resource_prefix': 'accounts/{}'.format(account['id']),
+            'methods': [ 'GET' ],
+        }
+        r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201
+
+        # now it should appear in the person's list:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        expected['list'].append(account)
+        assert expected == actual

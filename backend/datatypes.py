@@ -561,6 +561,8 @@ class Dashboard(object):
 
 
 class Account(object):
+    RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)$')
+
     def __init__(self, name):
         self.name = name
 
@@ -581,10 +583,36 @@ class Account(object):
             return account_id
 
     @staticmethod
-    def get_list():
+    def get_list(user_id=None):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, name FROM accounts ORDER BY name;')
+            if user_id is None:
+                c.execute('SELECT id, name FROM accounts ORDER BY name;')
+            else:
+                # get the list of accounts that this user has the permission to access: (GET)
+                # - get user's permissions, then:
+                #   - find a permission that grants access to all accounts, or
+                #   - find specific accounts that users has GET permission for
+                can_access_all_accounts = False
+                specific_accounts = []
+                for permission in Permission.get_list(user_id):
+                    # we are only interested in GET methods: (or None)
+                    if permission['methods'] is not None and 'GET' not in permission['methods']:
+                        continue
+                    if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
+                        can_access_all_accounts = True
+                        break
+                    m = Account.RESOURCE_ACCOUNTS_REGEX.match(permission['resource_prefix'])
+                    if m:
+                        specific_accounts.append(int(m.group(1)))
+
+                if can_access_all_accounts:
+                    c.execute('SELECT id, name FROM accounts ORDER BY name;')
+                elif specific_accounts:
+                    c.execute('SELECT id, name FROM accounts WHERE id IN %s ORDER BY name;', (tuple(specific_accounts),))
+                else:
+                    c = []
+
             for account_id, name in c:
                 ret.append({'id': account_id, 'name': name})
             return ret
