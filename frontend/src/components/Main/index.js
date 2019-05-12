@@ -4,7 +4,12 @@ import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, ROOT_URL, onReceiveDashboardsListSuccess } from '../../store/actions';
+import {
+  fetchBackendStatus,
+  ROOT_URL,
+  onReceiveDashboardsListSuccess,
+  onReceiveAccountsListSuccess,
+} from '../../store/actions';
 import PersistentFetcher, { havePermission } from '../../utils/fetch';
 
 import './Main.scss';
@@ -110,7 +115,7 @@ const WrappedRoute = connect(mapLoggedInStateToProps)(
   ),
 );
 
-class SidebarContentNoStore extends React.Component {
+class _SidebarContent extends React.Component {
   onDashboardsListUpdate = json => {
     store.dispatch(onReceiveDashboardsListSuccess(json));
   };
@@ -124,18 +129,22 @@ class SidebarContentNoStore extends React.Component {
       fetching,
       valid,
       user,
+      accounts,
     } = this.props;
     return (
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
-        <PersistentFetcher resource="accounts/1/dashboards" onUpdate={this.onDashboardsListUpdate} />
+        <PersistentFetcher
+          resource={`accounts/${accounts.selected.id}/dashboards`}
+          onUpdate={this.onDashboardsListUpdate}
+        />
 
         {fetching ? (
           <Loading />
         ) : !valid ? (
           <div>
-            <i className="fa fa-exclamation-triangle" />
+            <i className="fa fa-exclamation-triangle" title="Error fetching dashboards" />
           </div>
         ) : (
           dashboards &&
@@ -181,10 +190,30 @@ const mapDashboardsListToProps = store => ({
   fetching: store.dashboards.list.fetching,
   valid: store.dashboards.list.valid,
   user: store.user,
+  accounts: store.accounts,
 });
-const SidebarContent = connect(mapDashboardsListToProps)(SidebarContentNoStore);
+const SidebarContent = connect(mapDashboardsListToProps)(_SidebarContent);
 
-class LoggedInContent extends React.Component {
+class _LoggedInContent extends React.PureComponent {
+  handleAccountsUpdate = json => {
+    store.dispatch(onReceiveAccountsListSuccess(json));
+  };
+
+  render() {
+    return (
+      <>
+        <PersistentFetcher resource="profile/accounts" onUpdate={this.handleAccountsUpdate} />
+        {this.props.accounts && this.props.accounts.selected && <Account />}
+      </>
+    );
+  }
+}
+const mapAccountsListToProps = store => ({
+  accounts: store.accounts,
+});
+const LoggedInContent = connect(mapAccountsListToProps)(_LoggedInContent);
+
+class Account extends React.Component {
   CONTENT_PADDING_LR = 20;
   SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
   SIDEBAR_MAX_WIDTH = 250;

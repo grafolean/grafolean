@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import Redirect from 'react-router-dom/Redirect';
 
 import store from '../../store';
-import { handleFetchErrors, fetchDashboardsList, ROOT_URL, onFailure } from '../../store/actions';
+import { handleFetchErrors, ROOT_URL, onFailure } from '../../store/actions';
 
 import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
@@ -29,7 +29,6 @@ class DashboardDeleteLink extends React.Component {
           deleting: false,
           deleted: true,
         });
-        store.dispatch(fetchDashboardsList());
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };

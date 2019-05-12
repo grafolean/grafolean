@@ -14,6 +14,7 @@ import {
   ON_LOGIN_SUCCESS,
   ON_LOGOUT,
   CLEAR_NOTIFICATIONS,
+  ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
 } from './actions';
 
 function dashboardsList(
@@ -80,9 +81,22 @@ function backendStatus(state = null, action) {
   }
 }
 
+function accounts(state = {}, action) {
+  switch (action.type) {
+    case ON_RECEIVE_ACCOUNTS_LIST_SUCCESS:
+      return {
+        list: action.json.list,
+        selected: action.json.list[0],
+      };
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
   user,
   backendStatus,
+  accounts,
   dashboards: combineReducers({
     list: dashboardsList,
   }),
