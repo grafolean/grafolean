@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import store from '../../store';
@@ -9,7 +10,7 @@ import { fetchAuth } from '../../utils/fetch';
 import '../form.scss';
 import Button from '../Button';
 
-export default class BotNewForm extends React.PureComponent {
+class BotNewForm extends React.PureComponent {
   state = {
     name: '',
     submitted: false,
@@ -48,7 +49,7 @@ export default class BotNewForm extends React.PureComponent {
         method: 'POST',
         body: JSON.stringify({
           user_id: responseJson.id,
-          resource_prefix: 'accounts/1/values',
+          resource_prefix: `accounts/${this.props.accounts.selected.id}/values`,
           methods: ['POST', 'PUT'],
         }),
       });
@@ -81,3 +82,8 @@ export default class BotNewForm extends React.PureComponent {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(BotNewForm);

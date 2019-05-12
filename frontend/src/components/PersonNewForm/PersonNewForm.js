@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import { ROOT_URL } from '../../store/actions';
@@ -8,7 +9,7 @@ import { fetchAuth } from '../../utils/fetch';
 import '../form.scss';
 import Button from '../Button';
 
-export default class PersonNewForm extends React.PureComponent {
+class PersonNewForm extends React.PureComponent {
   state = {
     formValues: {
       username: '',
@@ -66,7 +67,7 @@ export default class PersonNewForm extends React.PureComponent {
         method: 'POST',
         body: JSON.stringify({
           user_id: responseJson.id,
-          resource_prefix: 'accounts/1',
+          resource_prefix: `accounts/${this.props.accounts.selected.id}`,
           methods: null,
         }),
       });
@@ -136,3 +137,8 @@ export default class PersonNewForm extends React.PureComponent {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(PersonNewForm);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import moment from 'moment';
 
 import isWidget from '../isWidget';
@@ -53,7 +54,7 @@ class LastValueWidget extends React.Component {
     return (
       <div className="last-value">
         <PersistentFetcher
-          resource={`accounts/1/values/${path}`}
+          resource={`accounts/${this.props.accounts.selected.id}/values/${path}`}
           queryParams={queryParams}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
@@ -65,4 +66,7 @@ class LastValueWidget extends React.Component {
   }
 }
 
-export default isWidget(LastValueWidget);
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default isWidget(connect(mapStoreToProps)(LastValueWidget));

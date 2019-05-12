@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import store from '../../store';
@@ -26,7 +27,7 @@ class DashboardNewForm extends React.Component {
     const params = {
       name: this.state.name,
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -68,4 +69,7 @@ class DashboardNewForm extends React.Component {
   }
 }
 
-export default DashboardNewForm;
+const mapAccountsListToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapAccountsListToProps)(DashboardNewForm);

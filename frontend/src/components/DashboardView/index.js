@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
@@ -12,7 +13,7 @@ import LastValueWidget from '../Widgets/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
 import DashboardDeleteLink from '../DashboardDeleteLink';
 
-class DashboardView extends React.Component {
+class _DashboardView extends React.Component {
   state = {
     loading: false,
     valid: true,
@@ -38,9 +39,12 @@ class DashboardView extends React.Component {
     this.setState({
       loading: true,
     });
-    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.match.params.slug}`, {
-      signal: this.abortController.signal,
-    })
+    fetchAuth(
+      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${this.props.match.params.slug}`,
+      {
+        signal: this.abortController.signal,
+      },
+    )
       .then(handleFetchErrors)
       .then(response =>
         response.json().then(json => {
@@ -95,7 +99,7 @@ class DashboardView extends React.Component {
     const params = {
       name: name,
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${dashboardSlug}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${dashboardSlug}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -186,6 +190,11 @@ class DashboardView extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+const DashboardView = connect(mapStoreToProps)(_DashboardView);
 
 class DashboardViewRemountable extends React.Component {
   /*
