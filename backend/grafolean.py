@@ -131,8 +131,8 @@ def before_request():
             return 'Service unavailable', 503
 
     view_func = app.view_functions[flask.request.endpoint]
-    # unless we have explicitly user @noauth decorator, do authorization check here:
-    if not hasattr(view_func, '_exclude_from_auth'):
+    # unless we have explicitly used @noauth decorator, do authorization check here:
+    if not hasattr(view_func, '_noauth'):
         try:
             user_id = None
             authorization_header = flask.request.headers.get('Authorization')
@@ -144,16 +144,21 @@ def before_request():
             elif query_params_bot_token is not None:
                 user_id = Bot.authenticate_token(query_params_bot_token)
 
-            # check permissions:
-            resource = flask.request.path[len('/api/'):]
-            is_allowed = Permission.is_access_allowed(
-                user_id = user_id,
-                resource = resource,
-                method = flask.request.method,
-            )
-            if not is_allowed:
-                log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
+            if user_id is None:
+                log.exception("Authentication failed")
                 return "Access denied", 401
+
+            # check permissions:
+            if not hasattr(view_func, '_auth_no_permissions'):
+                resource = flask.request.path[len('/api/'):]
+                is_allowed = Permission.is_access_allowed(
+                    user_id = user_id,
+                    resource = resource,
+                    method = flask.request.method,
+                )
+                if not is_allowed:
+                    log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
+                    return "Access denied", 401
 
             flask.g.grafolean_data['user_id'] = user_id
         except AuthFailedException:
@@ -217,8 +222,16 @@ def noauth(func):
     # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
     # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
     # The beauty of this approach is that every endpoint is defended *by default*.
-    # WARNING: any further decorators must carry the attribute "_exclude_from_auth" over to the wrapper.
-    func._exclude_from_auth = True
+    # WARNING: any further decorators must carry the attribute "_noauth" over to the wrapper.
+    func._noauth = True
+    return func
+
+
+def auth_no_permissions(func):
+    # Similar to noauth() decorator, except that it performs authentication, but doesn't deny access based on permissions.
+    # This is useful for endpoint which should be accessible to all authenticated users (like /profile/*), but not to
+    # unauthenticated.
+    func._auth_no_permissions = True
     return func
 
 
@@ -900,9 +913,18 @@ def status_cspreport():
 
 
 @app.route('/api/profile/permissions', methods=['GET'])
+@auth_no_permissions
 def profile_permissions():
     user_id = flask.g.grafolean_data['user_id']
     rec = Permission.get_list(user_id)
+    return json.dumps({'list': rec}), 200
+
+
+@app.route('/api/profile/accounts', methods=['GET'])
+@auth_no_permissions
+def profile_accounts():
+    user_id = flask.g.grafolean_data['user_id']
+    rec = Account.get_list(user_id)
     return json.dumps({'list': rec}), 200
 
 

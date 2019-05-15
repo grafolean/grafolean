@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Route } from 'react-router-dom';
 
 import store from '../../store';
@@ -9,8 +10,12 @@ import './index.scss';
 import WidgetTitleBar from './WidgetTitleBar';
 import { fetchAuth } from '../../utils/fetch';
 
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+
 const isWidget = WrappedComponent => {
-  return class Widget extends React.Component {
+  const wrappedComponent = class Widget extends React.Component {
     state = {
       buttonRenders: [],
       isFullscreen: false,
@@ -54,7 +59,9 @@ const isWidget = WrappedComponent => {
 
     deleteWidget = () => {
       fetchAuth(
-        `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId}`,
+        `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+          this.props.dashboardSlug
+        }/widgets/${this.props.widgetId}`,
         { method: 'DELETE' },
       )
         .then(handleFetchErrors)
@@ -112,6 +119,7 @@ const isWidget = WrappedComponent => {
       );
     }
   };
+  return connect(mapStoreToProps)(wrappedComponent);
 };
 
 export default isWidget;

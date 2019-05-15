@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import Redirect from 'react-router-dom/Redirect';
 
 import store from '../../store';
-import { handleFetchErrors, fetchDashboardsList, ROOT_URL, onFailure } from '../../store/actions';
+import { handleFetchErrors, ROOT_URL, onFailure } from '../../store/actions';
 
 import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
@@ -20,7 +20,7 @@ class DashboardDeleteLink extends React.Component {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/1/dashboards/${this.props.slug}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${this.props.slug}`, {
       method: 'DELETE',
     })
       .then(handleFetchErrors)
@@ -29,7 +29,6 @@ class DashboardDeleteLink extends React.Component {
           deleting: false,
           deleted: true,
         });
-        store.dispatch(fetchDashboardsList());
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
@@ -53,6 +52,7 @@ const mapStoreToProps = (store, ownProps) => {
   let slug = ownProps.slug;
   let defaultProps = {
     slug: slug,
+    accounts: store.accounts,
   };
 
   if (!store.dashboards || !store.dashboards[slug]) {

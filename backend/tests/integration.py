@@ -3,11 +3,13 @@ import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from collections import namedtuple
+import copy
 import json
 import multiprocessing
 import paho.mqtt.client as paho
 import pytest
 from pprint import pprint
+import re
 import queue
 import time
 
@@ -39,8 +41,6 @@ USERNAME_ADMIN = 'admin'
 PASSWORD_ADMIN = 'asdf123'
 USERNAME_USER1 = 'user1'
 PASSWORD_USER1 = '321abc'
-EXPECTED_FIRST_ADMIN_ID = 1
-EXPECTED_BOT_ID = 2
 
 
 def _delete_all_from_db():
@@ -84,21 +84,20 @@ def app_client_db_not_migrated():
     return app.test_client()
 
 @pytest.fixture
-def first_admin_exists(app_client):
+def first_admin_id(app_client):
     data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@grafolean.com' }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
-    assert int(admin_id) == EXPECTED_FIRST_ADMIN_ID
-    return True
+    return int(admin_id)
 
 @pytest.fixture
-def admin_authorization_header(app_client, first_admin_exists):
+def admin_authorization_header(app_client, first_admin_id):
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     auth_header = dict(r.headers).get('X-JWT-Token', None)
-    assert auth_header[:9] == 'Bearer 1:'
+    assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
     return auth_header
 
 @pytest.fixture
@@ -128,13 +127,20 @@ def account_id(account_id_factory):
     return account_id
 
 @pytest.fixture
-def bot_token(app_client, admin_authorization_header):
+def bot_data(app_client, admin_authorization_header):
     data = { 'name': 'Bot 1' }
     r = app_client.post('/api/admin/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     j = json.loads(r.data.decode('utf-8'))
-    assert j['id'] == EXPECTED_BOT_ID
-    return j['token']
+    return j
+
+@pytest.fixture
+def bot_id(bot_data):
+    return bot_data['id']
+
+@pytest.fixture
+def bot_token(bot_data):
+    return bot_data['token']
 
 @pytest.fixture
 def person_id(app_client, admin_authorization_header):
@@ -150,7 +156,7 @@ def person_authorization_header(app_client, admin_authorization_header, person_i
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     auth_header = dict(r.headers).get('X-JWT-Token', None)
-    assert auth_header[:9] == 'Bearer 1:'
+    assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
     return auth_header
 
 @pytest.fixture
@@ -593,7 +599,6 @@ def test_accounts(app_client):
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
-    assert int(admin_id) == EXPECTED_FIRST_ADMIN_ID
 
     # next fails:
     data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@grafolean.com' }
@@ -610,7 +615,7 @@ def test_accounts(app_client):
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
-    assert admin_authorization_header[:9] == 'Bearer 1:'
+    assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
 
     # now request some resource without auth:
     r = app_client.get('/api/admin/accounts')
@@ -620,7 +625,7 @@ def test_accounts(app_client):
     assert r.status_code == 200
 
 
-def test_jwt_expiry_refresh(app_client, first_admin_exists):
+def test_jwt_expiry_refresh(app_client, first_admin_id):
     """
         Login, get X-JWT-Token which expired before 1s, make sure you get 401 on resource request,
         hit /auth/refrest, make sure the new token works
@@ -635,7 +640,7 @@ def test_jwt_expiry_refresh(app_client, first_admin_exists):
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
-    assert admin_authorization_header[:9] == 'Bearer 1:'
+    assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
 
     # you got the (expired) token, reset the expiry timediff:
     JWT.TOKEN_VALID_FOR = original_jwt_token_valid_for
@@ -647,15 +652,14 @@ def test_jwt_expiry_refresh(app_client, first_admin_exists):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     new_admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
-    assert new_admin_authorization_header[:7] == 'Bearer '
-    assert new_admin_authorization_header[8:9] == ':'
+    assert re.match(r'^Bearer [0-9]+[:].+$', new_admin_authorization_header)
 
     # successful access, no refresh with the new token:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': new_admin_authorization_header})
     assert r.status_code == 200
 
 
-def test_jwt_total_expiry(app_client, first_admin_exists):
+def test_jwt_total_expiry(app_client, first_admin_id):
     """
         Login, get X-JWT-Token which expired before 1s, read the new token from header, check it
         WARNING: depends on test_accounts() being run first
@@ -670,7 +674,7 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
-    assert admin_authorization_header[:9] == 'Bearer 1:'
+    assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
 
     # you got the (expired) token, reset the expiry timediff:
     JWT.TOKEN_VALID_FOR = original_jwt_token_valid_for
@@ -683,7 +687,7 @@ def test_jwt_total_expiry(app_client, first_admin_exists):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messages):
+def test_permissions_post_get(app_client, first_admin_id, admin_authorization_header, mqtt_messages):
     """
         Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
@@ -695,8 +699,8 @@ def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messa
     expected = {
         'list': [
             {
-                'id': 1,
-                'user_id': EXPECTED_FIRST_ADMIN_ID,
+                'id': actual['list'][0]['id'],
+                'user_id': first_admin_id,
                 'resource_prefix': None,
                 'methods': None,
             },
@@ -705,14 +709,14 @@ def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messa
     assert actual == expected
 
     data = {
-        'user_id': EXPECTED_FIRST_ADMIN_ID,
-        'resource_prefix': 'accounts/1/',
+        'user_id': first_admin_id,
+        'resource_prefix': 'accounts/123',
         'methods': [ 'GET', 'POST' ],
     }
     r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual['id'] == 2
+    response = json.loads(r.data.decode('utf-8'))
+    new_permission_id = response['id']
     # check mqtt:
     m = mqtt_messages.get(timeout=3.0)
     assert m.topic == 'changed/admin/persons/{}'.format(data['user_id'])
@@ -724,13 +728,13 @@ def test_permissions_post_get(app_client, admin_authorization_header, mqtt_messa
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert len(actual['list']) == 2
-    new_record = [x for x in actual['list'] if x['id'] == 2][0]
-    assert new_record == {
-        'id': 2,
+    new_record = [x for x in actual['list'] if x['id'] == new_permission_id]
+    assert new_record == [{
+        'id': new_permission_id,
         'user_id': data['user_id'],
         'resource_prefix': data['resource_prefix'].rstrip('/'),
         'methods': ['GET', 'POST'],
-    }
+    }]
 
 def test_bots_crud(app_client, admin_authorization_header):
     """
@@ -791,12 +795,12 @@ def test_bots_crud(app_client, admin_authorization_header):
     }
     assert actual == expected
 
-def test_bots_token(app_client, admin_authorization_header, bot_token, account_id):
+def test_bots_token(app_client, admin_authorization_header, bot_id, bot_token, account_id):
     """
         Assign permissions to a bot (created via fixture), put values with it.
     """
     data = {
-        'user_id': EXPECTED_BOT_ID,
+        'user_id': bot_id,
         'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
@@ -813,7 +817,7 @@ def test_bots_token(app_client, admin_authorization_header, bot_token, account_i
     assert r.status_code == 401
 
 
-def test_persons_crud(app_client, admin_authorization_header):
+def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
     """
         Create a person, make sure it is in the list... and so on.
     """
@@ -847,15 +851,15 @@ def test_persons_crud(app_client, admin_authorization_header):
     expected_single['permissions'] = []
     assert actual == expected_single
     # individual GET for the first (admin) user:
-    r = app_client.get('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/admin/persons/{}'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected_single = expected['list'][0]
     # make sure the permissions are there:
     expected_single['permissions'] = [
         {
-            'id': 1,
-            'user_id': EXPECTED_FIRST_ADMIN_ID,
+            'id': actual['permissions'][0]['id'],
+            'user_id': first_admin_id,
             'resource_prefix': None,
             'methods': None,
         }
@@ -885,7 +889,7 @@ def test_persons_crud(app_client, admin_authorization_header):
     assert actual['list'][0]['username'] == USERNAME_ADMIN
 
     # can't delete yourself though:
-    r = app_client.delete('/api/admin/persons/{}'.format(EXPECTED_FIRST_ADMIN_ID), headers={'Authorization': admin_authorization_header})
+    r = app_client.delete('/api/admin/persons/{}'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 403
 
 
@@ -956,7 +960,7 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
 
 def test_auth_fails_unknown_key(app_client):
     jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
-    faulty_authorization_header = 'Bearer 315:' + jwt_token
+    faulty_authorization_header = 'Bearer 0:' + jwt_token
     r = app_client.get('/api/admin/permissions', headers={'Authorization': faulty_authorization_header})
     assert r.status_code == 401
 
@@ -1049,7 +1053,7 @@ def test_status_info_before_first(app_client):
     }
     assert expected == actual
 
-def test_status_info_after_first(app_client, first_admin_exists):
+def test_status_info_after_first(app_client, first_admin_id):
     r = app_client.get('/api/status/info')
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
@@ -1151,14 +1155,79 @@ def test_persons_email_validation(app_client, admin_authorization_header, accoun
     assert r.status_code == 201
 
 
-def test_profile_permissions_get(app_client, admin_authorization_header):
+def test_profile_permissions_get_as_admin(app_client, first_admin_id, admin_authorization_header):
     """ As admin, fetch your own permissions """
     r = app_client.get('/api/profile/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'list': [
-            {'id': 1, 'user_id': EXPECTED_FIRST_ADMIN_ID, 'resource_prefix': None, 'methods': None},
-        ]
+            {
+                'id': actual['list'][0]['id'],
+                'user_id': first_admin_id,
+                'resource_prefix': None,
+                'methods': None,
+            },
+        ],
     }
     assert expected == actual
+
+
+def test_profile_permissions_get_as_unauthorized(app_client):
+    """ Unauthorized users can't fetch their permissions """
+    r = app_client.get('/api/profile/permissions')
+    assert r.status_code == 401
+
+
+def test_profile_accounts_get(app_client, account_id_factory, admin_authorization_header, person_id, person_authorization_header):
+    """ As admin / normal person, fetch the accounts that you have read permissions for """
+    # initially the list of accounts should be empty:
+    r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected_empty = {
+        'list': [],
+    }
+    assert expected_empty == actual
+
+    # create new accounts and make sure they become available to admin, but not to person:
+    expected = copy.deepcopy(expected_empty)
+    for acc_nr in range(3):
+        # create new account:
+        new_account_name = "Account {}".format(acc_nr)
+        new_account_id, = account_id_factory(new_account_name)
+        expected['list'].append({
+            'id': new_account_id,
+            'name': new_account_name,
+        })
+
+        # make sure it becomes available to admin:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        assert expected == actual
+
+        # but not to person:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        assert expected_empty == actual
+
+    # now add a specific permission for each account and make sure it appears in the list:
+    accounts = copy.deepcopy(expected['list'])
+    expected = copy.deepcopy(expected_empty)
+    for account in accounts:
+        data = {
+            'user_id': person_id,
+            'resource_prefix': 'accounts/{}'.format(account['id']),
+            'methods': [ 'GET' ],
+        }
+        r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201
+
+        # now it should appear in the person's list:
+        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        actual = json.loads(r.data.decode('utf-8'))
+        expected['list'].append(account)
+        assert expected == actual

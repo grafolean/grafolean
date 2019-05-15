@@ -168,3 +168,63 @@ def migration_step_1():
 def migration_step_2():
     with db.cursor() as c:
         c.execute('ALTER TABLE permissions RENAME COLUMN url_prefix TO resource_prefix;')
+
+def _construct_plsql_randid_function(table_name):
+    """
+        Constructs a string definition of a PLSQL function that can be used to return a unique random ID on
+        a specified table.
+
+        Postgres doesn't allow us to supply table name as paramater because execution plan is made in advance. To avoid
+        this problem we construct N similar functions with hardcoded table names (one for each table).
+        There is a possible workaround which involves executing dynamic statements:
+          https://www.postgresql.org/docs/current/plpgsql-statements.html#PLPGSQL-STATEMENTS-EXECUTING-DYN
+
+        The implemented solution seems easier and is possibly more efficient, however this is not an informed decision,
+        so it might be necessary to revisit it in the future.
+    """
+
+    return """
+        CREATE OR REPLACE FUNCTION randid_{table_name}() RETURNS integer AS $$
+        DECLARE
+            maxId constant bigint := 2147483647;
+            randomId bigint;
+            offsetBy bigint;
+            candidateId bigint;
+        BEGIN
+            -- Plan: get a random ID, check it against existing records and return it if free. If it
+            -- already exists, increment offset until you find an ID that is free, and return it. If
+            -- no IDs are available, raise an exception.
+
+            -- try to find an initial random number in range 1..maxId:
+            randomId := floor(random() * maxId) + 1;
+
+            FOR offsetBy IN 0..maxId - 1 LOOP
+                -- check if it exists:
+                candidateId := ((randomId + offsetBy) % maxId) + 1;
+                PERFORM id FROM {table_name} WHERE id = candidateId;
+                IF NOT FOUND THEN
+                    -- there was no match, we can use this id:
+                    RETURN candidateId;
+                END IF;
+            END LOOP;
+
+            RAISE EXCEPTION 'No free IDs left in table {table_name}.';
+        END;
+
+        $$ LANGUAGE plpgsql;
+    """.format(table_name=table_name)
+
+def migration_step_3():
+    with db.cursor() as c:
+        TABLES_WITH_RANDOM_IDS = [
+            'accounts',
+            'users',
+            'private_jwt_keys',
+            'permissions',
+            'paths',
+            'dashboards',
+            'widgets',
+        ]
+        for table_name in TABLES_WITH_RANDOM_IDS:
+            c.execute(_construct_plsql_randid_function(table_name))
+            c.execute('ALTER TABLE {table_name} ALTER COLUMN id SET DATA TYPE integer, ALTER COLUMN id SET DEFAULT randid_{table_name}()'.format(table_name=table_name))

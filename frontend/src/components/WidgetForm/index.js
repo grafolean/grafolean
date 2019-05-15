@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { stringify } from 'qs';
 
 import store from '../../store';
@@ -18,7 +19,7 @@ const WIDGET_TYPES = [
   { type: 'lastvalue', label: 'last value', form: LastValueForm },
 ];
 
-export default class WidgetForm extends React.Component {
+class WidgetForm extends React.Component {
   static defaultProps = {
     dashboardSlug: null,
     widgetId: null,
@@ -55,9 +56,9 @@ export default class WidgetForm extends React.Component {
       paths_limit: 0,
     };
     fetchAuth(
-      `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${
-        this.props.widgetId
-      }?${stringify(query_params)}`,
+      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+        this.props.dashboardSlug
+      }/widgets/${this.props.widgetId}?${stringify(query_params)}`,
       { signal: this.fetchWidgetDataAbortController.signal },
     )
       .then(handleFetchErrors)
@@ -117,7 +118,9 @@ export default class WidgetForm extends React.Component {
         : null,
     };
     fetchAuth(
-      `${ROOT_URL}/accounts/1/dashboards/${this.props.dashboardSlug}/widgets/${this.props.widgetId || ''}`,
+      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+        this.props.dashboardSlug
+      }/widgets/${this.props.widgetId || ''}`,
       {
         headers: {
           Accept: 'application/json',
@@ -176,3 +179,8 @@ export default class WidgetForm extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(WidgetForm);

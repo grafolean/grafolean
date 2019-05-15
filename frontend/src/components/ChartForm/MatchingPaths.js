@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
@@ -6,7 +7,7 @@ import { fetchAuth } from '../../utils/fetch';
 
 import './index.scss';
 
-export default class MatchingPaths extends React.Component {
+class MatchingPaths extends React.Component {
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When
     props.pathFilter changes, new fetch request is issued (after some small timeout).
@@ -67,7 +68,7 @@ export default class MatchingPaths extends React.Component {
       this.setState({
         fetchingError: false,
       });
-      fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, {
+      fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/paths/?${stringify(query_params)}`, {
         signal: this.fetchInProgressAbortController.signal,
       })
         .then(handleFetchErrors)
@@ -159,3 +160,8 @@ export default class MatchingPaths extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(MatchingPaths);

@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import moment from 'moment';
 import { stringify } from 'qs';
 
@@ -52,7 +53,7 @@ class GLeanChartWidget extends React.Component {
       limit: 1001,
       failover_trailing: 'false',
     };
-    fetchAuth(`${ROOT_URL}/accounts/1/paths/?${stringify(query_params)}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/paths/?${stringify(query_params)}`, {
       signal: this.fetchPathsAbortController.signal,
     })
       .then(handleFetchErrors)
@@ -231,7 +232,7 @@ class GLeanChartWidget extends React.Component {
   }
 }
 
-export class ChartContainer extends React.Component {
+export class _ChartContainer extends React.Component {
   state = {
     fetchedIntervalsData: [],
     errorMsg: null,
@@ -433,7 +434,7 @@ export class ChartContainer extends React.Component {
     });
 
     fetchAuth(
-      `${ROOT_URL}/accounts/1/values?${stringify({
+      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/values?${stringify({
         p: this.paths.join(','),
         t0: fromTs,
         t1: toTs,
@@ -523,6 +524,10 @@ export class ChartContainer extends React.Component {
     );
   }
 }
+const mapStoreToPropsChartContainer = store => ({
+  accounts: store.accounts,
+});
+export const ChartContainer = connect(mapStoreToPropsChartContainer)(_ChartContainer);
 
 export class ChartView extends React.Component {
   static defaultProps = {
@@ -854,4 +859,7 @@ export class ChartView extends React.Component {
   }
 }
 
-export default isWidget(GLeanChartWidget);
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(isWidget(GLeanChartWidget));

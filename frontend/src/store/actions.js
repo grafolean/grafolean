@@ -64,6 +64,14 @@ export function onReceiveBackendStatusFailure(errMsg) {
   };
 }
 
+export const ON_RECEIVE_ACCOUNTS_LIST_SUCCESS = 'ON_RECEIVE_ACCOUNTS_LIST_SUCCESS';
+export function onReceiveAccountsListSuccess(json) {
+  return {
+    type: ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
+    json,
+  };
+}
+
 export const ON_FAILURE = 'ON_FAILURE';
 export function onFailure(msg) {
   return {
@@ -107,20 +115,6 @@ export function handleFetchErrors(response) {
     throw Error(response.statusText);
   }
   return response;
-}
-
-export function fetchDashboardsList() {
-  // react-thunk - return function instead of object:
-  return function(dispatch) {
-    dispatch(onRequestDashboardsList());
-    // return function that will start the request from server:
-    return fetchAuth(`${ROOT_URL}/accounts/1/dashboards`)
-      .then(handleFetchErrors)
-      .then(
-        response => response.json().then(json => dispatch(onReceiveDashboardsListSuccess(json))),
-        errorMsg => dispatch(onReceiveDashboardsListFailure(errorMsg.toString())),
-      );
-  };
 }
 
 export function fetchBackendStatus() {
