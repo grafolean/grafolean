@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
+import { BrowserRouter, Switch, Route, Link } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
@@ -44,12 +44,12 @@ class Main extends React.Component {
     return backendUrl.origin !== window.location.origin;
   }
   render() {
-    const { backendStatus } = this.props;
+    const { backendStatus, loggedIn } = this.props;
     if (!backendStatus) {
       return <Loading overlayParent={true} message={`Trying to connect to backend at: ${ROOT_URL}`} />;
     }
     // We want to be nice and display a warning when we are reaching a backend that we do not have access to (due
-    // to CORS). For this reason /api/status/info abckend endpoint is accessible from anywhere, and we can check
+    // to CORS). For this reason /api/status/info backend endpoint is accessible from anywhere, and we can check
     // if our domain is in the list of CORS allowed domains, before we even request any CORS-protected resource.
     // This of course applies only if backend really is on a different domain (which it is not, for example, if
     // backend and frontend are behind the same nginx reverse proxy).
@@ -65,54 +65,72 @@ class Main extends React.Component {
     if (backendStatus.user_exists === false) {
       return <AdminFirst />;
     }
-    return (
-      <BrowserRouter>
-        <Switch>
-          <Route exact path="/login" component={LoginPage} />
-          <Route component={LoggedInContent} />
-        </Switch>
-      </BrowserRouter>
-    );
+    if (!loggedIn) {
+      return <LoginPage />;
+    }
+
+    return <LoggedInContent />;
   }
 }
 const mapBackendStatusToProps = store => ({
   backendStatus: store.backendStatus,
+  loggedIn: Boolean(store.user),
+  accounts: store.accounts,
 });
 export default connect(mapBackendStatusToProps)(Main);
 
-// Our logged-in routes need to:
-// - know about users' logged-in state (from store)
-// - know about the content width that is available to them
-const mapLoggedInStateToProps = store => ({
-  loggedIn: !!store.user,
-});
-const WrappedRoute = connect(mapLoggedInStateToProps)(
-  ({ component: Component, loggedIn, contentWidth, ...rest }) => (
-    <Route
-      {...rest}
-      render={props =>
-        loggedIn ? (
-          // We need some className that will allow us to write CSS rules for specific pages if needed. In theory
-          // we could use `Component.name` here, but when we build for production, names are obfuscated
-          <div
-            className={`page ${rest.path
-              .replace(/[^a-z0-9A-Z]+/g, ' ')
-              .trim()
-              .replace(/[ ]/g, '-')}`}
-          >
-            <Component {...props} width={contentWidth} />
-          </div>
+class _LoggedInContent extends React.PureComponent {
+  handleAccountsUpdate = json => {
+    store.dispatch(onReceiveAccountsListSuccess(json));
+  };
+
+  handleAccountsUpdateError = err => {
+    console.err(err);
+  };
+
+  render() {
+    return (
+      <>
+        <PersistentFetcher
+          resource="profile/accounts"
+          onUpdate={this.handleAccountsUpdate}
+          onError={this.handleAccountsUpdateError}
+        />
+        {!this.props.accounts || !this.props.accounts.selected ? (
+          <Loading />
         ) : (
-          <Redirect
-            to={{
-              pathname: '/login',
-              state: { fromLocation: props.location },
-            }}
-          />
-        )
-      }
-    />
-  ),
+          <BrowserRouter>
+            <Account />
+          </BrowserRouter>
+        )}
+      </>
+    );
+  }
+}
+const mapAccountsToProps = store => ({
+  accounts: store.accounts,
+});
+const LoggedInContent = connect(mapAccountsToProps)(_LoggedInContent);
+
+// Our logged-in routes need to:
+// - know about the content width that is available to them
+// - be wrapped in a div with a suitable className so we can target pages with CSS selectors
+const WrappedRoute = ({ component: Component, contentWidth, ...rest }) => (
+  <Route
+    {...rest}
+    render={props => (
+      // We need some className that will allow us to write CSS rules for specific pages if needed. In theory
+      // we could use `Component.name` here, but when we build for production, names are obfuscated
+      <div
+        className={`page ${rest.path
+          .replace(/[^a-z0-9A-Z]+/g, ' ')
+          .trim()
+          .replace(/[ ]/g, '-')}`}
+      >
+        <Component {...props} width={contentWidth} />
+      </div>
+    )}
+  />
 );
 
 class _SidebarContent extends React.Component {
@@ -193,25 +211,6 @@ const mapDashboardsListToProps = store => ({
   accounts: store.accounts,
 });
 const SidebarContent = connect(mapDashboardsListToProps)(_SidebarContent);
-
-class _LoggedInContent extends React.PureComponent {
-  handleAccountsUpdate = json => {
-    store.dispatch(onReceiveAccountsListSuccess(json));
-  };
-
-  render() {
-    return (
-      <>
-        <PersistentFetcher resource="profile/accounts" onUpdate={this.handleAccountsUpdate} />
-        {this.props.accounts && this.props.accounts.selected && <Account />}
-      </>
-    );
-  }
-}
-const mapAccountsListToProps = store => ({
-  accounts: store.accounts,
-});
-const LoggedInContent = connect(mapAccountsListToProps)(_LoggedInContent);
 
 class Account extends React.Component {
   CONTENT_PADDING_LR = 20;
