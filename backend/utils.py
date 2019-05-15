@@ -201,7 +201,7 @@ def _construct_plsql_randid_function(table_name):
             FOR offsetBy IN 0..maxId - 1 LOOP
                 -- check if it exists:
                 candidateId := ((randomId + offsetBy) % maxId) + 1;
-                PERFORM id FROM {table_name} WHERE id = randomId;
+                PERFORM id FROM {table_name} WHERE id = candidateId;
                 IF NOT FOUND THEN
                     -- there was no match, we can use this id:
                     RETURN candidateId;
