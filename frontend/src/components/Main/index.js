@@ -9,6 +9,7 @@ import {
   ROOT_URL,
   onReceiveDashboardsListSuccess,
   onReceiveAccountsListSuccess,
+  onAccountUnselect,
 } from '../../store/actions';
 import PersistentFetcher, { havePermission } from '../../utils/fetch';
 
@@ -146,7 +147,9 @@ class _SidebarContent extends React.Component {
     store.dispatch(onReceiveDashboardsListSuccess(json));
   };
 
-  onUnselectAccountClick = () => {};
+  onUnselectAccountClick = () => {
+    store.dispatch(onAccountUnselect());
+  };
 
   render() {
     const {

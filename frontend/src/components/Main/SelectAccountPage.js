@@ -5,6 +5,8 @@ import { havePermission } from '../../utils/fetch';
 
 import './SelectAccountPage.scss';
 import { doLogout } from '../../store/helpers';
+import store from '../../store';
+import { onAccountSelect } from '../../store/actions';
 
 class SelectAccountPage extends React.PureComponent {
   render() {
@@ -14,7 +16,11 @@ class SelectAccountPage extends React.PureComponent {
         <div className="accounts">
           <label>Accounts:</label>
           {accounts.list.map(account => (
-            <button key={account.id} className="account">
+            <button
+              key={account.id}
+              className="account"
+              onClick={() => store.dispatch(onAccountSelect(account.id))}
+            >
               {account.name}
             </button>
           ))}
