@@ -8,7 +8,8 @@
   .accounts {
     max-width: 90vw;
     width: 400px;
-    padding-top: 20px;
+    display: flex;
+    flex-direction: column;
 
     & > button, & > label {
       width: 100%;
@@ -22,7 +23,9 @@
       }
       &.logout {
         width: auto;
-        margin-top: 50px;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        align-self: flex-end;
       }
     }
   }

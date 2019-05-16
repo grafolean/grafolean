@@ -14,6 +14,10 @@ class SelectAccountPage extends React.PureComponent {
     return (
       <div className="select-account-page">
         <div className="accounts">
+          <button className="logout" onClick={doLogout}>
+            <i className="fa fa-sign-out" />
+          </button>
+
           <label>Accounts:</label>
           {accounts.list.map(account => (
             <button
@@ -29,10 +33,6 @@ class SelectAccountPage extends React.PureComponent {
               <i className="fa fa-plus" /> Add account
             </button>
           )}
-
-          <button className="logout" onClick={doLogout}>
-            <i className="fa fa-sign-out" />
-          </button>
         </div>
       </div>
     );
