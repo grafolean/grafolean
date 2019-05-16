@@ -9,10 +9,8 @@ import {
   ROOT_URL,
   onReceiveDashboardsListSuccess,
   onReceiveAccountsListSuccess,
-  clearNotifications,
-  onLogout,
 } from '../../store/actions';
-import PersistentFetcher, { havePermission, MQTTFetcherSingleton } from '../../utils/fetch';
+import PersistentFetcher, { havePermission } from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -36,15 +34,27 @@ import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
+import SelectAccountPage from './SelectAccountPage';
+import { doLogout } from '../../store/helpers';
 
 class Main extends React.Component {
   componentDidMount() {
     store.dispatch(fetchBackendStatus());
   }
+
   backendIsCrossOrigin() {
     const backendUrl = new URL(ROOT_URL, window.location); // if ROOT_URL is relative, use window.location as base url
     return backendUrl.origin !== window.location.origin;
   }
+
+  handleAccountsUpdate = json => {
+    store.dispatch(onReceiveAccountsListSuccess(json));
+  };
+
+  handleAccountsUpdateError = err => {
+    console.err(err);
+  };
+
   render() {
     const { backendStatus, loggedIn } = this.props;
     if (!backendStatus) {
@@ -71,7 +81,22 @@ class Main extends React.Component {
       return <LoginPage />;
     }
 
-    return <LoggedInContent />;
+    return (
+      <>
+        <PersistentFetcher
+          resource="profile/accounts"
+          onUpdate={this.handleAccountsUpdate}
+          onError={this.handleAccountsUpdateError}
+        />
+        {!this.props.accounts.list ? (
+          <Loading />
+        ) : !this.props.accounts.selected ? (
+          <SelectAccountPage />
+        ) : (
+          <LoggedInContent />
+        )}
+      </>
+    );
   }
 }
 const mapBackendStatusToProps = store => ({
@@ -82,30 +107,11 @@ const mapBackendStatusToProps = store => ({
 export default connect(mapBackendStatusToProps)(Main);
 
 class _LoggedInContent extends React.PureComponent {
-  handleAccountsUpdate = json => {
-    store.dispatch(onReceiveAccountsListSuccess(json));
-  };
-
-  handleAccountsUpdateError = err => {
-    console.err(err);
-  };
-
   render() {
     return (
-      <>
-        <PersistentFetcher
-          resource="profile/accounts"
-          onUpdate={this.handleAccountsUpdate}
-          onError={this.handleAccountsUpdateError}
-        />
-        {!this.props.accounts || !this.props.accounts.selected ? (
-          <Loading />
-        ) : (
-          <BrowserRouter>
-            <Account />
-          </BrowserRouter>
-        )}
-      </>
+      <BrowserRouter>
+        <Account />
+      </BrowserRouter>
     );
   }
 }
@@ -140,12 +146,7 @@ class _SidebarContent extends React.Component {
     store.dispatch(onReceiveDashboardsListSuccess(json));
   };
 
-  onLogoutClick = () => {
-    window.sessionStorage.removeItem('grafolean_jwt_token');
-    MQTTFetcherSingleton.disconnect();
-    store.dispatch(clearNotifications());
-    store.dispatch(onLogout());
-  };
+  onUnselectAccountClick = () => {};
 
   render() {
     const {
@@ -163,11 +164,11 @@ class _SidebarContent extends React.Component {
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
         <div className="back-logout-buttons">
-          <Link className="button green" to="/dashboards/new" onClick={onSidebarLinkClick}>
-            <i className="fa fa-arrow-left"/>
-          </Link>
-          <Button onClick={this.onLogoutClick}>
-            <i className="fa fa-power-off"/>
+          <Button className="unselect-account" onClick={this.onUnselectAccountClick}>
+            <i className="fa fa-arrow-up" />
+          </Button>
+          <Button className="logout" onClick={doLogout}>
+            <i className="fa fa-sign-out" />
           </Button>
         </div>
 

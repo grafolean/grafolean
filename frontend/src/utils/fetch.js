@@ -3,10 +3,11 @@ import { connect } from 'react-redux';
 import moment from 'moment';
 import { stringify } from 'qs';
 
-import { ROOT_URL, handleFetchErrors, onLogout, onFailure } from '../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../store/actions';
 import store from '../store';
 
 import { VERSION_INFO } from '../VERSION';
+import { doLogout } from '../store/helpers';
 
 const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   if (!authHeader) {
@@ -52,8 +53,7 @@ export const fetchAuth = (url, fetchOptions = {}) => {
               .catch(err => reject(err));
           })
           .catch(() => {
-            window.sessionStorage.removeItem('grafolean_jwt_token');
-            store.dispatch(onLogout());
+            doLogout();
             reject('Error refreshing session.');
           });
       })
