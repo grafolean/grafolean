@@ -38,6 +38,22 @@ header {
     color: #666;
     padding: 10px 15px 0px;
   }
+
+  .back-logout-buttons {
+    width: 100%;
+    display: flex;
+
+    button.unselect-account {
+      margin-left: 15px;
+    }
+    button.logout {
+      margin-left: auto;
+      margin-right: 15px;
+    }
+    i.fa {
+      margin: 0;
+    }
+  }
 }
 
 .notifications {

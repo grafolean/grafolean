@@ -9,8 +9,10 @@ import {
   ROOT_URL,
   onReceiveDashboardsListSuccess,
   onReceiveAccountsListSuccess,
+  clearNotifications,
+  onLogout,
 } from '../../store/actions';
-import PersistentFetcher, { havePermission } from '../../utils/fetch';
+import PersistentFetcher, { havePermission, MQTTFetcherSingleton } from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -138,6 +140,13 @@ class _SidebarContent extends React.Component {
     store.dispatch(onReceiveDashboardsListSuccess(json));
   };
 
+  onLogoutClick = () => {
+    window.sessionStorage.removeItem('grafolean_jwt_token');
+    MQTTFetcherSingleton.disconnect();
+    store.dispatch(clearNotifications());
+    store.dispatch(onLogout());
+  };
+
   render() {
     const {
       sidebarDocked,
@@ -152,6 +161,15 @@ class _SidebarContent extends React.Component {
     return (
       <div className="navigation">
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+
+        <div className="back-logout-buttons">
+          <Link className="button green" to="/dashboards/new" onClick={onSidebarLinkClick}>
+            <i className="fa fa-arrow-left"/>
+          </Link>
+          <Button onClick={this.onLogoutClick}>
+            <i className="fa fa-power-off"/>
+          </Button>
+        </div>
 
         <PersistentFetcher
           resource={`accounts/${accounts.selected.id}/dashboards`}
