@@ -784,7 +784,7 @@ def test_bots_crud(app_client, admin_authorization_header):
 
     # DELETE:
     r = app_client.delete('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
+    assert r.status_code == 204
     r = app_client.get('/api/admin/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404
     r = app_client.get('/api/admin/bots', headers={'Authorization': admin_authorization_header})
@@ -879,7 +879,7 @@ def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
 
     # DELETE:
     r = app_client.delete('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
+    assert r.status_code == 204
     r = app_client.get('/api/admin/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404
     r = app_client.get('/api/admin/persons', headers={'Authorization': admin_authorization_header})
@@ -956,7 +956,7 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
 
         # then clean up:
         r = app_client.delete('/api/admin/permissions/{}'.format(permission_id), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 200
+        assert r.status_code == 204
 
 def test_auth_fails_unknown_key(app_client):
     jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
