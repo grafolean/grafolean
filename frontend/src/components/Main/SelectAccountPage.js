@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import { havePermission } from '../../utils/fetch';
 
 import './SelectAccountPage.scss';
+import { doLogout } from '../../store/helpers';
 
 class SelectAccountPage extends React.PureComponent {
   render() {
@@ -22,6 +23,10 @@ class SelectAccountPage extends React.PureComponent {
               <i className="fa fa-plus" /> Add account
             </button>
           )}
+
+          <button className="logout" onClick={doLogout}>
+            <i className="fa fa-sign-out" />
+          </button>
         </div>
       </div>
     );
