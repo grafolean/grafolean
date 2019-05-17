@@ -54,6 +54,16 @@ header {
       margin: 0;
     }
   }
+
+  .account-name {
+    padding: 20px 15px 10px;
+
+    i.fa-pencil {
+      margin-left: 10px;
+      font-size: 12px;
+      color: #0f428a;
+    }
+  }
 }
 
 .notifications {

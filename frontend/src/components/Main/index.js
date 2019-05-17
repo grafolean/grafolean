@@ -10,8 +10,10 @@ import {
   onReceiveDashboardsListSuccess,
   onReceiveAccountsListSuccess,
   onAccountUnselect,
+  handleFetchErrors,
+  onFailure,
 } from '../../store/actions';
-import PersistentFetcher, { havePermission } from '../../utils/fetch';
+import PersistentFetcher, { havePermission, fetchAuth } from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -37,6 +39,7 @@ import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
 import SelectAccountPage from './SelectAccountPage';
 import { doLogout } from '../../store/helpers';
+import EditableLabel from '../EditableLabel';
 
 class Main extends React.Component {
   componentDidMount() {
@@ -143,12 +146,38 @@ const WrappedRoute = ({ component: Component, contentWidth, ...rest }) => (
 );
 
 class _SidebarContent extends React.Component {
+  state = {
+    accountName: this.props.accounts.selected.name,
+  };
+
   onDashboardsListUpdate = json => {
     store.dispatch(onReceiveDashboardsListSuccess(json));
   };
 
+  onAccountUpdate = json => {
+    this.setState({
+      accountName: json.name,
+    });
+  };
+
   onUnselectAccountClick = () => {
     store.dispatch(onAccountUnselect());
+  };
+
+  updateAccountName = newAccountName => {
+    const { accounts } = this.props;
+    const params = {
+      name: newAccountName,
+    };
+    fetchAuth(`${ROOT_URL}/accounts/${accounts.selected.id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+      body: JSON.stringify(params),
+    })
+      .then(handleFetchErrors)
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   render() {
@@ -162,8 +191,15 @@ class _SidebarContent extends React.Component {
       user,
       accounts,
     } = this.props;
+    const { accountName } = this.state;
     return (
       <div className="navigation">
+        <PersistentFetcher resource={`accounts/${accounts.selected.id}`} onUpdate={this.onAccountUpdate} />
+        <PersistentFetcher
+          resource={`accounts/${accounts.selected.id}/dashboards`}
+          onUpdate={this.onDashboardsListUpdate}
+        />
+
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
         <div className="back-logout-buttons">
@@ -174,11 +210,13 @@ class _SidebarContent extends React.Component {
             <i className="fa fa-sign-out" />
           </Button>
         </div>
-
-        <PersistentFetcher
-          resource={`accounts/${accounts.selected.id}/dashboards`}
-          onUpdate={this.onDashboardsListUpdate}
-        />
+        <div className="account-name">
+          <EditableLabel
+            label={accountName}
+            onChange={this.updateAccountName}
+            isEditable={havePermission(`accounts/${accounts.selected.id}`, 'POST', user.permissions)}
+          />
+        </div>
 
         {fetching ? (
           <Loading />

@@ -995,6 +995,9 @@ def account_crud(account_id):
         rowcount = rec.update()
         if not rowcount:
             return "No such account", 404
+        mqtt_publish_changed([
+            f'accounts/{account_id}',
+        ])
         return "", 204
 
 
