@@ -86,10 +86,15 @@ function backendStatus(state = null, action) {
 function accounts(state = {}, action) {
   switch (action.type) {
     case ON_RECEIVE_ACCOUNTS_LIST_SUCCESS:
-      return {
+      let newState = {
         ...state,
         list: action.json.list,
       };
+      // if only one account is available, select it by default:
+      if (!newState.selected && newState.list.length === 1) {
+        newState.selected = newState.list[0];
+      }
+      return newState;
     case ON_ACCOUNT_SELECT:
       const selected = state.list.find(a => a.id === action.accountId);
       return {
