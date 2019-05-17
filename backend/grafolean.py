@@ -984,10 +984,18 @@ def accounts_crud():
             return "Account with this name already exists", 400
 
 
-@app.route('/api/accounts/<string:account_id>', methods=['GET'])
-def account_get(account_id):
-    rec = Account.get(account_id)
-    return json.dumps(rec), 200
+@app.route('/api/accounts/<string:account_id>', methods=['GET', 'PUT'])
+def account_crud(account_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Account.get(account_id)
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        rec = Account.forge_from_input(flask.request, force_id=account_id)
+        rowcount = rec.update()
+        if not rowcount:
+            return "No such account", 404
+        return "", 204
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])

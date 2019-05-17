@@ -41,6 +41,7 @@ USERNAME_ADMIN = 'admin'
 PASSWORD_ADMIN = 'asdf123'
 USERNAME_USER1 = 'user1'
 PASSWORD_USER1 = '321abc'
+FIRST_ACCOUNT_NAME = 'First account'
 
 
 def _delete_all_from_db():
@@ -123,7 +124,7 @@ def account_id(account_id_factory):
     """
         Generate just a single account_id (because this is what we want in most of the tests).
     """
-    account_id, = account_id_factory('First account')
+    account_id, = account_id_factory(FIRST_ACCOUNT_NAME)
     return account_id
 
 @pytest.fixture
@@ -1231,3 +1232,29 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
         actual = json.loads(r.data.decode('utf-8'))
         expected['list'].append(account)
         assert expected == actual
+
+def test_account_update(app_client, admin_authorization_header, account_id):
+    """
+        As admin (or any person who has permissions - this is not subject of our test) try to change account name.
+    """
+    # check initial account name:
+    r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == FIRST_ACCOUNT_NAME
+
+    # change account name:
+    data = {'name': 'asdf123'}
+    r = app_client.put('/api/accounts/{}'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+    # check that it has changed:
+    r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == 'asdf123'
+
+def test_account_update_404(app_client, admin_authorization_header, account_id):
+    # try to update non-existant account:
+    data = {'name': 'asdf123'}
+    r = app_client.put('/api/accounts/{}'.format(account_id + 1), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404

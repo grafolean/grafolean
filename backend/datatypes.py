@@ -563,24 +563,32 @@ class Dashboard(object):
 class Account(object):
     RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)$')
 
-    def __init__(self, name):
+    def __init__(self, name, force_id=None):
         self.name = name
+        self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request):
+    def forge_from_input(cls, flask_request, force_id=None):
         inputs = AccountSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
 
         name = data['name']
-        return cls(name)
+        return cls(name, force_id)
 
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO accounts (name) VALUES (%s) RETURNING id;", (self.name,))
             account_id = c.fetchone()[0]
             return account_id
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE accounts SET name = %s WHERE id = %s;", (self.name, self.force_id,))
+            return c.rowcount
 
     @staticmethod
     def get_list(user_id=None):
