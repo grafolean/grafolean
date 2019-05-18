@@ -1258,3 +1258,9 @@ def test_account_update_404(app_client, admin_authorization_header, account_id):
     data = {'name': 'asdf123'}
     r = app_client.put('/api/accounts/{}'.format(account_id + 1), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404
+
+def test_accounts_name_not_unique(account_id_factory):
+    """
+        Make sure you can create two accounts with the same name
+    """
+    acc1, acc2 = account_id_factory('My account', 'My account')

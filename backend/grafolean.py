@@ -977,11 +977,8 @@ def accounts_crud():
 
     elif flask.request.method == 'POST':
         account = Account.forge_from_input(flask.request)
-        try:
-            account_id = account.insert()
-            return json.dumps({'name': account.name, 'id': account_id}), 201
-        except psycopg2.IntegrityError:
-            return "Account with this name already exists", 400
+        account_id = account.insert()
+        return json.dumps({'name': account.name, 'id': account_id}), 201
 
 
 @app.route('/api/accounts/<string:account_id>', methods=['GET', 'PUT'])

@@ -228,3 +228,10 @@ def migration_step_3():
         for table_name in TABLES_WITH_RANDOM_IDS:
             c.execute(_construct_plsql_randid_function(table_name))
             c.execute('ALTER TABLE {table_name} ALTER COLUMN id SET DATA TYPE integer, ALTER COLUMN id SET DEFAULT randid_{table_name}()'.format(table_name=table_name))
+
+def migration_step_4():
+    """ Removes the UNIQUE constraint on accounts.name. We need to identify the constraint first and then remove it. """
+    with db.cursor() as c:
+        c.execute("SELECT conname FROM pg_constraint WHERE conrelid = 'accounts'::regclass AND contype = 'u';")
+        constraint_name, = c.fetchone()
+        c.execute("ALTER TABLE accounts DROP CONSTRAINT {};".format(constraint_name))
