@@ -38,7 +38,7 @@ export default class EditableLabel extends React.PureComponent {
   };
 
   render() {
-    const { label } = this.props;
+    const { label, isEditable } = this.props;
     const { editing, newLabel } = this.state;
     return (
       <span className="editable-label">
@@ -50,7 +50,7 @@ export default class EditableLabel extends React.PureComponent {
           </>
         ) : (
           <>
-            {label} <i className="fa fa-pencil" onClick={this.startEdit} />
+            {label} {isEditable && <i className="fa fa-pencil" onClick={this.startEdit} />}
           </>
         )}
       </span>

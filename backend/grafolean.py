@@ -867,6 +867,18 @@ def admin_person_crud(user_id):
         return "", 204
 
 
+@app.route('/api/admin/accounts', methods=['GET', 'POST'])
+def accounts_crud():
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Account.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        account = Account.forge_from_input(flask.request)
+        account_id = account.insert()
+        return json.dumps({'name': account.name, 'id': account_id}), 201
+
+
 # --------------
 # /status/ - system status information
 # --------------
@@ -969,25 +981,21 @@ def auth_refresh_post():
         return "Access denied", 401
 
 
-@app.route('/api/admin/accounts', methods=['GET', 'POST'])
-def accounts_crud():
+@app.route('/api/accounts/<string:account_id>', methods=['GET', 'PUT'])
+def account_crud(account_id):
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Account.get_list()
-        return json.dumps({'list': rec}), 200
+        rec = Account.get(account_id)
+        return json.dumps(rec), 200
 
-    elif flask.request.method == 'POST':
-        account = Account.forge_from_input(flask.request)
-        try:
-            account_id = account.insert()
-            return json.dumps({'name': account.name, 'id': account_id}), 201
-        except psycopg2.IntegrityError:
-            return "Account with this name already exists", 400
-
-
-@app.route('/api/accounts/<string:account_id>', methods=['GET'])
-def account_get(account_id):
-    rec = Account.get(account_id)
-    return json.dumps(rec), 200
+    elif flask.request.method == 'PUT':
+        rec = Account.forge_from_input(flask.request, force_id=account_id)
+        rowcount = rec.update()
+        if not rowcount:
+            return "No such account", 404
+        mqtt_publish_changed([
+            f'accounts/{account_id}',
+        ])
+        return "", 204
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])

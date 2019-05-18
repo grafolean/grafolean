@@ -72,6 +72,21 @@ export function onReceiveAccountsListSuccess(json) {
   };
 }
 
+export const ON_ACCOUNT_SELECT = 'ON_ACCOUNT_SELECT';
+export function onAccountSelect(accountId) {
+  return {
+    type: ON_ACCOUNT_SELECT,
+    accountId: accountId,
+  };
+}
+
+export const ON_ACCOUNT_UNSELECT = 'ON_ACCOUNT_UNSELECT';
+export function onAccountUnselect() {
+  return {
+    type: ON_ACCOUNT_UNSELECT,
+  };
+}
+
 export const ON_FAILURE = 'ON_FAILURE';
 export function onFailure(msg) {
   return {

@@ -15,6 +15,8 @@ import {
   ON_LOGOUT,
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
+  ON_ACCOUNT_SELECT,
+  ON_ACCOUNT_UNSELECT,
 } from './actions';
 
 function dashboardsList(
@@ -84,9 +86,25 @@ function backendStatus(state = null, action) {
 function accounts(state = {}, action) {
   switch (action.type) {
     case ON_RECEIVE_ACCOUNTS_LIST_SUCCESS:
-      return {
+      let newState = {
+        ...state,
         list: action.json.list,
-        selected: action.json.list[0],
+      };
+      // if only one account is available, select it by default:
+      if (!newState.selected && newState.list.length === 1) {
+        newState.selected = newState.list[0];
+      }
+      return newState;
+    case ON_ACCOUNT_SELECT:
+      const selected = state.list.find(a => a.id === action.accountId);
+      return {
+        ...state,
+        selected: selected,
+      };
+    case ON_ACCOUNT_UNSELECT:
+      return {
+        ...state,
+        selected: undefined,
       };
     default:
       return state;

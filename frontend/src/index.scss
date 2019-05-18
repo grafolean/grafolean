@@ -46,8 +46,9 @@ a.button, button, a.button:visited {
   margin: 0px;
   border: none;
   border-radius: 3px;
-  line-height: 14px;  // important to make buttons look exactly the same as (button-ified) links
   cursor: pointer;
+  line-height: 14px;  // important to make buttons look exactly the same as (button-ified) links
+  display: inline-block;  // fixes height discrepancies between <Link> and <button>
 
   &.orange {
     background-color: #ec932f;
@@ -70,6 +71,8 @@ a.button, button, a.button:visited {
     }
   }
 }
+a.button:hover { color: #fff; }
+
 
 // button {
 //   background-color: #4cd074;

@@ -9,8 +9,11 @@ import {
   ROOT_URL,
   onReceiveDashboardsListSuccess,
   onReceiveAccountsListSuccess,
+  onAccountUnselect,
+  handleFetchErrors,
+  onFailure,
 } from '../../store/actions';
-import PersistentFetcher, { havePermission } from '../../utils/fetch';
+import PersistentFetcher, { havePermission, fetchAuth } from '../../utils/fetch';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -34,15 +37,28 @@ import Changelog from '../About/Changelog';
 import WelcomePage from '../WelcomePage';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
+import SelectAccountPage from './SelectAccountPage';
+import { doLogout } from '../../store/helpers';
+import EditableLabel from '../EditableLabel';
 
 class Main extends React.Component {
   componentDidMount() {
     store.dispatch(fetchBackendStatus());
   }
+
   backendIsCrossOrigin() {
     const backendUrl = new URL(ROOT_URL, window.location); // if ROOT_URL is relative, use window.location as base url
     return backendUrl.origin !== window.location.origin;
   }
+
+  handleAccountsUpdate = json => {
+    store.dispatch(onReceiveAccountsListSuccess(json));
+  };
+
+  handleAccountsUpdateError = err => {
+    console.err(err);
+  };
+
   render() {
     const { backendStatus, loggedIn } = this.props;
     if (!backendStatus) {
@@ -69,7 +85,22 @@ class Main extends React.Component {
       return <LoginPage />;
     }
 
-    return <LoggedInContent />;
+    return (
+      <>
+        <PersistentFetcher
+          resource="profile/accounts"
+          onUpdate={this.handleAccountsUpdate}
+          onError={this.handleAccountsUpdateError}
+        />
+        {!this.props.accounts.list ? (
+          <Loading />
+        ) : !this.props.accounts.selected ? (
+          <SelectAccountPage />
+        ) : (
+          <LoggedInContent />
+        )}
+      </>
+    );
   }
 }
 const mapBackendStatusToProps = store => ({
@@ -80,30 +111,11 @@ const mapBackendStatusToProps = store => ({
 export default connect(mapBackendStatusToProps)(Main);
 
 class _LoggedInContent extends React.PureComponent {
-  handleAccountsUpdate = json => {
-    store.dispatch(onReceiveAccountsListSuccess(json));
-  };
-
-  handleAccountsUpdateError = err => {
-    console.err(err);
-  };
-
   render() {
     return (
-      <>
-        <PersistentFetcher
-          resource="profile/accounts"
-          onUpdate={this.handleAccountsUpdate}
-          onError={this.handleAccountsUpdateError}
-        />
-        {!this.props.accounts || !this.props.accounts.selected ? (
-          <Loading />
-        ) : (
-          <BrowserRouter>
-            <Account />
-          </BrowserRouter>
-        )}
-      </>
+      <BrowserRouter>
+        <Account />
+      </BrowserRouter>
     );
   }
 }
@@ -134,8 +146,38 @@ const WrappedRoute = ({ component: Component, contentWidth, ...rest }) => (
 );
 
 class _SidebarContent extends React.Component {
+  state = {
+    accountName: this.props.accounts.selected.name,
+  };
+
   onDashboardsListUpdate = json => {
     store.dispatch(onReceiveDashboardsListSuccess(json));
+  };
+
+  onAccountUpdate = json => {
+    this.setState({
+      accountName: json.name,
+    });
+  };
+
+  onUnselectAccountClick = () => {
+    store.dispatch(onAccountUnselect());
+  };
+
+  updateAccountName = newAccountName => {
+    const { accounts } = this.props;
+    const params = {
+      name: newAccountName,
+    };
+    fetchAuth(`${ROOT_URL}/accounts/${accounts.selected.id}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+      body: JSON.stringify(params),
+    })
+      .then(handleFetchErrors)
+      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   render() {
@@ -149,14 +191,32 @@ class _SidebarContent extends React.Component {
       user,
       accounts,
     } = this.props;
+    const { accountName } = this.state;
     return (
       <div className="navigation">
-        {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
-
+        <PersistentFetcher resource={`accounts/${accounts.selected.id}`} onUpdate={this.onAccountUpdate} />
         <PersistentFetcher
           resource={`accounts/${accounts.selected.id}/dashboards`}
           onUpdate={this.onDashboardsListUpdate}
         />
+
+        {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
+
+        <div className="back-logout-buttons">
+          <Button className="unselect-account" onClick={this.onUnselectAccountClick}>
+            <i className="fa fa-arrow-up" />
+          </Button>
+          <Button className="logout" onClick={doLogout}>
+            <i className="fa fa-sign-out" />
+          </Button>
+        </div>
+        <div className="account-name">
+          <EditableLabel
+            label={accountName}
+            onChange={this.updateAccountName}
+            isEditable={havePermission(`accounts/${accounts.selected.id}`, 'POST', user.permissions)}
+          />
+        </div>
 
         {fetching ? (
           <Loading />
