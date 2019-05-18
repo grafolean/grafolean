@@ -203,10 +203,10 @@ class _SidebarContent extends React.Component {
         {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
 
         <div className="back-logout-buttons">
-          <Button className="unselect-account" onClick={this.onUnselectAccountClick}>
+          <Button className="unselect-account" onClick={this.onUnselectAccountClick} title="Switch accounts">
             <i className="fa fa-arrow-up" />
           </Button>
-          <Button className="logout" onClick={doLogout}>
+          <Button className="logout" onClick={doLogout} title="Logout">
             <i className="fa fa-sign-out" />
           </Button>
         </div>
