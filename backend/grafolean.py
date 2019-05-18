@@ -867,6 +867,18 @@ def admin_person_crud(user_id):
         return "", 204
 
 
+@app.route('/api/admin/accounts', methods=['GET', 'POST'])
+def accounts_crud():
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Account.get_list()
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        account = Account.forge_from_input(flask.request)
+        account_id = account.insert()
+        return json.dumps({'name': account.name, 'id': account_id}), 201
+
+
 # --------------
 # /status/ - system status information
 # --------------
@@ -967,18 +979,6 @@ def auth_refresh_post():
         return response
     except:
         return "Access denied", 401
-
-
-@app.route('/api/admin/accounts', methods=['GET', 'POST'])
-def accounts_crud():
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Account.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        account = Account.forge_from_input(flask.request)
-        account_id = account.insert()
-        return json.dumps({'name': account.name, 'id': account_id}), 201
 
 
 @app.route('/api/accounts/<string:account_id>', methods=['GET', 'PUT'])
