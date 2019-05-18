@@ -1235,7 +1235,7 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
 
 def test_account_update(app_client, admin_authorization_header, account_id):
     """
-        As admin (or any person who has permissions - this is not subject of our test) try to change account name.
+        As authorized person (admin) try to change account name.
     """
     # check initial account name:
     r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
