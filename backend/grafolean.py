@@ -145,7 +145,7 @@ def before_request():
                 user_id = Bot.authenticate_token(query_params_bot_token)
 
             if user_id is None:
-                log.exception("Authentication failed")
+                log.info("Authentication failed")
                 return "Access denied", 401
 
             # check permissions:
@@ -162,7 +162,7 @@ def before_request():
 
             flask.g.grafolean_data['user_id'] = user_id
         except AuthFailedException:
-            log.exception("Authentication failed")
+            log.info("Authentication failed")
             return "Access denied", 401
         except:
             log.exception("Exception while checking access rights")
@@ -407,7 +407,7 @@ def admin_mqttauth_plug(check_type):
         return "Invalid endpoint", 404
 
     except AuthFailedException:
-        log.exception("Authentication failed")
+        log.info("Authentication failed")
         return "Access denied", 401
     except:
         log.exception("Exception while checking access rights")
