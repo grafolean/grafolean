@@ -273,6 +273,7 @@ class PersistentFetcher extends React.PureComponent {
         await MQTTFetcherSingleton.connect(mqttWsHostname, mqttWsPort, mqttWsSsl, jwtToken);
       } catch (ex) {
         console.error('Could not connect to MQTT', ex);
+        doLogout();
         return;
       }
     }
