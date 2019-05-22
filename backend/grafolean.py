@@ -619,7 +619,7 @@ def admin_bots():
 
     elif flask.request.method == 'POST':
         bot = Bot.forge_from_input(flask.request)
-        user_id, bot_token = bot.insert()
+        user_id, _ = bot.insert()
         rec = Bot.get(user_id)
         return json.dumps(rec), 201
 
@@ -981,6 +981,10 @@ def auth_refresh_post():
         return "Access denied", 401
 
 
+# --------------
+# /accounts/
+# --------------
+
 @app.route('/api/accounts/<string:account_id>', methods=['GET', 'PUT'])
 def account_crud(account_id):
     if flask.request.method in ['GET', 'HEAD']:
@@ -995,6 +999,44 @@ def account_crud(account_id):
         mqtt_publish_changed([
             f'accounts/{account_id}',
         ])
+        return "", 204
+
+
+@app.route('/api/accounts/<string:account_id>/bots', methods=['GET', 'POST'])
+def account_bots(account_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Bot.get_list(account_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        bot = Bot.forge_from_input(flask.request, force_account=account_id)
+        user_id, _ = bot.insert()
+        rec = Bot.get(user_id)
+        return json.dumps(rec), 201
+
+
+@app.route('/api/accounts/<string:account_id>/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
+def account_bot_crud(account_id, user_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Bot.get(user_id, account_id)
+        if not rec:
+            return "No such bot", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        bot = Bot.forge_from_input(flask.request, force_account=account_id, force_id=user_id)
+        rowcount = bot.update()
+        if not rowcount:
+            return "No such bot", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        # bot should not be able to delete himself, otherwise they could lock themselves out:
+        if int(flask.g.grafolean_data['user_id']) == int(user_id):
+            return "Can't delete yourself", 403
+        rowcount = Bot.delete(user_id, force_account=account_id)
+        if not rowcount:
+            return "No such bot", 404
         return "", 204
 
 

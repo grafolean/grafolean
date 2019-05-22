@@ -42,6 +42,7 @@ PASSWORD_ADMIN = 'asdf123'
 USERNAME_USER1 = 'user1'
 PASSWORD_USER1 = '321abc'
 FIRST_ACCOUNT_NAME = 'First account'
+BOT_NAME1 = 'My Bot 1'
 
 
 def _delete_all_from_db():
@@ -1264,3 +1265,66 @@ def test_accounts_name_not_unique(account_id_factory):
         Make sure you can create two accounts with the same name
     """
     acc1, acc2 = account_id_factory('My account', 'My account')
+
+def test_account_bots(app_client, bot_id, admin_authorization_header, person_authorization_header, person_id, account_id):
+    """
+        Assign permissions on account to a person and check that there are no 'account bots' (bots which are tied to this account).
+        When person creates a bot, make sure you can see it in the list. Then update the bot, get it, and then delete it (and
+        make sure it is deleted).
+    """
+    data = {
+        'user_id': person_id,
+        'resource_prefix': 'accounts/{}'.format(account_id),
+        'methods': None,
+    }
+    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    # the list of account bots is empty at the start: (even though we have asked for bot_id, so some non-account bot exists)
+    r = app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['list'] == []
+
+    # then we create a bot:
+    data = {'name': BOT_NAME1}
+    r = app_client.post('/api/accounts/{}/bots'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
+    assert r.status_code == 201
+    account_bot_id = json.loads(r.data.decode('utf-8'))['id']
+
+    r = app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    expected = {
+        'name': BOT_NAME1,
+        'id': account_bot_id,
+        'token': actual['list'][0]['token'],
+        'insert_time': actual['list'][0]['insert_time'],
+    }
+    assert len(actual['list']) == 1
+    assert actual['list'][0] == expected
+
+    # then we fetch just this bot:
+    r = app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # then we update it:
+    data = {'name': BOT_NAME1 + "123"}
+    r = app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
+    assert r.status_code == 204
+
+    r = app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['name'] == BOT_NAME1 + "123"
+
+    # now remove the bot:
+    r = app_client.delete('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 204
+
+    r = app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual['list'] == []

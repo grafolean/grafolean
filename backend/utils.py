@@ -235,3 +235,9 @@ def migration_step_4():
         c.execute("SELECT conname FROM pg_constraint WHERE conrelid = 'accounts'::regclass AND contype = 'u';")
         constraint_name, = c.fetchone()
         c.execute("ALTER TABLE accounts DROP CONSTRAINT {};".format(constraint_name))
+
+def migration_step_5():
+    """ Bots can be either system-wide or tied to a specific account. """
+    with db.cursor() as c:
+        ACCOUNT_ID_FIELD_NULLABLE = 'account INTEGER DEFAULT NULL REFERENCES accounts(id) ON DELETE CASCADE'
+        c.execute("ALTER TABLE bots ADD COLUMN {account};".format(account=ACCOUNT_ID_FIELD_NULLABLE))
