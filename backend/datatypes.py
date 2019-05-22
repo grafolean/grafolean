@@ -702,24 +702,28 @@ class Permission(object):
 
 
 class Bot(object):
-    def __init__(self, name, force_id=None):
+    def __init__(self, name, force_account=None, force_id=None):
         self.name = name
+        self.force_account = force_account
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, force_id=None):
+    def forge_from_input(cls, flask_request, force_account=None, force_id=None):
         inputs = BotSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        return cls(name, force_id)
+        return cls(name, force_account=force_account, force_id=force_id)
 
     @staticmethod
-    def get_list():
+    def get_list(force_account=None):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
+            if force_account is None:
+                c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
+            else:
+                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE account = %s ORDER BY insert_time DESC;', (force_account,))
             for user_id, name, token, insert_time in c:
                 ret.append({
                     'id': user_id,
@@ -733,7 +737,7 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
+            c.execute("INSERT INTO bots (user_id, name, account) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.force_account,))
             bot_token, = c.fetchone()
             return user_id, bot_token
 
@@ -741,19 +745,30 @@ class Bot(object):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
+            if self.force_account is None:
+                c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
+            else:
+                c.execute("UPDATE bots SET name = %s WHERE user_id = %s AND account = %s;", (self.name, self.force_id, self.force_account,))
             return c.rowcount
 
     @staticmethod
-    def delete(user_id):
+    def delete(user_id, force_account=None):
         with db.cursor() as c:
-            c.execute("DELETE FROM users WHERE id = %s and user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
+            if force_account is not None:
+                # make sure that the bot with this user_id really has this account:
+                test_record = Bot.get(user_id, force_account)
+                if not test_record:
+                    return 0
+            c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
 
     @staticmethod
-    def get(user_id):
+    def get(user_id, force_account=None):
         with db.cursor() as c:
-            c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+            if force_account is None:
+                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+            else:
+                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s AND account = %s;', (user_id, force_account,))
             res = c.fetchone()
             if not res:
                 return None
