@@ -46,9 +46,9 @@ MQTT_WS_PORT = os.environ.get('MQTT_WS_PORT', '')
 
 class SuperuserJWTToken(object):
     """
-        We distinguish between superuser and admin:
-        - admin is a person who has unlimited access to resources
-        - superuser is someone who is authenticated through a JWT token that has 'superuser' field set; it is only intended for internal use
+        SuperuserJWTToken is a workaround which allows us to post information (about changed resources) to MQTT. When we post such information,
+        MQTT connects back to us (see /api/admin/mqtt-auth-plug/<check_type>/ API endpoint) to determine if we have the necessary permissions,
+        and we check the validity of JWT token (and allow it).
     """
     jwt_tokens = {}
     valid_until = {}
