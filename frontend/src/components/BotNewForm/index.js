@@ -41,14 +41,13 @@ class BotNewForm extends React.PureComponent {
       const responseJson = await response.json();
 
       // assign permissions to bot:
-      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/permissions/`, {
+      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/bots/${responseJson.id}/permissions`, {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
         method: 'POST',
         body: JSON.stringify({
-          user_id: responseJson.id,
           resource_prefix: `accounts/${this.props.accounts.selected.id}/values`,
           methods: ['POST', 'PUT'],
         }),

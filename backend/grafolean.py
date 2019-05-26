@@ -710,6 +710,7 @@ def admin_person_crud(user_id):
         return "", 204
 
 
+@app.route('/api/admin/users/<string:user_id>/permissions', methods=['GET', 'POST'])
 @app.route('/api/admin/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
 @app.route('/api/admin/persons/<string:user_id>/permissions', methods=['GET', 'POST'])
 def admin_permissions_get_post(user_id):
@@ -822,6 +823,7 @@ def admin_permissions_get_post(user_id):
             return "Invalid parameters", 400
 
 
+@app.route('/api/admin/users/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
 @app.route('/api/admin/bots/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
 @app.route('/api/admin/persons/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
 def admin_permission_delete(permission_id, user_id):
