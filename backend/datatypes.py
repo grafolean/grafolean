@@ -674,7 +674,6 @@ class Permission(object):
             account_id = c.fetchone()[0]
             return account_id
 
-
     @staticmethod
     def is_access_allowed(user_id, resource, method):
         if method == 'HEAD':
@@ -699,6 +698,38 @@ class Permission(object):
             num_deleted = c.rowcount
             user_id = c.fetchone()[0]
             return num_deleted, user_id
+
+
+    @staticmethod
+    def can_grant_permission(granting_user_permissions, requested_resource_prefix, requested_methods):
+        # User can grant a permission if he has a (single!) permission which includes the desired permission
+
+        def is_resource_prefix_subset_of(subset_resource_prefix, superset_resource_prefix):
+            if superset_resource_prefix is None:
+                return True
+            if subset_resource_prefix is None:  # we can't grant access to every resource if we don't have it
+                return False
+            if superset_resource_prefix == subset_resource_prefix:
+                return True
+            if subset_resource_prefix.startswith(superset_resource_prefix + '/'):
+                return True
+            return False
+
+        def are_methods_subset_of(subset_methods, superset_methods):
+            if superset_methods is None:
+                return True
+            if subset_methods is None:  # we can't grant access for every method if we don't have it
+                return False
+            if set(superset_methods).issuperset(set(subset_methods)):
+                return True
+            return False
+
+        for granting_permission in granting_user_permissions:
+            if is_resource_prefix_subset_of(requested_resource_prefix, granting_permission['resource_prefix']) and \
+                are_methods_subset_of(requested_methods, granting_permission['methods']):
+                return True
+
+        return False
 
 
 class Bot(object):

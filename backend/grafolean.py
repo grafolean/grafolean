@@ -1040,6 +1040,44 @@ def account_bot_crud(account_id, user_id):
         return "", 204
 
 
+@app.route('/api/accounts/<string:account_id>/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
+def account_bot_permissions(account_id, user_id):
+    """
+        Allows reading and assigning permissions to account bots (bots which are tied to a specific account).
+    """
+    # make sure the bot really belongs to the account:
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        return "No such bot", 404
+
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Permission.get_list(user_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        # make sure that authenticated user's permissions are a superset of the ones that they wish to grant:
+        granting_user_id = flask.g.grafolean_data['user_id']
+        permission = Permission.forge_from_input(flask.request)
+        granting_user_permissions = Permission.get_list(granting_user_id)
+        if not Permission.can_grant_permission(granting_user_permissions, permission.resource_prefix, permission.methods):
+            return "Can't grant permission", 401
+
+        try:
+            permission_id = permission.insert()
+            mqtt_publish_changed([
+                f'admin/persons/{permission.user_id}',
+                f'admin/bots/{permission.user_id}',
+            ])
+            return json.dumps({
+                'user_id': permission.user_id,
+                'resource_prefix': permission.resource_prefix,
+                'methods': permission.methods,
+                'id': permission_id,
+            }), 201
+        except psycopg2.IntegrityError:
+            return "Invalid parameters", 400
+
+
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])
 def values_put(account_id):
     data = flask.request.get_json()
