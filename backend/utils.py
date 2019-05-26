@@ -241,3 +241,8 @@ def migration_step_5():
     with db.cursor() as c:
         ACCOUNT_ID_FIELD_NULLABLE = 'account INTEGER DEFAULT NULL REFERENCES accounts(id) ON DELETE CASCADE'
         c.execute("ALTER TABLE bots ADD COLUMN {account};".format(account=ACCOUNT_ID_FIELD_NULLABLE))
+
+def migration_step_6():
+    """ Permissions are now always tied to a specific user. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE permissions ALTER COLUMN user_id SET NOT NULL;")

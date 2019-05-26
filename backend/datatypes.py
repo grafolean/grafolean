@@ -647,24 +647,21 @@ class Permission(object):
         self.methods = methods
 
     @classmethod
-    def forge_from_input(cls, flask_request):
+    def forge_from_input(cls, flask_request, user_id):
         inputs = PermissionSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-        return cls(data['user_id'], data['resource_prefix'], data['methods'])
+        return cls(user_id, data['resource_prefix'], data['methods'])
 
     @staticmethod
-    def get_list(user_id=None):
+    def get_list(user_id):
         with db.cursor() as c:
             ret = []
-            if user_id is None:
-                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
-            else:
-                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
+            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
             for permission_id, user_id, resource_prefix, methods in c:
                 methods_as_list = None if not methods else [m.strip('{ }') for m in methods.split(',')]  # not sure why, but we get what we inserted (string instead of a list)... this is workaround
-                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
+                ret.append({'id': permission_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
             return ret
 
     def insert(self):
@@ -681,7 +678,7 @@ class Permission(object):
         with db.cursor() as c:
             # with resource_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
-                '(user_id IS NULL OR user_id = %s) AND ' + \
+                '(user_id = %s) AND ' + \
                 "(resource_prefix IS NULL OR resource_prefix = %s OR %s LIKE resource_prefix || '/%%') AND " + \
                 '(methods IS NULL OR %s = ANY(methods));',
                 (user_id, resource, resource, method,))
@@ -692,12 +689,10 @@ class Permission(object):
                 return False
 
     @staticmethod
-    def delete(permission_id):
+    def delete(permission_id, user_id):
         with db.cursor() as c:
-            c.execute('DELETE FROM permissions WHERE id = %s RETURNING user_id;', (permission_id,))
-            num_deleted = c.rowcount
-            user_id = c.fetchone()[0]
-            return num_deleted, user_id
+            c.execute('DELETE FROM permissions WHERE id = %s AND user_id = %s;', (permission_id, user_id,))
+            return c.rowcount
 
 
     @staticmethod

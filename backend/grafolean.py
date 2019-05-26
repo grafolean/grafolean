@@ -414,21 +414,29 @@ def admin_mqttauth_plug(check_type):
         return "Access denied", 401
 
 
-@app.route('/api/admin/permissions', methods=['GET', 'POST'])
-def admin_permissions_get_post():
+@app.route('/api/admin/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/persons/<string:user_id>/permissions', methods=['GET', 'POST'])
+def admin_permissions_get_post(user_id):
     """
         ---
         get:
-          summary: Get a list of all permissions granted to users
+          summary: Get a list of all permissions granted to a specified user
           tags:
             - admin
           description:
-            Returns a list of all permissions granted to users. The list is returned in a single array (no pagination).
+            Returns a list of all permissions granted to the user. The list is returned in a single array (no pagination).
 
 
             Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
             resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
             access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: false
+              schema:
+                type: integer
           responses:
             200:
               content:
@@ -444,10 +452,6 @@ def admin_permissions_get_post():
                             id:
                               type: integer
                               description: "Permission id"
-                            user_id:
-                              type: integer
-                              nullable: true
-                              description: "User id; if null, this permission is granted to any user"
                             resource_prefix:
                               type: string
                               nullable: true
@@ -464,11 +468,11 @@ def admin_permissions_get_post():
                               nullable: true
                               description: "List of HTTP methods allowed; if null, this permission applies to any method"
         post:
-          summary: Grant permission to user(s)
+          summary: Grant permission to the user
           tags:
             - admin
           description:
-            Grants a specified permission to a single users or to all users. Permissions are defined with a combination of resource prefix and a list of methods.
+            Grants a specified permission to the user. Permissions are defined with a combination of resource prefix and a list of methods.
             Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
 
 
@@ -478,6 +482,12 @@ def admin_permissions_get_post():
 
 
           parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: false
+              schema:
+                type: integer
             - name: "body"
               in: body
               description: "Permission to be granted"
@@ -494,52 +504,31 @@ def admin_permissions_get_post():
                       id:
                         type: integer
                         description: "Permission id"
-                      user_id:
-                        type: integer
-                        nullable: true
-                        description: "User id; if null, this permission is granted to any user"
-                      resource_prefix:
-                        type: string
-                        nullable: true
-                        description: "Resource prefix (e.g., 'admin/permissions' or 'accounts/123'); if null, this permission applies to any resource"
-                      methods:
-                        type: array
-                        items:
-                          type: string
-                          enum:
-                              - "GET"
-                              - "POST"
-                              - "PUT"
-                              - "DELETE"
-                        nullable: true
-                        description: "List of HTTP methods allowed; if null, this permission applies to any method"
             400:
               description: Invalid parameters
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list()
+        rec = Permission.get_list(user_id=user_id)
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        permission = Permission.forge_from_input(flask.request)
+        permission = Permission.forge_from_input(flask.request, user_id)
         try:
             permission_id = permission.insert()
             mqtt_publish_changed([
-                f'admin/persons/{permission.user_id}',
-                f'admin/bots/{permission.user_id}',
+                f'admin/persons/{user_id}',
+                f'admin/bots/{user_id}',
             ])
             return json.dumps({
-                'user_id': permission.user_id,
-                'resource_prefix': permission.resource_prefix,
-                'methods': permission.methods,
                 'id': permission_id,
             }), 201
         except psycopg2.IntegrityError:
             return "Invalid parameters", 400
 
 
-@app.route('/api/admin/permissions/<string:permission_id>', methods=['DELETE'])
-def admin_permission_delete(permission_id):
+@app.route('/api/admin/bots/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/persons/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
+def admin_permission_delete(permission_id, user_id):
     """
         ---
         delete:
@@ -561,7 +550,7 @@ def admin_permission_delete(permission_id):
             404:
               description: No such permission
     """
-    rowcount, user_id = Permission.delete(permission_id)
+    rowcount = Permission.delete(permission_id, user_id)
     if not rowcount:
         return "No such permission", 404
     mqtt_publish_changed([
@@ -1057,7 +1046,7 @@ def account_bot_permissions(account_id, user_id):
     elif flask.request.method == 'POST':
         # make sure that authenticated user's permissions are a superset of the ones that they wish to grant:
         granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request)
+        permission = Permission.forge_from_input(flask.request, user_id)
         granting_user_permissions = Permission.get_list(granting_user_id)
         if not Permission.can_grant_permission(granting_user_permissions, permission.resource_prefix, permission.methods):
             return "Can't grant permission", 401
