@@ -689,7 +689,7 @@ def test_jwt_total_expiry(app_client, first_admin_id):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-def test_permissions_post_get(app_client, first_admin_id, admin_authorization_header, mqtt_messages):
+def test_permissions_post_get(app_client, first_admin_id, admin_authorization_header, person_id, mqtt_messages):
     """
         Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
@@ -713,21 +713,25 @@ def test_permissions_post_get(app_client, first_admin_id, admin_authorization_he
         'resource_prefix': 'accounts/123/',
         'methods': [ 'GET', 'POST' ],
     }
+    # you can't change your own permissions:
     r = app_client.post('/api/admin/persons/{}/permissions'.format(first_admin_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 401
+
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     response = json.loads(r.data.decode('utf-8'))
     new_permission_id = response['id']
     # check mqtt:
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/persons/{}'.format(first_admin_id)
+    assert m.topic == 'changed/admin/persons/{}'.format(person_id)
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/bots/{}'.format(first_admin_id)
+    assert m.topic == 'changed/admin/bots/{}'.format(person_id)
     assert mqtt_messages.empty()
 
-    r = app_client.get('/api/admin/persons/{}/permissions'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/admin/persons/{}/permissions'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    assert len(actual['list']) == 2
+    assert len(actual['list']) == 1
     new_record = [x for x in actual['list'] if x['id'] == new_permission_id]
     assert new_record == [{
         'id': new_permission_id,

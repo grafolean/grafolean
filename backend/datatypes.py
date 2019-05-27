@@ -25,6 +25,10 @@ class ValidationError(Exception):
     pass
 
 
+class AccessDeniedError(Exception):
+    pass
+
+
 class _RegexValidatedInputValue(object):
     """ Helper parent class; allows easy creation of classes which validate their input with a regular expression. """
     _regex = None
@@ -664,7 +668,16 @@ class Permission(object):
                 ret.append({'id': permission_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
             return ret
 
-    def insert(self):
+    def insert(self, granting_user_id, skip_checks=False):
+        if not skip_checks:
+            # make sure user is not granting permissions to themselves:
+            if int(granting_user_id) == int(self.user_id):
+                raise AccessDeniedError("Can't grant permissions to yourself")
+            # make sure that authenticated user's permissions are a superset of the ones that they wish to grant:
+            granting_user_permissions = Permission.get_list(granting_user_id)
+            if not Permission.can_grant_permission(granting_user_permissions, self.resource_prefix, self.methods):
+                raise AccessDeniedError("Can't grant permission you don't have")
+
         with db.cursor() as c:
             methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
             c.execute("INSERT INTO permissions (user_id, resource_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.resource_prefix, methods_array,))
@@ -689,7 +702,10 @@ class Permission(object):
                 return False
 
     @staticmethod
-    def delete(permission_id, user_id):
+    def delete(permission_id, user_id, granting_user_id):
+        # make sure user is not removing their own permission:
+        if granting_user_id == user_id:
+            raise AccessDeniedError("Can't grant permissions to yourself")
         with db.cursor() as c:
             c.execute('DELETE FROM permissions WHERE id = %s AND user_id = %s;', (permission_id, user_id,))
             return c.rowcount

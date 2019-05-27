@@ -17,7 +17,7 @@ import urllib.parse
 import validators
 from werkzeug.exceptions import HTTPException
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, AccessDeniedError, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
 import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
@@ -302,7 +302,7 @@ def admin_first_post():
     admin_id = admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)
-    permission.insert()
+    permission.insert(None, skip_checks=True)
     mqtt_publish_changed(['status/info'])
     return json.dumps({
         'id': admin_id,
@@ -803,15 +803,18 @@ def admin_permissions_get_post(user_id):
                         description: "Permission id"
             400:
               description: Invalid parameters
+            401:
+              description: Not allowed to grant permissions
     """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Permission.get_list(user_id=user_id)
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
+        granting_user_id = flask.g.grafolean_data['user_id']
         permission = Permission.forge_from_input(flask.request, user_id)
         try:
-            permission_id = permission.insert()
+            permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
                 f'admin/persons/{user_id}',
                 f'admin/bots/{user_id}',
@@ -819,6 +822,8 @@ def admin_permissions_get_post(user_id):
             return json.dumps({
                 'id': permission_id,
             }), 201
+        except AccessDeniedError as ex:
+            return str(ex), 401
         except psycopg2.IntegrityError:
             return "Invalid parameters", 400
 
@@ -845,10 +850,17 @@ def admin_permission_delete(permission_id, user_id):
           responses:
             204:
               description: Permission removed successfully
+            401:
+              description: Not allowed to revoke this permission
             404:
               description: No such permission
     """
-    rowcount = Permission.delete(permission_id, user_id)
+    # nobody can remove their own permissions:
+    granting_user_id = flask.g.grafolean_data['user_id']
+    try:
+        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
+    except AccessDeniedError as ex:
+        return str(ex), 401
     if not rowcount:
         return "No such permission", 404
     mqtt_publish_changed([
@@ -1046,15 +1058,10 @@ def account_bot_permissions(account_id, user_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        # make sure that authenticated user's permissions are a superset of the ones that they wish to grant:
         granting_user_id = flask.g.grafolean_data['user_id']
         permission = Permission.forge_from_input(flask.request, user_id)
-        granting_user_permissions = Permission.get_list(granting_user_id)
-        if not Permission.can_grant_permission(granting_user_permissions, permission.resource_prefix, permission.methods):
-            return "Can't grant permission", 401
-
         try:
-            permission_id = permission.insert()
+            permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
                 f'admin/persons/{permission.user_id}',
                 f'admin/bots/{permission.user_id}',
@@ -1065,6 +1072,8 @@ def account_bot_permissions(account_id, user_id):
                 'methods': permission.methods,
                 'id': permission_id,
             }), 201
+        except AccessDeniedError as ex:
+            return str(ex), 401
         except psycopg2.IntegrityError:
             return "Invalid parameters", 400
 
