@@ -765,7 +765,9 @@ class Bot(object):
             if force_account is None:
                 c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE account = %s ORDER BY insert_time DESC;', (force_account,))
+                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
             for user_id, name, token, insert_time in c:
                 ret.append({
                     'id': user_id,
@@ -779,28 +781,52 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name, account) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.force_account,))
+            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
             bot_token, = c.fetchone()
+            if self.force_account:
+                c.execute("INSERT INTO users_accounts (user_id, account) VALUES (%s, %s);", (user_id, self.force_account,))
             return user_id, bot_token
+
+    @staticmethod
+    def _is_tied_to_account(user_id, account_id):
+        # make sure that the bot with this user_id really has this account:
+        test_record = Bot.get(user_id, account_id)
+        if not test_record:
+            return False
+        return True
+
+    @staticmethod
+    def _is_tied_only_to_account(user_id, account_id):
+        # additional check, just to be safe - bot must not have other accounts:
+        with db.cursor() as c:
+            c.execute('SELECT count(*) FROM users_accounts WHERE user_id = %s;', (user_id,))
+            if c.fetchone()[0] != 1:
+                return False
+        return True
 
     def update(self):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            if self.force_account is None:
-                c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
-            else:
-                c.execute("UPDATE bots SET name = %s WHERE user_id = %s AND account = %s;", (self.name, self.force_id, self.force_account,))
+            if self.force_account is not None:
+                if not Bot._is_tied_to_account(self.force_id, self.force_account):
+                    return 0
+
+            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
             return c.rowcount
 
     @staticmethod
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                # make sure that the bot with this user_id really has this account:
-                test_record = Bot.get(user_id, force_account)
-                if not test_record:
+                if not Bot._is_tied_only_to_account(user_id, force_account):
                     return 0
+                if not Bot._is_tied_only_to_account(user_id, force_account):
+                    # just remove the connection to this account, leave the bot itself alone:
+                    # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
+                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND account = %s;", (user_id, force_account,))
+                    return c.rowcount
+
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
 
@@ -810,7 +836,9 @@ class Bot(object):
             if force_account is None:
                 c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s AND account = %s;', (user_id, force_account,))
+                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
