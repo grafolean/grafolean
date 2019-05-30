@@ -22,7 +22,7 @@ class SelectAccountPage extends React.PureComponent {
           {accounts.list.map(account => (
             <button
               key={account.id}
-              className="account"
+              className="blue"
               onClick={() => store.dispatch(onAccountSelect(account.id))}
             >
               {account.name}
