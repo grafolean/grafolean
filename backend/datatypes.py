@@ -704,7 +704,7 @@ class Permission(object):
     @staticmethod
     def delete(permission_id, user_id, granting_user_id):
         # make sure user is not removing their own permission:
-        if granting_user_id == user_id:
+        if int(granting_user_id) == int(user_id):
             raise AccessDeniedError("Can't grant permissions to yourself")
         with db.cursor() as c:
             c.execute('DELETE FROM permissions WHERE id = %s AND user_id = %s;', (permission_id, user_id,))
