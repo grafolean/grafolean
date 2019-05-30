@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
 import moment from 'moment';
 
 import store from '../../store';
@@ -13,7 +14,7 @@ import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
 
-export default class Bots extends React.PureComponent {
+class Bots extends React.PureComponent {
   state = {
     bots: null,
   };
@@ -23,7 +24,7 @@ export default class Bots extends React.PureComponent {
   }
 
   fetchBots = () => {
-    fetchAuth(`${ROOT_URL}/admin/bots/`)
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/`)
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json =>
@@ -41,7 +42,7 @@ export default class Bots extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/bots/${botId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/${botId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .then(() =>
         this.setState(
@@ -95,3 +96,8 @@ export default class Bots extends React.PureComponent {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default connect(mapStoreToProps)(Bots);

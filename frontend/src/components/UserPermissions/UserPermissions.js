@@ -27,7 +27,7 @@ export default class UserPermissions extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/users/${this.props.match.params}/permissions/${permissionId}`, {
+    fetchAuth(`${ROOT_URL}/admin/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
       method: 'DELETE',
     })
       .then(handleFetchErrors)

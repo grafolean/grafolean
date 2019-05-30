@@ -710,9 +710,9 @@ def admin_person_crud(user_id):
         return "", 204
 
 
-@app.route('/api/admin/users/<string:user_id>/permissions', methods=['GET', 'POST'])
-@app.route('/api/admin/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
-@app.route('/api/admin/persons/<string:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/users/<int:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/persons/<int:user_id>/permissions', methods=['GET', 'POST'])
 def admin_permissions_get_post(user_id):
     """
         ---
@@ -828,9 +828,9 @@ def admin_permissions_get_post(user_id):
             return "Invalid parameters", 400
 
 
-@app.route('/api/admin/users/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
-@app.route('/api/admin/bots/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
-@app.route('/api/admin/persons/<string:user_id>/permissions/<string:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/users/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/persons/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
 def admin_permission_delete(permission_id, user_id):
     """
         ---
@@ -855,7 +855,6 @@ def admin_permission_delete(permission_id, user_id):
             404:
               description: No such permission
     """
-    # nobody can remove their own permissions:
     granting_user_id = flask.g.grafolean_data['user_id']
     try:
         rowcount = Permission.delete(permission_id, user_id, granting_user_id)
@@ -1076,6 +1075,28 @@ def account_bot_permissions(account_id, user_id):
             return str(ex), 401
         except psycopg2.IntegrityError:
             return "Invalid parameters", 400
+
+
+@app.route('/api/accounts/<int:account_id>/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+def account_bot_permission_delete(account_id, user_id, permission_id):
+    """ Revoke permission from account bot """
+    # make sure the bot really belongs to the account:
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        return "No such bot", 404
+
+    granting_user_id = flask.g.grafolean_data['user_id']
+    try:
+        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
+    except AccessDeniedError as ex:
+        return str(ex), 401
+    if not rowcount:
+        return "No such permission", 404
+    mqtt_publish_changed([
+        f'admin/persons/{user_id}',
+        f'admin/bots/{user_id}',
+    ])
+    return "", 204
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])

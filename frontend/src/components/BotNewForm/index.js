@@ -29,7 +29,7 @@ class BotNewForm extends React.PureComponent {
         name: this.state.name,
       };
       // create bot:
-      const response = await fetchAuth(`${ROOT_URL}/admin/bots/`, {
+      const response = await fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/`, {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -41,17 +41,20 @@ class BotNewForm extends React.PureComponent {
       const responseJson = await response.json();
 
       // assign permissions to bot:
-      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/bots/${responseJson.id}/permissions`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
+      const responsePermissions = await fetchAuth(
+        `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/${responseJson.id}/permissions`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            resource_prefix: `accounts/${this.props.accounts.selected.id}/values`,
+            methods: ['POST', 'PUT'],
+          }),
         },
-        method: 'POST',
-        body: JSON.stringify({
-          resource_prefix: `accounts/${this.props.accounts.selected.id}/values`,
-          methods: ['POST', 'PUT'],
-        }),
-      });
+      );
       await handleFetchErrors(responsePermissions);
 
       await this.setState({ submitted: true });
