@@ -17,7 +17,7 @@ import urllib.parse
 import validators
 from werkzeug.exceptions import HTTPException
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, AccessDeniedError, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
 import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
@@ -302,7 +302,7 @@ def admin_first_post():
     admin_id = admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)
-    permission.insert()
+    permission.insert(None, skip_checks=True)
     mqtt_publish_changed(['status/info'])
     return json.dumps({
         'id': admin_id,
@@ -412,163 +412,6 @@ def admin_mqttauth_plug(check_type):
     except:
         log.exception("Exception while checking access rights")
         return "Access denied", 401
-
-
-@app.route('/api/admin/permissions', methods=['GET', 'POST'])
-def admin_permissions_get_post():
-    """
-        ---
-        get:
-          summary: Get a list of all permissions granted to users
-          tags:
-            - admin
-          description:
-            Returns a list of all permissions granted to users. The list is returned in a single array (no pagination).
-
-
-            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
-            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
-            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: "Permission id"
-                            user_id:
-                              type: integer
-                              nullable: true
-                              description: "User id; if null, this permission is granted to any user"
-                            resource_prefix:
-                              type: string
-                              nullable: true
-                              description: "Resource prefix (e.g., 'admin/permissions' or 'accounts/123'); if null, this permission applies to any resource"
-                            methods:
-                              type: array
-                              items:
-                                type: string
-                                enum:
-                                  - "GET"
-                                  - "POST"
-                                  - "PUT"
-                                  - "DELETE"
-                              nullable: true
-                              description: "List of HTTP methods allowed; if null, this permission applies to any method"
-        post:
-          summary: Grant permission to user(s)
-          tags:
-            - admin
-          description:
-            Grants a specified permission to a single users or to all users. Permissions are defined with a combination of resource prefix and a list of methods.
-            Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
-
-
-            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
-            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
-            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
-
-
-          parameters:
-            - name: "body"
-              in: body
-              description: "Permission to be granted"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/Permission'
-          responses:
-            201:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: "Permission id"
-                      user_id:
-                        type: integer
-                        nullable: true
-                        description: "User id; if null, this permission is granted to any user"
-                      resource_prefix:
-                        type: string
-                        nullable: true
-                        description: "Resource prefix (e.g., 'admin/permissions' or 'accounts/123'); if null, this permission applies to any resource"
-                      methods:
-                        type: array
-                        items:
-                          type: string
-                          enum:
-                              - "GET"
-                              - "POST"
-                              - "PUT"
-                              - "DELETE"
-                        nullable: true
-                        description: "List of HTTP methods allowed; if null, this permission applies to any method"
-            400:
-              description: Invalid parameters
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        permission = Permission.forge_from_input(flask.request)
-        try:
-            permission_id = permission.insert()
-            mqtt_publish_changed([
-                f'admin/persons/{permission.user_id}',
-                f'admin/bots/{permission.user_id}',
-            ])
-            return json.dumps({
-                'user_id': permission.user_id,
-                'resource_prefix': permission.resource_prefix,
-                'methods': permission.methods,
-                'id': permission_id,
-            }), 201
-        except psycopg2.IntegrityError:
-            return "Invalid parameters", 400
-
-
-@app.route('/api/admin/permissions/<string:permission_id>', methods=['DELETE'])
-def admin_permission_delete(permission_id):
-    """
-        ---
-        delete:
-          summary: Revoke permission
-          tags:
-            - admin
-          description:
-            Revokes a specific permission, as specified by permission id.
-          parameters:
-            - name: permission_id
-              in: path
-              description: "Permission id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            204:
-              description: Permission removed successfully
-            404:
-              description: No such permission
-    """
-    rowcount, user_id = Permission.delete(permission_id)
-    if not rowcount:
-        return "No such permission", 404
-    mqtt_publish_changed([
-        f'admin/persons/{user_id}',
-        f'admin/bots/{user_id}',
-    ])
-    return "", 204
 
 
 @app.route('/api/admin/bots', methods=['GET', 'POST'])
@@ -867,6 +710,165 @@ def admin_person_crud(user_id):
         return "", 204
 
 
+@app.route('/api/admin/users/<int:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
+@app.route('/api/admin/persons/<int:user_id>/permissions', methods=['GET', 'POST'])
+def admin_permissions_get_post(user_id):
+    """
+        ---
+        get:
+          summary: Get a list of all permissions granted to a specified user
+          tags:
+            - admin
+          description:
+            Returns a list of all permissions granted to the user. The list is returned in a single array (no pagination).
+
+
+            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
+            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
+            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: false
+              schema:
+                type: integer
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: "Permission id"
+                            resource_prefix:
+                              type: string
+                              nullable: true
+                              description: "Resource prefix (e.g., 'admin/permissions' or 'accounts/123'); if null, this permission applies to any resource"
+                            methods:
+                              type: array
+                              items:
+                                type: string
+                                enum:
+                                  - "GET"
+                                  - "POST"
+                                  - "PUT"
+                                  - "DELETE"
+                              nullable: true
+                              description: "List of HTTP methods allowed; if null, this permission applies to any method"
+        post:
+          summary: Grant permission to the user
+          tags:
+            - admin
+          description:
+            Grants a specified permission to the user. Permissions are defined with a combination of resource prefix and a list of methods.
+            Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
+
+
+            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
+            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
+            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
+
+
+          parameters:
+            - name: user_id
+              in: path
+              description: "User id"
+              required: false
+              schema:
+                type: integer
+            - name: "body"
+              in: body
+              description: "Permission to be granted"
+              required: true
+              schema:
+                "$ref": '#/components/schemas/Permission'
+          responses:
+            201:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: "Permission id"
+            400:
+              description: Invalid parameters
+            401:
+              description: Not allowed to grant permissions
+    """
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Permission.get_list(user_id=user_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        granting_user_id = flask.g.grafolean_data['user_id']
+        permission = Permission.forge_from_input(flask.request, user_id)
+        try:
+            permission_id = permission.insert(granting_user_id)
+            mqtt_publish_changed([
+                f'admin/persons/{user_id}',
+                f'admin/bots/{user_id}',
+            ])
+            return json.dumps({
+                'id': permission_id,
+            }), 201
+        except AccessDeniedError as ex:
+            return str(ex), 401
+        except psycopg2.IntegrityError:
+            return "Invalid parameters", 400
+
+
+@app.route('/api/admin/users/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+@app.route('/api/admin/persons/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+def admin_permission_delete(permission_id, user_id):
+    """
+        ---
+        delete:
+          summary: Revoke permission
+          tags:
+            - admin
+          description:
+            Revokes a specific permission, as specified by permission id.
+          parameters:
+            - name: permission_id
+              in: path
+              description: "Permission id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            204:
+              description: Permission removed successfully
+            401:
+              description: Not allowed to revoke this permission
+            404:
+              description: No such permission
+    """
+    granting_user_id = flask.g.grafolean_data['user_id']
+    try:
+        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
+    except AccessDeniedError as ex:
+        return str(ex), 401
+    if not rowcount:
+        return "No such permission", 404
+    mqtt_publish_changed([
+        f'admin/persons/{user_id}',
+        f'admin/bots/{user_id}',
+    ])
+    return "", 204
+
+
 @app.route('/api/admin/accounts', methods=['GET', 'POST'])
 def accounts_crud():
     if flask.request.method in ['GET', 'HEAD']:
@@ -1038,6 +1040,63 @@ def account_bot_crud(account_id, user_id):
         if not rowcount:
             return "No such bot", 404
         return "", 204
+
+
+@app.route('/api/accounts/<string:account_id>/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
+def account_bot_permissions(account_id, user_id):
+    """
+        Allows reading and assigning permissions to account bots (bots which are tied to a specific account).
+    """
+    # make sure the bot really belongs to the account:
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        return "No such bot", 404
+
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Permission.get_list(user_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        granting_user_id = flask.g.grafolean_data['user_id']
+        permission = Permission.forge_from_input(flask.request, user_id)
+        try:
+            permission_id = permission.insert(granting_user_id)
+            mqtt_publish_changed([
+                f'admin/persons/{permission.user_id}',
+                f'admin/bots/{permission.user_id}',
+            ])
+            return json.dumps({
+                'user_id': permission.user_id,
+                'resource_prefix': permission.resource_prefix,
+                'methods': permission.methods,
+                'id': permission_id,
+            }), 201
+        except AccessDeniedError as ex:
+            return str(ex), 401
+        except psycopg2.IntegrityError:
+            return "Invalid parameters", 400
+
+
+@app.route('/api/accounts/<int:account_id>/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
+def account_bot_permission_delete(account_id, user_id, permission_id):
+    """ Revoke permission from account bot """
+    # make sure the bot really belongs to the account:
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        return "No such bot", 404
+
+    granting_user_id = flask.g.grafolean_data['user_id']
+    try:
+        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
+    except AccessDeniedError as ex:
+        return str(ex), 401
+    if not rowcount:
+        return "No such permission", 404
+    mqtt_publish_changed([
+        f'admin/persons/{user_id}',
+        f'admin/bots/{user_id}',
+    ])
+    return "", 204
 
 
 @app.route("/api/accounts/<string:account_id>/values", methods=['PUT'])

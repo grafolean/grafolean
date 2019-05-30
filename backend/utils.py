@@ -241,3 +241,20 @@ def migration_step_5():
     with db.cursor() as c:
         ACCOUNT_ID_FIELD_NULLABLE = 'account INTEGER DEFAULT NULL REFERENCES accounts(id) ON DELETE CASCADE'
         c.execute("ALTER TABLE bots ADD COLUMN {account};".format(account=ACCOUNT_ID_FIELD_NULLABLE))
+
+def migration_step_6():
+    """ Permissions are now always tied to a specific user. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE permissions ALTER COLUMN user_id SET NOT NULL;")
+
+def migration_step_7():
+    """ Try a different way: users and bots may be tied to a set of accounts (users via invites, bots by being created inside the accounts). """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='users_accounts')
+    ACCOUNT_ID_FIELD = 'account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE'
+    USER_ID_FIELD = 'user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('users_accounts'))
+        c.execute('CREATE TABLE users_accounts ({id}, {user_id}, {account});'.format(id=ID_FIELD, user_id=USER_ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX users_accounts_account ON users_accounts (user_id, account);')
+
+        c.execute("ALTER TABLE bots DROP COLUMN account;")  # no need to convert data, it wasn't used anywhere

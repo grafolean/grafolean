@@ -25,6 +25,10 @@ class ValidationError(Exception):
     pass
 
 
+class AccessDeniedError(Exception):
+    pass
+
+
 class _RegexValidatedInputValue(object):
     """ Helper parent class; allows easy creation of classes which validate their input with a regular expression. """
     _regex = None
@@ -647,33 +651,38 @@ class Permission(object):
         self.methods = methods
 
     @classmethod
-    def forge_from_input(cls, flask_request):
+    def forge_from_input(cls, flask_request, user_id):
         inputs = PermissionSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
-        return cls(data['user_id'], data['resource_prefix'], data['methods'])
+        return cls(user_id, data['resource_prefix'], data['methods'])
 
     @staticmethod
-    def get_list(user_id=None):
+    def get_list(user_id):
         with db.cursor() as c:
             ret = []
-            if user_id is None:
-                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions ORDER BY user_id, resource_prefix, id;')
-            else:
-                c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
+            c.execute('SELECT id, user_id, resource_prefix, methods FROM permissions WHERE user_id = %s ORDER BY resource_prefix, id;', (user_id,))
             for permission_id, user_id, resource_prefix, methods in c:
                 methods_as_list = None if not methods else [m.strip('{ }') for m in methods.split(',')]  # not sure why, but we get what we inserted (string instead of a list)... this is workaround
-                ret.append({'id': permission_id, 'user_id': user_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
+                ret.append({'id': permission_id, 'resource_prefix': resource_prefix, 'methods': methods_as_list})
             return ret
 
-    def insert(self):
+    def insert(self, granting_user_id, skip_checks=False):
+        if not skip_checks:
+            # make sure user is not granting permissions to themselves:
+            if int(granting_user_id) == int(self.user_id):
+                raise AccessDeniedError("Can't grant permissions to yourself")
+            # make sure that authenticated user's permissions are a superset of the ones that they wish to grant:
+            granting_user_permissions = Permission.get_list(granting_user_id)
+            if not Permission.can_grant_permission(granting_user_permissions, self.resource_prefix, self.methods):
+                raise AccessDeniedError("Can't grant permission you don't have")
+
         with db.cursor() as c:
             methods_array = None if self.methods is None else '{' + ",".join(self.methods) + '}'  # passing the list directly results in integrity error, this is another way - https://stackoverflow.com/a/15073439/593487
             c.execute("INSERT INTO permissions (user_id, resource_prefix, methods) VALUES (%s, %s, %s) RETURNING id;", (self.user_id, self.resource_prefix, methods_array,))
             account_id = c.fetchone()[0]
             return account_id
-
 
     @staticmethod
     def is_access_allowed(user_id, resource, method):
@@ -682,7 +691,7 @@ class Permission(object):
         with db.cursor() as c:
             # with resource_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \
-                '(user_id IS NULL OR user_id = %s) AND ' + \
+                '(user_id = %s) AND ' + \
                 "(resource_prefix IS NULL OR resource_prefix = %s OR %s LIKE resource_prefix || '/%%') AND " + \
                 '(methods IS NULL OR %s = ANY(methods));',
                 (user_id, resource, resource, method,))
@@ -693,12 +702,45 @@ class Permission(object):
                 return False
 
     @staticmethod
-    def delete(permission_id):
+    def delete(permission_id, user_id, granting_user_id):
+        # make sure user is not removing their own permission:
+        if int(granting_user_id) == int(user_id):
+            raise AccessDeniedError("Can't grant permissions to yourself")
         with db.cursor() as c:
-            c.execute('DELETE FROM permissions WHERE id = %s RETURNING user_id;', (permission_id,))
-            num_deleted = c.rowcount
-            user_id = c.fetchone()[0]
-            return num_deleted, user_id
+            c.execute('DELETE FROM permissions WHERE id = %s AND user_id = %s;', (permission_id, user_id,))
+            return c.rowcount
+
+
+    @staticmethod
+    def can_grant_permission(granting_user_permissions, requested_resource_prefix, requested_methods):
+        # User can grant a permission if he has a (single!) permission which includes the desired permission
+
+        def is_resource_prefix_subset_of(subset_resource_prefix, superset_resource_prefix):
+            if superset_resource_prefix is None:
+                return True
+            if subset_resource_prefix is None:  # we can't grant access to every resource if we don't have it
+                return False
+            if superset_resource_prefix == subset_resource_prefix:
+                return True
+            if subset_resource_prefix.startswith(superset_resource_prefix + '/'):
+                return True
+            return False
+
+        def are_methods_subset_of(subset_methods, superset_methods):
+            if superset_methods is None:
+                return True
+            if subset_methods is None:  # we can't grant access for every method if we don't have it
+                return False
+            if set(superset_methods).issuperset(set(subset_methods)):
+                return True
+            return False
+
+        for granting_permission in granting_user_permissions:
+            if is_resource_prefix_subset_of(requested_resource_prefix, granting_permission['resource_prefix']) and \
+                are_methods_subset_of(requested_methods, granting_permission['methods']):
+                return True
+
+        return False
 
 
 class Bot(object):
@@ -723,7 +765,9 @@ class Bot(object):
             if force_account is None:
                 c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE account = %s ORDER BY insert_time DESC;', (force_account,))
+                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
             for user_id, name, token, insert_time in c:
                 ret.append({
                     'id': user_id,
@@ -737,28 +781,52 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name, account) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.force_account,))
+            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
             bot_token, = c.fetchone()
+            if self.force_account:
+                c.execute("INSERT INTO users_accounts (user_id, account) VALUES (%s, %s);", (user_id, self.force_account,))
             return user_id, bot_token
+
+    @staticmethod
+    def _is_tied_to_account(user_id, account_id):
+        # make sure that the bot with this user_id really has this account:
+        test_record = Bot.get(user_id, account_id)
+        if not test_record:
+            return False
+        return True
+
+    @staticmethod
+    def _is_tied_only_to_account(user_id, account_id):
+        # additional check, just to be safe - bot must not have other accounts:
+        with db.cursor() as c:
+            c.execute('SELECT count(*) FROM users_accounts WHERE user_id = %s;', (user_id,))
+            if c.fetchone()[0] != 1:
+                return False
+        return True
 
     def update(self):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            if self.force_account is None:
-                c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
-            else:
-                c.execute("UPDATE bots SET name = %s WHERE user_id = %s AND account = %s;", (self.name, self.force_id, self.force_account,))
+            if self.force_account is not None:
+                if not Bot._is_tied_to_account(self.force_id, self.force_account):
+                    return 0
+
+            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
             return c.rowcount
 
     @staticmethod
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                # make sure that the bot with this user_id really has this account:
-                test_record = Bot.get(user_id, force_account)
-                if not test_record:
+                if not Bot._is_tied_only_to_account(user_id, force_account):
                     return 0
+                if not Bot._is_tied_only_to_account(user_id, force_account):
+                    # just remove the connection to this account, leave the bot itself alone:
+                    # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
+                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND account = %s;", (user_id, force_account,))
+                    return c.rowcount
+
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
 
@@ -768,7 +836,9 @@ class Bot(object):
             if force_account is None:
                 c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s AND account = %s;', (user_id, force_account,))
+                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None

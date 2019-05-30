@@ -97,7 +97,6 @@ class PermissionSchemaInputs(Inputs):
         'type': 'object',
         'additionalProperties': False,
         'properties': {
-            'user_id': {'type': ['integer', 'null']},
             'resource_prefix': {'type': ['string', 'null']},
             'methods': {
                 'type': ['array', 'null'],
@@ -109,7 +108,7 @@ class PermissionSchemaInputs(Inputs):
                 'minItems': 1,
             },
         },
-        'required': ['user_id', 'resource_prefix', 'methods'],
+        'required': ['resource_prefix', 'methods'],
     })]
 
 

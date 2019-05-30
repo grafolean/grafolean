@@ -52,14 +52,13 @@ export default class UserPermissionsNewForm extends React.PureComponent {
       this.setState({ posting: true });
 
       // assign permissions to person:
-      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/permissions/`, {
+      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/users/${userId}/permissions/`, {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
         method: 'POST',
         body: JSON.stringify({
-          user_id: Number(userId),
           resource_prefix: formValues.resource_prefix === '/' ? null : formValues.resource_prefix,
           methods: formValues.methods.length === this.ALL_METHODS.length ? null : formValues.methods,
         }),

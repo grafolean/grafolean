@@ -242,7 +242,7 @@ class _SidebarContent extends React.Component {
           <i className="fa fa-plus" /> Add dashboard
         </Link>
         <div className="spacer" />
-        {user && havePermission('admin/bots', 'GET', user.permissions) && (
+        {user && havePermission(`accounts/${accounts.selected.id}/bots`, 'GET', user.permissions) && (
           <Link className="button green" to="/settings/bots" onClick={onSidebarLinkClick}>
             <i className="fa fa-robot" /> Bots
           </Link>

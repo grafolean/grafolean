@@ -59,18 +59,20 @@ class PersonNewForm extends React.PureComponent {
       const responseJson = await responseCreate.json();
 
       // assign permissions to person:
-      const responsePermissions = await fetchAuth(`${ROOT_URL}/admin/permissions/`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
+      const responsePermissions = await fetchAuth(
+        `${ROOT_URL}/admin/persons/${responseJson.id}/permissions/`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            resource_prefix: `accounts/${this.props.accounts.selected.id}`,
+            methods: null,
+          }),
         },
-        method: 'POST',
-        body: JSON.stringify({
-          user_id: responseJson.id,
-          resource_prefix: `accounts/${this.props.accounts.selected.id}`,
-          methods: null,
-        }),
-      });
+      );
       if (!responsePermissions.ok) {
         throw await responsePermissions.text();
       }

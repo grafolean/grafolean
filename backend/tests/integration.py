@@ -689,20 +689,19 @@ def test_jwt_total_expiry(app_client, first_admin_id):
     r = app_client.post('/api/auth/refresh', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-def test_permissions_post_get(app_client, first_admin_id, admin_authorization_header, mqtt_messages):
+def test_permissions_post_get(app_client, first_admin_id, admin_authorization_header, person_id, mqtt_messages):
     """
         Fetch permissions, should only have default permission for first admin, post and get, should be there
     """
     assert mqtt_messages.empty()
 
-    r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/admin/persons/{}/permissions'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'list': [
             {
                 'id': actual['list'][0]['id'],
-                'user_id': first_admin_id,
                 'resource_prefix': None,
                 'methods': None,
             },
@@ -711,29 +710,31 @@ def test_permissions_post_get(app_client, first_admin_id, admin_authorization_he
     assert actual == expected
 
     data = {
-        'user_id': first_admin_id,
-        'resource_prefix': 'accounts/123',
+        'resource_prefix': 'accounts/123/',
         'methods': [ 'GET', 'POST' ],
     }
-    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    # you can't change your own permissions:
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(first_admin_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 401
+
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     response = json.loads(r.data.decode('utf-8'))
     new_permission_id = response['id']
     # check mqtt:
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/persons/{}'.format(data['user_id'])
+    assert m.topic == 'changed/admin/persons/{}'.format(person_id)
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/bots/{}'.format(data['user_id'])
+    assert m.topic == 'changed/admin/bots/{}'.format(person_id)
     assert mqtt_messages.empty()
 
-    r = app_client.get('/api/admin/permissions', headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/admin/persons/{}/permissions'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    assert len(actual['list']) == 2
+    assert len(actual['list']) == 1
     new_record = [x for x in actual['list'] if x['id'] == new_permission_id]
     assert new_record == [{
         'id': new_permission_id,
-        'user_id': data['user_id'],
         'resource_prefix': data['resource_prefix'].rstrip('/'),
         'methods': ['GET', 'POST'],
     }]
@@ -802,11 +803,10 @@ def test_bots_token(app_client, admin_authorization_header, bot_id, bot_token, a
         Assign permissions to a bot (created via fixture), put values with it.
     """
     data = {
-        'user_id': bot_id,
         'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
-    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/admin/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
@@ -861,7 +861,6 @@ def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
     expected_single['permissions'] = [
         {
             'id': actual['permissions'][0]['id'],
-            'user_id': first_admin_id,
             'resource_prefix': None,
             'methods': None,
         }
@@ -905,11 +904,10 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
 
     # grant a permission:
     data = {
-        'user_id': person_id,
         'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': [ 'GET' ],  # but only GET
     }
-    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     # try again:
@@ -940,11 +938,10 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
     for resource_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
         # grant a permission:
         data = {
-            'user_id': person_id,
             'resource_prefix': resource_prefix,
             'methods': None,
         }
-        r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201
         permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
 
@@ -957,13 +954,13 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         assert r.status_code == 401  # stays denied
 
         # then clean up:
-        r = app_client.delete('/api/admin/permissions/{}'.format(permission_id), headers={'Authorization': admin_authorization_header})
+        r = app_client.delete('/api/admin/persons/{}/permissions/{}'.format(person_id, permission_id), headers={'Authorization': admin_authorization_header})
         assert r.status_code == 204
 
 def test_auth_fails_unknown_key(app_client):
     jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
     faulty_authorization_header = 'Bearer 0:' + jwt_token
-    r = app_client.get('/api/admin/permissions', headers={'Authorization': faulty_authorization_header})
+    r = app_client.get('/api/admin/bots', headers={'Authorization': faulty_authorization_header})
     assert r.status_code == 401
 
 
@@ -1102,11 +1099,10 @@ def test_mqtt_subscribe_changed(app_client, admin_authorization_header, account_
 
     # person should have read access to one of the accounts, but not to the other:
     data = {
-        'user_id': person_id,
         'resource_prefix': 'accounts/{}'.format(account_id_ok),
         'methods': [ 'GET' ],
     }
-    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
@@ -1166,7 +1162,6 @@ def test_profile_permissions_get_as_admin(app_client, first_admin_id, admin_auth
         'list': [
             {
                 'id': actual['list'][0]['id'],
-                'user_id': first_admin_id,
                 'resource_prefix': None,
                 'methods': None,
             },
@@ -1220,11 +1215,10 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
     expected = copy.deepcopy(expected_empty)
     for account in accounts:
         data = {
-            'user_id': person_id,
             'resource_prefix': 'accounts/{}'.format(account['id']),
             'methods': [ 'GET' ],
         }
-        r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201
 
         # now it should appear in the person's list:
@@ -1273,11 +1267,10 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
         make sure it is deleted).
     """
     data = {
-        'user_id': person_id,
         'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': None,
     }
-    r = app_client.post('/api/admin/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/admin/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     # the list of account bots is empty at the start: (even though we have asked for bot_id, so some non-account bot exists)

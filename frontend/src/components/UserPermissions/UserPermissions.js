@@ -9,9 +9,6 @@ import Loading from '../Loading';
 import Button from '../Button';
 
 export default class UserPermissions extends React.PureComponent {
-  static defaultProps = {
-    userId: null,
-  };
   state = {
     loading: true,
     user: null,
@@ -30,7 +27,9 @@ export default class UserPermissions extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/permissions/${permissionId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/admin/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
+      method: 'DELETE',
+    })
       .then(handleFetchErrors)
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
