@@ -62,11 +62,8 @@ COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
-# nginx wants to have a certificate available if we want to have https in default config - which is a problem
-# for us because it will only be supplied by docker-compose.yml, not at build time. So we supply some dummy
-# certificate and let admins override it:
-COPY ./install/docker-compose/nginx-dummy.crt /etc/certs/cert.crt
-COPY ./install/docker-compose/nginx-dummy.key /etc/certs/cert.key
+COPY ./install/docker-compose/nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
+COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
