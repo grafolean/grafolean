@@ -28,7 +28,7 @@ frontend_lint:
     - npm ci
     - npm run lint
 
-deploy_to_docker_hub_grafolean:
+grafolean to docker hub:
   stage: deploy
   when: manual
   only:
@@ -57,7 +57,7 @@ deploy_to_docker_hub_grafolean:
     - docker rmi $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     - docker rmi $CI_REGISTRY_IMAGE:latest
 
-deploy_to_docker_hub_mosquitto:
+mosquitto to docker hub:
   stage: deploy
   when: manual
   only:
@@ -79,32 +79,31 @@ deploy_to_docker_hub_mosquitto:
     - docker rmi $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
     - docker rmi $CI_REGISTRY_IMAGE:latest
 
-deploy_to_demo.grafolean.com:
-  image: node:10-alpine
-  stage: deploy
-  when: manual
-  only:
-    # only on (protected) version tags:
-    variables:
-      - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([.][^.]+)?$/
-  variables:
-    REACT_APP_BACKEND_ROOT_URL: "https://xo0y8lq3jf.execute-api.eu-central-1.amazonaws.com/dev/api"
-  script:
-    # frontend:
-    - cd frontend
-    - npm ci
-    - CI=true npm run build
-    # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
-    # with a local copy of the file: (to avoid using CDN)
-    - sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
-    - apk add --update python python-dev py-pip
-    - pip install awscli
-    - aws s3 sync ./build s3://demo.grafolean.com/
-
-  artifacts:
-    name: "build-$CI_COMMIT_TAG"
-    expire_in: 100 years
-    paths:
-      - frontend/build/
+# deploy_to_demo.grafolean.com:
+#   image: node:10-alpine
+#   stage: deploy
+#   when: manual
+#   only:
+#     # only on (protected) version tags:
+#     variables:
+#       - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([.][^.]+)?$/
+#   variables:
+#     REACT_APP_BACKEND_ROOT_URL: "https://xo0y8lq3jf.execute-api.eu-central-1.amazonaws.com/dev/api"
+#   script:
+#     # frontend:
+#     - cd frontend
+#     - npm ci
+#     - CI=true npm run build
+#     # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
+#     # with a local copy of the file: (to avoid using CDN)
+#     - sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
+#     - apk add --update python python-dev py-pip
+#     - pip install awscli
+#     - aws s3 sync ./build s3://demo.grafolean.com/
+#   artifacts:
+#     name: "build-$CI_COMMIT_TAG"
+#     expire_in: 100 years
+#     paths:
+#       - frontend/build/
 
 
