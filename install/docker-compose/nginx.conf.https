@@ -9,19 +9,6 @@ server {
         return 400 "Please use HTTPS!";
     }
 
-    # Handling MQTT websockets connection through nginx saves us a lot of trouble:
-    # - easier CORS handling (there is no cross-origin - frontend and mqtt ws are on the same origin)
-    # - easier CSP handling ('connect-src' can be 'self') - well, apparently this works only for ws://, not for wss://; thus the need to set MQTT_WS_HOSTNAME env var
-    # - adding TLS can be done in one place (here)
-    location /mqtt {
-        # nginx doesn't allow env vars to be used (easily), so we substitute MQTT_HOSTNAME at start time:
-        proxy_pass http://$MQTT_HOSTNAME:9883/mqtt;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_read_timeout 3600000000s; # there doesn't seem to be a way to set this to unlimited, so we'll settle for ~100 years
-    }
-
     # The next location is here so that the certbot can authenticate the domain, if the docker-compose mounted appropriate dir there:
     location /.well-known/acme-challenge/ {
         root /var/www/acme-challenge;
@@ -45,6 +32,19 @@ server {
     location /api/ {
         include uwsgi_params;
         uwsgi_pass unix:///tmp/uwsgi.socket;
+    }
+
+    # Handling MQTT websockets connection through nginx saves us a lot of trouble:
+    # - easier CORS handling (there is no cross-origin - frontend and mqtt ws are on the same origin)
+    # - easier CSP handling ('connect-src' can be 'self') - well, apparently this works only for ws://, not for wss://; thus the need to set MQTT_WS_HOSTNAME env var
+    # - adding TLS can be done in one place (here)
+    location /mqtt {
+        # nginx doesn't allow env vars to be used (easily), so we substitute MQTT_HOSTNAME at start time:
+        proxy_pass http://$MQTT_HOSTNAME:9883/mqtt;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 3600000000s; # there doesn't seem to be a way to set this to unlimited, so we'll settle for ~100 years
     }
 
     location / {
