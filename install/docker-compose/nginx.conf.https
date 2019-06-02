@@ -2,10 +2,14 @@ server {
     listen       80 default_server;
     listen       [::]:80 default_server;
 
-    root         /var/www/html;
+    # MQTT broker will try to authenticate via HTTP, allow it:
+    location /api/admin/mqtt-auth-plug/ {
+        include uwsgi_params;
+        uwsgi_pass unix:///tmp/uwsgi.socket;
+    }
 
+    # any other API call should fail when accessed over port 80: (redirecting would not be safe)
     location /api/ {
-        # API should bail out when accessed over port 80: (redirecting would not be safe)
         return 400 "Please use HTTPS!";
     }
 
