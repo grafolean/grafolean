@@ -1,8 +1,10 @@
 # About Grafolean
 
-Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on any Linux platform (and probably elsewhere). With some work it can also run on AWS (EC2 + RDS). [^2]).
+Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses
+PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on any Linux
+platform (and probably elsewhere). With some work it can also run on AWS Lambda [^2].
 
-For featureMany features are still planned or in development, and there might be bugs. Feel freed to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you encounter a problem.
+Many features are still planned or in development, and there might be bugs. Feel freed to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you encounter a problem.
 
 [^1]: though running any software that writes to SD card is in general not a good idea due to SD cards' reliability issues (especially on power failure)
 [^2]: note that AWS IOT is not a suitable replacement for Mosquitto in this case, because it uses a different authentication mechanism. However running backend on Lambda is possible.
