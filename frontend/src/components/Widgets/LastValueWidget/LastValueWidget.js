@@ -5,6 +5,8 @@ import moment from 'moment';
 import isWidget from '../isWidget';
 import PersistentFetcher from '../../../utils/fetch';
 
+import './LastValueWidget.scss';
+
 class LastValueWidget extends React.Component {
   state = {
     loading: true,
@@ -44,13 +46,13 @@ class LastValueWidget extends React.Component {
   };
 
   render() {
-    const { path } = this.props.content;
+    const { lastValue, lastValueTime } = this.state;
+    const { path, decimals = 3, unit = '' } = this.props.content;
     const queryParams = {
       a: 'no',
       sort: 'desc',
       limit: 1,
     };
-
     return (
       <div className="last-value">
         <PersistentFetcher
@@ -60,7 +62,15 @@ class LastValueWidget extends React.Component {
           onUpdate={this.onUpdateData}
           onError={this.onFetchError}
         />
-        {this.state.lastValue} (at {moment(this.state.lastValueTime * 1000).format('YYYY-MM-DD HH:mm:ss')})
+        {lastValue ? (
+          <>
+            <span className="value">{lastValue.toFixed(decimals)}</span>
+            <span className="unit">{unit} </span>
+            <When t={lastValueTime} />
+          </>
+        ) : (
+          <span>/</span>
+        )}
       </div>
     );
   }
@@ -70,3 +80,37 @@ const mapStoreToProps = store => ({
   accounts: store.accounts,
 });
 export default isWidget(connect(mapStoreToProps)(LastValueWidget));
+
+class When extends React.PureComponent {
+  static defaultProps = {
+    limits: {
+      60: '< 1 min',
+      120: '< 2 min',
+      180: '< 3 min',
+      300: '< 5 min',
+      600: '< 10 min',
+      1200: '< 20 min',
+      1800: '< 30 min',
+      2700: '< 45 min',
+      3600: '< 1 h',
+      7200: '< 2 h',
+      21600: '< 6 h',
+      43200: '< 12 h',
+      86400: '< 1 day',
+      2592000: '< 30 days',
+      5184000: '< 60 days',
+      7776000: '< 90 days',
+    },
+  };
+  render() {
+    const { limits, t } = this.props;
+    const now = moment.utc().unix();
+    const diff = now - t;
+    const limit = Object.keys(limits).find(l => l > diff);
+    return (
+      <span className="when">
+        {limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss')}`}
+      </span>
+    );
+  }
+}

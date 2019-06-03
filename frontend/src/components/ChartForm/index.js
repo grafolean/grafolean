@@ -45,7 +45,7 @@ export default class ChartForm extends React.Component {
 
   static defaultProps = {
     initialFormContent: [],
-    handleFormContentChange: () => {},
+    onChange: () => {},
   };
 
   constructor(props) {
