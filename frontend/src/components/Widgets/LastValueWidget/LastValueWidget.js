@@ -84,6 +84,10 @@ export default isWidget(connect(mapStoreToProps)(LastValueWidget));
 class When extends React.PureComponent {
   static defaultProps = {
     limits: {
+      5: '< 5 s',
+      10: '< 10 s',
+      20: '< 20 s',
+      30: '< 30 s',
       60: '< 1 min',
       120: '< 2 min',
       180: '< 3 min',
@@ -102,11 +106,31 @@ class When extends React.PureComponent {
       7776000: '< 90 days',
     },
   };
+  timeoutHandle = null;
+
+  componentWillUnmount() {
+    if (this.timeoutHandle) {
+      clearTimeout(this.timeoutHandle);
+    }
+  }
+
+  registerUpdateTimeout = waitS => {
+    if (this.timeoutHandle) {
+      clearTimeout(this.timeoutHandle);
+    }
+    // when limit is reached, trigger a forced update:
+    setTimeout(() => {
+      this.forceUpdate();
+      this.timeoutHandle = null;
+    }, waitS * 1000);
+  };
+
   render() {
     const { limits, t } = this.props;
     const now = moment.utc().unix();
     const diff = now - t;
     const limit = Object.keys(limits).find(l => l > diff);
+    this.registerUpdateTimeout(limit - diff + 1);
     return (
       <span className="when">
         {limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss')}`}
