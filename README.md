@@ -2,23 +2,21 @@
 
 Grafolean is an easy to use, powerful and secure generic monitoring system. It can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on any Linux platform (and probably elsewhere). With some work it can also run on AWS (EC2 + RDS). [^2]).
 
-** THIS IS ALPHA SOFTWARE - USE AT YOUR OWN RISK! **
-
-Many features are still planned or in development and there might be bugs. Feel free to test it and to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you find a problem.
-
+For featureMany features are still planned or in development, and there might be bugs. Feel freed to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you encounter a problem.
 
 [^1]: though running any software that writes to SD card is in general not a good idea due to SD cards' reliability issues (especially on power failure)
 [^2]: note that AWS IOT is not a suitable replacement for Mosquitto in this case, because it uses a different authentication mechanism. However running backend on Lambda is possible.
 
 # Demo
 
-https://demo.grafolean.com/
+https://grafolean.com/
 
 Username: `demo`, password: `demo`.
 
 # License
 
-License is Commons Clause license (on top of Apache 2.0) - similar to open source, but you can't sell it (you can use it for free though, even for commercial purposes). See [LICENSE.md](https://gitlab.com/grafolean/grafolean/blob/master/LICENSE.md) for details.
+License is Commons Clause license (on top of Apache 2.0) - source is available, you can use it for free (commercially too), modify and 
+share, but you can't sell it. See [LICENSE.md](https://gitlab.com/grafolean/grafolean/blob/master/LICENSE.md) for details.
 
 If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issues) to get further clarification.
 
@@ -118,7 +116,7 @@ Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/mast
 
 ## Contributing
 
-To contribute to this repository, CLA needs to be signed. Please open an issue before submitting a pull request.
+To contribute to this repository, CLA needs to be signed. Please open an issue about the problem you are facing before submitting a pull request.
 
 ## Frontend
 
