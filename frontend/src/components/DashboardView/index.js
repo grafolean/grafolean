@@ -9,7 +9,7 @@ import EditableLabel from '../EditableLabel';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget';
-import LastValueWidget from '../Widgets/LastValueWidget';
+import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import { fetchAuth } from '../../utils/fetch';
 import DashboardDeleteLink from '../DashboardDeleteLink';
 
