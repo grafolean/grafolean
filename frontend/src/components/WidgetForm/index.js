@@ -169,7 +169,9 @@ class WidgetForm extends React.Component {
             </div>
           )}
 
-          <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
+          <div className="widget-type-form">
+            <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
+          </div>
 
           <Button isLoading={submitting} onClick={this.handleSubmit} disabled={widgetName.length === 0}>
             Submit

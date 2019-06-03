@@ -9,8 +9,8 @@ import EditableLabel from '../EditableLabel';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget';
-import LastValueWidget from '../Widgets/LastValueWidget';
-import { fetchAuth } from '../../utils/fetch';
+import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
+import { fetchAuth, havePermission } from '../../utils/fetch';
 import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class _DashboardView extends React.Component {
@@ -19,7 +19,7 @@ class _DashboardView extends React.Component {
     valid: true,
     name: '',
     widgets: [],
-    newChartFormOpened: false,
+    newWidgetFormOpened: false,
   };
   abortController = new window.AbortController();
 
@@ -73,24 +73,24 @@ class _DashboardView extends React.Component {
       });
   };
 
-  handleShowNewChartForm = ev => {
+  handleShowNewWidgetForm = ev => {
     ev.preventDefault();
     this.setState({
-      newChartFormOpened: true,
+      newWidgetFormOpened: true,
     });
   };
 
-  handleHideNewChartForm = ev => {
+  handleHideNewWidgetForm = ev => {
     ev.preventDefault();
     this.setState({
-      newChartFormOpened: false,
+      newWidgetFormOpened: false,
     });
   };
 
   handleWidgetUpdate = () => {
     this.fetchDashboardDetails();
     this.setState({
-      newChartFormOpened: false,
+      newWidgetFormOpened: false,
     });
   };
 
@@ -114,6 +114,7 @@ class _DashboardView extends React.Component {
   };
 
   render() {
+    const { accounts, user } = this.props;
     const { valid, loading } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
@@ -170,22 +171,28 @@ class _DashboardView extends React.Component {
           </div>
         )}
 
-        <div className="frame">
-          {!this.state.newChartFormOpened ? (
-            <div>
-              <Button onClick={this.handleShowNewChartForm}>
-                <i className="fa fa-plus" /> add widget
-              </Button>
-            </div>
-          ) : (
-            <div>
-              <Button onClick={this.handleHideNewChartForm}>
-                <i className="fa fa-minus" /> cancel
-              </Button>
-              <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
-            </div>
-          )}
-        </div>
+        {havePermission(
+          `accounts/${accounts.selected.id}/dashboards/${dashboardSlug}`,
+          'POST',
+          user.permissions,
+        ) && (
+          <div className="frame">
+            {!this.state.newWidgetFormOpened ? (
+              <div>
+                <Button onClick={this.handleShowNewWidgetForm}>
+                  <i className="fa fa-plus" /> add widget
+                </Button>
+              </div>
+            ) : (
+              <div>
+                <Button onClick={this.handleHideNewWidgetForm}>
+                  <i className="fa fa-minus" /> cancel
+                </Button>
+                <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -193,6 +200,7 @@ class _DashboardView extends React.Component {
 
 const mapStoreToProps = store => ({
   accounts: store.accounts,
+  user: store.user,
 });
 const DashboardView = connect(mapStoreToProps)(_DashboardView);
 
