@@ -11,10 +11,13 @@
   }
 
   .widget-title {
-    border-bottom: 1px solid #ddd;
     padding: 5px 20px;
     display: flex;
     font-size: 14px;
+    border-bottom: 1px solid #ddd;
+    .dark-mode & {
+      border-bottom: 1px solid #555;
+    }
 
     h1 {
       flex-grow: 1;
@@ -38,14 +41,20 @@
         color: hsl(0, 80%, 30%);
       }
       &.fa-edit {
-        margin-top: 3px;
+        margin-top: 2px;
         color: hsl(215, 80%, 30%);
       }
       &.fullscreen {
-        margin-left: 10px;
-        font-size: 12px;
-        padding-top: 2px;
+        margin-left: 11px;
+        font-size: 13px;
+        padding-top: 1px;
         color: hsl(215, 80%, 30%);
+      }
+      .dark-mode &.fa-trash,
+      .dark-mode &.fa-edit,
+      .dark-mode &.fullscreen
+      {
+        color: #ccc;
       }
     }
   }

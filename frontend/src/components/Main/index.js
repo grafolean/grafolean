@@ -14,6 +14,8 @@ import {
   onFailure,
 } from '../../store/actions';
 import PersistentFetcher, { havePermission, fetchAuth } from '../../utils/fetch';
+import { doLogout } from '../../store/helpers';
+import { isDarkMode } from '../../utils/darkmode';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -38,7 +40,6 @@ import WelcomePage from '../WelcomePage';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
 import SelectAccountPage from './SelectAccountPage';
-import { doLogout } from '../../store/helpers';
 import EditableLabel from '../EditableLabel';
 
 class Main extends React.Component {
@@ -282,11 +283,13 @@ class Account extends React.Component {
     windowWidth: 0,
     windowHeight: 0,
   };
-  mql = window.matchMedia(`(min-width: 800px)`);
+  mqlWidthOver800px = window.matchMedia('(min-width: 800px)');
 
   componentWillMount() {
-    this.mql.addListener(this.mediaQueryChanged);
-    this.setState({ sidebarDocked: this.mql.matches });
+    this.mqlWidthOver800px.addListener(this.mediaQueryChanged);
+    this.setState({
+      sidebarDocked: this.mqlWidthOver800px.matches,
+    });
   }
 
   componentDidMount() {
@@ -295,7 +298,7 @@ class Account extends React.Component {
   }
 
   componentWillUnmount() {
-    this.mql.removeListener(this.mediaQueryChanged);
+    this.mqlWidthOver800px.removeListener(this.mediaQueryChanged);
     window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
@@ -307,7 +310,7 @@ class Account extends React.Component {
   };
 
   mediaQueryChanged = () => {
-    this.setState({ sidebarDocked: this.mql.matches });
+    this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
   };
 
   onBurgerClick = event => {
@@ -334,6 +337,7 @@ class Account extends React.Component {
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
     const contentWidth = innerWindowWidth - sidebarWidth;
+    const darkMode = isDarkMode();
 
     return (
       <Sidebar
@@ -348,14 +352,15 @@ class Account extends React.Component {
         docked={sidebarDocked}
         onSetOpen={this.onSetSidebarOpen}
         shadow={false}
+        rootClassName={darkMode ? 'dark-mode' : ''}
         styles={{
           sidebar: {
-            backgroundColor: '#f5f5f5',
+            backgroundColor: darkMode ? '#202020' : '#f5f5f5',
             width: sidebarWidth,
-            borderRight: '1px solid #e3e3e3',
+            borderRight: `1px solid ${darkMode ? '#151515' : '#e3e3e3'}`,
           },
           content: {
-            backgroundColor: '#fafafa',
+            backgroundColor: darkMode ? '#131313' : '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },

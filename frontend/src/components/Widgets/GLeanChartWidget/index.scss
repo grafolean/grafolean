@@ -28,6 +28,9 @@
   background-color: #fff;
   position: relative;
   float: left;
+  .dark-mode & {
+    background-color: #161616;
+  }
 
   .status {
     position: absolute;
@@ -49,17 +52,40 @@
     font-family: 'Comic Sans MS', cursive, sans-serif;
     font-size: 13px;
     text-anchor: end;
-    fill: #333333;
     stroke: none;
+    fill: #333333;
+    .dark-mode & {
+      fill: #ddd;
+    }
   }
 
   .y-axis-unit {
     font-family: 'Comic Sans MS', cursive, sans-serif;
     font-size: 13px;
     text-anchor: end;
-    fill: #333333;
     stroke: none;
     font-weight: bold;
+    fill: #333333;
+    .dark-mode & {
+      fill: #ddd;
+    }
+  }
+
+  .tooltip-popup {
+    .tooltip-indicator {
+      shape-rendering: crispEdges;
+      stroke: #e3e3e3;
+      stroke-width: 1px;
+      .dark-mode & {
+        stroke: #ff0000;
+      }
+    }
+
+    .tooltip-popup-content {
+      border-radius: 7px;
+      padding: 10px 20px;
+      font-size: 12px;
+    }
   }
 }
 
@@ -73,5 +99,11 @@
     border: 1px solid #ccc;
     background-color: #fff;
     color: #000;
+
+    .dark-mode & {
+      border: 1px solid #444;
+      background-color: #333;
+      color: #eee;
+      }
   }
 }

@@ -273,7 +273,7 @@ export default class TimestampXAxis extends React.Component {
     const { ticks, secondaryIntervals } = this.getXTicksPositions();
     return (
       <g className="timestamp-x-axis">
-        <rect x={0} y={0} width={this.props.width} height={this.props.height} fill="white" stroke="none" />
+        <rect x={0} y={0} width={this.props.width} height={this.props.height} stroke="none" />
         <line x1={0} y1={0} x2={this.props.width} y2={0} />
 
         {ticks.map(tickInfo => (
