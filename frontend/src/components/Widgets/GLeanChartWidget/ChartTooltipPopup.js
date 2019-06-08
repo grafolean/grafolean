@@ -14,7 +14,7 @@ export default class ChartTooltipPopup extends React.PureComponent {
           top: top,
         }}
       >
-        <TooltipPopup zIndex={onTop ? 999999 : 1}>
+        <TooltipPopup zIndex={onTop ? 999999 : 1111}>
           <div>
             <p>{closest.cs.serieName}</p>
             <p>{closest.cs.path}</p>

@@ -31,9 +31,11 @@ export const generateSerieColor = (path, index) => {
   return GOOGLE_CHART_COLOR_LIST[index % GOOGLE_CHART_COLOR_LIST.length];
 };
 
-const GRID_COLORS = ['#f0f0f0', '#e7e7e7'];
-export const generateGridColor = index => {
-  return GRID_COLORS[index % GRID_COLORS.length];
+const GRID_COLORS_LIGHT_MODE = ['#f0f0f0', '#e7e7e7'];
+const GRID_COLORS_DARK_MODE = ['#343434', '#454545'];
+export const generateGridColor = (index, isDarkMode) => {
+  const gridColors = isDarkMode ? GRID_COLORS_DARK_MODE : GRID_COLORS_LIGHT_MODE;
+  return gridColors[index % gridColors.length];
 };
 
 export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLevel = -1) => {

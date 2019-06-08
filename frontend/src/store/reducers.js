@@ -17,6 +17,7 @@ import {
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
   ON_ACCOUNT_SELECT,
   ON_ACCOUNT_UNSELECT,
+  SET_COLOR_SCHEME,
 } from './actions';
 
 function dashboardsList(
@@ -111,6 +112,18 @@ function accounts(state = {}, action) {
   }
 }
 
+function preferences(state = {}, action) {
+  switch (action.type) {
+    case SET_COLOR_SCHEME:
+      return {
+        ...state,
+        colorScheme: action.colorScheme,
+      };
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
   user,
   backendStatus,
@@ -118,6 +131,7 @@ const grafoleanApp = combineReducers({
   dashboards: combineReducers({
     list: dashboardsList,
   }),
+  preferences,
   notifications,
 });
 

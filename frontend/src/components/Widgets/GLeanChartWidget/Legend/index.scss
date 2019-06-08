@@ -1,5 +1,3 @@
-input { border: 1px solid #ccc; background-color: #fff; padding: 1px 5px; }
-
 div.path-filter {
   margin-bottom: 3px;
   position: relative;
@@ -56,6 +54,10 @@ div.legend {
     left: 15px;
     top: 4px;
     border: 1px solid #ff6600;
+    .dark-mode & {
+      background-color: #161616;
+      opacity: 0.9;
+    }
 
     & > div {
       width: 10px;

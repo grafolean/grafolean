@@ -12,8 +12,10 @@ import {
   onAccountUnselect,
   handleFetchErrors,
   onFailure,
+  setColorScheme,
 } from '../../store/actions';
 import PersistentFetcher, { havePermission, fetchAuth } from '../../utils/fetch';
+import { doLogout } from '../../store/helpers';
 
 import './Main.scss';
 import AdminFirst from '../AdminFirst';
@@ -38,7 +40,6 @@ import WelcomePage from '../WelcomePage';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
 import SelectAccountPage from './SelectAccountPage';
-import { doLogout } from '../../store/helpers';
 import EditableLabel from '../EditableLabel';
 
 class Main extends React.Component {
@@ -114,13 +115,14 @@ class _LoggedInContent extends React.PureComponent {
   render() {
     return (
       <BrowserRouter>
-        <Account />
+        <Account isDarkMode={this.props.isDarkMode} />
       </BrowserRouter>
     );
   }
 }
 const mapAccountsToProps = store => ({
   accounts: store.accounts,
+  isDarkMode: Boolean(store.preferences.colorScheme === 'dark'),
 });
 const LoggedInContent = connect(mapAccountsToProps)(_LoggedInContent);
 
@@ -258,7 +260,10 @@ class _SidebarContent extends React.Component {
         <Link className="button green" to="/profile" onClick={onSidebarLinkClick}>
           <i className="fa fa-user" /> Profile
         </Link>
-        <VersionInfo />
+        <div className="bottom">
+          <VersionInfo />
+          <ColorSchemeSwitch />
+        </div>
       </div>
     );
   }
@@ -282,11 +287,15 @@ class Account extends React.Component {
     windowWidth: 0,
     windowHeight: 0,
   };
-  mql = window.matchMedia(`(min-width: 800px)`);
+  mqlWidthOver800px = window.matchMedia('(min-width: 800px)');
+  mqlPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 
   componentWillMount() {
-    this.mql.addListener(this.mediaQueryChanged);
-    this.setState({ sidebarDocked: this.mql.matches });
+    this.mqlWidthOver800px.addListener(this.mqlWidthOver800pxChanged);
+    this.mqlWidthOver800pxChanged();
+
+    this.mqlPrefersDarkMode.addListener(this.mqlPrefersDarkModeChanged);
+    this.mqlPrefersDarkModeChanged();
   }
 
   componentDidMount() {
@@ -295,7 +304,7 @@ class Account extends React.Component {
   }
 
   componentWillUnmount() {
-    this.mql.removeListener(this.mediaQueryChanged);
+    this.mqlWidthOver800px.removeListener(this.mqlWidthOver800pxChanged);
     window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
@@ -306,8 +315,11 @@ class Account extends React.Component {
     });
   };
 
-  mediaQueryChanged = () => {
-    this.setState({ sidebarDocked: this.mql.matches });
+  mqlWidthOver800pxChanged = () => {
+    this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
+  };
+  mqlPrefersDarkModeChanged = () => {
+    store.dispatch(setColorScheme(this.mqlPrefersDarkMode.matches ? 'dark' : 'light'));
   };
 
   onBurgerClick = event => {
@@ -331,6 +343,7 @@ class Account extends React.Component {
 
   render() {
     const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
+    const { isDarkMode } = this.props;
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
     const contentWidth = innerWindowWidth - sidebarWidth;
@@ -348,14 +361,15 @@ class Account extends React.Component {
         docked={sidebarDocked}
         onSetOpen={this.onSetSidebarOpen}
         shadow={false}
+        rootClassName={isDarkMode ? 'dark-mode' : ''}
         styles={{
           sidebar: {
-            backgroundColor: '#f5f5f5',
+            backgroundColor: isDarkMode ? '#202020' : '#f5f5f5',
             width: sidebarWidth,
-            borderRight: '1px solid #e3e3e3',
+            borderRight: `1px solid ${isDarkMode ? '#151515' : '#e3e3e3'}`,
           },
           content: {
-            backgroundColor: '#fafafa',
+            backgroundColor: isDarkMode ? '#131313' : '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },
@@ -423,3 +437,26 @@ class Account extends React.Component {
     );
   }
 }
+
+class _ColorSchemeSwitch extends React.Component {
+  handleClick = colorScheme => {
+    store.dispatch(setColorScheme());
+  };
+
+  render() {
+    const { colorScheme } = this.props;
+    return (
+      <div className="color-scheme-switch">
+        {colorScheme === 'dark' ? (
+          <i className="fa fa-sun" onClick={() => store.dispatch(setColorScheme('light'))} />
+        ) : (
+          <i className="fa fa-moon" onClick={() => store.dispatch(setColorScheme('dark'))} />
+        )}
+      </div>
+    );
+  }
+}
+const mapColorSchemeToProps = store => ({
+  colorScheme: store.preferences.colorScheme || 'light',
+});
+const ColorSchemeSwitch = connect(mapColorSchemeToProps)(_ColorSchemeSwitch);

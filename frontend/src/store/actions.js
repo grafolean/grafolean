@@ -118,6 +118,14 @@ export function clearNotifications() {
   };
 }
 
+export const SET_COLOR_SCHEME = 'SET_COLOR_SCHEME';
+export function setColorScheme(colorScheme) {
+  return {
+    type: SET_COLOR_SCHEME,
+    colorScheme: colorScheme,
+  };
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even

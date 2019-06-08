@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 
 import './index.scss';
 
@@ -6,26 +7,32 @@ import { generateSerieColor } from '../utils';
 import Filter from './Filter';
 import isDockable from './isDockable';
 
-const Checkbox = props => (
-  <div
-    className="path-checkbox"
-    style={{
-      borderColor: props.color,
-    }}
-  >
-    <div
-      style={{
-        backgroundColor: props.checked !== false ? props.color : '#fff',
-        backgroundImage:
-          props.checked === null
-            ? `repeating-linear-gradient(135deg, #fff, #fff 7px, ${props.color} 7px, ${props.color} 15px)`
-            : null,
-      }}
-    />
-  </div>
-);
+class Checkbox extends React.Component {
+  render() {
+    const { color, checked, isDarkMode } = this.props;
+    const bgColor = isDarkMode ? '#161616' : '#fff';
+    return (
+      <div
+        className="path-checkbox"
+        style={{
+          borderColor: color,
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: checked !== false ? color : bgColor,
+            backgroundImage:
+              checked === null
+                ? `repeating-linear-gradient(135deg, ${bgColor}, ${bgColor} 7px, ${color} 7px, ${color} 15px)`
+                : null,
+          }}
+        />
+      </div>
+    );
+  }
+}
 
-class Legend extends React.Component {
+class _Legend extends React.Component {
   static defaultProps = {
     width: 200,
     height: 300,
@@ -126,6 +133,7 @@ class Legend extends React.Component {
   }
 
   render() {
+    const { isDarkMode } = this.props;
     if (!this.props.chartSeries) {
       return null;
     }
@@ -149,7 +157,11 @@ class Legend extends React.Component {
             className="path-checkbox-parent all"
             onClick={() => this.setEnabledAll(allChecked ? false : true, this.state.filter)}
           >
-            <Checkbox color="#666" checked={allChecked ? true : noneChecked ? false : null} />
+            <Checkbox
+              color={isDarkMode ? '#ddd' : '#666'}
+              checked={allChecked ? true : noneChecked ? false : null}
+              isDarkMode={isDarkMode}
+            />
             <div className="checkbox-label">
               <i className="fa fa-check" />
             </div>
@@ -175,6 +187,7 @@ class Legend extends React.Component {
               <Checkbox
                 color={generateSerieColor(cs.path, cs.index)}
                 checked={this.state.selectedChartSeriesSet.has(cs)}
+                isDarkMode={isDarkMode}
               />
               <div className="checkbox-label">
                 <span className="legend-label">
@@ -188,5 +201,10 @@ class Legend extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  isDarkMode: store.preferences.colorScheme === 'dark',
+});
+const Legend = connect(mapStoreToProps)(_Legend);
 
 export default isDockable(Legend);
