@@ -1,5 +1,3 @@
-import { isDarkMode } from '../../../utils/darkmode';
-
 export const MAX_AGGR_LEVEL = 6;
 
 const GOOGLE_CHART_COLOR_LIST = [
@@ -35,8 +33,8 @@ export const generateSerieColor = (path, index) => {
 
 const GRID_COLORS_LIGHT_MODE = ['#f0f0f0', '#e7e7e7'];
 const GRID_COLORS_DARK_MODE = ['#343434', '#454545'];
-export const generateGridColor = index => {
-  const gridColors = isDarkMode() ? GRID_COLORS_DARK_MODE : GRID_COLORS_LIGHT_MODE;
+export const generateGridColor = (index, isDarkMode) => {
+  const gridColors = isDarkMode ? GRID_COLORS_DARK_MODE : GRID_COLORS_LIGHT_MODE;
   return gridColors[index % gridColors.length];
 };
 

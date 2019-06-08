@@ -526,6 +526,7 @@ export class _ChartContainer extends React.Component {
 }
 const mapStoreToPropsChartContainer = store => ({
   accounts: store.accounts,
+  isDarkMode: store.preferences.colorScheme === 'dark',
 });
 export const ChartContainer = connect(mapStoreToPropsChartContainer)(_ChartContainer);
 
@@ -692,7 +693,7 @@ export class ChartView extends React.Component {
   }
 
   render() {
-    const { fetching, errorMsg } = this.props;
+    const { fetching, errorMsg, isDarkMode } = this.props;
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
     const yAxisHeight = xAxisTop;
@@ -760,7 +761,7 @@ export class ChartView extends React.Component {
                 width={this.props.width - this.props.yAxisWidth * (i + 1)}
                 v2y={this.props.yAxesProperties[unit].derived.v2y}
                 yTicks={this.props.yAxesProperties[unit].derived.ticks}
-                color={generateGridColor(i)}
+                color={generateGridColor(i, isDarkMode)}
               />
             </g>
           ))}

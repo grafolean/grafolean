@@ -8,6 +8,9 @@
     right: 0;
     z-index: 10;
     background-color: #ffffff;
+    .dark-mode & {
+      background-color: #161616;
+    }
   }
 
   .widget-title {
@@ -23,7 +26,10 @@
       flex-grow: 1;
       line-height: 20px;
       padding: 0;
-      font-weight: 100;
+      font-weight: normal;
+      .dark-mode & {
+        color: #ccc;
+      }
 
       i {
         font-size: 12px;

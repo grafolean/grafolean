@@ -32,11 +32,20 @@ header {
   a {
     margin: 10px 15px 0;
   }
-  .version-info {
-    font-style: italic;
-    font-size: 10px;
-    color: #666;
+  .bottom {
     padding: 10px 15px 0px;
+    display: flex;
+    flex-direction: row;
+
+    .version-info {
+      font-style: italic;
+      font-size: 10px;
+      color: #666;
+    }
+    .color-scheme-switch {
+      margin-left: auto;
+      font-size: 10px;
+    }
   }
 
   .back-logout-buttons {

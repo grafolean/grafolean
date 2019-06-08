@@ -1,7 +1,7 @@
 import React from 'react';
-import { isDarkMode } from '../utils/darkmode';
+import { connect } from 'react-redux';
 
-export default class TooltipPopup extends React.Component {
+class TooltipPopup extends React.Component {
   /*
       Place this component inside a properly positioned div (meaning: left top corner of enveloping div
       is exactly where you want the arrow tip to be) and everything else will be taken care of.
@@ -29,6 +29,7 @@ export default class TooltipPopup extends React.Component {
       arrowSpacingHorizontal,
       children,
       borderWidth,
+      isDarkMode,
     } = this.props;
     const isArrowOnRight = arrowPercentFromLeft > 50;
     const arrowWidth = 10;
@@ -40,9 +41,8 @@ export default class TooltipPopup extends React.Component {
       : isArrowOnRight
       ? `${arrowHeight}px 0 0 ${arrowWidth}px`
       : `${arrowHeight}px ${arrowWidth}px 0 0`;
-    const darkMode = isDarkMode();
-    const backgroundColor = darkMode ? '#161616' : '#ffffff';
-    const borderColor = darkMode ? '#555' : '#aaaaaa';
+    const backgroundColor = isDarkMode ? '#161616' : '#ffffff';
+    const borderColor = isDarkMode ? '#555' : '#aaaaaa';
 
     return (
       <div
@@ -114,3 +114,7 @@ export default class TooltipPopup extends React.Component {
     );
   }
 }
+const mapStoreToProps = store => ({
+  isDarkMode: store.preferences.colorScheme === 'dark',
+});
+export default connect(mapStoreToProps)(TooltipPopup);
