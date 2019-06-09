@@ -48,8 +48,9 @@ class GLeanChartWidget extends React.Component {
       return; // fetch is already in progress
     }
     this.fetchPathsAbortController = new window.AbortController();
+    const seriesGroups = this.props.content;
     const query_params = {
-      filter: this.props.chartContent.map(cc => cc.path_filter).join(','),
+      filter: seriesGroups.map(cc => cc.path_filter).join(','),
       limit: 1001,
       failover_trailing: 'false',
     };
@@ -60,10 +61,10 @@ class GLeanChartWidget extends React.Component {
       .then(response => response.json())
       .then(json => {
         // construct a better representation of the data for display in the chart:
-        const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
+        const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
           return result.concat(
             json.paths[c.path_filter].map(path => ({
-              chartSeriesId: `${contentIndex}-${path}`,
+              chartSeriesId: `${seriesGroupIndex}-${path}`,
               path: path,
               serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
               unit: c.unit,
