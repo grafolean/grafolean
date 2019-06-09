@@ -1,6 +1,7 @@
 import React from 'react';
 import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
+import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
@@ -69,8 +70,22 @@ export default class ChartForm extends React.Component {
       expression: sg.expression,
       unit: sg.unit,
     }));
-    const valid = true;
+    const valid = this.isValid(content);
     this.props.onChange('chart', content, valid);
+  };
+
+  isValid = content => {
+    if (content.length === 0) {
+      return false;
+    }
+    for (let sg of content) {
+      try {
+        compile(sg.expression);
+      } catch (err) {
+        return false;
+      }
+    }
+    return true;
   };
 
   setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
