@@ -7,6 +7,12 @@
   .Select div {
     width: 250px;
   }
+  .field {
+    p.hint {
+      font-size: 11px;
+      font-style: italic;
+    }
+  }
 }
 
 .matching-paths {

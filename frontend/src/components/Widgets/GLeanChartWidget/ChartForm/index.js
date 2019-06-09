@@ -55,6 +55,7 @@ export default class ChartForm extends React.Component {
         ? this.props.initialFormContent.map(c => ({
             pathFilter: c.path_filter,
             pathRenamer: c.renaming,
+            expression: c.expression,
             unit: c.unit,
             metricPrefix: c.metric_prefix,
           }))
@@ -66,6 +67,7 @@ export default class ChartForm extends React.Component {
     const content = this.state.seriesGroups.map(sg => ({
       path_filter: sg.pathFilter,
       renaming: sg.pathRenamer,
+      expression: sg.expression,
       unit: sg.unit,
       metric_prefix: sg.metricPrefix,
     }));
@@ -105,6 +107,7 @@ export default class ChartForm extends React.Component {
         {
           pathFilter: '',
           pathRenamer: '',
+          expression: '$1',
           unit: '',
           metricPrefix: '',
         },
@@ -151,27 +154,30 @@ export default class ChartForm extends React.Component {
                       <label>Path filter:</label>
                       <input
                         type="text"
-                        name={`pf-${sgIndex}`}
                         value={sg.pathFilter}
                         onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
                       />
                     </div>
                     <div className="field">
-                      <label>Path renamer:</label>
+                      <label>Series label:</label>
                       <input
                         type="text"
-                        name={`pr-${sgIndex}`}
                         value={sg.pathRenamer}
                         onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
                       />
+                      <p className="hint markdown">
+                        Hint: Use `$1` to reference first replaced part, `$2` for the second,... Leave empty
+                        to display the whole path instead.
+                      </p>
+                    </div>
+                    <div className="field">
+                      <label>Expression for modifying values:</label>
+                      <input
+                        type="text"
+                        value={sg.expression}
+                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'expression', ev.target.value)}
+                      />
+                      <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
                     </div>
                   </div>
 
