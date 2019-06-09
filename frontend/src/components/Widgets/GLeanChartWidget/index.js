@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import moment from 'moment';
 import { stringify } from 'qs';
+import { compile } from 'mathjs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
@@ -331,6 +332,23 @@ export class _ChartContainer extends React.Component {
     return floorCeilFunc(originalTs / interval) * interval;
   }
 
+  _applyExpression(data, expression, isAggr) {
+    const mathExpression = compile(expression);
+    if (isAggr) {
+      return data.map(d => ({
+        t: d.t,
+        v: mathExpression.evaluate({ $1: d.v }),
+        minv: mathExpression.evaluate({ $1: d.minv }),
+        maxv: mathExpression.evaluate({ $1: d.maxv }),
+      }));
+    } else {
+      return data.map(d => ({
+        t: d.t,
+        v: mathExpression.evaluate({ $1: d.v }),
+      }));
+    }
+  }
+
   saveResponseData(fromTs, toTs, aggrLevel, json) {
     // make sure aggregation level exists:
     this.fetchedData[aggrLevel] = this.fetchedData[aggrLevel] || [];
@@ -342,10 +360,11 @@ export class _ChartContainer extends React.Component {
     // if there are any, merge them together:
     let csData = {};
     for (let cs of this.props.allChartSeries) {
-      const { path, chartSerieId } = cs;
+      const { path, chartSerieId, expression = '$1' } = cs;
+      const newData = this._applyExpression(json.paths[path].data, expression, aggrLevel >= 0);
       csData[chartSerieId] = [
         ...(existingBlockBefore ? existingBlockBefore.csData[chartSerieId] : []),
-        ...json.paths[path].data,
+        ...newData,
         ...(existingBlockAfter ? existingBlockAfter.csData[chartSerieId] : []),
       ];
     }
