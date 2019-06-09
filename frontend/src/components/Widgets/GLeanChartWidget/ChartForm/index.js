@@ -3,7 +3,7 @@ import Select, { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
 
 import MatchingPaths from './MatchingPaths';
-import Button from '../Button';
+import Button from '../../../Button';
 import './index.scss';
 
 const METRIC_PREFIXES = [

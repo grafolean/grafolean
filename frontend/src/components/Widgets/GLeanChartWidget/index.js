@@ -5,6 +5,7 @@ import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
+import { fetchAuth } from '../../../utils/fetch';
 
 import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
@@ -14,14 +15,13 @@ import Legend from './Legend';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
-
-import './index.scss';
-import MatchingPaths from '../../ChartForm/MatchingPaths';
+import MatchingPaths from './ChartForm/MatchingPaths';
 import isWidget from '../isWidget';
-import { fetchAuth } from '../../../utils/fetch';
 import ChartTooltipPopup from './ChartTooltipPopup';
 import YAxisMinMaxAdjuster from './YAxisMinMaxAdjuster';
 import TimeIntervalSelector from './TimeIntervalSelector';
+
+import './index.scss';
 
 class GLeanChartWidget extends React.Component {
   state = {

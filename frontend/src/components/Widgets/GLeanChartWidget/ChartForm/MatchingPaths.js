@@ -2,8 +2,8 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { stringify } from 'qs';
 
-import { ROOT_URL, handleFetchErrors } from '../../store/actions';
-import { fetchAuth } from '../../utils/fetch';
+import { ROOT_URL, handleFetchErrors } from '../../../../store/actions';
+import { fetchAuth } from '../../../../utils/fetch';
 
 import './index.scss';
 

@@ -4,12 +4,12 @@ import { stringify } from 'qs';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import Button from '../Button';
-
-import ChartForm from '../ChartForm';
-import Loading from '../Loading';
-import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 import { fetchAuth } from '../../utils/fetch';
+import Button from '../Button';
+import Loading from '../Loading';
+
+import ChartForm from '../Widgets/GLeanChartWidget/ChartForm';
+import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 
 import '../form.scss';
 import './widgetForm.scss';
