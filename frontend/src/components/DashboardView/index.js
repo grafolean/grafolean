@@ -160,7 +160,7 @@ class _DashboardView extends React.Component {
                       widgetId={widget.id}
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
-                      chartContent={widget.content}
+                      content={widget.content}
                       onWidgetDelete={this.fetchDashboardDetails}
                     />
                   );

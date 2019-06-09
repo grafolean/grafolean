@@ -180,7 +180,7 @@ class _Legend extends React.Component {
         ) : (
           filteredChartSeries.map(cs => (
             <div
-              key={cs.chartSeriesId}
+              key={cs.chartSerieId}
               className="path-checkbox-parent"
               onClick={() => this.toggleChartSerieSelected(cs, this.state.filter)}
             >

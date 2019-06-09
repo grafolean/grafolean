@@ -6,6 +6,7 @@
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
     "lodash": "^4.17.4",
+    "mathjs": "^6.0.0",
     "moment": "^2.19.3",
     "node-sass": "^4.9.3",
     "qs": "^6.5.1",

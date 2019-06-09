@@ -1,25 +1,26 @@
 import React from 'react';
-import Select, { Creatable } from 'react-select';
+import { Creatable } from 'react-select';
 import 'react-select/dist/react-select.css';
+import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
 import './index.scss';
 
-const METRIC_PREFIXES = [
-  { prefix: 'P', name: 'peta', power: 15 },
-  { prefix: 'T', name: 'tera', power: 12 },
-  { prefix: 'G', name: 'giga', power: 9 },
-  { prefix: 'M', name: 'mega', power: 6 },
-  { prefix: 'k', name: 'kilo', power: 3 },
-  { prefix: 'h', name: 'hecto', power: 2 },
-  { prefix: 'd', name: 'deci', power: 1 },
-  { prefix: 'c', name: 'centi', power: -2 },
-  { prefix: 'm', name: 'milli', power: -3 },
-  { prefix: 'µ', name: 'micro', power: -6 },
-  { prefix: 'n', name: 'nano', power: -9 },
-  { prefix: 'p', name: 'pico', power: -12 },
-];
+// const METRIC_PREFIXES = [
+//   { prefix: 'P', name: 'peta', power: 15 },
+//   { prefix: 'T', name: 'tera', power: 12 },
+//   { prefix: 'G', name: 'giga', power: 9 },
+//   { prefix: 'M', name: 'mega', power: 6 },
+//   { prefix: 'k', name: 'kilo', power: 3 },
+//   { prefix: 'h', name: 'hecto', power: 2 },
+//   { prefix: 'd', name: 'deci', power: 1 },
+//   { prefix: 'c', name: 'centi', power: -2 },
+//   { prefix: 'm', name: 'milli', power: -3 },
+//   { prefix: 'µ', name: 'micro', power: -6 },
+//   { prefix: 'n', name: 'nano', power: -9 },
+//   { prefix: 'p', name: 'pico', power: -12 },
+// ];
 const KNOWN_UNITS = {
   '%': { name: 'percent', allowedPrefixes: '' },
   s: { name: 'second', allowedPrefixes: 'mµnp' },
@@ -55,8 +56,8 @@ export default class ChartForm extends React.Component {
         ? this.props.initialFormContent.map(c => ({
             pathFilter: c.path_filter,
             pathRenamer: c.renaming,
+            expression: c.expression,
             unit: c.unit,
-            metricPrefix: c.metric_prefix,
           }))
         : [],
     };
@@ -66,11 +67,25 @@ export default class ChartForm extends React.Component {
     const content = this.state.seriesGroups.map(sg => ({
       path_filter: sg.pathFilter,
       renaming: sg.pathRenamer,
+      expression: sg.expression,
       unit: sg.unit,
-      metric_prefix: sg.metricPrefix,
     }));
-    const valid = true;
+    const valid = this.isValid(content);
     this.props.onChange('chart', content, valid);
+  };
+
+  isValid = content => {
+    if (content.length === 0) {
+      return false;
+    }
+    for (let sg of content) {
+      try {
+        compile(sg.expression);
+      } catch (err) {
+        return false;
+      }
+    }
+    return true;
   };
 
   setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
@@ -90,14 +105,6 @@ export default class ChartForm extends React.Component {
     };
   };
 
-  metricPrefixOptionRenderer = (pOption, unit) => (
-    <span>
-      {pOption.prefix}
-      {unit} [{pOption.name} - 10
-      <sup>{pOption.power}</sup> {unit}]
-    </span>
-  );
-
   handleAddEmptySerie = ev => {
     this.setState(prevState => ({
       seriesGroups: [
@@ -105,8 +112,8 @@ export default class ChartForm extends React.Component {
         {
           pathFilter: '',
           pathRenamer: '',
+          expression: '$1',
           unit: '',
-          metricPrefix: '',
         },
       ],
     }));
@@ -151,27 +158,30 @@ export default class ChartForm extends React.Component {
                       <label>Path filter:</label>
                       <input
                         type="text"
-                        name={`pf-${sgIndex}`}
                         value={sg.pathFilter}
                         onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
                       />
                     </div>
                     <div className="field">
-                      <label>Path renamer:</label>
+                      <label>Series label:</label>
                       <input
                         type="text"
-                        name={`pr-${sgIndex}`}
                         value={sg.pathRenamer}
                         onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
-                        style={{
-                          height: 20,
-                          minWidth: 300,
-                        }}
                       />
+                      <p className="hint markdown">
+                        Hint: Use `$1` to reference first replaced part, `$2` for the second,... Leave empty
+                        to display the whole path instead.
+                      </p>
+                    </div>
+                    <div className="field">
+                      <label>Expression for modifying values:</label>
+                      <input
+                        type="text"
+                        value={sg.expression}
+                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'expression', ev.target.value)}
+                      />
+                      <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
                     </div>
                   </div>
 
@@ -199,29 +209,6 @@ export default class ChartForm extends React.Component {
                   newOptionCreator={this.userUnitCreator}
                 />
               </div>
-
-              {sg.unit && (!KNOWN_UNITS[sg.unit] || KNOWN_UNITS[sg.unit].allowedPrefixes !== '') && (
-                <div className="form-item">
-                  <label>Metric prefix: (optional)</label>
-                  <Select
-                    value={sg.metricPrefix || ''}
-                    placeholder={`-- none [1${sg.unit}] --`}
-                    onChange={selectedOption =>
-                      this.setSeriesGroupProperty(sgIndex, 'metricPrefix', selectedOption.value)
-                    }
-                    options={METRIC_PREFIXES.filter(
-                      p =>
-                        !(sg.unit in KNOWN_UNITS) || KNOWN_UNITS[sg.unit].allowedPrefixes.includes(p.prefix),
-                    ).map(p => ({
-                      value: p.prefix,
-                      // no need for label because we specify optionRenderer; but we must supply additional info to it:
-                      ...p,
-                    }))}
-                    optionRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
-                    valueRenderer={pOption => this.metricPrefixOptionRenderer(pOption, sg.unit)}
-                  />
-                </div>
-              )}
             </div>
           ))}
           <Button onClick={this.handleAddEmptySerie}>+</Button>

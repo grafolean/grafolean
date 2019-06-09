@@ -77,7 +77,7 @@ export const getMissingIntervals = (existingIntervals, wantedInterval) => {
   return wantedIntervals;
 };
 
-export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel) => {
+export const aggregateIntervalOnTheFly = (fromTs, toTs, csData, useAggrLevel) => {
   const interval = Math.round(3600 * 3 ** useAggrLevel);
   const fromTsAligned = Math.floor(fromTs / interval) * interval;
   const toTsAligned = Math.ceil(toTs / interval) * interval;
@@ -85,10 +85,10 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
   // initialize result array:
   const numberOfBuckets = Math.round((toTsAligned - fromTsAligned) / interval);
   let result = {};
-  for (let path in pathsData) {
-    result[path] = new Array(numberOfBuckets);
+  for (let chartSerieId in csData) {
+    result[chartSerieId] = new Array(numberOfBuckets);
     for (let i = 0; i < numberOfBuckets; i++) {
-      result[path][i] = {
+      result[chartSerieId][i] = {
         sumv: 0,
         minv: Number.POSITIVE_INFINITY,
         maxv: Number.NEGATIVE_INFINITY,
@@ -98,11 +98,11 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
   }
 
   // aggregate each of the values with correct bucket:
-  for (let path in pathsData) {
-    for (let x of pathsData[path]) {
+  for (let chartSerieId in csData) {
+    for (let x of csData[chartSerieId]) {
       const bucketNo = Math.floor((x.t - fromTsAligned) / interval);
-      const r = result[path][bucketNo];
-      result[path][bucketNo] = {
+      const r = result[chartSerieId][bucketNo];
+      result[chartSerieId][bucketNo] = {
         sumv: r.sumv + x.v,
         minv: Math.min(r.minv, x.v),
         maxv: Math.max(r.maxv, x.v),
@@ -112,21 +112,21 @@ export const aggregateIntervalOnTheFly = (fromTs, toTs, pathsData, useAggrLevel)
   }
 
   // and now set the times of the buckets too, and forget count, and calculate average value:
-  for (let path in pathsData) {
+  for (let chartSerieId in csData) {
     for (let i = 0; i < numberOfBuckets; i++) {
-      if (result[path][i].count === 0) {
-        result[path][i] = {
+      if (result[chartSerieId][i].count === 0) {
+        result[chartSerieId][i] = {
           t: fromTsAligned + i * interval + interval / 2,
           v: null,
           minv: null,
           maxv: null,
         };
       } else {
-        result[path][i] = {
+        result[chartSerieId][i] = {
           t: fromTsAligned + i * interval + interval / 2,
-          v: result[path][i].sumv / result[path][i].count,
-          minv: result[path][i].minv,
-          maxv: result[path][i].maxv,
+          v: result[chartSerieId][i].sumv / result[chartSerieId][i].count,
+          minv: result[chartSerieId][i].minv,
+          maxv: result[chartSerieId][i].maxv,
         };
       }
     }

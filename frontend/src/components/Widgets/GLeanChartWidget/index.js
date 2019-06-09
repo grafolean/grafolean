@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import moment from 'moment';
 import { stringify } from 'qs';
+import { compile } from 'mathjs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
 import { getSuggestedAggrLevel, getMissingIntervals, generateGridColor } from './utils';
@@ -48,8 +49,9 @@ class GLeanChartWidget extends React.Component {
       return; // fetch is already in progress
     }
     this.fetchPathsAbortController = new window.AbortController();
+    const seriesGroups = this.props.content;
     const query_params = {
-      filter: this.props.chartContent.map(cc => cc.path_filter).join(','),
+      filter: seriesGroups.map(cc => cc.path_filter).join(','),
       limit: 1001,
       failover_trailing: 'false',
     };
@@ -60,12 +62,13 @@ class GLeanChartWidget extends React.Component {
       .then(response => response.json())
       .then(json => {
         // construct a better representation of the data for display in the chart:
-        const allChartSeries = this.props.chartContent.reduce((result, c, contentIndex) => {
+        const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
           return result.concat(
             json.paths[c.path_filter].map(path => ({
-              chartSeriesId: `${contentIndex}-${path}`,
+              chartSerieId: `${seriesGroupIndex}-${path}`,
               path: path,
               serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
+              expression: c.expression,
               unit: c.unit,
             })),
           );
@@ -190,7 +193,7 @@ class GLeanChartWidget extends React.Component {
           {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
             <div className="repinchy-content">
               <ChartContainer
-                chartSeries={this.state.allChartSeries}
+                allChartSeries={this.state.allChartSeries}
                 drawnChartSeries={this.state.drawnChartSeries}
                 width={chartWidth}
                 height={this.props.height}
@@ -251,8 +254,8 @@ export class _ChartContainer extends React.Component {
       {
         fromTs,
         toTs,
-        pathsData: {
-          <path0> : [
+        csData: {
+          <csId0> : [
             { t:..., v:..., vmin:..., max:... },  // aggregation
             { t:..., v:... },  // no aggregation
           ],
@@ -262,31 +265,30 @@ export class _ChartContainer extends React.Component {
     ]
     */
   };
-  paths = null;
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
   componentDidMount() {
-    this.ensureData(this.props.fromTs, this.props.toTs);
+    this.ensureData();
   }
 
   componentDidUpdate(prevProps) {
     if (
-      prevProps.chartSeries !== this.props.chartSeries ||
+      prevProps.allChartSeries !== this.props.allChartSeries ||
       prevProps.fromTs !== this.props.fromTs ||
       prevProps.toTs !== this.props.toTs
     ) {
-      this.paths = this.props.chartSeries.map(cs => cs.path);
-      this.ensureData(this.props.fromTs, this.props.toTs);
+      this.ensureData();
     }
   }
 
-  ensureData(fromTs, toTs) {
-    if (this.paths === null) {
-      return; // we didn't receive the list of paths yet, we only have path filters
+  ensureData() {
+    const { fromTs, toTs, allChartSeries, width } = this.props;
+    if (allChartSeries.length === 0) {
+      return; // we didn't receive the list of paths that match our path filters yet
     }
-    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * this.props.width) / 100;
-    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1); // -1 for no aggregation
+    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * width) / 100;
+    const aggrLevel = getSuggestedAggrLevel(fromTs, toTs, maxPointsOnChart, -1); // -1 for no aggregation
     this.setState({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
@@ -302,7 +304,8 @@ export class _ChartContainer extends React.Component {
     const wantedIntervals = getMissingIntervals(existingIntervals, {
       fromTs: fromTs - diffTs / 2,
       toTs: toTs + diffTs / 2,
-    }); // do we have everything we need, plus some more?
+    });
+    // do we have everything we need, plus some more?
     if (wantedIntervals.length === 0) {
       return;
     }
@@ -311,11 +314,11 @@ export class _ChartContainer extends React.Component {
     // sure that the timestamps are aligned according to aggr. level)
     const alignedFromTs = this.alignTs(fromTs - diffTs, aggrLevel, Math.floor);
     const alignedToTs = this.alignTs(toTs + diffTs, aggrLevel, Math.ceil);
-    const intervalsToFeFetched = getMissingIntervals(existingIntervals, {
+    const intervalsToBeFetched = getMissingIntervals(existingIntervals, {
       fromTs: alignedFromTs,
       toTs: alignedToTs,
     });
-    for (let intervalToBeFetched of intervalsToFeFetched) {
+    for (let intervalToBeFetched of intervalsToBeFetched) {
       this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel); // take exactly what is needed, so you'll be able to merge intervals easily
     }
   }
@@ -329,6 +332,23 @@ export class _ChartContainer extends React.Component {
     return floorCeilFunc(originalTs / interval) * interval;
   }
 
+  _applyExpression(data, expression, isAggr) {
+    const mathExpression = compile(expression);
+    if (isAggr) {
+      return data.map(d => ({
+        t: d.t,
+        v: mathExpression.evaluate({ $1: d.v }),
+        minv: mathExpression.evaluate({ $1: d.minv }),
+        maxv: mathExpression.evaluate({ $1: d.maxv }),
+      }));
+    } else {
+      return data.map(d => ({
+        t: d.t,
+        v: mathExpression.evaluate({ $1: d.v }),
+      }));
+    }
+  }
+
   saveResponseData(fromTs, toTs, aggrLevel, json) {
     // make sure aggregation level exists:
     this.fetchedData[aggrLevel] = this.fetchedData[aggrLevel] || [];
@@ -338,18 +358,20 @@ export class _ChartContainer extends React.Component {
     const existingBlockBefore = this.fetchedData[aggrLevel].find(b => b.toTs === fromTs);
     const existingBlockAfter = this.fetchedData[aggrLevel].find(b => b.fromTs === toTs);
     // if there are any, merge them together:
-    let pathsData = {};
-    for (let path of this.paths) {
-      pathsData[path] = [
-        ...(existingBlockBefore ? existingBlockBefore.pathsData[path] : []),
-        ...json.paths[path].data,
-        ...(existingBlockAfter ? existingBlockAfter.pathsData[path] : []),
+    let csData = {};
+    for (let cs of this.props.allChartSeries) {
+      const { path, chartSerieId, expression = '$1' } = cs;
+      const newData = this._applyExpression(json.paths[path].data, expression, aggrLevel >= 0);
+      csData[chartSerieId] = [
+        ...(existingBlockBefore ? existingBlockBefore.csData[chartSerieId] : []),
+        ...newData,
+        ...(existingBlockAfter ? existingBlockAfter.csData[chartSerieId] : []),
       ];
     }
     const mergedBlock = {
       fromTs: existingBlockBefore ? existingBlockBefore.fromTs : fromTs,
       toTs: existingBlockAfter ? existingBlockAfter.toTs : toTs,
-      pathsData: pathsData,
+      csData: csData,
     };
 
     // then construct new this.fetchedData from data blocks that came before, our merged block and those that are after:
@@ -363,18 +385,18 @@ export class _ChartContainer extends React.Component {
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
 
-      for (let cs of this.props.chartSeries) {
+      for (let cs of this.props.allChartSeries) {
         if (!newYAxesProperties.hasOwnProperty(cs.unit)) {
           newYAxesProperties[cs.unit] = {
             minYValue: 0,
             maxYValue: Number.NEGATIVE_INFINITY,
           };
         }
-        newYAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce(
+        newYAxesProperties[cs.unit].minYValue = csData[cs.chartSerieId].reduce(
           (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
           newYAxesProperties[cs.unit].minYValue,
         );
-        newYAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce(
+        newYAxesProperties[cs.unit].maxYValue = csData[cs.chartSerieId].reduce(
           (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
           newYAxesProperties[cs.unit].maxYValue,
         );
@@ -433,9 +455,10 @@ export class _ChartContainer extends React.Component {
       fetching: true,
     });
 
+    const allPaths = this.props.allChartSeries.map(cs => cs.path);
     fetchAuth(
       `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/values?${stringify({
-        p: this.paths.join(','),
+        p: allPaths.join(','),
         t0: fromTs,
         t1: toTs,
         a: aggrLevel < 0 ? 'no' : aggrLevel,
@@ -663,14 +686,14 @@ export class ChartView extends React.Component {
     let closest = null;
     for (let interval of applicableIntervals) {
       for (let cs of this.props.drawnChartSeries) {
-        if (!interval.pathsData.hasOwnProperty(cs.path)) {
+        if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           // do we have fetched data for this cs?
           continue;
         }
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
-        for (let point of interval.pathsData[cs.path]) {
+        for (let point of interval.csData[cs.chartSerieId]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
           if (distTs > maxDistTs || distV > maxDistV) continue;
@@ -704,8 +727,8 @@ export class ChartView extends React.Component {
           {
             "fromTs": 1516870170,
             "toTs": 1524922170,
-            "pathsData": {
-              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.buying": [
+            "csData": {
+              "0-rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.buying": [
                 {
                   "minv": 650.65,
                   "v": 662.0042527615335,
@@ -714,7 +737,7 @@ export class ChartView extends React.Component {
                 },
                 // ...
               ],
-              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.selling": [
+              "0-rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.selling": [
                 {
                   "minv": 650.6,
                   "v": 659.263127842755,
