@@ -190,7 +190,7 @@ class GLeanChartWidget extends React.Component {
           {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
             <div className="repinchy-content">
               <ChartContainer
-                chartSeries={this.state.allChartSeries}
+                allChartSeries={this.state.allChartSeries}
                 drawnChartSeries={this.state.drawnChartSeries}
                 width={chartWidth}
                 height={this.props.height}
@@ -262,31 +262,30 @@ export class _ChartContainer extends React.Component {
     ]
     */
   };
-  paths = null;
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
   componentDidMount() {
-    this.ensureData(this.props.fromTs, this.props.toTs);
+    this.ensureData();
   }
 
   componentDidUpdate(prevProps) {
     if (
-      prevProps.chartSeries !== this.props.chartSeries ||
+      prevProps.allChartSeries !== this.props.allChartSeries ||
       prevProps.fromTs !== this.props.fromTs ||
       prevProps.toTs !== this.props.toTs
     ) {
-      this.paths = this.props.chartSeries.map(cs => cs.path);
-      this.ensureData(this.props.fromTs, this.props.toTs);
+      this.ensureData();
     }
   }
 
-  ensureData(fromTs, toTs) {
-    if (this.paths === null) {
-      return; // we didn't receive the list of paths yet, we only have path filters
+  ensureData() {
+    const { fromTs, toTs, allChartSeries, width } = this.props;
+    if (allChartSeries.length === 0) {
+      return; // we didn't receive the list of paths that match our path filters yet
     }
-    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * this.props.width) / 100;
-    const aggrLevel = getSuggestedAggrLevel(this.props.fromTs, this.props.toTs, maxPointsOnChart, -1); // -1 for no aggregation
+    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * width) / 100;
+    const aggrLevel = getSuggestedAggrLevel(fromTs, toTs, maxPointsOnChart, -1); // -1 for no aggregation
     this.setState({
       aggrLevel: aggrLevel,
       fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
@@ -302,7 +301,8 @@ export class _ChartContainer extends React.Component {
     const wantedIntervals = getMissingIntervals(existingIntervals, {
       fromTs: fromTs - diffTs / 2,
       toTs: toTs + diffTs / 2,
-    }); // do we have everything we need, plus some more?
+    });
+    // do we have everything we need, plus some more?
     if (wantedIntervals.length === 0) {
       return;
     }
@@ -311,11 +311,11 @@ export class _ChartContainer extends React.Component {
     // sure that the timestamps are aligned according to aggr. level)
     const alignedFromTs = this.alignTs(fromTs - diffTs, aggrLevel, Math.floor);
     const alignedToTs = this.alignTs(toTs + diffTs, aggrLevel, Math.ceil);
-    const intervalsToFeFetched = getMissingIntervals(existingIntervals, {
+    const intervalsToBeFetched = getMissingIntervals(existingIntervals, {
       fromTs: alignedFromTs,
       toTs: alignedToTs,
     });
-    for (let intervalToBeFetched of intervalsToFeFetched) {
+    for (let intervalToBeFetched of intervalsToBeFetched) {
       this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel); // take exactly what is needed, so you'll be able to merge intervals easily
     }
   }
@@ -339,7 +339,8 @@ export class _ChartContainer extends React.Component {
     const existingBlockAfter = this.fetchedData[aggrLevel].find(b => b.fromTs === toTs);
     // if there are any, merge them together:
     let pathsData = {};
-    for (let path of this.paths) {
+    for (let cs of this.props.allChartSeries) {
+      const { path } = cs;
       pathsData[path] = [
         ...(existingBlockBefore ? existingBlockBefore.pathsData[path] : []),
         ...json.paths[path].data,
@@ -363,7 +364,7 @@ export class _ChartContainer extends React.Component {
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
 
-      for (let cs of this.props.chartSeries) {
+      for (let cs of this.props.allChartSeries) {
         if (!newYAxesProperties.hasOwnProperty(cs.unit)) {
           newYAxesProperties[cs.unit] = {
             minYValue: 0,
@@ -433,9 +434,10 @@ export class _ChartContainer extends React.Component {
       fetching: true,
     });
 
+    const allPaths = this.props.allChartSeries.map(cs => cs.path);
     fetchAuth(
       `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/values?${stringify({
-        p: this.paths.join(','),
+        p: allPaths.join(','),
         t0: fromTs,
         t1: toTs,
         a: aggrLevel < 0 ? 'no' : aggrLevel,
