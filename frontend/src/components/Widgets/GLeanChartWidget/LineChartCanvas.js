@@ -57,11 +57,11 @@ class LineChartCanvasUnaligned extends React.PureComponent {
     // ctx.stroke();
     this.props.drawnChartSeries.forEach(cs => {
       this.props.intervals.forEach(interval => {
-        if (!interval.pathsData.hasOwnProperty(cs.path)) {
+        if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           return;
         }
         const v2y = this.props.yAxesProperties[cs.unit].derived.v2y;
-        const pathPoints = interval.pathsData[cs.path].map(p => ({
+        const pathPoints = interval.csData[cs.chartSerieId].map(p => ({
           x: ts2x(p.t),
           y: v2y(p.v),
           minY: v2y(p.minv),

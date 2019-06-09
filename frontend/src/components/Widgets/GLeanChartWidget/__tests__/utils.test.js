@@ -52,27 +52,27 @@ test('getMissingIntervals', () => {
 test('aggregateIntervalOnTheFly single path, single bucket', () => {
   const fromTs = 2000;
   const toTs = 4000;
-  const pathsData = {
-    'asdf.123': [{ t: 2010, v: 100.0 }, { t: 2020, v: 150.0 }, { t: 2030, v: 110.0 }],
+  const csData = {
+    '0-asdf.123': [{ t: 2010, v: 100.0 }, { t: 2020, v: 150.0 }, { t: 2030, v: 110.0 }],
   };
   const useAggrLevel = -1; // aggr. interval == 1200 s
   const expectedResult = {
-    'asdf.123': [
+    '0-asdf.123': [
       { t: 1800, v: 120.0, minv: 100.0, maxv: 150.0 },
       { t: 3000, v: null, minv: null, maxv: null },
       { t: 4200, v: null, minv: null, maxv: null },
     ],
   };
 
-  const result = aggregateIntervalOnTheFly(fromTs, toTs, pathsData, useAggrLevel);
+  const result = aggregateIntervalOnTheFly(fromTs, toTs, csData, useAggrLevel);
   expect(result).toEqual(expectedResult);
 });
 
 test('aggregateIntervalOnTheFly single path, multiple buckets', () => {
   const fromTs = 2000;
   const toTs = 4000;
-  const pathsData = {
-    'asdf.123': [
+  const csData = {
+    '0-asdf.123': [
       { t: 2010, v: 100.0 },
       { t: 2020, v: 150.0 },
       { t: 2030, v: 110.0 },
@@ -83,22 +83,22 @@ test('aggregateIntervalOnTheFly single path, multiple buckets', () => {
   };
   const useAggrLevel = -1; // aggr. interval == 1200 s
   const expectedResult = {
-    'asdf.123': [
+    '0-asdf.123': [
       { t: 1800, v: 120.0, minv: 100.0, maxv: 150.0 },
       { t: 3000, v: 320.0, minv: 300.0, maxv: 350.0 },
       { t: 4200, v: null, minv: null, maxv: null },
     ],
   };
 
-  const result = aggregateIntervalOnTheFly(fromTs, toTs, pathsData, useAggrLevel);
+  const result = aggregateIntervalOnTheFly(fromTs, toTs, csData, useAggrLevel);
   expect(result).toEqual(expectedResult);
 });
 
 test('aggregateIntervalOnTheFly multiple paths, multiple buckets', () => {
   const fromTs = 2000;
   const toTs = 4000;
-  const pathsData = {
-    'asdf.123': [
+  const csData = {
+    '0-asdf.123': [
       { t: 2010, v: 100.0 },
       { t: 2020, v: 150.0 },
       { t: 2030, v: 110.0 },
@@ -106,7 +106,7 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets', () => {
       { t: 2520, v: 350.0 },
       { t: 2530, v: 310.0 },
     ],
-    'asdf.234': [
+    '0-asdf.234': [
       { t: 2510, v: 200.0 },
       { t: 2520, v: 250.0 },
       { t: 2530, v: 210.0 },
@@ -117,27 +117,27 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets', () => {
   };
   const useAggrLevel = -1; // aggr. interval == 1200 s
   const expectedResult = {
-    'asdf.123': [
+    '0-asdf.123': [
       { t: 1800, v: 120.0, minv: 100.0, maxv: 150.0 },
       { t: 3000, v: 320.0, minv: 300.0, maxv: 350.0 },
       { t: 4200, v: null, minv: null, maxv: null },
     ],
-    'asdf.234': [
+    '0-asdf.234': [
       { t: 1800, v: null, minv: null, maxv: null },
       { t: 3000, v: 220.0, minv: 200.0, maxv: 250.0 },
       { t: 4200, v: 420.0, minv: 400.0, maxv: 450.0 },
     ],
   };
 
-  const result = aggregateIntervalOnTheFly(fromTs, toTs, pathsData, useAggrLevel);
+  const result = aggregateIntervalOnTheFly(fromTs, toTs, csData, useAggrLevel);
   expect(result).toEqual(expectedResult);
 });
 
 test('aggregateIntervalOnTheFly multiple paths, multiple buckets, aggr -2', () => {
   const fromTs = 2000;
   const toTs = 4000;
-  const pathsData = {
-    'asdf.123': [
+  const csData = {
+    '0-asdf.123': [
       { t: 2010, v: 100.0 },
       { t: 2020, v: 150.0 },
       { t: 2030, v: 110.0 },
@@ -145,7 +145,7 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets, aggr -2', () =
       { t: 2520, v: 350.0 },
       { t: 2530, v: 310.0 },
     ],
-    'asdf.234': [
+    '0-asdf.234': [
       { t: 2510, v: 200.0 },
       { t: 2520, v: 250.0 },
       { t: 2530, v: 210.0 },
@@ -156,14 +156,14 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets, aggr -2', () =
   };
   const useAggrLevel = -2; // aggr. interval == 400 s
   const expectedResult = {
-    'asdf.123': [
+    '0-asdf.123': [
       { t: 2200, v: 120.0, minv: 100.0, maxv: 150.0 },
       { t: 2600, v: 320.0, minv: 300.0, maxv: 350.0 },
       { t: 3000, v: null, minv: null, maxv: null },
       { t: 3400, v: null, minv: null, maxv: null },
       { t: 3800, v: null, minv: null, maxv: null },
     ],
-    'asdf.234': [
+    '0-asdf.234': [
       { t: 2200, v: null, minv: null, maxv: null },
       { t: 2600, v: 220.0, minv: 200.0, maxv: 250.0 },
       { t: 3000, v: null, minv: null, maxv: null },
@@ -172,6 +172,6 @@ test('aggregateIntervalOnTheFly multiple paths, multiple buckets, aggr -2', () =
     ],
   };
 
-  const result = aggregateIntervalOnTheFly(fromTs, toTs, pathsData, useAggrLevel);
+  const result = aggregateIntervalOnTheFly(fromTs, toTs, csData, useAggrLevel);
   expect(result).toEqual(expectedResult);
 });

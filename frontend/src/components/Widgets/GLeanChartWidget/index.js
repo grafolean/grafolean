@@ -64,9 +64,10 @@ class GLeanChartWidget extends React.Component {
         const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
           return result.concat(
             json.paths[c.path_filter].map(path => ({
-              chartSeriesId: `${seriesGroupIndex}-${path}`,
+              chartSerieId: `${seriesGroupIndex}-${path}`,
               path: path,
               serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
+              expression: c.expression,
               unit: c.unit,
             })),
           );
@@ -252,8 +253,8 @@ export class _ChartContainer extends React.Component {
       {
         fromTs,
         toTs,
-        pathsData: {
-          <path0> : [
+        csData: {
+          <csId0> : [
             { t:..., v:..., vmin:..., max:... },  // aggregation
             { t:..., v:... },  // no aggregation
           ],
@@ -339,19 +340,19 @@ export class _ChartContainer extends React.Component {
     const existingBlockBefore = this.fetchedData[aggrLevel].find(b => b.toTs === fromTs);
     const existingBlockAfter = this.fetchedData[aggrLevel].find(b => b.fromTs === toTs);
     // if there are any, merge them together:
-    let pathsData = {};
+    let csData = {};
     for (let cs of this.props.allChartSeries) {
-      const { path } = cs;
-      pathsData[path] = [
-        ...(existingBlockBefore ? existingBlockBefore.pathsData[path] : []),
+      const { path, chartSerieId } = cs;
+      csData[chartSerieId] = [
+        ...(existingBlockBefore ? existingBlockBefore.csData[chartSerieId] : []),
         ...json.paths[path].data,
-        ...(existingBlockAfter ? existingBlockAfter.pathsData[path] : []),
+        ...(existingBlockAfter ? existingBlockAfter.csData[chartSerieId] : []),
       ];
     }
     const mergedBlock = {
       fromTs: existingBlockBefore ? existingBlockBefore.fromTs : fromTs,
       toTs: existingBlockAfter ? existingBlockAfter.toTs : toTs,
-      pathsData: pathsData,
+      csData: csData,
     };
 
     // then construct new this.fetchedData from data blocks that came before, our merged block and those that are after:
@@ -666,14 +667,14 @@ export class ChartView extends React.Component {
     let closest = null;
     for (let interval of applicableIntervals) {
       for (let cs of this.props.drawnChartSeries) {
-        if (!interval.pathsData.hasOwnProperty(cs.path)) {
+        if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           // do we have fetched data for this cs?
           continue;
         }
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
-        for (let point of interval.pathsData[cs.path]) {
+        for (let point of interval.csData[cs.chartSerieId]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
           if (distTs > maxDistTs || distV > maxDistV) continue;
@@ -707,8 +708,8 @@ export class ChartView extends React.Component {
           {
             "fromTs": 1516870170,
             "toTs": 1524922170,
-            "pathsData": {
-              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.buying": [
+            "csData": {
+              "0-rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.buying": [
                 {
                   "minv": 650.65,
                   "v": 662.0042527615335,
@@ -717,7 +718,7 @@ export class ChartView extends React.Component {
                 },
                 // ...
               ],
-              "rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.selling": [
+              "0-rebalancer.rqww2054.46Bk9z0r6c8K8C9du9XCW3tACqsWMlKj.rate.selling": [
                 {
                   "minv": 650.6,
                   "v": 659.263127842755,

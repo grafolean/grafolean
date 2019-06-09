@@ -8,33 +8,35 @@ const stories = storiesOf('LineChartCanvas', module);
 // test data:
 const timeFrom = 1550926131;
 const timeTo = 1551147882;
-const pathsDataRandom = [];
-const pathsDataSin = [];
+const csDataRandom = [];
+const csDataSin = [];
 for (let t = timeFrom, i = 0; t <= timeTo; t += 600.0, i++) {
   const vRand = Math.random() * 10.0;
-  pathsDataRandom.push({
+  csDataRandom.push({
     t: t,
     v: vRand,
     minv: vRand - Math.random() * 2.0,
     maxv: vRand + Math.random() * 2.0,
   });
   const vSin = Math.sin(i / 1.0) + 3.2;
-  pathsDataSin.push({
+  csDataSin.push({
     t: t,
     v: vSin,
     minv: vSin - Math.random() * 2.0,
     maxv: vSin + Math.random() * 2.0,
   });
 }
-const pathsDataRandomRaw = pathsDataRandom.map(d => ({ t: d.t, v: d.v }));
-const pathsDataSinRaw = pathsDataSin.map(d => ({ t: d.t, v: d.v }));
+const csDataRandomRaw = csDataRandom.map(d => ({ t: d.t, v: d.v }));
+const csDataSinRaw = csDataSin.map(d => ({ t: d.t, v: d.v }));
 const drawnChartSeries = [
   {
+    chartSerieId: '0-dummy.sin.1min',
     path: 'dummy.sin.1min',
     unit: '',
     index: 0,
   },
   {
+    chartSerieId: '0-dummy.random.1min',
     path: 'dummy.random.1min',
     unit: '',
     index: 1,
@@ -65,9 +67,9 @@ stories.add('random data - raw', () => {
       {
         fromTs: timeFrom,
         toTs: timeTo,
-        pathsData: {
-          'dummy.random.1min': pathsDataRandomRaw,
-          'dummy.sin.1min': pathsDataSinRaw,
+        csData: {
+          '0-dummy.random.1min': csDataRandomRaw,
+          '0-dummy.sin.1min': csDataSinRaw,
         },
       },
     ],
@@ -109,9 +111,9 @@ stories.add('random data - aggregated', () => {
       {
         fromTs: timeFrom,
         toTs: timeTo,
-        pathsData: {
-          'dummy.random.1min': pathsDataRandom,
-          'dummy.sin.1min': pathsDataSin,
+        csData: {
+          '0-dummy.random.1min': csDataRandom,
+          '0-dummy.sin.1min': csDataSin,
         },
       },
     ],
@@ -148,9 +150,9 @@ stories.add('whole chart', () => {
       {
         fromTs: timeFrom,
         toTs: timeTo,
-        pathsData: {
-          'dummy.random.1min': pathsDataRandom,
-          'dummy.sin.1min': pathsDataSin,
+        csData: {
+          'dummy.random.1min': csDataRandom,
+          'dummy.sin.1min': csDataSin,
         },
       },
     ],

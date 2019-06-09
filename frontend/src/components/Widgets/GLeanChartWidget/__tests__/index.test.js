@@ -4,13 +4,13 @@ import { ChartContainer, ChartView } from '../index';
 
 const chartSeries = [
   {
-    chartSeriesId: `0-asdf.123`,
+    chartSerieId: `0-asdf.123`,
     path: 'asdf.123',
     serieName: 'asdf.123',
     unit: 's',
   },
   {
-    chartSeriesId: `1-asdf.234`,
+    chartSerieId: `0-asdf.234`,
     path: 'asdf.234',
     serieName: 'asdf.234',
     unit: 's',
@@ -53,9 +53,9 @@ test('ChartContainer merging of intervals - add before', () => {
       {
         fromTs: 400,
         toTs: 700,
-        pathsData: {
-          'asdf.123': [{ t: 444, v: 100.1 }, { t: 555, v: 200.2 }, { t: 666, v: 300.3 }],
-          'asdf.234': [{ t: 449, v: 109.1 }, { t: 559, v: 209.2 }, { t: 669, v: 309.3 }],
+        csData: {
+          '0-asdf.123': [{ t: 444, v: 100.1 }, { t: 555, v: 200.2 }, { t: 666, v: 300.3 }],
+          '0-asdf.234': [{ t: 449, v: 109.1 }, { t: 559, v: 209.2 }, { t: 669, v: 309.3 }],
         },
       },
     ],
@@ -75,9 +75,19 @@ test('ChartContainer merging of intervals - add before', () => {
       {
         fromTs: 300,
         toTs: 700,
-        pathsData: {
-          'asdf.123': [{ t: 333, v: 50.1 }, { t: 444, v: 100.1 }, { t: 555, v: 200.2 }, { t: 666, v: 300.3 }],
-          'asdf.234': [{ t: 339, v: 59.1 }, { t: 449, v: 109.1 }, { t: 559, v: 209.2 }, { t: 669, v: 309.3 }],
+        csData: {
+          '0-asdf.123': [
+            { t: 333, v: 50.1 },
+            { t: 444, v: 100.1 },
+            { t: 555, v: 200.2 },
+            { t: 666, v: 300.3 },
+          ],
+          '0-asdf.234': [
+            { t: 339, v: 59.1 },
+            { t: 449, v: 109.1 },
+            { t: 559, v: 209.2 },
+            { t: 669, v: 309.3 },
+          ],
         },
       },
     ],
@@ -128,17 +138,17 @@ test('ChartContainer merging of intervals - add between', () => {
       {
         fromTs: 200,
         toTs: 300,
-        pathsData: {
-          'asdf.123': [{ t: 222, v: 20.1 }],
-          'asdf.234': [{ t: 229, v: 29.1 }],
+        csData: {
+          '0-asdf.123': [{ t: 222, v: 20.1 }],
+          '0-asdf.234': [{ t: 229, v: 29.1 }],
         },
       },
       {
         fromTs: 400,
         toTs: 700,
-        pathsData: {
-          'asdf.123': [{ t: 444, v: 100.1 }, { t: 555, v: 200.2 }, { t: 666, v: 300.3 }],
-          'asdf.234': [{ t: 449, v: 109.1 }, { t: 559, v: 209.2 }, { t: 669, v: 309.3 }],
+        csData: {
+          '0-asdf.123': [{ t: 444, v: 100.1 }, { t: 555, v: 200.2 }, { t: 666, v: 300.3 }],
+          '0-asdf.234': [{ t: 449, v: 109.1 }, { t: 559, v: 209.2 }, { t: 669, v: 309.3 }],
         },
       },
     ],
@@ -158,15 +168,15 @@ test('ChartContainer merging of intervals - add between', () => {
       {
         fromTs: 200,
         toTs: 700,
-        pathsData: {
-          'asdf.123': [
+        csData: {
+          '0-asdf.123': [
             { t: 222, v: 20.1 },
             { t: 333, v: 50.1 },
             { t: 444, v: 100.1 },
             { t: 555, v: 200.2 },
             { t: 666, v: 300.3 },
           ],
-          'asdf.234': [
+          '0-asdf.234': [
             { t: 229, v: 29.1 },
             { t: 339, v: 59.1 },
             { t: 449, v: 109.1 },
