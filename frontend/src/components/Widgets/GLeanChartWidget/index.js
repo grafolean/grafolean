@@ -392,11 +392,11 @@ export class _ChartContainer extends React.Component {
             maxYValue: Number.NEGATIVE_INFINITY,
           };
         }
-        newYAxesProperties[cs.unit].minYValue = json.paths[cs.path].data.reduce(
+        newYAxesProperties[cs.unit].minYValue = csData[cs.chartSerieId].reduce(
           (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
           newYAxesProperties[cs.unit].minYValue,
         );
-        newYAxesProperties[cs.unit].maxYValue = json.paths[cs.path].data.reduce(
+        newYAxesProperties[cs.unit].maxYValue = csData[cs.chartSerieId].reduce(
           (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
           newYAxesProperties[cs.unit].maxYValue,
         );
