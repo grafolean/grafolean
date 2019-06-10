@@ -5,6 +5,7 @@ export default class LastValueForm extends React.Component {
     path: '',
     decimals: 1,
     unit: '',
+    expression: '$1',
   };
   static defaultProps = {
     initialFormContent: {},
@@ -42,14 +43,14 @@ export default class LastValueForm extends React.Component {
     if (!content || Object.keys(content).length === 0) {
       return null;
     }
-    const { path = '', decimals = 1, unit = '' } = this.state.content;
+    const { path = '', decimals = 1, unit = '', expression = '$1' } = content;
     return (
       <div className="last-value-form">
-        <div>
+        <div className="field">
           <label>Path:</label>
           <input type="text" name="path" value={path} onChange={this.handleInputChange} />
         </div>
-        <div>
+        <div className="field">
           <label>Number of decimals:</label>
           <input
             type="number"
@@ -60,7 +61,12 @@ export default class LastValueForm extends React.Component {
             onChange={this.handleInputChange}
           />
         </div>
-        <div>
+        <div className="field">
+          <label>Expression for modifying values:</label>
+          <input type="text" name="expression" value={expression} onChange={this.handleInputChange} />
+          <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
+        </div>
+        <div className="field">
           <label>Unit:</label>
           <input type="text" name="unit" value={unit} onChange={this.handleInputChange} />
         </div>
