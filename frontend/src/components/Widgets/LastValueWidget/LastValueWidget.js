@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import moment from 'moment';
+import { evaluate } from 'mathjs';
 
 import isWidget from '../isWidget';
 import PersistentFetcher from '../../../utils/fetch';
@@ -38,21 +39,23 @@ class LastValueWidget extends React.Component {
   };
 
   onUpdateData = json => {
+    const { path } = this.props.content;
     this.setState({
-      lastValue: json.paths[this.props.content.path].data[0].v,
-      lastValueTime: json.paths[this.props.content.path].data[0].t,
+      lastValue: json.paths[path].data[0].v,
+      lastValueTime: json.paths[path].data[0].t,
       loading: false,
     });
   };
 
   render() {
     const { lastValue, lastValueTime } = this.state;
-    const { path, decimals = 3, unit = '' } = this.props.content;
+    const { path, decimals = 3, unit = '', expression = '$1' } = this.props.content;
     const queryParams = {
       a: 'no',
       sort: 'desc',
       limit: 1,
     };
+    const calculatedValue = lastValue ? evaluate(expression, { $1: lastValue }) : null;
     return (
       <div className="last-value">
         <PersistentFetcher
@@ -62,9 +65,9 @@ class LastValueWidget extends React.Component {
           onUpdate={this.onUpdateData}
           onError={this.onFetchError}
         />
-        {lastValue ? (
+        {calculatedValue ? (
           <>
-            <span className="value">{lastValue.toFixed(decimals)}</span>
+            <span className="value">{calculatedValue.toFixed(decimals)}</span>
             <span className="unit">{unit} </span>
             <When t={lastValueTime} />
           </>
