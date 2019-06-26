@@ -15,9 +15,9 @@ import {
   ON_LOGOUT,
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
+  SET_COLOR_SCHEME,
   ON_ACCOUNT_SELECT,
   ON_ACCOUNT_UNSELECT,
-  SET_COLOR_SCHEME,
 } from './actions';
 
 function dashboardsList(
@@ -97,10 +97,11 @@ function accounts(state = {}, action) {
       }
       return newState;
     case ON_ACCOUNT_SELECT:
-      const selected = state.list.find(a => a.id === action.accountId);
       return {
         ...state,
-        selected: selected,
+        selected: {
+          id: action.accountId,
+        },
       };
     case ON_ACCOUNT_UNSELECT:
       return {

@@ -105,7 +105,7 @@ class PersonNewForm extends React.PureComponent {
       formValues: { username, password, email, name },
     } = this.state;
     if (submitted) {
-      return <Redirect to={`/settings/users`} />;
+      return <Redirect to={`/users`} />;
     }
     return (
       <div className="frame">

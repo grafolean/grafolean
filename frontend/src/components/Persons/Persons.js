@@ -72,7 +72,7 @@ export default class Persons extends React.PureComponent {
                     <td>{person.name}</td>
                     <td>{person.email}</td>
                     <td>
-                      <Link className="button green" to={`/settings/users/${person.user_id}/permissions`}>
+                      <Link className="button green" to={`/users/${person.user_id}/permissions`}>
                         <i className="fa fa-user-lock" /> Permissions
                       </Link>
                     </td>
@@ -87,7 +87,7 @@ export default class Persons extends React.PureComponent {
             </table>
           )
         )}
-        <Link className="button green" to="/settings/users/new">
+        <Link className="button green" to="/users/new">
           <i className="fa fa-plus" /> Add person
         </Link>
       </div>
