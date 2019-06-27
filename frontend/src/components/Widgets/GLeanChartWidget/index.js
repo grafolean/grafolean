@@ -289,8 +289,6 @@ export class _ChartContainer extends React.Component {
   }
 
   ensureData() {
-    return;
-    // eslint-disable-next-line no-unreachable
     const { fromTs, toTs, allChartSeries, width } = this.props;
     if (allChartSeries.length === 0) {
       return; // we didn't receive the list of paths that match our path filters yet
