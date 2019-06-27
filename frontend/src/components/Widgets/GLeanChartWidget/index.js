@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import { stringify } from 'qs';
 import { compile } from 'mathjs';
@@ -55,7 +56,8 @@ class GLeanChartWidget extends React.Component {
       limit: 1001,
       failover_trailing: 'false',
     };
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/paths/?${stringify(query_params)}`, {
+    const accountId = this.props.match.params.accountId;
+    fetchAuth(`${ROOT_URL}/accounts/${accountId}/paths/?${stringify(query_params)}`, {
       signal: this.fetchPathsAbortController.signal,
     })
       .then(handleFetchErrors)
@@ -234,6 +236,10 @@ class GLeanChartWidget extends React.Component {
     );
   }
 }
+const mapStoreToProps = store => ({
+  accounts: store.accounts,
+});
+export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
 
 export class _ChartContainer extends React.Component {
   state = {
@@ -283,6 +289,8 @@ export class _ChartContainer extends React.Component {
   }
 
   ensureData() {
+    return;
+    // eslint-disable-next-line no-unreachable
     const { fromTs, toTs, allChartSeries, width } = this.props;
     if (allChartSeries.length === 0) {
       return; // we didn't receive the list of paths that match our path filters yet
@@ -457,7 +465,7 @@ export class _ChartContainer extends React.Component {
 
     const allPaths = this.props.allChartSeries.map(cs => cs.path);
     fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/values?${stringify({
+      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/values?${stringify({
         p: allPaths.join(','),
         t0: fromTs,
         t1: toTs,
@@ -551,7 +559,7 @@ const mapStoreToPropsChartContainer = store => ({
   accounts: store.accounts,
   isDarkMode: store.preferences.colorScheme === 'dark',
 });
-export const ChartContainer = connect(mapStoreToPropsChartContainer)(_ChartContainer);
+export const ChartContainer = withRouter(connect(mapStoreToPropsChartContainer)(_ChartContainer));
 
 export class ChartView extends React.Component {
   static defaultProps = {
@@ -882,8 +890,3 @@ export class ChartView extends React.Component {
     );
   }
 }
-
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
-});
-export default connect(mapStoreToProps)(isWidget(GLeanChartWidget));

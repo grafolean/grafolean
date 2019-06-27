@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../../store/actions';
@@ -68,9 +69,12 @@ class MatchingPaths extends React.Component {
       this.setState({
         fetchingError: false,
       });
-      fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/paths/?${stringify(query_params)}`, {
-        signal: this.fetchInProgressAbortController.signal,
-      })
+      fetchAuth(
+        `${ROOT_URL}/accounts/${this.props.match.params.accountId}/paths/?${stringify(query_params)}`,
+        {
+          signal: this.fetchInProgressAbortController.signal,
+        },
+      )
         .then(handleFetchErrors)
         .then(response => response.json())
         .then(json => {
@@ -164,4 +168,4 @@ class MatchingPaths extends React.Component {
 const mapStoreToProps = store => ({
   accounts: store.accounts,
 });
-export default connect(mapStoreToProps)(MatchingPaths);
+export default withRouter(connect(mapStoreToProps)(MatchingPaths));

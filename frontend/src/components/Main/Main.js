@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, ROOT_URL, setColorScheme, onAccountSelect } from '../../store/actions';
+import { fetchBackendStatus, ROOT_URL, setColorScheme } from '../../store/actions';
 
 import AdminFirst from '../AdminFirst';
 import AdminMigrateDB from '../AdminMigrateDB';
@@ -37,8 +37,6 @@ class Main extends React.Component {
 
     this.mqlPrefersDarkMode.addListener(this.mqlPrefersDarkModeChanged);
     this.mqlPrefersDarkModeChanged();
-
-    store.dispatch(onAccountSelect(this.props.match.params.accountId));
 
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
@@ -118,7 +116,6 @@ class Main extends React.Component {
       return <LoginPage />;
     }
 
-    const { match } = this.props;
     const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
     const { isDarkMode } = false;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu

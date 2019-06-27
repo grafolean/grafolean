@@ -29,7 +29,7 @@ class BotNewForm extends React.PureComponent {
         name: this.state.name,
       };
       // create bot:
-      const response = await fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/`, {
+      const response = await fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/`, {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ class BotNewForm extends React.PureComponent {
 
       // assign permissions to bot:
       const responsePermissions = await fetchAuth(
-        `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/${responseJson.id}/permissions`,
+        `${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/${responseJson.id}/permissions`,
         {
           headers: {
             Accept: 'application/json',
@@ -50,7 +50,7 @@ class BotNewForm extends React.PureComponent {
           },
           method: 'POST',
           body: JSON.stringify({
-            resource_prefix: `accounts/${this.props.accounts.selected.id}/values`,
+            resource_prefix: `accounts/${this.props.match.params.accountId}/values`,
             methods: ['POST', 'PUT'],
           }),
         },
@@ -66,7 +66,7 @@ class BotNewForm extends React.PureComponent {
   render() {
     const { submitted, loading, name } = this.state;
     if (submitted) {
-      return <Redirect to={`/settings/bots`} />;
+      return <Redirect to={`/accounts/${this.props.match.params.accountId}/bots`} />;
     }
     return (
       <div className="frame">

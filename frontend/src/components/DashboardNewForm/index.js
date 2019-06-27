@@ -27,7 +27,7 @@ class DashboardNewForm extends React.Component {
     const params = {
       name: this.state.name,
     };
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ class DashboardNewForm extends React.Component {
   render() {
     const { submitted, loading, name, newSlug } = this.state;
     if (submitted) {
-      return <Redirect to={`/dashboards/view/${newSlug}`} />;
+      return <Redirect to={`/accounts/${this.props.match.params.accountId}/dashboards/view/${newSlug}`} />;
     }
     return (
       <div className="frame">

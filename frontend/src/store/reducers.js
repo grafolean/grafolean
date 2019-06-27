@@ -16,8 +16,6 @@ import {
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
   SET_COLOR_SCHEME,
-  ON_ACCOUNT_SELECT,
-  ON_ACCOUNT_UNSELECT,
 } from './actions';
 
 function dashboardsList(
@@ -91,23 +89,7 @@ function accounts(state = {}, action) {
         ...state,
         list: action.json.list,
       };
-      // if only one account is available, select it by default:
-      if (!newState.selected && newState.list.length === 1) {
-        newState.selected = newState.list[0];
-      }
       return newState;
-    case ON_ACCOUNT_SELECT:
-      return {
-        ...state,
-        selected: {
-          id: action.accountId,
-        },
-      };
-    case ON_ACCOUNT_UNSELECT:
-      return {
-        ...state,
-        selected: undefined,
-      };
     default:
       return state;
   }

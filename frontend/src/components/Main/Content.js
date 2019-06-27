@@ -57,19 +57,14 @@ class Content extends React.PureComponent {
             path="/accounts/:accountId/"
             component={WelcomePage}
           />
-          <WrappedRoute
-            exact
-            contentWidth={contentWidth}
-            path="/accounts/:accountId/settings/bots"
-            component={Bots}
-          />
+          <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/bots" component={Bots} />
           <WrappedRoute exact contentWidth={contentWidth} path="/users" component={Persons} />
           <WrappedRoute exact contentWidth={contentWidth} path="/changelog" component={Changelog} />
           <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
           <WrappedRoute
             exact
             contentWidth={contentWidth}
-            path="/accounts/:accountId/settings/bots/new"
+            path="/accounts/:accountId/bots/new"
             component={BotNewForm}
           />
           <WrappedRoute exact contentWidth={contentWidth} path="/users/new" component={PersonNewForm} />

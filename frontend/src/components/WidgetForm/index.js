@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 import { stringify } from 'qs';
 
 import store from '../../store';
@@ -56,7 +57,7 @@ class WidgetForm extends React.Component {
       paths_limit: 0,
     };
     fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${
         this.props.dashboardSlug
       }/widgets/${this.props.widgetId}?${stringify(query_params)}`,
       { signal: this.fetchWidgetDataAbortController.signal },
@@ -118,7 +119,7 @@ class WidgetForm extends React.Component {
         : null,
     };
     fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${
         this.props.dashboardSlug
       }/widgets/${this.props.widgetId || ''}`,
       {
@@ -185,4 +186,4 @@ class WidgetForm extends React.Component {
 const mapStoreToProps = store => ({
   accounts: store.accounts,
 });
-export default connect(mapStoreToProps)(WidgetForm);
+export default withRouter(connect(mapStoreToProps)(WidgetForm));

@@ -79,7 +79,7 @@ class _AccountSidebarContent extends React.Component {
   };
 
   updateAccountName = newAccountName => {
-    const { accountId } = this.props;
+    const accountId = this.props.match.params.accountId;
     const params = {
       name: newAccountName,
     };
@@ -144,11 +144,7 @@ class _AccountSidebarContent extends React.Component {
           <i className="fa fa-plus" /> Add dashboard
         </Link>
         {user && havePermission(`accounts/${accountId}/bots`, 'GET', user.permissions) && (
-          <Link
-            className="button green"
-            to={`/accounts/${accountId}/settings/bots`}
-            onClick={onSidebarLinkClick}
-          >
+          <Link className="button green" to={`/accounts/${accountId}/bots`} onClick={onSidebarLinkClick}>
             <i className="fa fa-robot" /> Bots
           </Link>
         )}
