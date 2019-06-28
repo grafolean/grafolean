@@ -14,13 +14,16 @@ import Profile from '../Profile';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
 import WelcomePage from '../WelcomePage';
+import SelectAccount from './SelectAccount';
+
+import './Content.scss';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
 // - be wrapped in a div with a suitable className so we can target pages with CSS selectors
 class WrappedRoute extends React.Component {
   render() {
-    const { component: Component, contentWidth, ...rest } = this.props;
+    const { component: Component, contentWidth, pageClassName, ...rest } = this.props;
     return (
       <Route
         {...rest}
@@ -28,10 +31,11 @@ class WrappedRoute extends React.Component {
           // We need some className that will allow us to write CSS rules for specific pages if needed. In theory
           // we could use `Component.name` here, but when we build for production, names are obfuscated
           <div
-            className={`page ${rest.path
-              .replace(/[^a-z0-9A-Z]+/g, ' ')
-              .trim()
-              .replace(/[ ]/g, '-')}`}
+            className={`page ${pageClassName ||
+              rest.path
+                .replace(/[^a-z0-9A-Z]+/g, ' ')
+                .trim()
+                .replace(/[ ]/g, '-')}`}
           >
             <Component {...props} width={contentWidth} />
           </div>
@@ -58,19 +62,14 @@ class Content extends React.PureComponent {
           <WrappedRoute
             exact
             contentWidth={contentWidth}
-            path="/accounts/:accountId/"
-            component={WelcomePage}
+            path="/"
+            component={SelectAccount}
+            pageClassName="select-account"
           />
-          <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/bots" component={Bots} />
-          <WrappedRoute exact contentWidth={contentWidth} path="/users" component={Persons} />
           <WrappedRoute exact contentWidth={contentWidth} path="/changelog" component={Changelog} />
           <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
-          <WrappedRoute
-            exact
-            contentWidth={contentWidth}
-            path="/accounts/:accountId/bots/new"
-            component={BotNewForm}
-          />
+
+          <WrappedRoute exact contentWidth={contentWidth} path="/users" component={Persons} />
           <WrappedRoute exact contentWidth={contentWidth} path="/users/new" component={PersonNewForm} />
           <WrappedRoute
             exact
@@ -85,6 +84,19 @@ class Content extends React.PureComponent {
             component={UserPermissionsNewForm}
           />
 
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/"
+            component={WelcomePage}
+          />
+          <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/bots" component={Bots} />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/bots/new"
+            component={BotNewForm}
+          />
           <WrappedRoute
             exact
             contentWidth={contentWidth}

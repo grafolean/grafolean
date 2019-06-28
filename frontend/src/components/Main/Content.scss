@@ -1,0 +1,10 @@
+.content {
+  .page.select-account {
+    display: flex;
+    flex-direction: column;
+
+    & > a.button {
+      margin: 10px 0 0;
+    }
+  }
+}

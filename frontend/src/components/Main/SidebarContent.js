@@ -13,7 +13,6 @@ import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
-import SelectAccount from './SelectAccount';
 
 class SidebarContent extends React.Component {
   render() {
@@ -163,6 +162,6 @@ const AccountSidebarContent = connect(mapDashboardsListToProps)(_AccountSidebarC
 
 class DefaultSidebarContent extends React.Component {
   render() {
-    return <SelectAccount />;
+    return null;
   }
 }
