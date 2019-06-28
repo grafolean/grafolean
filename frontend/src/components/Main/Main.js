@@ -118,7 +118,9 @@ class Main extends React.Component {
 
     const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
     const { isDarkMode } = this.props;
+    const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
+    const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
 
     return (
       <Sidebar
@@ -159,7 +161,7 @@ class Main extends React.Component {
 
         <Notifications />
 
-        <Content windowWidth={windowWidth} />
+        <Content contentWidth={contentWidth} />
       </Sidebar>
     );
   }

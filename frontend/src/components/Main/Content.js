@@ -46,15 +46,8 @@ class WrappedRoute extends React.Component {
 }
 
 class Content extends React.PureComponent {
-  CONTENT_PADDING_LR = 20;
-  SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
-  SIDEBAR_MAX_WIDTH = 250;
-
   render() {
-    const { windowWidth } = this.props;
-    const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
-    const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
-    const contentWidth = innerWindowWidth - sidebarWidth;
+    const { contentWidth } = this.props;
 
     return (
       <div className="content centered">
