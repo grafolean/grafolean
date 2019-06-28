@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import Redirect from 'react-router-dom/Redirect';
+import { withRouter, Redirect } from 'react-router-dom';
 
 import store from '../../store';
 import { handleFetchErrors, ROOT_URL, onFailure } from '../../store/actions';
@@ -20,7 +20,7 @@ class DashboardDeleteLink extends React.Component {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${this.props.slug}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${this.props.slug}`, {
       method: 'DELETE',
     })
       .then(handleFetchErrors)
@@ -37,7 +37,7 @@ class DashboardDeleteLink extends React.Component {
     const { deleting, deleted } = this.state;
 
     if (deleted) {
-      return <Redirect to="/" />;
+      return <Redirect to={`/accounts/${this.props.match.params.accountId}/`} />;
     }
 
     return (
@@ -61,4 +61,4 @@ const mapStoreToProps = (store, ownProps) => {
 
   return { ...defaultProps, ...store.dashboards[slug] };
 };
-export default connect(mapStoreToProps)(DashboardDeleteLink);
+export default withRouter(connect(mapStoreToProps)(DashboardDeleteLink));

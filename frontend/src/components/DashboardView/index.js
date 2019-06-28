@@ -40,7 +40,7 @@ class _DashboardView extends React.Component {
       loading: true,
     });
     fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${this.props.match.params.slug}`,
+      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${this.props.match.params.slug}`,
       {
         signal: this.abortController.signal,
       },
@@ -96,10 +96,11 @@ class _DashboardView extends React.Component {
 
   setDashboardName = async name => {
     const dashboardSlug = this.props.match.params.slug;
+    const accountId = this.props.match.params.accountId;
     const params = {
       name: name,
     };
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${dashboardSlug}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -114,9 +115,10 @@ class _DashboardView extends React.Component {
   };
 
   render() {
-    const { accounts, user } = this.props;
+    const { user } = this.props;
     const { valid, loading } = this.state;
     const dashboardSlug = this.props.match.params.slug;
+    const accountId = this.props.match.params.accountId;
 
     const innerWidth = this.props.width - 2 * 21; // padding
 
@@ -171,11 +173,7 @@ class _DashboardView extends React.Component {
           </div>
         )}
 
-        {havePermission(
-          `accounts/${accounts.selected.id}/dashboards/${dashboardSlug}`,
-          'POST',
-          user.permissions,
-        ) && (
+        {havePermission(`accounts/${accountId}/dashboards/${dashboardSlug}`, 'POST', user.permissions) && (
           <div className="frame">
             {!this.state.newWidgetFormOpened ? (
               <div>
@@ -199,7 +197,6 @@ class _DashboardView extends React.Component {
 }
 
 const mapStoreToProps = store => ({
-  accounts: store.accounts,
   user: store.user,
 });
 const DashboardView = connect(mapStoreToProps)(_DashboardView);

@@ -68,7 +68,7 @@ class PersonNewForm extends React.PureComponent {
           },
           method: 'POST',
           body: JSON.stringify({
-            resource_prefix: `accounts/${this.props.accounts.selected.id}`,
+            resource_prefix: `accounts/${this.props.match.params.accountId}`,
             methods: null,
           }),
         },
@@ -105,7 +105,7 @@ class PersonNewForm extends React.PureComponent {
       formValues: { username, password, email, name },
     } = this.state;
     if (submitted) {
-      return <Redirect to={`/settings/users`} />;
+      return <Redirect to={`/users`} />;
     }
     return (
       <div className="frame">

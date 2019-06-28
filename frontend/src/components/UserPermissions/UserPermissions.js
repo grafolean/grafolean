@@ -79,7 +79,7 @@ export default class UserPermissions extends React.PureComponent {
 
         {this.renderInner()}
 
-        <Link className="button green" to={`/settings/users/${userId}/permissions/new`}>
+        <Link className="button green" to={`/users/${userId}/permissions/new`}>
           <i className="fa fa-plus" /> Add permission
         </Link>
       </div>

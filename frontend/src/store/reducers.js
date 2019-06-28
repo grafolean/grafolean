@@ -15,8 +15,6 @@ import {
   ON_LOGOUT,
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
-  ON_ACCOUNT_SELECT,
-  ON_ACCOUNT_UNSELECT,
   SET_COLOR_SCHEME,
 } from './actions';
 
@@ -91,22 +89,7 @@ function accounts(state = {}, action) {
         ...state,
         list: action.json.list,
       };
-      // if only one account is available, select it by default:
-      if (!newState.selected && newState.list.length === 1) {
-        newState.selected = newState.list[0];
-      }
       return newState;
-    case ON_ACCOUNT_SELECT:
-      const selected = state.list.find(a => a.id === action.accountId);
-      return {
-        ...state,
-        selected: selected,
-      };
-    case ON_ACCOUNT_UNSELECT:
-      return {
-        ...state,
-        selected: undefined,
-      };
     default:
       return state;
   }

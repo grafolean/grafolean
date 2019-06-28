@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import { evaluate } from 'mathjs';
 
@@ -59,7 +60,7 @@ class LastValueWidget extends React.Component {
     return (
       <div className="last-value">
         <PersistentFetcher
-          resource={`accounts/${this.props.accounts.selected.id}/values/${path}`}
+          resource={`accounts/${this.props.match.params.accountId}/values/${path}`}
           queryParams={queryParams}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
@@ -82,7 +83,7 @@ class LastValueWidget extends React.Component {
 const mapStoreToProps = store => ({
   accounts: store.accounts,
 });
-export default isWidget(connect(mapStoreToProps)(LastValueWidget));
+export default withRouter(isWidget(connect(mapStoreToProps)(LastValueWidget)));
 
 class When extends React.PureComponent {
   static defaultProps = {

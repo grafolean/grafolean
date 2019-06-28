@@ -44,7 +44,9 @@ const isWidget = WrappedComponent => {
               className="fa fa-edit"
               onClick={() =>
                 history.push(
-                  `/dashboards/view/${this.props.dashboardSlug}/widget/${this.props.widgetId}/edit`,
+                  `/accounts/${this.props.match.params.accountId}/dashboards/view/${
+                    this.props.dashboardSlug
+                  }/widget/${this.props.widgetId}/edit`,
                 )
               }
             />
@@ -59,7 +61,7 @@ const isWidget = WrappedComponent => {
 
     deleteWidget = () => {
       fetchAuth(
-        `${ROOT_URL}/accounts/${this.props.accounts.selected.id}/dashboards/${
+        `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${
           this.props.dashboardSlug
         }/widgets/${this.props.widgetId}`,
         { method: 'DELETE' },

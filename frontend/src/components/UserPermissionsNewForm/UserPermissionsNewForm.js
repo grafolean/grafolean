@@ -96,7 +96,7 @@ export default class UserPermissionsNewForm extends React.PureComponent {
     } = this.state;
     if (submitted) {
       const { userId } = this.props.match.params;
-      return <Redirect to={`/settings/users/${userId}/permissions`} />;
+      return <Redirect to={`/users/${userId}/permissions`} />;
     }
     return (
       <div className="frame">

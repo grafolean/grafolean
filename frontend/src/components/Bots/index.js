@@ -24,7 +24,7 @@ class Bots extends React.PureComponent {
   }
 
   fetchBots = () => {
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/`)
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/`)
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json =>
@@ -42,7 +42,7 @@ class Bots extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.accounts.selected.id}/bots/${botId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/${botId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .then(() =>
         this.setState(
@@ -89,7 +89,7 @@ class Bots extends React.PureComponent {
             </table>
           )
         )}
-        <Link className="button green" to="/settings/bots/new">
+        <Link className="button green" to={`/accounts/${this.props.match.params.accountId}/bots/new`}>
           <i className="fa fa-plus" /> Add bot
         </Link>
       </div>
