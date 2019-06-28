@@ -5,7 +5,7 @@ import moment from 'moment';
 import { evaluate } from 'mathjs';
 
 import isWidget from '../isWidget';
-import PersistentFetcher from '../../../utils/fetch';
+import { PersistentFetcher } from '../../../utils/fetch';
 
 import './LastValueWidget.scss';
 

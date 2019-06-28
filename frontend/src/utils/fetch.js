@@ -82,7 +82,7 @@ class MQTTFetcher {
 
   Example usage:
 
-    import PersistentFetcher from 'fetch.js';
+    import { PersistentFetcher } from 'fetch.js';
     ...
       componentDidMount() {
         this.fetchId = PersistentFetcher.start('account/123/dashboards', this.onDashboardsFetch, this.onDashboardsFetchError);
@@ -241,7 +241,7 @@ class MQTTFetcher {
 
 export const MQTTFetcherSingleton = new MQTTFetcher();
 
-class PersistentFetcher extends React.PureComponent {
+class _PersistentFetcher extends React.PureComponent {
   fetchId = null;
 
   componentDidMount() {
@@ -303,4 +303,4 @@ const mapStoreToProps = store => ({
   backendStatus: store.backendStatus,
   jwtToken: store.user ? store.user.jwtToken : undefined,
 });
-export default connect(mapStoreToProps)(PersistentFetcher);
+export const PersistentFetcher = connect(mapStoreToProps)(_PersistentFetcher);

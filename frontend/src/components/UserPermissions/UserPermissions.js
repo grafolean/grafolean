@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import PersistentFetcher, { fetchAuth } from '../../utils/fetch';
+import { PersistentFetcher, fetchAuth } from '../../utils/fetch';
 import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
 import store from '../../store';
 
