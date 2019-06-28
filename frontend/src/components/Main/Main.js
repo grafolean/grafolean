@@ -117,7 +117,7 @@ class Main extends React.Component {
     }
 
     const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
-    const { isDarkMode } = false;
+    const { isDarkMode } = this.props;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
 
     return (
@@ -159,6 +159,7 @@ class Main extends React.Component {
 const mapBackendStatusToProps = store => ({
   backendStatus: store.backendStatus,
   loggedIn: Boolean(store.user),
+  isDarkMode: store.preferences.colorScheme === 'dark',
 });
 // withRouter is needed to force re-rendering of this component when URL changes:
 export default withRouter(connect(mapBackendStatusToProps)(Main));
