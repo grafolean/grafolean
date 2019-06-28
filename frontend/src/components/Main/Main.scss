@@ -18,6 +18,13 @@ header {
   }
 }
 
+.burger {
+  margin: 10px auto 0 20px;
+  & > i.fa.fa-bars {
+    margin: 0 2px 0 0;
+  }
+}
+
 .navigation {
   margin: 10px 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;

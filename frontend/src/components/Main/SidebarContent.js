@@ -16,12 +16,10 @@ import ColorSchemeSwitch from './ColorSchemeSwitch';
 
 class SidebarContent extends React.Component {
   render() {
-    const { sidebarDocked, onSidebarXClick, onSidebarLinkClick, user } = this.props;
+    const { onSidebarLinkClick, user } = this.props;
 
     return (
       <div className="navigation">
-        {!sidebarDocked ? <button onClick={onSidebarXClick}>X</button> : ''}
-
         <div className="back-logout-buttons">
           <LinkButton className="unselect-account" title="Home" to="/">
             <i className="fa fa-home" />

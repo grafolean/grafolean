@@ -139,15 +139,23 @@ class Main extends React.Component {
             backgroundColor: isDarkMode ? '#202020' : '#f5f5f5',
             width: sidebarWidth,
             borderRight: `1px solid ${isDarkMode ? '#151515' : '#e3e3e3'}`,
+            zIndex: 88008800,
           },
           content: {
             backgroundColor: isDarkMode ? '#131313' : '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },
+          overlay: {
+            zIndex: 88008800 - 1,
+          },
         }}
       >
-        {!sidebarDocked && <Button onClick={this.onBurgerClick}>burger</Button>}
+        {!sidebarDocked && (
+          <Button className="burger" onClick={this.onBurgerClick}>
+            <i className="fa fa-bars" />
+          </Button>
+        )}
 
         <Notifications />
 
