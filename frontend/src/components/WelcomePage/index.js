@@ -1,14 +1,53 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-export default class WelcomePage extends React.PureComponent {
+import { PersistentFetcher } from '../../utils/fetch';
+
+import Loading from '../Loading';
+
+export default class WelcomePage extends React.Component {
+  state = {
+    botsAvailable: null,
+  };
+
+  onBotsUpdate = json => {
+    this.setState({
+      botsAvailable: json.list.length > 0,
+    });
+  };
+
+  renderContent() {
+    const { botsAvailable } = this.state;
+    const accountId = this.props.match.params.accountId;
+
+    if (botsAvailable === null) {
+      return <Loading />;
+    }
+
+    return (
+      <>
+        <h3>Welcome!</h3>
+        {botsAvailable ? (
+          <p>
+            This page should display information about the latest values received and provides guidance on how
+            to post these values.
+          </p>
+        ) : (
+          <p>
+            To send data to this account, you need to setup at least one{' '}
+            <Link to={`/accounts/${accountId}/bots`}>bot</Link>.
+          </p>
+        )}
+      </>
+    );
+  }
+
   render() {
+    const accountId = this.props.match.params.accountId;
     return (
       <div>
-        <h3>Welcome!</h3>
-        <p>
-          This page displays information about the latest values received and provides guidance on how to post
-          these values.
-        </p>
+        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
+        {this.renderContent()}
       </div>
     );
   }
