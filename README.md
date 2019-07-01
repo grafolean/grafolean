@@ -45,7 +45,7 @@ If you follow default installation (docker), setting up Grafolean for HTTPS shou
 If you have your own certificates and will renew them manually, it is enough to expose port `443` and mount certificates (as indicated in `docker-compose.yml`). When changing the certificates you also need to restart nginx:
 
 ```bash
-docker exec -ti grafolean service nginx reload`
+docker exec -ti grafolean service nginx reload
 ```
 
 #### Configuring certbot (LetsEncrypt certificates)
