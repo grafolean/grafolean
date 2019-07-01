@@ -29,8 +29,8 @@ export default class WelcomePage extends React.Component {
         <h3>Welcome!</h3>
         {botsAvailable ? (
           <p>
-            This page should display information about the latest values received and provides guidance on how
-            to post these values.
+            Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
+            <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
           </p>
         ) : (
           <p>
