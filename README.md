@@ -144,7 +144,7 @@ Build time configuration only allows a single setting:
 
 - `REACT_APP_BACKEND_ROOT_URL`: URL address of the backend service. Example: `http://127.0.0.1:5000/api`. Default value is origin of frontend with `/api` suffix.
 
-If running frontend locally (`npm start`), this setting can be put to `.env` file (see `.env.example`). If building, it needs to be set as envoronment variable (for example `REACT_APP_BACKEND_ROOT_URL=https://mydomain.com/grafolean/api npm build`).
+If running frontend locally (`npm start`), this setting can be put to `.env` file (see `.env.example`). If building, it needs to be set as environment variable (for example `REACT_APP_BACKEND_ROOT_URL=https://mydomain.com/grafolean/api npm build`).
 
 The rest of configuration data (for example location of MQTT broker) will be fetched from the backend via `/api/status/info` call.
 
