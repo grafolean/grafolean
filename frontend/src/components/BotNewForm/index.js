@@ -13,7 +13,7 @@ import Button from '../Button';
 class BotNewForm extends React.PureComponent {
   state = {
     name: '',
-    submitted: false,
+    newId: null,
     loading: false,
   };
 
@@ -57,16 +57,16 @@ class BotNewForm extends React.PureComponent {
       );
       await handleFetchErrors(responsePermissions);
 
-      await this.setState({ submitted: true });
+      await this.setState({ newId: responseJson.id });
     } catch (e) {
       store.dispatch(onFailure(e.toString()));
     }
   };
 
   render() {
-    const { submitted, loading, name } = this.state;
-    if (submitted) {
-      return <Redirect to={`/accounts/${this.props.match.params.accountId}/bots`} />;
+    const { newId, loading, name } = this.state;
+    if (newId) {
+      return <Redirect to={`/accounts/${this.props.match.params.accountId}/bots?infoAbout=${newId}`} />;
     }
     return (
       <div className="frame">
