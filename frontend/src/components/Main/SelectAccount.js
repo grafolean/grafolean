@@ -20,7 +20,7 @@ class SelectAccount extends React.Component {
   render() {
     const { accounts, user } = this.props;
     return (
-      <>
+      <div className="frame">
         <PersistentFetcher
           resource="profile/accounts"
           onUpdate={this.handleAccountsUpdate}
@@ -44,7 +44,7 @@ class SelectAccount extends React.Component {
             )}
           </>
         )}
-      </>
+      </div>
     );
   }
 }

@@ -1,10 +1,10 @@
 .content {
-  .page.select-account {
+  .page.select-account .frame {
     display: flex;
     flex-direction: column;
 
     & > a.button {
-      margin: 10px 0 0;
+      margin: 10px auto 0 0;
     }
   }
 }
