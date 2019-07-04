@@ -27,7 +27,10 @@ If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issue
 This is the easiest and currently the only officially supported way. All the services necessary can be run with a few simple steps:
 
 1) save [install/docker-compose.yml](https://gitlab.com/grafolean/grafolean/raw/master/install/docker-compose.yml) to a local file
-2) edit `docker-compose.yml` and change the path where the DB data will be saved locally (`/grafolean/db/` by default), DB admin credentials, hostname and similar
+2) edit `docker-compose.yml` and change:
+  - mandatory: `MQTT_WS_HOSTNAME` (set to the external IP/hostname of the server),
+  - optional but recommended: DB admin credentials, and
+  - optional: the path where the DB data will be saved locally (`/grafolean/db/` by default).
 3) run: `docker-compose up -d`
 4) point your browser to http://localhost/ (or other appropriate URL) and follow post-installation instructions
 
