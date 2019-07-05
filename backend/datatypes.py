@@ -744,8 +744,10 @@ class Permission(object):
 
 
 class Bot(object):
-    def __init__(self, name, force_account=None, force_id=None):
+    def __init__(self, name, bot_type, config, force_account=None, force_id=None):
         self.name = name
+        self.bot_type = bot_type
+        self.config = config
         self.force_account = force_account
         self.force_id = force_id
 
@@ -756,22 +758,25 @@ class Bot(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        return cls(name, force_account=force_account, force_id=force_id)
+        bot_type = data.get('bot_type', None)
+        config = data.get('config', None)
+        return cls(name, bot_type, config, force_account=force_account, force_id=force_id)
 
     @staticmethod
     def get_list(force_account=None):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
+                c.execute('SELECT user_id, name, bot_type, token, insert_time FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.bot_type, b.token, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, token, insert_time in c:
+            for user_id, name, bot_type, token, insert_time in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
+                    'bot_type': bot_type,
                     'token': token,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
                 })
@@ -781,7 +786,7 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
+            c.execute("INSERT INTO bots (user_id, name, bot_type, config) VALUES (%s, %s, %s, %s) RETURNING token;", (user_id, self.name, self.bot_type, self.config))
             bot_token, = c.fetchone()
             if self.force_account:
                 c.execute("INSERT INTO users_accounts (user_id, account) VALUES (%s, %s);", (user_id, self.force_account,))
@@ -812,7 +817,7 @@ class Bot(object):
                 if not Bot._is_tied_to_account(self.force_id, self.force_account):
                     return 0
 
-            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
+            c.execute("UPDATE bots SET name = %s, bot_type = %s, config = %s WHERE user_id = %s;", (self.name, self.bot_type, self.config, self.force_id,))
             return c.rowcount
 
     @staticmethod
@@ -834,19 +839,21 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT user_id, name, token, bot_type, config, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.token, b.bot_type, b.config, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, token, insert_time = res
+            user_id, name, token, bot_type, config, insert_time = res
         return {
             'id': user_id,
             'name': name,
             'token': token,
+            'bot_type': bot_type,
+            'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
         }
 

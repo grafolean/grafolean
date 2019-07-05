@@ -762,6 +762,7 @@ def test_bots_crud(app_client, admin_authorization_header):
             {
                 'id': bot_id,
                 'name': data['name'],
+                'bot_type': None,
                 'token': token,
                 'insert_time': actual['list'][0]['insert_time'],
             },
@@ -774,6 +775,7 @@ def test_bots_crud(app_client, admin_authorization_header):
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected = expected['list'][0]
+    expected['config'] = None
     assert actual == expected
 
     # PUT:
@@ -1290,6 +1292,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'name': BOT_NAME1,
+        'bot_type': None,
         'id': account_bot_id,
         'token': actual['list'][0]['token'],
         'insert_time': actual['list'][0]['insert_time'],
@@ -1301,10 +1304,11 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     r = app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
+    expected['config'] = None
     assert actual == expected
 
     # then we update it:
-    data = {'name': BOT_NAME1 + "123"}
+    data = {'name': BOT_NAME1 + "123", 'bot_type': 'ping', 'config': '{"a": 123}'}
     r = app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
     assert r.status_code == 204
 
@@ -1312,6 +1316,8 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['name'] == BOT_NAME1 + "123"
+    assert actual['bot_type'] == 'ping'
+    assert actual['config'] == {"a": 123}
 
     # now remove the bot:
     r = app_client.delete('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})

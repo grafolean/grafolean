@@ -118,6 +118,8 @@ class BotSchemaInputs(Inputs):
         'additionalProperties': False,  # do not allow fields which are not specified in schema
         'properties': {
             'name': {'type': 'string'},
+            'bot_type': {'type': ['string', 'null']},
+            'config': {'type': ['string', 'null']},
         },
         'required': ['name'],
     })]
