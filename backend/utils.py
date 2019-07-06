@@ -263,4 +263,4 @@ def migration_step_8():
     """ Bots can have their type and configuration saved to DB. """
     with db.cursor() as c:
         c.execute("ALTER TABLE bots ADD COLUMN bot_type TEXT DEFAULT NULL;")
-        c.execute("ALTER TABLE bots ADD COLUMN config JSON DEFAULT NULL;")
+        c.execute("ALTER TABLE users_accounts ADD COLUMN config JSON DEFAULT NULL;")

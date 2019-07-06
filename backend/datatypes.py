@@ -8,7 +8,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -753,7 +753,10 @@ class Bot(object):
 
     @classmethod
     def forge_from_input(cls, flask_request, force_account=None, force_id=None):
-        inputs = BotSchemaInputs(flask_request)
+        if force_account:
+            inputs = AccountBotSchemaInputs(flask_request)
+        else:
+            inputs = BotSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
@@ -786,10 +789,10 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name, bot_type, config) VALUES (%s, %s, %s, %s) RETURNING token;", (user_id, self.name, self.bot_type, self.config))
+            c.execute("INSERT INTO bots (user_id, name, bot_type) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.bot_type,))
             bot_token, = c.fetchone()
             if self.force_account:
-                c.execute("INSERT INTO users_accounts (user_id, account) VALUES (%s, %s);", (user_id, self.force_account,))
+                c.execute("INSERT INTO users_accounts (user_id, account, config) VALUES (%s, %s, %s);", (user_id, self.force_account, self.config,))
             return user_id, bot_token
 
     @staticmethod
@@ -817,8 +820,13 @@ class Bot(object):
                 if not Bot._is_tied_to_account(self.force_id, self.force_account):
                     return 0
 
-            c.execute("UPDATE bots SET name = %s, bot_type = %s, config = %s WHERE user_id = %s;", (self.name, self.bot_type, self.config, self.force_id,))
-            return c.rowcount
+            c.execute("UPDATE bots SET name = %s, bot_type = %s WHERE user_id = %s;", (self.name, self.bot_type, self.force_id,))
+            if not c.rowcount:
+                return 0
+            # if account id is known, we must update config information in users_accounts table:
+            if self.force_account:
+                c.execute("UPDATE users_accounts SET config = %s WHERE user_id = %s and account = %s;", (self.config, self.force_id, self.force_account,))
+            return 1
 
     @staticmethod
     def delete(user_id, force_account=None):
@@ -839,9 +847,9 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT user_id, name, token, bot_type, config, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT user_id, name, token, bot_type, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.bot_type, b.config, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.token, b.bot_type, ua.config, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
