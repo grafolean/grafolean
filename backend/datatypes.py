@@ -832,7 +832,7 @@ class Bot(object):
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                if not Bot._is_tied_only_to_account(user_id, force_account):
+                if not Bot._is_tied_to_account(user_id, force_account):
                     return 0
                 if not Bot._is_tied_only_to_account(user_id, force_account):
                     # just remove the connection to this account, leave the bot itself alone:
