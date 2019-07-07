@@ -937,9 +937,30 @@ def profile_permissions():
 @app.route('/api/profile/accounts', methods=['GET'])
 @auth_no_permissions
 def profile_accounts():
+    """
+        Returns the list of accounts that this user (person or bot) has permission to access.
+    """
     user_id = flask.g.grafolean_data['user_id']
     rec = Account.get_list(user_id)
-    return json.dumps({'list': rec}), 200
+    return json.dumps({
+        'user_id': user_id,
+        'list': rec,
+    }), 200
+
+
+@app.route('/api/profile/accounts/<int:account_id>', methods=['GET'])
+@auth_no_permissions
+def profile_account_get(account_id):
+    """
+        Returns the configuration that is tied to a specified account for this user (bot).
+    """
+    user_id = flask.g.grafolean_data['user_id']
+
+    res = {}
+    if Bot.is_bot(user_id):
+        bot_data = Bot.get(user_id, account_id)
+        res["config"] = bot_data["config"]
+    return json.dumps(res), 200
 
 
 # --------------

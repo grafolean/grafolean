@@ -866,6 +866,13 @@ class Bot(object):
         }
 
     @staticmethod
+    def is_bot(user_id):
+        with db.cursor() as c:
+            c.execute("SELECT user_type FROM users WHERE id = %s;", (user_id,))
+            user_type, = c.fetchone()
+            return user_type == 'bot'
+
+    @staticmethod
     def authenticate_token(bot_token_unclean):
         try:
             bot_token = str(BotToken(bot_token_unclean))
