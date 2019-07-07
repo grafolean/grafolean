@@ -837,7 +837,7 @@ class Bot(object):
                 if not Bot._is_tied_only_to_account(user_id, force_account):
                     # just remove the connection to this account, leave the bot itself alone:
                     # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
-                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND account = %s;", (user_id, force_account,))
+                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND user_type = 'bot' AND account = %s;", (user_id, force_account,))
                     return c.rowcount
 
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
