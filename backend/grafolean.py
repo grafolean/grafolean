@@ -80,11 +80,14 @@ def mqtt_publish_changed(topics, payload='1'):
     if not MQTT_HOSTNAME:
         log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
-    log.debug("MQTT publishing change of: [{}]".format(topics,))
-    # https://www.eclipse.org/paho/clients/python/docs/#id2
-    msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
-    superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
-    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
+    try:
+        log.debug("MQTT publishing change of: [{}]".format(topics,))
+        # https://www.eclipse.org/paho/clients/python/docs/#id2
+        msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
+        superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
+        mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
+    except Exception as ex:
+        log.warning("Could not publish change to MQTT, error: {}".format(ex))
 
 
 @app.before_request
@@ -204,7 +207,11 @@ def after_request(response):
 
 @app.errorhandler(ValidationError)
 def handle_invalid_usage(error):
-    return 'Input validation failed: {}'.format(str(error)), 400
+    content_type_header = flask.request.headers.get('Content-Type', None)
+    str_error = str(error)
+    if not content_type_header or content_type_header != 'application/json':
+        str_error = "{} - maybe Content-Type header was not set to application/json?".format(str_error)
+    return 'Input validation failed: {}'.format(str_error), 400
 
 
 @app.errorhandler(Exception)
