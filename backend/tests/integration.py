@@ -948,10 +948,13 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
 
         # try again:
+        expected = {'id': str(account_id), 'name': FIRST_ACCOUNT_NAME}
         r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
+        assert json.loads(r.data.decode('utf-8')) == expected
         r = app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
+        assert json.loads(r.data.decode('utf-8')) == expected
         r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 401  # stays denied
 
