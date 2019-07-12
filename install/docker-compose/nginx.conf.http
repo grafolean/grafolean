@@ -4,6 +4,11 @@ server {
 
     root         /var/www/html;
 
+    location /api/admin/mqtt-auth-plug/ {
+        include uwsgi_params;
+        uwsgi_pass unix:///tmp/uwsgi.mqtt-auth.socket;
+    }
+
     location /api/ {
         include uwsgi_params;
         uwsgi_pass unix:///tmp/uwsgi.socket;
