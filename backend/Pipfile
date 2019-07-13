@@ -24,6 +24,7 @@ apispec-webframeworks = "*"
 [dev-packages]
 pytest = "*"
 zappa = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.6"

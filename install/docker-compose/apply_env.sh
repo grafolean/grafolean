@@ -20,9 +20,9 @@ echo "" > /grafolean/backend/.env
 # depending on whether https certificates are available, include a bit different nginx config:
 if [ -f /etc/certs/cert.crt ] && [ -f /etc/certs/cert.key ]
 then
-  mv /etc/nginx/grafolean.https.conf.disabled /etc/nginx/grafolean.https.conf
+  cp /etc/nginx/grafolean.https.conf.disabled /etc/nginx/grafolean.https.conf
 else
-  mv /etc/nginx/grafolean.http.conf.disabled /etc/nginx/grafolean.http.conf
+  cp /etc/nginx/grafolean.http.conf.disabled /etc/nginx/grafolean.http.conf
 fi
 # nginx doesn't (easily) support env vars in its config files, so we must replace them on startup:
 sed -i "s/[$]MQTT_HOSTNAME/${MQTT_HOSTNAME}/g" /etc/nginx/grafolean.*.conf

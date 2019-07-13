@@ -17,7 +17,7 @@ Username: `demo`, password: `demo`.
 
 # License
 
-License is Commons Clause license (on top of Apache 2.0) - source is available, you can use it for free (commercially too), modify and 
+License is Commons Clause license (on top of Apache 2.0) - source is available, you can use it for free (commercially too), modify and
 share, but you can't sell it. See [LICENSE.md](https://gitlab.com/grafolean/grafolean/blob/master/LICENSE.md) for details.
 
 If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issues) to get further clarification.
@@ -159,6 +159,7 @@ $ docker-compose up -d
 $ pipenv shell
 ... $ pipenv install
 ... $ export GRAFOLEAN_CORS_DOMAINS=http://localhost:3000
+... $ export MQTT_WS_HOSTNAME=localhost
 ... $ python grafolean.py
 ```
 

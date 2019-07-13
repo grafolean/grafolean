@@ -8,7 +8,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs
 from auth import Auth
 
 
@@ -565,7 +565,7 @@ class Dashboard(object):
 
 
 class Account(object):
-    RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)$')
+    RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)([/].*)?$')
 
     def __init__(self, name, force_id=None):
         self.name = name
@@ -609,8 +609,6 @@ class Account(object):
                 specific_accounts = []
                 for permission in Permission.get_list(user_id):
                     # we are only interested in GET methods: (or None)
-                    if permission['methods'] is not None and 'GET' not in permission['methods']:
-                        continue
                     if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
                         can_access_all_accounts = True
                         break
@@ -744,34 +742,42 @@ class Permission(object):
 
 
 class Bot(object):
-    def __init__(self, name, force_account=None, force_id=None):
+    def __init__(self, name, bot_type, config, force_account=None, force_id=None):
         self.name = name
+        self.bot_type = bot_type
+        self.config = config
         self.force_account = force_account
         self.force_id = force_id
 
     @classmethod
     def forge_from_input(cls, flask_request, force_account=None, force_id=None):
-        inputs = BotSchemaInputs(flask_request)
+        if force_account:
+            inputs = AccountBotSchemaInputs(flask_request)
+        else:
+            inputs = BotSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        return cls(name, force_account=force_account, force_id=force_id)
+        bot_type = data.get('bot_type', None)
+        config = data.get('config', None)
+        return cls(name, bot_type, config, force_account=force_account, force_id=force_id)
 
     @staticmethod
     def get_list(force_account=None):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots ORDER BY insert_time DESC;')
+                c.execute('SELECT user_id, name, bot_type, token, insert_time FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.bot_type, b.token, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, token, insert_time in c:
+            for user_id, name, bot_type, token, insert_time in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
+                    'bot_type': bot_type,
                     'token': token,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
                 })
@@ -781,10 +787,10 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name) VALUES (%s, %s) RETURNING token;", (user_id, self.name,))
+            c.execute("INSERT INTO bots (user_id, name, bot_type) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.bot_type,))
             bot_token, = c.fetchone()
             if self.force_account:
-                c.execute("INSERT INTO users_accounts (user_id, account) VALUES (%s, %s);", (user_id, self.force_account,))
+                c.execute("INSERT INTO users_accounts (user_id, account, config) VALUES (%s, %s, %s);", (user_id, self.force_account, self.config,))
             return user_id, bot_token
 
     @staticmethod
@@ -812,19 +818,24 @@ class Bot(object):
                 if not Bot._is_tied_to_account(self.force_id, self.force_account):
                     return 0
 
-            c.execute("UPDATE bots SET name = %s WHERE user_id = %s;", (self.name, self.force_id,))
-            return c.rowcount
+            c.execute("UPDATE bots SET name = %s, bot_type = %s WHERE user_id = %s;", (self.name, self.bot_type, self.force_id,))
+            if not c.rowcount:
+                return 0
+            # if account id is known, we must update config information in users_accounts table:
+            if self.force_account:
+                c.execute("UPDATE users_accounts SET config = %s WHERE user_id = %s and account = %s;", (self.config, self.force_id, self.force_account,))
+            return 1
 
     @staticmethod
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                if not Bot._is_tied_only_to_account(user_id, force_account):
+                if not Bot._is_tied_to_account(user_id, force_account):
                     return 0
                 if not Bot._is_tied_only_to_account(user_id, force_account):
                     # just remove the connection to this account, leave the bot itself alone:
                     # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
-                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND account = %s;", (user_id, force_account,))
+                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND user_type = 'bot' AND account = %s;", (user_id, force_account,))
                     return c.rowcount
 
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
@@ -834,21 +845,30 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT user_id, name, token, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT user_id, name, token, bot_type, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.token, b.bot_type, ua.config, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, token, insert_time = res
+            user_id, name, token, bot_type, config, insert_time = res
         return {
             'id': user_id,
             'name': name,
             'token': token,
+            'bot_type': bot_type,
+            'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
         }
+
+    @staticmethod
+    def is_bot(user_id):
+        with db.cursor() as c:
+            c.execute("SELECT user_type FROM users WHERE id = %s;", (user_id,))
+            user_type, = c.fetchone()
+            return user_type == 'bot'
 
     @staticmethod
     def authenticate_token(bot_token_unclean):

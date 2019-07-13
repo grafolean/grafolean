@@ -28,5 +28,33 @@ services:
     networks:
       - grafolean
 
+  grafolean:
+    # This is a hack to make Mosquitto work in this setting:
+    # Mosquitto uses our REST API for auth, but it assumes it is available on hostname grafolean, port 80. Instead
+    # of changing mosquitto settings (which would be cleaner, but more challenging) we simply provide another
+    # backend at the correct address:
+    image: grafolean/grafolean
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=grafolean
+      - DB_USERNAME=admin
+      - DB_PASSWORD=admin
+      - MQTT_HOSTNAME=mosquitto
+      - MQTT_PORT=1883
+      - MQTT_WS_HOSTNAME=mosquitto
+      - MQTT_WS_PORT=9883
+      - MQTT_WS_SSL=false
+    ports:
+      - "80:80"
+    volumes:
+      - ./:/grafolean/backend/
+    networks:
+      - grafolean
+    container_name:
+      grafolean
+
 networks:
   grafolean:

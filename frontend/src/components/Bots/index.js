@@ -62,6 +62,9 @@ export default class Bots extends React.PureComponent {
       return null;
     }
     const bot = bots.find(b => b.id === Number(helpBotIdParam));
+    if (!bot) {
+      return null;
+    }
     return (
       <div className="bot-help frame">
         <h1>

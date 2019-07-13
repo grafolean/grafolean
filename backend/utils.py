@@ -258,3 +258,9 @@ def migration_step_7():
         c.execute('CREATE UNIQUE INDEX users_accounts_account ON users_accounts (user_id, account);')
 
         c.execute("ALTER TABLE bots DROP COLUMN account;")  # no need to convert data, it wasn't used anywhere
+
+def migration_step_8():
+    """ Bots can have their type and configuration saved to DB. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE bots ADD COLUMN bot_type TEXT DEFAULT NULL;")
+        c.execute("ALTER TABLE users_accounts ADD COLUMN config JSON DEFAULT NULL;")

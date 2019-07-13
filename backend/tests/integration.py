@@ -31,7 +31,8 @@ VALID_FRONTEND_ORIGINS = [
 VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
-from grafolean import app, SuperuserJWTToken
+from grafolean import app
+from api.common import SuperuserJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
@@ -762,6 +763,7 @@ def test_bots_crud(app_client, admin_authorization_header):
             {
                 'id': bot_id,
                 'name': data['name'],
+                'bot_type': None,
                 'token': token,
                 'insert_time': actual['list'][0]['insert_time'],
             },
@@ -774,6 +776,7 @@ def test_bots_crud(app_client, admin_authorization_header):
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected = expected['list'][0]
+    expected['config'] = None
     assert actual == expected
 
     # PUT:
@@ -946,10 +949,13 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
 
         # try again:
+        expected = {'id': str(account_id), 'name': FIRST_ACCOUNT_NAME}
         r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
+        assert json.loads(r.data.decode('utf-8')) == expected
         r = app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
+        assert json.loads(r.data.decode('utf-8')) == expected
         r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 401  # stays denied
 
@@ -1176,7 +1182,7 @@ def test_profile_permissions_get_as_unauthorized(app_client):
     assert r.status_code == 401
 
 
-def test_profile_accounts_get(app_client, account_id_factory, admin_authorization_header, person_id, person_authorization_header):
+def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, admin_authorization_header, person_id, person_authorization_header):
     """ As admin / normal person, fetch the accounts that you have read permissions for """
     # initially the list of accounts should be empty:
     r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
@@ -1184,35 +1190,41 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
     actual = json.loads(r.data.decode('utf-8'))
     expected_empty = {
         'list': [],
+        'user_id': first_admin_id,
     }
     assert expected_empty == actual
 
     # create new accounts and make sure they become available to admin, but not to person:
-    expected = copy.deepcopy(expected_empty)
+    expected_admin = copy.deepcopy(expected_empty)
+    expected_person_empty = {
+        'list': [],
+        'user_id': person_id,
+    }
     for acc_nr in range(3):
         # create new account:
         new_account_name = "Account {}".format(acc_nr)
         new_account_id, = account_id_factory(new_account_name)
-        expected['list'].append({
+        new_record = {
             'id': new_account_id,
             'name': new_account_name,
-        })
+        }
+        expected_admin['list'].append(new_record)
 
         # make sure it becomes available to admin:
         r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
-        assert expected == actual
+        assert expected_admin == actual
 
         # but not to person:
         r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
-        assert expected_empty == actual
+        assert expected_person_empty == actual
 
     # now add a specific permission for each account and make sure it appears in the list:
-    accounts = copy.deepcopy(expected['list'])
-    expected = copy.deepcopy(expected_empty)
+    accounts = copy.deepcopy(expected_admin['list'])
+    expected = copy.deepcopy(expected_person_empty)
     for account in accounts:
         data = {
             'resource_prefix': 'accounts/{}'.format(account['id']),
@@ -1227,6 +1239,33 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
         actual = json.loads(r.data.decode('utf-8'))
         expected['list'].append(account)
         assert expected == actual
+
+
+def test_profile_accounts_bot_config_get(app_client, account_id, first_admin_id, admin_authorization_header, bot_id, bot_token):
+    """
+        Assign permissions for an account to a bot, make sure it is able to get config from profile.
+    """
+    # assign a permission for bot to post values to the account:
+    data = {
+        'resource_prefix': 'accounts/{}/values/'.format(account_id),
+        'methods': [ 'POST' ],
+    }
+    r = app_client.post('/api/admin/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    # the bot should be able to see that they have access to the account:
+    r = app_client.get('/api/profile/accounts?b={}'.format(bot_token))
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert account_id == actual['list'][0]['id']
+
+    # the bot should be able to access config for some bot_type:
+    bot_type = 'ping'
+    r = app_client.get('/api/profile/accounts/{}/config/{}?b={}'.format(account_id, bot_type, bot_token))
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert [] == actual
+
 
 def test_account_update(app_client, admin_authorization_header, account_id):
     """
@@ -1290,6 +1329,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'name': BOT_NAME1,
+        'bot_type': None,
         'id': account_bot_id,
         'token': actual['list'][0]['token'],
         'insert_time': actual['list'][0]['insert_time'],
@@ -1301,10 +1341,11 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     r = app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
+    expected['config'] = None
     assert actual == expected
 
     # then we update it:
-    data = {'name': BOT_NAME1 + "123"}
+    data = {'name': BOT_NAME1 + "123", 'bot_type': 'ping', 'config': '{"a": 123}'}
     r = app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
     assert r.status_code == 204
 
@@ -1312,6 +1353,8 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['name'] == BOT_NAME1 + "123"
+    assert actual['bot_type'] == 'ping'
+    assert actual['config'] == {"a": 123}
 
     # now remove the bot:
     r = app_client.delete('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})

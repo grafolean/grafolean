@@ -3,3 +3,5 @@ frontend/docker/*
 install/docker-compose/db/*
 .git*
 .dockerignore
+.vscode*
+extras/
