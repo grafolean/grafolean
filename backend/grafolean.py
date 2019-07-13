@@ -21,11 +21,16 @@ from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, Unfinis
 import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
+from api import noauth, auth_no_permissions
+from api.profile import profile_api
 
 
 app = flask.Flask(__name__, static_folder=None)
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
+
+
+app.register_blueprint(profile_api, url_prefix='/api/profile')
 
 
 try:
@@ -223,23 +228,6 @@ def handle_error(e):
     response = flask.make_response('Unknown exception: {}'.format(str(e)), code)
     _add_cors_headers(response)  # even if we fail, we should still add CORS headers, or browsers won't display real error status
     return response
-
-
-def noauth(func):
-    # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
-    # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
-    # The beauty of this approach is that every endpoint is defended *by default*.
-    # WARNING: any further decorators must carry the attribute "_noauth" over to the wrapper.
-    func._noauth = True
-    return func
-
-
-def auth_no_permissions(func):
-    # Similar to noauth() decorator, except that it performs authentication, but doesn't deny access based on permissions.
-    # This is useful for endpoint which should be accessible to all authenticated users (like /profile/*), but not to
-    # unauthenticated.
-    func._auth_no_permissions = True
-    return func
 
 
 # -----------------------------------------------------------------------
@@ -927,47 +915,6 @@ def status_cspreport():
     log.error("CSP report received: {}".format(flask.request.data))
     return '', 200
 
-
-# --------------
-# /profile/ - user specific endpoints
-# --------------
-
-
-@app.route('/api/profile/permissions', methods=['GET'])
-@auth_no_permissions
-def profile_permissions():
-    user_id = flask.g.grafolean_data['user_id']
-    rec = Permission.get_list(user_id)
-    return json.dumps({'list': rec}), 200
-
-
-@app.route('/api/profile/accounts', methods=['GET'])
-@auth_no_permissions
-def profile_accounts():
-    """
-        Returns the list of accounts that this user (person or bot) has permission to access.
-    """
-    user_id = flask.g.grafolean_data['user_id']
-    rec = Account.get_list(user_id)
-    return json.dumps({
-        'user_id': user_id,
-        'list': rec,
-    }), 200
-
-
-@app.route('/api/profile/accounts/<int:account_id>', methods=['GET'])
-@auth_no_permissions
-def profile_account_get(account_id):
-    """
-        Returns the configuration that is tied to a specified account for this user (bot).
-    """
-    user_id = flask.g.grafolean_data['user_id']
-
-    res = {}
-    if Bot.is_bot(user_id):
-        bot_data = Bot.get(user_id, account_id)
-        res["config"] = bot_data["config"]
-    return json.dumps(res), 200
 
 
 # --------------
