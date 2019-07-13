@@ -565,7 +565,7 @@ class Dashboard(object):
 
 
 class Account(object):
-    RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)$')
+    RESOURCE_ACCOUNTS_REGEX = re.compile('^accounts/([0-9]+)([/].*)?$')
 
     def __init__(self, name, force_id=None):
         self.name = name
@@ -609,8 +609,6 @@ class Account(object):
                 specific_accounts = []
                 for permission in Permission.get_list(user_id):
                     # we are only interested in GET methods: (or None)
-                    if permission['methods'] is not None and 'GET' not in permission['methods']:
-                        continue
                     if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
                         can_access_all_accounts = True
                         break

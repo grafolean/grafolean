@@ -35,16 +35,17 @@ def profile_accounts():
     }), 200
 
 
-@profile_api.route('/accounts/<int:account_id>', methods=['GET'])
+@profile_api.route('/accounts/<int:account_id>/config/<string:bot_type>', methods=['GET'])
 @auth_no_permissions
-def profile_account_get(account_id):
+def profile_account_bot_config_get(account_id, bot_type):
     """
-        Returns the configuration that is tied to a specified account for this user (bot).
+        Returns the configuration of a certain bot type (ping, snmp,...) for an account.
     """
     user_id = flask.g.grafolean_data['user_id']
 
-    res = {}
-    if Bot.is_bot(user_id):
-        bot_data = Bot.get(user_id, account_id)
-        res["config"] = bot_data["config"]
+    if not Bot.is_bot(user_id):
+        return 'Only bots are allowed to access this endpoint', 400
+
+    # !!! this information should be generated dynamically from the sensors
+    res = []
     return json.dumps(res), 200
