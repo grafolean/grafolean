@@ -1181,7 +1181,7 @@ def test_profile_permissions_get_as_unauthorized(app_client):
     assert r.status_code == 401
 
 
-def test_profile_accounts_get(app_client, account_id_factory, admin_authorization_header, person_id, person_authorization_header):
+def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, admin_authorization_header, person_id, person_authorization_header):
     """ As admin / normal person, fetch the accounts that you have read permissions for """
     # initially the list of accounts should be empty:
     r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
@@ -1189,35 +1189,41 @@ def test_profile_accounts_get(app_client, account_id_factory, admin_authorizatio
     actual = json.loads(r.data.decode('utf-8'))
     expected_empty = {
         'list': [],
+        'user_id': first_admin_id,
     }
     assert expected_empty == actual
 
     # create new accounts and make sure they become available to admin, but not to person:
-    expected = copy.deepcopy(expected_empty)
+    expected_admin = copy.deepcopy(expected_empty)
+    expected_person_empty = {
+        'list': [],
+        'user_id': person_id,
+    }
     for acc_nr in range(3):
         # create new account:
         new_account_name = "Account {}".format(acc_nr)
         new_account_id, = account_id_factory(new_account_name)
-        expected['list'].append({
+        new_record = {
             'id': new_account_id,
             'name': new_account_name,
-        })
+        }
+        expected_admin['list'].append(new_record)
 
         # make sure it becomes available to admin:
         r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
-        assert expected == actual
+        assert expected_admin == actual
 
         # but not to person:
         r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
-        assert expected_empty == actual
+        assert expected_person_empty == actual
 
     # now add a specific permission for each account and make sure it appears in the list:
-    accounts = copy.deepcopy(expected['list'])
-    expected = copy.deepcopy(expected_empty)
+    accounts = copy.deepcopy(expected_admin['list'])
+    expected = copy.deepcopy(expected_person_empty)
     for account in accounts:
         data = {
             'resource_prefix': 'accounts/{}'.format(account['id']),
