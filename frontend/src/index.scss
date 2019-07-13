@@ -149,3 +149,11 @@ table.list {
     padding: 10px 20px;
   }
 }
+
+.fa-exclamation-triangle {
+  margin-right: 10px;
+  color: #aa2200;
+  .dark-mode & {
+    color: #dd2200;
+  }
+}

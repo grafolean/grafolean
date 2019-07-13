@@ -17,6 +17,7 @@ import WelcomePage from '../WelcomePage';
 import SelectAccount from './SelectAccount';
 
 import './Content.scss';
+import Entities from '../Entities/Entities';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -84,6 +85,12 @@ class Content extends React.PureComponent {
             component={WelcomePage}
           />
           <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/bots" component={Bots} />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/entities"
+            component={Entities}
+          />
           <WrappedRoute
             exact
             contentWidth={contentWidth}
