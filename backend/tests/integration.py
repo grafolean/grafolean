@@ -31,7 +31,8 @@ VALID_FRONTEND_ORIGINS = [
 VALID_FRONTEND_ORIGINS_LOWERCASED = [x.lower() for x in VALID_FRONTEND_ORIGINS]
 os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
-from grafolean import app, SuperuserJWTToken
+from grafolean import app
+from api.common import SuperuserJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache

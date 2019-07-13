@@ -1,28 +1,22 @@
 #!/usr/bin/env python
 from apispec import APISpec
 from apispec_webframeworks.flask import FlaskPlugin
-import atexit
 from collections import defaultdict
 from dotenv import load_dotenv
 import flask
-from functools import wraps
 import json
 import os
-import paho.mqtt.publish as mqtt_publish
 import psycopg2
-import re
 import secrets
 import time
-import urllib.parse
 import validators
 from werkzeug.exceptions import HTTPException
 
-from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, AccessDeniedError, ValidationError, Person, Account, Permission, Bot, PersonCredentials, Person
+from datatypes import Measurement, Aggregation, Dashboard, Widget, Path, UnfinishedPathFilter, PathFilter, Timestamp, AccessDeniedError, ValidationError, Account, Permission, Bot, PersonCredentials
 import utils
 from utils import log
 from auth import Auth, JWT, AuthFailedException
-from api import noauth, auth_no_permissions
-from api.profile import profile_api
+from api import noauth, mqtt_publish_changed, MQTT_WS_HOSTNAME, MQTT_WS_PORT, admin_api, profile_api
 
 
 app = flask.Flask(__name__, static_folder=None)
@@ -30,6 +24,7 @@ app = flask.Flask(__name__, static_folder=None)
 app.url_map.strict_slashes = False
 
 
+app.register_blueprint(admin_api, url_prefix='/api/admin')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
 
 
@@ -43,56 +38,6 @@ except:
 
 
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
-MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
-MQTT_PORT = int(os.environ.get('MQTT_PORT', 1883))
-MQTT_WS_HOSTNAME = os.environ.get('MQTT_WS_HOSTNAME', '')
-MQTT_WS_PORT = os.environ.get('MQTT_WS_PORT', '')
-
-
-class SuperuserJWTToken(object):
-    """
-        SuperuserJWTToken is a workaround which allows us to post information (about changed resources) to MQTT. When we post such information,
-        MQTT connects back to us (see /api/admin/mqtt-auth-plug/<check_type>/ API endpoint) to determine if we have the necessary permissions,
-        and we check the validity of JWT token (and allow it).
-    """
-    jwt_tokens = {}
-    valid_until = {}
-
-    @classmethod
-    def get_valid_token(cls, superuser_identifier):
-        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + 10.0:
-            cls._refresh_token(superuser_identifier)
-        return cls.jwt_tokens[superuser_identifier]
-
-    @classmethod
-    def _refresh_token(cls, superuser_identifier):
-        data = {
-            "superuser": superuser_identifier,
-        }
-        token_header, valid_until = JWT(data).encode_as_authorization_header()
-        cls.jwt_tokens[superuser_identifier] = token_header[len('Bearer '):]
-        cls.valid_until[superuser_identifier] = valid_until
-
-    @classmethod
-    def clear_cache(cls):
-        cls.jwt_tokens = {}
-        cls.valid_until = {}
-
-# This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
-# when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
-# can re-issue GET to the same endpoint URL.
-def mqtt_publish_changed(topics, payload='1'):
-    if not MQTT_HOSTNAME:
-        log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
-        return
-    try:
-        log.debug("MQTT publishing change of: [{}]".format(topics,))
-        # https://www.eclipse.org/paho/clients/python/docs/#id2
-        msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
-        superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
-        mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
-    except Exception as ex:
-        log.warning("Could not publish change to MQTT, error: {}".format(ex))
 
 
 @app.before_request
@@ -235,648 +180,6 @@ def handle_error(e):
 # -----------------------------------------------------------------------
 
 # --------------
-# /admin/ - administration tools; can be locked to local access
-# --------------
-
-@app.route('/api/admin/migratedb', methods=['POST'])
-@noauth
-def admin_migratedb_post():
-    """
-        ---
-        post:
-          summary: Migrate database
-          tags:
-            - admin
-          description:
-            Migrates database to latest schema version if needed.
-          responses:
-            204:
-              description: Success
-    """
-    was_needed = utils.migrate_if_needed()
-    if was_needed:
-        mqtt_publish_changed(['status/info'])
-    return '', 204
-
-
-@app.route('/api/admin/first', methods=['POST'])
-@noauth
-def admin_first_post():
-    """
-        ---
-        post:
-          summary: Create first admin user
-          tags:
-            - admin
-          description:
-            This endpoint helps with setting up a new installation. It allows us to set up just one initial
-            admin access (with name, email and password). Later requests to the same endpoint will fail.
-          parameters:
-            - name: "body"
-              in: body
-              description: "First admin data and credentials"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/PersonPOST'
-          responses:
-            201:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: "User id of created admin"
-            401:
-              description: System already initialized
-    """
-    if Auth.first_user_exists():
-        return 'System already initialized', 401
-    admin = Person.forge_from_input(flask.request)
-    admin_id = admin.insert()
-    # make it a superuser:
-    permission = Permission(admin_id, None, None)
-    permission.insert(None, skip_checks=True)
-    mqtt_publish_changed(['status/info'])
-    return json.dumps({
-        'id': admin_id,
-    }), 201
-
-
-@app.route('/api/admin/mqtt-auth-plug/<string:check_type>', methods=['POST'])
-@noauth
-def admin_mqttauth_plug(check_type):
-    """
-        ---
-        post:
-          summary: Authorization for Mosquitto with mosquitto-auth-plug plugin
-          tags:
-            - admin
-          description:
-            >
-              If using MQTT (with mosquitto-auth-plug plugin), it should be configured
-              to ask this endpoint about access rights via JWT tokens (Authorization header). The JWT token is supplied
-              to MQTT by frontend via websockets through username (password is not used).
-              See [mosquitto-auth-plug](https://github.com/jpmens/mosquitto-auth-plug) for more info.
-          parameters:
-            - name: check_type
-              in: path
-              description: "One of the 3 modes of calling this endpoint"
-              required: true
-              schema:
-                type: "string"
-                enum:
-                  - "getuser"
-                  - "superuser"
-                  - "aclcheck"
-            - name: Authorization
-              in: header
-              description: "JWT token (in other words: MQTT username)"
-              schema:
-                type: string
-              required: true
-          responses:
-            200:
-              description: Access allowed
-            401:
-              description: Access denied
-    """
-    # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
-    authorization_header = flask.request.headers.get('Authorization')
-    authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')
-    # debugging:
-    # if authorization_header == 'Bearer secret':
-    #     log.info('--- secret account authenticated ---')
-    #     return "", 200
-    # log_received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
-    # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, flask.request.form.to_dict()))
-    try:
-        if check_type == 'getuser':
-            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
-            # jwt token was successfully decoded, so we can allow for the fact that this is a valid user - we'll still see about
-            # access rights though (might be superuser, in which case everything goes, or it might be checked via aclcheck)
-            return "", 200
-
-        elif check_type == 'superuser':
-            # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
-            # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
-            is_superuser = bool(received_jwt.data.get('superuser', False))
-            if is_superuser:
-                return "", 200
-
-            log.info("Access denied (not a superuser)")
-            return "Access denied", 401
-
-        elif check_type == 'aclcheck':
-            params = flask.request.form.to_dict()
-            # When client connects, username is jwt token. However subscribing to topics doesn't necessarily reconnect so
-            # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
-            # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
-            # superusers can do whatever they want to:
-            is_superuser = bool(received_jwt.data.get('superuser', False))
-            if is_superuser:
-                return "", 200
-
-            if params['topic'][:8] != 'changed/':
-                log.info("Access denied (wrong topic)")
-                return "Access denied", 401
-
-            # check user's access rights:
-            user_id = received_jwt.data['user_id']
-            resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
-            is_allowed = Permission.is_access_allowed(
-                user_id = user_id,
-                resource = resource,
-                method = 'GET',  # users can only request read access (apart from backend, which is superuser anyway)
-            )
-            if is_allowed:
-                return "", 200
-
-            log.info("Access denied (permissions check failed for user '{}', url '{}', method 'GET')".format(user_id, resource))
-            return "Access denied", 401
-
-        return "Invalid endpoint", 404
-
-    except AuthFailedException:
-        log.info("Authentication failed")
-        return "Access denied", 401
-    except:
-        log.exception("Exception while checking access rights")
-        return "Access denied", 401
-
-
-@app.route('/api/admin/bots', methods=['GET', 'POST'])
-def admin_bots():
-    """
-        ---
-        get:
-          summary: Get all bots
-          tags:
-            - admin
-          description:
-            Returns a list of all bots. The list is returned in a single array (no pagination).
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          "$ref": '#/components/schemas/BotGET'
-        post:
-          summary: Create a bot
-          tags:
-            - admin
-          description:
-            Creates a bot. By default (as any user) a bot is without permissions, so they must be granted to it before it can do anything useful.
-
-          parameters:
-            - name: "body"
-              in: body
-              description: "Bot data"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/BotPOST'
-          responses:
-            201:
-              content:
-                application/json:
-                  schema:
-                    "$ref": '#/components/schemas/BotGET'
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request)
-        user_id, _ = bot.insert()
-        rec = Bot.get(user_id)
-        return json.dumps(rec), 201
-
-
-@app.route('/api/admin/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def admin_bot_crud(user_id):
-    """
-        ---
-        get:
-          summary: Get bot data
-          tags:
-            - admin
-          description:
-            Returns bot data.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    "$ref": '#/components/schemas/BotGET'
-            404:
-              description: No such bot
-        put:
-          summary: Update the bot
-          tags:
-            - admin
-          description:
-            Updates bot name. Note that all other fields are handled automatically (they can't be changed).
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-              type: integer
-            - name: "body"
-              in: body
-              description: "Bot data"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/BotPOST'
-          responses:
-            204:
-              description: Update successful
-            404:
-              description: No such bot
-        delete:
-          summary: Remove the bot
-          tags:
-            - admin
-          description:
-            Removes the bot. Also removes its permissions, if any.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            204:
-              description: Bot removed successfully
-            403:
-              description: Can't remove yourself
-            404:
-              description: No such bot
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get(user_id)
-        if not rec:
-            return "No such bot", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request, force_id=user_id)
-        rowcount = bot.update()
-        if not rowcount:
-            return "No such bot", 404
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        # bot should not be able to delete himself, otherwise they could lock themselves out:
-        if int(flask.g.grafolean_data['user_id']) == int(user_id):
-            return "Can't delete yourself", 403
-        rowcount = Bot.delete(user_id)
-        if not rowcount:
-            return "No such bot", 404
-        return "", 204
-
-
-@app.route('/api/admin/persons', methods=['GET', 'POST'])
-def admin_persons():
-    """
-        ---
-        get:
-          summary: Get all persons
-          tags:
-            - admin
-          description:
-            Returns a list of all persons. The list is returned in a single array (no pagination).
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          "$ref": '#/components/schemas/PersonGET'
-        post:
-          summary: Create a person account
-          tags:
-            - admin
-          description:
-            Creates a person account. By default (as any user) a person is without permissions, so they must be granted to it before it can do anything useful.
-          parameters:
-            - name: "body"
-              in: body
-              description: "Person data"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/PersonPOST'
-          responses:
-            201:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        person = Person.forge_from_input(flask.request)
-        user_id = person.insert()
-        return json.dumps({
-            'id': user_id,
-        }), 201
-
-
-@app.route('/api/admin/persons/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def admin_person_crud(user_id):
-    """
-        ---
-        get:
-          summary: Get person data
-          tags:
-            - admin
-          description:
-            Returns person data.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    "$ref": '#/components/schemas/PersonGETWithPermissions'
-            404:
-              description: No such person
-        put:
-          summary: Update the bot
-          tags:
-            - admin
-          description:
-            Updates person data.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-                type: integer
-            - name: "body"
-              in: body
-              description: "Person data"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/PersonPOST'
-          responses:
-            204:
-              description: Update successful
-            404:
-              description: No such person
-        delete:
-          summary: Remove the person data
-          tags:
-            - admin
-          description:
-            Removes the person data. Also removes user's permissions, if any.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            204:
-              description: Person data removed successfully
-            403:
-              description: Can't remove yourself
-            404:
-              description: No such person
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get(user_id)
-        if not rec:
-            return "No such person", 404
-        rec['permissions'] = Permission.get_list(user_id)
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        person = Person.forge_from_input(flask.request, force_id=user_id)
-        rowcount = person.update()
-        if not rowcount:
-            return "No such person", 404
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        # user should not be able to delete himself, otherwise they could lock themselves out:
-        if int(flask.g.grafolean_data['user_id']) == int(user_id):
-            return "Can't delete yourself", 403
-        rowcount = Person.delete(user_id)
-        if not rowcount:
-            return "No such person", 404
-        return "", 204
-
-
-@app.route('/api/admin/users/<int:user_id>/permissions', methods=['GET', 'POST'])
-@app.route('/api/admin/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
-@app.route('/api/admin/persons/<int:user_id>/permissions', methods=['GET', 'POST'])
-def admin_permissions_get_post(user_id):
-    """
-        ---
-        get:
-          summary: Get a list of all permissions granted to a specified user
-          tags:
-            - admin
-          description:
-            Returns a list of all permissions granted to the user. The list is returned in a single array (no pagination).
-
-
-            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
-            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
-            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: false
-              schema:
-                type: integer
-          responses:
-            200:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      list:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id:
-                              type: integer
-                              description: "Permission id"
-                            resource_prefix:
-                              type: string
-                              nullable: true
-                              description: "Resource prefix (e.g., 'admin/permissions' or 'accounts/123'); if null, this permission applies to any resource"
-                            methods:
-                              type: array
-                              items:
-                                type: string
-                                enum:
-                                  - "GET"
-                                  - "POST"
-                                  - "PUT"
-                                  - "DELETE"
-                              nullable: true
-                              description: "List of HTTP methods allowed; if null, this permission applies to any method"
-        post:
-          summary: Grant permission to the user
-          tags:
-            - admin
-          description:
-            Grants a specified permission to the user. Permissions are defined with a combination of resource prefix and a list of methods.
-            Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
-
-
-            Note that when comparing, resource prefix is checked either for equality (resource must match prefix), otherwise
-            resource location must start with the prefix, followed by forward slash ('/'). In other words, allowing users
-            access to 'accounts/123' does **not** grant them access to 'accounts/1234'.
-
-
-          parameters:
-            - name: user_id
-              in: path
-              description: "User id"
-              required: false
-              schema:
-                type: integer
-            - name: "body"
-              in: body
-              description: "Permission to be granted"
-              required: true
-              schema:
-                "$ref": '#/components/schemas/Permission'
-          responses:
-            201:
-              content:
-                application/json:
-                  schema:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        description: "Permission id"
-            400:
-              description: Invalid parameters
-            401:
-              description: Not allowed to grant permissions
-    """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list(user_id=user_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request, user_id)
-        try:
-            permission_id = permission.insert(granting_user_id)
-            mqtt_publish_changed([
-                f'admin/persons/{user_id}',
-                f'admin/bots/{user_id}',
-            ])
-            return json.dumps({
-                'id': permission_id,
-            }), 201
-        except AccessDeniedError as ex:
-            return str(ex), 401
-        except psycopg2.IntegrityError:
-            return "Invalid parameters", 400
-
-
-@app.route('/api/admin/users/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-@app.route('/api/admin/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-@app.route('/api/admin/persons/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-def admin_permission_delete(permission_id, user_id):
-    """
-        ---
-        delete:
-          summary: Revoke permission
-          tags:
-            - admin
-          description:
-            Revokes a specific permission, as specified by permission id.
-          parameters:
-            - name: permission_id
-              in: path
-              description: "Permission id"
-              required: true
-              schema:
-                type: integer
-          responses:
-            204:
-              description: Permission removed successfully
-            401:
-              description: Not allowed to revoke this permission
-            404:
-              description: No such permission
-    """
-    granting_user_id = flask.g.grafolean_data['user_id']
-    try:
-        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
-    except AccessDeniedError as ex:
-        return str(ex), 401
-    if not rowcount:
-        return "No such permission", 404
-    mqtt_publish_changed([
-        f'admin/persons/{user_id}',
-        f'admin/bots/{user_id}',
-    ])
-    return "", 204
-
-
-@app.route('/api/admin/accounts', methods=['GET', 'POST'])
-def accounts_crud():
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Account.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        account = Account.forge_from_input(flask.request)
-        account_id = account.insert()
-        return json.dumps({'name': account.name, 'id': account_id}), 201
-
-
-# --------------
 # /status/ - system status information
 # --------------
 
@@ -974,7 +277,7 @@ def account_crud(account_id):
         if not rowcount:
             return "No such account", 404
         mqtt_publish_changed([
-            f'accounts/{account_id}',
+            'accounts/{account_id}'.format(account_id=account_id),
         ])
         return "", 204
 
@@ -1037,8 +340,8 @@ def account_bot_permissions(account_id, user_id):
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
-                f'admin/persons/{permission.user_id}',
-                f'admin/bots/{permission.user_id}',
+                'admin/persons/{}'.format(permission.user_id),
+                'admin/bots/{}'.format(permission.user_id),
             ])
             return json.dumps({
                 'user_id': permission.user_id,
@@ -1068,8 +371,8 @@ def account_bot_permission_delete(account_id, user_id, permission_id):
     if not rowcount:
         return "No such permission", 404
     mqtt_publish_changed([
-        f'admin/persons/{user_id}',
-        f'admin/bots/{user_id}',
+        'admin/persons/{user_id}'.format(user_id=user_id),
+        'admin/bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204
 
@@ -1276,7 +579,7 @@ def dashboards_crud(account_id):
             dashboard.insert()
         except psycopg2.IntegrityError:
             return "Dashboard with this slug already exists", 400
-        mqtt_publish_changed([f'accounts/{account_id}/dashboards'])
+        mqtt_publish_changed(['accounts/{}/dashboards'.format(account_id)])
         return json.dumps({'slug': dashboard.slug}), 201
 
 
@@ -1294,8 +597,8 @@ def dashboard_crud(account_id, dashboard_slug):
         if not rowcount:
             return "No such dashboard", 404
         mqtt_publish_changed([
-            f'accounts/{account_id}/dashboards',
-            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+            'accounts/{}/dashboards'.format(account_id),
+            'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
         ])
         return "", 204
 
@@ -1304,8 +607,8 @@ def dashboard_crud(account_id, dashboard_slug):
         if not rowcount:
             return "No such dashboard", 404
         mqtt_publish_changed([
-            f'accounts/{account_id}/dashboards',
-            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+            'accounts/{}/dashboards'.format(account_id),
+            'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
         ])
         return "", 200
 

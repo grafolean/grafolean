@@ -1,12 +1,11 @@
-from flask import Blueprint
 import flask
 import json
 
-from . import auth_no_permissions
+from .common import auth_no_permissions
 from datatypes import Account, Bot, Permission
 
 
-profile_api = Blueprint('profile_api', __name__)
+profile_api = flask.Blueprint('profile_api', __name__)
 
 
 # --------------
