@@ -145,6 +145,11 @@ class _AccountSidebarContent extends React.Component {
             <i className="fa fa-robot" /> Bots
           </Link>
         )}
+        {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
+          <Link className="button green" to={`/accounts/${accountId}/entities`} onClick={onSidebarLinkClick}>
+            <i className="fa fa-cube" /> Monitored entities
+          </Link>
+        )}
       </>
     );
   }
