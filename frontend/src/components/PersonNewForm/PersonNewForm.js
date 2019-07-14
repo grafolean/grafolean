@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 
 import { ROOT_URL } from '../../store/actions';
@@ -9,7 +8,7 @@ import { fetchAuth } from '../../utils/fetch';
 import '../form.scss';
 import Button from '../Button';
 
-class PersonNewForm extends React.PureComponent {
+export default class PersonNewForm extends React.PureComponent {
   state = {
     formValues: {
       username: '',
@@ -139,8 +138,3 @@ class PersonNewForm extends React.PureComponent {
     );
   }
 }
-
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
-});
-export default connect(mapStoreToProps)(PersonNewForm);
