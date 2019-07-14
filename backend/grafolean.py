@@ -6,24 +6,8 @@ from dotenv import load_dotenv
 import flask
 from werkzeug.exceptions import HTTPException
 
-from datatypes import ValidationError, Permission, Bot
-import utils
-from utils import log
-from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api
-import validators
-
 
 app = flask.Flask(__name__, static_folder=None)
-# since this is API, we don't care about trailing slashes - and we don't want redirects:
-app.url_map.strict_slashes = False
-
-
-app.register_blueprint(admin_api, url_prefix='/api/admin')
-app.register_blueprint(profile_api, url_prefix='/api/profile')
-app.register_blueprint(accounts_api, url_prefix='/api/accounts')
-app.register_blueprint(status_api, url_prefix='/api/status')
-app.register_blueprint(auth_api, url_prefix='/api/auth')
 
 
 try:
@@ -33,6 +17,24 @@ try:
     load_dotenv(dotenv_filename)
 except:
     pass
+
+
+from datatypes import ValidationError, Permission, Bot
+import utils
+from utils import log
+from auth import JWT, AuthFailedException
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api
+import validators
+
+
+# since this is API, we don't care about trailing slashes - and we don't want redirects:
+app.url_map.strict_slashes = False
+# register the blueprints for different api endpoints:
+app.register_blueprint(admin_api, url_prefix='/api/admin')
+app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(accounts_api, url_prefix='/api/accounts')
+app.register_blueprint(status_api, url_prefix='/api/status')
+app.register_blueprint(auth_api, url_prefix='/api/auth')
 
 
 @app.before_request
