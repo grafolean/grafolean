@@ -7,6 +7,7 @@ import { ROOT_URL } from '../../store/actions';
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
 import Button from '../Button';
+import EntityDetails from './EntityDetails';
 
 export default class Entities extends React.Component {
   state = {
@@ -16,7 +17,7 @@ export default class Entities extends React.Component {
 
   onEntitiesUpdate = entities => {
     this.setState({
-      entities: entities,
+      entities: entities.list,
       fetchError: false,
     });
   };
@@ -72,11 +73,13 @@ export default class Entities extends React.Component {
                   </tr>
                   {entities.map(entity => (
                     <tr key={entity.id}>
-                      <td>{entity.type}</td>
+                      <td>{entity.entity_type}</td>
                       <td>{entity.name}</td>
-                      <td>/</td>
                       <td>
-                        <LinkButton title="Edit" to="/">
+                        <EntityDetails details={entity.details} />
+                      </td>
+                      <td>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/entities/edit/${entity.id}`}>
                           <i className="fa fa-pencil" /> Edit
                         </LinkButton>
                       </td>
