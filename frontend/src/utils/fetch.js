@@ -162,10 +162,17 @@ class MQTTFetcher {
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => this.fetches[fetchId].onFetchCallback(json))
-      .catch(err => this.fetches[fetchId].onErrorCallback(err));
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          this.fetches[fetchId].onErrorCallback(err);
+        }
+      });
   };
 
   onMessageReceived = message => {
+    // Note that unsubscribe is async so it might happen that some messages come *after* the unsubscribe:
+    //   https://www.eclipse.org/paho/files/jsdoc/Paho.MQTT.Client.html
+    // Since we can't rush the unsubscribing process, we simply ignore such messages (they match no known topic).
     console.log('Message received:', message.destinationName, message.topic, message.payloadString);
     if (!message.destinationName.startsWith('changed/')) {
       console.error('Message doesn\'t start with "changed/", how did we get it?');
@@ -173,7 +180,7 @@ class MQTTFetcher {
     }
     const changedTopic = message.destinationName.substring('changed/'.length);
     this.fetches.forEach((f, fetchId) => {
-      if (f.topic !== changedTopic) {
+      if (f === null || f.topic !== changedTopic) {
         return;
       }
       try {
@@ -207,6 +214,7 @@ class MQTTFetcher {
         console.error('Error subscribing to topic: ' + topic);
         onErrorCallback('Error subscribing to topic: ' + topic);
         //this.fetches.splice(fetchId, 1); // don't do this, other ids will change then...
+        this.fetches[fetchId] = null;
       },
     });
   };
@@ -219,6 +227,7 @@ class MQTTFetcher {
     const { topic } = this.fetches[fetchId];
     if (this.mqttClient) {
       // if client component stops listening before we even connected, this.mqttClient could be null
+      console.log('Unsubscribed from topic: ' + topic);
       this.mqttClient.unsubscribe(topic);
     }
 
@@ -228,6 +237,7 @@ class MQTTFetcher {
     }
     // now cut out the element at fetchId from the list:
     //this.fetches.splice(fetchId, 1); // don't do this, other ids will change then...
+    this.fetches[fetchId] = null;
   };
 
   disconnect = () => {
@@ -255,6 +265,12 @@ class _PersistentFetcher extends React.PureComponent {
       (!prevProps.jwtToken && !!this.props.jwtToken)
     ) {
       this.subscribe();
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.fetchId !== null) {
+      MQTTFetcherSingleton.stop(this.fetchId);
     }
   }
 
@@ -287,12 +303,6 @@ class _PersistentFetcher extends React.PureComponent {
       this.props.onNotification,
     );
   };
-
-  componentWillUnmount() {
-    if (this.fetchId !== null) {
-      MQTTFetcherSingleton.stop(this.fetchId);
-    }
-  }
 
   render() {
     return null;
