@@ -13,6 +13,9 @@ MQTT_WS_HOSTNAME = os.environ.get('MQTT_WS_HOSTNAME', '')
 MQTT_WS_PORT = os.environ.get('MQTT_WS_PORT', '')
 
 
+CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
+
+
 def noauth(func):
     # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
     # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
