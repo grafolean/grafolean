@@ -1,20 +1,17 @@
 #!/usr/bin/env python
+import os
 from apispec import APISpec
 from apispec_webframeworks.flask import FlaskPlugin
-from collections import defaultdict
 from dotenv import load_dotenv
 import flask
-import json
-import os
-import secrets
-import validators
 from werkzeug.exceptions import HTTPException
 
-from datatypes import ValidationError, Permission, Bot, PersonCredentials
+from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
-from auth import Auth, JWT, AuthFailedException
-from api import noauth, MQTT_WS_HOSTNAME, MQTT_WS_PORT, admin_api, profile_api, accounts_api
+from auth import JWT, AuthFailedException
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api
+import validators
 
 
 app = flask.Flask(__name__, static_folder=None)
@@ -25,6 +22,8 @@ app.url_map.strict_slashes = False
 app.register_blueprint(admin_api, url_prefix='/api/admin')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
 app.register_blueprint(accounts_api, url_prefix='/api/accounts')
+app.register_blueprint(status_api, url_prefix='/api/status')
+app.register_blueprint(auth_api, url_prefix='/api/auth')
 
 
 try:
@@ -34,9 +33,6 @@ try:
     load_dotenv(dotenv_filename)
 except:
     pass
-
-
-CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
 
 
 @app.before_request
@@ -104,9 +100,9 @@ def before_request():
             if not hasattr(view_func, '_auth_no_permissions'):
                 resource = flask.request.path[len('/api/'):]
                 is_allowed = Permission.is_access_allowed(
-                    user_id = user_id,
-                    resource = resource,
-                    method = flask.request.method,
+                    user_id=user_id,
+                    resource=resource,
+                    method=flask.request.method,
                 )
                 if not is_allowed:
                     log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
@@ -174,95 +170,10 @@ def handle_error(e):
     return response
 
 
-# -----------------------------------------------------------------------
-# Routes:
-# -----------------------------------------------------------------------
-
-# --------------
-# /status/ - system status information
-# --------------
-
-
-# Useful for determining status of backend (is it available, is the first user initialized,...)
-@app.route('/api/status/info', methods=['GET'])
-@noauth
-def status_info_get():
-    db_migration_needed = utils.is_migration_needed()
-    result = {
-        'alive': True,
-        'db_migration_needed': db_migration_needed,
-        'db_version': utils.get_existing_schema_version(),
-        'user_exists': Auth.first_user_exists() if not db_migration_needed else None,
-        'cors_domains': CORS_DOMAINS,
-        'mqtt_ws_hostname': MQTT_WS_HOSTNAME,
-        'mqtt_ws_port': MQTT_WS_PORT,
-    }
-    return json.dumps(result), 200
-
-
-@app.route('/api/status/sitemap', methods=['GET'])
-@noauth
-def status_sitemap_get():
-    ignored_methods = set(['HEAD', 'OPTIONS'])
-    rules = defaultdict(set)
-    for rule in app.url_map.iter_rules():
-        rules[str(rule)] |= rule.methods
-    result = [{ 'url': k, 'methods': sorted(list(v - ignored_methods))} for k, v in rules.items()]
-    return json.dumps(result), 200
-
-
-@app.route('/api/status/cspreport', methods=['POST'])
-@noauth
-def status_cspreport():
-    log.error("CSP report received: {}".format(flask.request.data))
-    return '', 200
-
-
-
-# --------------
-# /auth/ - authentication; might need different logging settings
-# --------------
-
-@app.route('/api/auth/login', methods=['POST'])
-@noauth
-def auth_login_post():
-    credentials = PersonCredentials.forge_from_input(flask.request)
-    user_id = credentials.check_user_login()
-    if not user_id:
-        return "Invalid credentials", 401
-
-    session_data = {
-        'user_id': user_id,
-        'session_id': secrets.token_hex(32),
-        'permissions': Permission.get_list(user_id),
-    }
-    response = flask.make_response(json.dumps(session_data), 200)
-    response.headers['X-JWT-Token'], _ = JWT(session_data).encode_as_authorization_header()
-    return response
-
-
-@app.route('/api/auth/refresh', methods=['POST'])
-@noauth
-def auth_refresh_post():
-    try:
-        authorization_header = flask.request.headers.get('Authorization')
-        if not authorization_header:
-            return "Access denied", 401
-
-        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
-        data = old_jwt.data.copy()
-        new_jwt, _ = JWT(data).encode_as_authorization_header()
-
-        response = flask.make_response(json.dumps(data), 200)
-        response.headers['X-JWT-Token'] = new_jwt
-        return response
-    except:
-        return "Access denied", 401
-
-
-
-
 def generate_api_docs(filename):
+    """
+        Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
+    """
     import copy
     apidoc = APISpec(
         title="Grafolean API",
