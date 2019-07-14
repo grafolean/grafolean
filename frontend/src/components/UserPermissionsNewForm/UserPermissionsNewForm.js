@@ -67,7 +67,7 @@ export default class UserPermissionsNewForm extends React.PureComponent {
         throw await responsePermissions.text();
       }
 
-      await this.setState({ submitted: true });
+      this.setState({ submitted: true });
     } catch (errorMsg) {
       this.setState({
         errorMsg: errorMsg.toString(),

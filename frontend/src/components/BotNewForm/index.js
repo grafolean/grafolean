@@ -56,7 +56,7 @@ export default class BotNewForm extends React.Component {
       );
       await handleFetchErrors(responsePermissions);
 
-      await this.setState({ newId: responseJson.id });
+      this.setState({ newId: responseJson.id });
     } catch (e) {
       store.dispatch(onFailure(e.toString()));
     }
