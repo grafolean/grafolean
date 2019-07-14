@@ -1364,3 +1364,98 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['list'] == []
+
+
+def test_account_entities(app_client, admin_authorization_header, account_id):
+    """
+        Fetch a list of entities for account (must be empty), create one, check it, edit, check, delete, check.
+    """
+    ENTITY_NAME1 = 'My first device'
+    ENTITY_DETAILS1 = {
+        'ipv4': '1.1.1.1',
+    }
+    ENTITY_NAME2 = 'My first device - renamed'
+    ENTITY_DETAILS2 = {
+        'ipv4': '2.2.2.2',
+    }
+
+    # the list of entities for account must be empty at first:
+    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # create an entity:
+    data = {
+        'name': ENTITY_NAME1,
+        'entity_type': 'device',
+        'details': ENTITY_DETAILS1,
+    }
+    r = app_client.post('/api/accounts/{}/entities'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    entity_id = json.loads(r.data.decode('utf-8'))['id']
+
+    # check result:
+    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [
+            {
+                'id': entity_id,
+                'name': ENTITY_NAME1,
+                'entity_type': 'device',
+                'details': ENTITY_DETAILS1,
+            },
+        ],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # get only the entity:
+    r = app_client.get('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': entity_id,
+        'name': ENTITY_NAME1,
+        'entity_type': 'device',
+        'details': ENTITY_DETAILS1,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # update it:
+    data = {
+        'name': ENTITY_NAME2,
+        'entity_type': 'device2',
+        'details': ENTITY_DETAILS2,
+    }
+    r = app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # get only the entity:
+    r = app_client.get('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': entity_id,
+        'name': ENTITY_NAME2,  # the name has changed
+        'entity_type': 'device2',
+        'details': ENTITY_DETAILS2,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # delete the entity:
+    r = app_client.delete('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # the list is again empty:
+    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected

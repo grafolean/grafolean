@@ -1,6 +1,7 @@
 import calendar
 from collections import defaultdict
 import dns
+import json
 from functools import lru_cache
 import math
 import psycopg2.extras
@@ -8,7 +9,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs
 from auth import Auth
 
 
@@ -845,17 +846,17 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT user_id, name, token, bot_type, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT name, token, bot_type, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.user_id, b.name, b.token, b.bot_type, ua.config, b.insert_time ' +
+                c.execute('SELECT b.name, b.token, b.bot_type, ua.config, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, token, bot_type, config, insert_time = res
+            name, token, bot_type, config, insert_time = res
         return {
-            'id': user_id,
+            'id': int(user_id),
             'name': name,
             'token': token,
             'bot_type': bot_type,
@@ -994,3 +995,71 @@ class PersonCredentials(object):
             if Auth.is_password_valid(self.password, passhash):
                 return user_id
             return None
+
+
+class Entity(object):
+    def __init__(self, name, entity_type, details, account_id, force_id=None):
+        self.name = name
+        self.entity_type = entity_type
+        self.details = json.dumps(details)
+        self.account_id = account_id
+        self.force_id = force_id
+
+    @classmethod
+    def forge_from_input(cls, flask_request, account_id, force_id=None):
+        inputs = EntitySchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        name = data['name']
+        entity_type = data.get('entity_type', None)
+        details = data.get('details', None)
+        return cls(name, entity_type, details, account_id, force_id=force_id)
+
+    @staticmethod
+    def get_list(account_id):
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for entity_id, name, entity_type, details in c:
+                ret.append({
+                    'id': entity_id,
+                    'name': name,
+                    'entity_type': entity_type,
+                    'details': details,
+                })
+            return ret
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO entities (account, name, entity_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.details,))
+            entity_id, = c.fetchone()
+            return entity_id
+
+    @staticmethod
+    def get(entity_id, account_id):
+        with db.cursor() as c:
+            c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
+            res = c.fetchone()
+            if not res:
+                return None
+            name, entity_type, details = res
+        return {
+            'id': int(entity_id),
+            'name': name,
+            'entity_type': entity_type,
+            'details': details,
+        }
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE entities SET name = %s, entity_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.entity_type, self.details, self.force_id, self.account_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(entity_id, account_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM entities WHERE id = %s AND account = %s;", (entity_id, account_id,))
+            return c.rowcount

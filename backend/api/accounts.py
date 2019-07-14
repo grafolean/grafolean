@@ -3,7 +3,7 @@ import json
 import psycopg2
 import time
 
-from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
+from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
 from .common import mqtt_publish_changed
 
 
@@ -66,6 +66,41 @@ def account_bot_crud(account_id, user_id):
         rowcount = Bot.delete(user_id, force_account=account_id)
         if not rowcount:
             return "No such bot", 404
+        return "", 204
+
+
+@accounts_api.route('/<string:account_id>/entities', methods=['GET', 'POST'])
+def account_entities(account_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Entity.get_list(account_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        entity = Entity.forge_from_input(flask.request, account_id)
+        entity_id = entity.insert()
+        rec = {'id': entity_id}
+        return json.dumps(rec), 201
+
+
+@accounts_api.route('/<string:account_id>/entities/<string:entity_id>', methods=['GET', 'PUT', 'DELETE'])
+def account_entity_crud(account_id, entity_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Entity.get(entity_id, account_id)
+        if not rec:
+            return "No such entity", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        entity = Entity.forge_from_input(flask.request, account_id, force_id=entity_id)
+        rowcount = entity.update()
+        if not rowcount:
+            return "No such entity", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        rowcount = Entity.delete(entity_id, account_id)
+        if not rowcount:
+            return "No such entity", 404
         return "", 204
 
 

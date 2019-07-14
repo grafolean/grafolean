@@ -135,3 +135,16 @@ class AccountBotSchemaInputs(Inputs):
         },
         'required': ['name'],
     })]
+
+
+class EntitySchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'entity_type': {'type': 'string'},
+            'details': {'type': 'object'},
+        },
+        'required': ['name', 'entity_type', 'details'],
+    })]

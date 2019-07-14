@@ -264,3 +264,12 @@ def migration_step_8():
     with db.cursor() as c:
         c.execute("ALTER TABLE bots ADD COLUMN bot_type TEXT DEFAULT NULL;")
         c.execute("ALTER TABLE users_accounts ADD COLUMN config JSON DEFAULT NULL;")
+
+def migration_step_9():
+    """ Add monitored entities (devices, web pages, services,...). """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='entities')
+    ACCOUNT_ID_FIELD = 'account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('entities'))
+        c.execute('CREATE TABLE entities ({id}, {account}, name TEXT NOT NULL, entity_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX entities_name ON entities (account, name);')
