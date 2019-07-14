@@ -79,6 +79,9 @@ def account_entities(account_id):
         entity = Entity.forge_from_input(flask.request, account_id)
         entity_id = entity.insert()
         rec = {'id': entity_id}
+        mqtt_publish_changed([
+            'accounts/{}/entities'.format(account_id),
+        ])
         return json.dumps(rec), 201
 
 
@@ -95,12 +98,20 @@ def account_entity_crud(account_id, entity_id):
         rowcount = entity.update()
         if not rowcount:
             return "No such entity", 404
+        mqtt_publish_changed([
+            'accounts/{}/entities'.format(account_id),
+            'accounts/{}/entities/{}'.format(account_id, entity_id),
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Entity.delete(entity_id, account_id)
         if not rowcount:
             return "No such entity", 404
+        mqtt_publish_changed([
+            'accounts/{}/entities'.format(account_id),
+            'accounts/{}/entities/{}'.format(account_id, entity_id),
+        ])
         return "", 204
 
 
