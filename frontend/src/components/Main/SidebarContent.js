@@ -14,6 +14,13 @@ import Loading from '../Loading';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
 
+class PassPropsRoute extends React.Component {
+  render() {
+    const { component: Component, computedMatch, location, ...rest } = this.props;
+    return <Route {...rest} render={props => <Component {...props} {...rest} />} />;
+  }
+}
+
 class SidebarContent extends React.Component {
   render() {
     const { onSidebarLinkClick, user } = this.props;
@@ -30,8 +37,12 @@ class SidebarContent extends React.Component {
         </div>
 
         <Switch>
-          <Route path="/accounts/:accountId/" component={AccountSidebarContent} />
-          <Route component={DefaultSidebarContent} />
+          <PassPropsRoute
+            path="/accounts/:accountId/"
+            component={AccountSidebarContent}
+            onSidebarLinkClick={onSidebarLinkClick}
+          />
+          <PassPropsRoute component={DefaultSidebarContent} onSidebarLinkClick={onSidebarLinkClick} />
         </Switch>
 
         <div className="spacer" />
@@ -167,11 +178,7 @@ class DefaultSidebarContent extends React.Component {
   render() {
     const { onSidebarLinkClick } = this.props;
     return (
-      <Link
-        className="button green"
-        to="/"
-        onClick={onSidebarLinkClick}
-      >
+      <Link className="button green" to="/" onClick={onSidebarLinkClick}>
         <i className="fa fa-dashboard" /> Accounts
       </Link>
     );
