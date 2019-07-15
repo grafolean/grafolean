@@ -165,6 +165,15 @@ const AccountSidebarContent = connect(mapDashboardsListToProps)(_AccountSidebarC
 
 class DefaultSidebarContent extends React.Component {
   render() {
-    return null;
+    const { onSidebarLinkClick } = this.props;
+    return (
+      <Link
+        className="button green"
+        to="/"
+        onClick={onSidebarLinkClick}
+      >
+        <i className="fa fa-dashboard" /> Accounts
+      </Link>
+    );
   }
 }
