@@ -56,6 +56,8 @@ services:
       - "5000:80"
     networks:
       - grafoleandev
+    volumes:
+      - ../backend/:/grafolean/backend/
     container_name:
       grafoleandev
 
