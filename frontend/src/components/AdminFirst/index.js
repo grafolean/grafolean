@@ -139,7 +139,7 @@ class AdminFirst extends React.Component {
           </div>
           <div className="field">
             <label>Username:</label>
-            <input type="text" value={username} onChange={this.changeUsername} />
+            <input type="text" value={username} onChange={this.changeUsername} autoFocus />
           </div>
           <div className="field">
             <label>Password:</label>
