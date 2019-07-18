@@ -133,8 +133,8 @@ class AdminFirst extends React.Component {
         <form>
           <h3>Add first (admin) user:</h3>
           <div className="info">
-            This will insert the first user (which will have administrator privileges). It willnot be possible
-            to insert another user in such way, so it is important that you{' '}
+            This will insert the first user (which will have administrator privileges). It will not be
+            possible to insert another user in such way, so it is important that you{' '}
             <strong>remember the credentials</strong>!
           </div>
           <div className="field">
