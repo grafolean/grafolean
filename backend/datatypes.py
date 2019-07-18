@@ -173,19 +173,29 @@ class BotToken(_RegexValidatedInputValue):
 
 
 class EmailAddress(object):
-    def __init__(self, v):
-        if not self.is_valid(str(v)):
+    def __init__(self, v, strict_check=False):
+        is_valid = self.is_valid(str(v))
+        if is_valid is False:
             raise ValidationError("Invalid email format: {}".format(str(v)))
+        if strict_check and is_valid is None:
+            raise ValidationError("Could not validate email: {}".format(str(v)))
         self.v = str(v)
 
     @classmethod
     def is_valid(cls, v):
+        """
+            Returns False if validation failed (invalid format or MX DNS record
+            not available), None if DNS timed out, True otherwise.
+        """
         if '@' not in v:
             return False
         domain = v.rsplit('@', 1)[-1]
         try:
-            dns_records = dns.resolver.query(domain, 'MX')
+            dns_records = dns.resolver.query(domain, 'MX', lifetime=10.0)
             return len(dns_records) > 0
+        except dns.exception.Timeout:
+            log.warning("Could not validate email address due to DNS timeout!")
+            return None
         except:
             return False
 
@@ -892,7 +902,7 @@ class Bot(object):
 class Person(object):
     def __init__(self, name, email, username, password, force_id=None):
         self.name = name
-        self.email = EmailAddress(email)
+        self.email = EmailAddress(email, strict_check=False)
         self.username = username
         self.password = password
         self.force_id = force_id
