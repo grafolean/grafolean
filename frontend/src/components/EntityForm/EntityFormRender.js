@@ -1,6 +1,5 @@
 import React from 'react';
 
-import '../form.scss';
 import EntityDetailsForm from './EntityDetailsForm';
 import isForm from '../isForm';
 

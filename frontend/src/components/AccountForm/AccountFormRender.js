@@ -1,6 +1,5 @@
 import React from 'react';
 
-import '../form.scss';
 import isForm from '../isForm';
 
 class AccountFormRender extends React.Component {

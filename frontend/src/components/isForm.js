@@ -6,6 +6,8 @@ import { ROOT_URL, handleFetchErrors } from '../store/actions';
 import Loading from './Loading';
 import Button from './Button';
 
+import './form.scss';
+
 const isForm = WrappedComponent => {
   const wrappedComponent = class Form extends React.Component {
     static defaultProps = {
