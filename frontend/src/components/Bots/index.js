@@ -121,6 +121,7 @@ export default class Bots extends React.PureComponent {
                 <tbody>
                   <tr>
                     <th>Name</th>
+                    <th>Type</th>
                     <th>Token</th>
                     <th>Insert time (UTC)</th>
                     <th />
@@ -130,6 +131,7 @@ export default class Bots extends React.PureComponent {
                   {bots.map(bot => (
                     <tr key={bot.id}>
                       <td>{bot.name}</td>
+                      <td>{bot.bot_type || "custom"}</td>
                       <td>
                         <BotToken token={bot.token} />
                       </td>
