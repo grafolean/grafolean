@@ -19,6 +19,7 @@ import WelcomePage from '../WelcomePage';
 import SelectAccount from './SelectAccount';
 import Entities from '../Entities/Entities';
 import EntityForm from '../EntityForm/EntityForm';
+import AccountForm from '../AccountForm/AccountForm';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -79,6 +80,7 @@ class Content extends React.PureComponent {
             component={UserPermissionsNewForm}
           />
 
+          <WrappedRoute exact contentWidth={contentWidth} path="/accounts-new/" component={AccountForm} />
           <WrappedRoute
             exact
             contentWidth={contentWidth}

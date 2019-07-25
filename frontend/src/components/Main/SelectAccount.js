@@ -38,7 +38,7 @@ class SelectAccount extends React.Component {
             ))}
 
             {havePermission('admin/accounts', 'POST', user.permissions) && (
-              <Link className="button add-account green" to={`/account-add`}>
+              <Link className="button add-account green" to={`/accounts-new`}>
                 <i className="fa fa-plus" /> Add account
               </Link>
             )}

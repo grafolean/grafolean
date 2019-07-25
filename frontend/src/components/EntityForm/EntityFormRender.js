@@ -20,6 +20,11 @@ class EntityFormRender extends React.Component {
     this.props.onValidChange(valid);
   };
 
+  handleInputChange = ev => {
+    this.props.onInputChangeEvent(ev);
+    this.performValidation();
+  };
+
   handleDetailsChange = details => {
     this.props.onInputChange('details', details);
     this.performValidation();
@@ -28,7 +33,6 @@ class EntityFormRender extends React.Component {
   render() {
     const {
       formValues: { name = '', entity_type = '', details = {} },
-      onInputChangeEvent,
     } = this.props;
 
     return (
@@ -39,7 +43,7 @@ class EntityFormRender extends React.Component {
             type="text"
             value={name}
             name="name"
-            onChange={onInputChangeEvent}
+            onChange={this.handleInputChange}
             onBlur={this.performValidation}
           />
         </div>
@@ -48,7 +52,7 @@ class EntityFormRender extends React.Component {
           <select
             value={entity_type}
             name="entity_type"
-            onChange={onInputChangeEvent}
+            onChange={this.handleInputChange}
             onBlur={this.performValidation}
           >
             <option value="">-- please select entity type --</option>
