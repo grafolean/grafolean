@@ -12,6 +12,7 @@ import './bots.scss';
 import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
+import LinkButton from '../LinkButton/LinkButton';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -124,6 +125,7 @@ export default class Bots extends React.PureComponent {
                     <th>Insert time (UTC)</th>
                     <th />
                     <th />
+                    <th />
                   </tr>
                   {bots.map(bot => (
                     <tr key={bot.id}>
@@ -132,6 +134,11 @@ export default class Bots extends React.PureComponent {
                         <BotToken token={bot.token} />
                       </td>
                       <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
+                      <td>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
+                          <i className="fa fa-pencil" /> Edit
+                        </LinkButton>
+                      </td>
                       <td>
                         <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
                           <i className="fa fa-trash" /> Delete

@@ -70,6 +70,7 @@ export default class Entities extends React.Component {
                     <th>Name</th>
                     <th>Details</th>
                     <th />
+                    <th />
                   </tr>
                   {entities.map(entity => (
                     <tr key={entity.id}>

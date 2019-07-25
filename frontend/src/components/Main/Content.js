@@ -3,7 +3,6 @@ import { Switch, Route, withRouter } from 'react-router-dom';
 
 import './Content.scss';
 
-import BotNewForm from '../BotNewForm';
 import Bots from '../Bots';
 import Changelog from '../About/Changelog';
 import DashboardNewForm from '../DashboardNewForm';
@@ -20,6 +19,7 @@ import SelectAccount from './SelectAccount';
 import Entities from '../Entities/Entities';
 import EntityForm from '../EntityForm/EntityForm';
 import AccountForm from '../AccountForm/AccountForm';
+import BotForm from '../BotForm/BotForm';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -110,7 +110,13 @@ class Content extends React.PureComponent {
             exact
             contentWidth={contentWidth}
             path="/accounts/:accountId/bots/new"
-            component={BotNewForm}
+            component={BotForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/bots/edit/:botId"
+            component={BotForm}
           />
           <WrappedRoute
             exact

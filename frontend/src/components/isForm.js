@@ -22,6 +22,7 @@ const isForm = WrappedComponent => {
       submitted: false,
       errorMsg: null,
       valid: false,
+      afterSubmitUrl: null,
     };
 
     handleValuesBackendChange = formValues => {
@@ -34,6 +35,8 @@ const isForm = WrappedComponent => {
       }
 
       delete formValues['id']; // server might return an id too, which we don't need
+      delete formValues['insert_time'];
+      delete formValues['token'];
       this.setState({
         formValues: formValues,
         loading: false,
@@ -76,6 +79,10 @@ const isForm = WrappedComponent => {
           throw await responseCreate.text();
         }
         await handleFetchErrors(responseCreate);
+        if (this.props.afterSubmit) {
+          const afterSubmitUrl = await this.props.afterSubmit(responseCreate);
+          this.setState({ afterSubmitUrl: afterSubmitUrl });
+        }
         this.setState({ submitted: true });
       } catch (errorMsg) {
         this.setState({
@@ -96,10 +103,18 @@ const isForm = WrappedComponent => {
 
     render() {
       const { editing, resource, afterSubmitRedirectTo, ...passThroughProps } = this.props;
-      const { formValues, loading, posting, valid, warnChangedOnServer, submitted } = this.state;
+      const {
+        formValues,
+        loading,
+        posting,
+        valid,
+        warnChangedOnServer,
+        submitted,
+        afterSubmitUrl,
+      } = this.state;
 
       if (submitted) {
-        return <Redirect to={afterSubmitRedirectTo || '/'} />;
+        return <Redirect to={afterSubmitUrl || afterSubmitRedirectTo || '/'} />;
       }
 
       return (
