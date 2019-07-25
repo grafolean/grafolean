@@ -6,43 +6,57 @@ import isForm from '../isForm';
 
 class EntityFormRender extends React.Component {
   areFormValuesValid() {
-    const { name, entity_type } = this.state.formValues;
+    const {
+      formValues: { name = '', entity_type = '' },
+    } = this.props;
     if (name.length === 0 || entity_type.length === 0) {
       return false;
     }
     return true;
   }
 
-  handleBlur = () => {
-    this.props.onValidChange(this.areFormValuesValid());
+  performValidation = () => {
+    const valid = this.areFormValuesValid();
+    this.props.onValidChange(valid);
+  };
+
+  handleDetailsChange = details => {
+    this.props.onInputChange('details', details);
+    this.performValidation();
   };
 
   render() {
     const {
       formValues: { name = '', entity_type = '', details = {} },
       onInputChangeEvent,
-      onInputChange,
     } = this.props;
 
     return (
       <div className="frame">
         <div className="field">
           <label>Name:</label>
-          <input type="text" value={name} name="name" onChange={onInputChangeEvent} />
+          <input
+            type="text"
+            value={name}
+            name="name"
+            onChange={onInputChangeEvent}
+            onBlur={this.performValidation}
+          />
         </div>
         <div className="field">
           <label>Monitored entity type:</label>
-          <select value={entity_type} name="entity_type" onChange={onInputChangeEvent}>
+          <select
+            value={entity_type}
+            name="entity_type"
+            onChange={onInputChangeEvent}
+            onBlur={this.performValidation}
+          >
             <option value="">-- please select entity type --</option>
             <option value="device">Device</option>
           </select>
         </div>
         {entity_type && (
-          <EntityDetailsForm
-            entityType={entity_type}
-            value={details}
-            onChange={details => onInputChange('details', details)}
-          />
+          <EntityDetailsForm entityType={entity_type} value={details} onChange={this.handleDetailsChange} />
         )}
       </div>
     );

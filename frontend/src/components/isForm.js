@@ -19,6 +19,7 @@ const isForm = WrappedComponent => {
       warnChangedOnServer: false,
       submitted: false,
       errorMsg: null,
+      valid: false,
     };
 
     handleValuesBackendChange = formValues => {
@@ -118,7 +119,7 @@ const isForm = WrappedComponent => {
                   <i className="fa fa-exclamation-triangle" /> Warning: record has changed on server!
                 </p>
               )}
-              <Button isLoading={posting} onClick={this.handleSubmit} disabled={valid}>
+              <Button isLoading={posting} onClick={this.handleSubmit} disabled={!valid}>
                 Submit
               </Button>
             </form>
