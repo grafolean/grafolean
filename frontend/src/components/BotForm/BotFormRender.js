@@ -1,13 +1,5 @@
 import React from 'react';
-import { Redirect } from 'react-router-dom';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-
-import { fetchAuth } from '../../utils/fetch';
-
-import '../form.scss';
-import Button from '../Button';
 import isForm from '../isForm';
 
 class BotFormRender extends React.Component {
