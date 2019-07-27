@@ -1,7 +1,7 @@
 import React from 'react';
 
-import CredentialsDetailsForm from './CredentialsDetailsForm';
 import isForm from '../isForm';
+import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
 
 class CredentialsFormRender extends React.Component {
   areFormValuesValid() {
@@ -64,13 +64,9 @@ class CredentialsFormRender extends React.Component {
             <option value="snmp">SNMP</option>
           </select>
         </div>
-        {credentials_type && (
-          <CredentialsDetailsForm
-            credentialsType={credentials_type}
-            value={details}
-            onChange={this.handleDetailsChange}
-          />
-        )}
+        {credentials_type === 'snmp' ? (
+          <CredentialsDetailsFormSnmp value={details} onChange={this.handleDetailsChange} />
+        ) : null}
       </div>
     );
   }
