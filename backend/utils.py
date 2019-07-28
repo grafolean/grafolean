@@ -282,4 +282,3 @@ def migration_step_10():
         c.execute(_construct_plsql_randid_function('credentials'))
         c.execute('CREATE TABLE credentials ({id}, {account}, name TEXT NOT NULL, credentials_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE UNIQUE INDEX credentials_name ON credentials (account, name);')
-        c.execute('CREATE UNIQUE INDEX credentials_credentials_type ON credentials (account, credentials_type);')
