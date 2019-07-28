@@ -1460,3 +1460,101 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
+
+
+def test_account_credentials(app_client, admin_authorization_header, account_id):
+    """
+        Fetch a list of credentials for account (must be empty), create one, check it, edit, check, delete, check.
+    """
+    CREDENTIAL_NAME1 = 'cred 1'
+    CREDENTIAL_TYPE1 = 'snmp'
+    CREDENTIAL_DETAILS1 = {
+        'version': 'snmpv12',
+        'snmpv12_community': 'public',
+    }
+    CREDENTIAL_NAME2 = 'cred 1 - renamed'
+    CREDENTIAL_TYPE2 = 'wmi'
+    CREDENTIAL_DETAILS2 = {
+        'token': 'asdf',
+    }
+
+    # the list of credentials for account must be empty at first:
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # create a credential:
+    data = {
+        'name': CREDENTIAL_NAME1,
+        'credentials_type': CREDENTIAL_TYPE1,
+        'details': CREDENTIAL_DETAILS1,
+    }
+    r = app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    credential_id = json.loads(r.data.decode('utf-8'))['id']
+
+    # check result:
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [
+            {
+                'id': credential_id,
+                'name': CREDENTIAL_NAME1,
+                'credentials_type': CREDENTIAL_TYPE1,
+                'details': CREDENTIAL_DETAILS1,
+            },
+        ],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # get only the credential:
+    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': credential_id,
+        'name': CREDENTIAL_NAME1,
+        'credentials_type': CREDENTIAL_TYPE1,
+        'details': CREDENTIAL_DETAILS1,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # update it:
+    data = {
+        'name': CREDENTIAL_NAME2,
+        'credentials_type': CREDENTIAL_TYPE2,
+        'details': CREDENTIAL_DETAILS2,
+    }
+    r = app_client.put('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # get only the credential:
+    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': credential_id,
+        'name': CREDENTIAL_NAME2,  # the name has changed
+        'credentials_type': CREDENTIAL_TYPE2,  # and so has type
+        'details': CREDENTIAL_DETAILS2,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # delete the credential:
+    r = app_client.delete('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # the list is again empty:
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected

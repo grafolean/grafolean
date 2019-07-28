@@ -148,3 +148,16 @@ class EntitySchemaInputs(Inputs):
         },
         'required': ['name', 'entity_type', 'details'],
     })]
+
+
+class CredentialsSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'credentials_type': {'type': 'string'},
+            'details': {'type': 'object'},
+        },
+        'required': ['name', 'credentials_type', 'details'],
+    })]

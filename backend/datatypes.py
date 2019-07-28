@@ -9,7 +9,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialsSchemaInputs
 from auth import Auth
 
 
@@ -1070,4 +1070,72 @@ class Entity(object):
     def delete(entity_id, account_id):
         with db.cursor() as c:
             c.execute("DELETE FROM entities WHERE id = %s AND account = %s;", (entity_id, account_id,))
+            return c.rowcount
+
+
+class Credential(object):
+    def __init__(self, name, credentials_type, details, account_id, force_id=None):
+        self.name = name
+        self.credentials_type = credentials_type
+        self.details = json.dumps(details)
+        self.account_id = account_id
+        self.force_id = force_id
+
+    @classmethod
+    def forge_from_input(cls, flask_request, account_id, force_id=None):
+        inputs = CredentialsSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        name = data['name']
+        credentials_type = data.get('credentials_type', None)
+        details = data.get('details', None)
+        return cls(name, credentials_type, details, account_id, force_id=force_id)
+
+    @staticmethod
+    def get_list(account_id):
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, name, credentials_type, details FROM credentials WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for credential_id, name, credentials_type, details in c:
+                ret.append({
+                    'id': credential_id,
+                    'name': name,
+                    'credentials_type': credentials_type,
+                    'details': details,
+                })
+            return ret
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO credentials (account, name, credentials_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.credentials_type, self.details,))
+            credential_id, = c.fetchone()
+            return credential_id
+
+    @staticmethod
+    def get(credential_id, account_id):
+        with db.cursor() as c:
+            c.execute('SELECT name, credentials_type, details FROM credentials WHERE id = %s AND account = %s;', (credential_id, account_id))
+            res = c.fetchone()
+            if not res:
+                return None
+            name, credentials_type, details = res
+        return {
+            'id': int(credential_id),
+            'name': name,
+            'credentials_type': credentials_type,
+            'details': details,
+        }
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE credentials SET name = %s, credentials_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.credentials_type, self.details, self.force_id, self.account_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(credential_id, account_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM credentials WHERE id = %s AND account = %s;", (credential_id, account_id,))
             return c.rowcount

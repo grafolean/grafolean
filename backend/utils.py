@@ -273,3 +273,13 @@ def migration_step_9():
         c.execute(_construct_plsql_randid_function('entities'))
         c.execute('CREATE TABLE entities ({id}, {account}, name TEXT NOT NULL, entity_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE UNIQUE INDEX entities_name ON entities (account, name);')
+
+def migration_step_10():
+    """ Add credentials. """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='credentials')
+    ACCOUNT_ID_FIELD = 'account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('credentials'))
+        c.execute('CREATE TABLE credentials ({id}, {account}, name TEXT NOT NULL, credentials_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX credentials_name ON credentials (account, name);')
+        c.execute('CREATE UNIQUE INDEX credentials_credentials_type ON credentials (account, credentials_type);')
