@@ -175,8 +175,6 @@ class BotToken(_RegexValidatedInputValue):
 class EmailAddress(object):
     def __init__(self, v, strict_check=False):
         is_valid = self.is_valid(str(v))
-        if is_valid is False:
-            raise ValidationError("Invalid email format: {}".format(str(v)))
         if strict_check and is_valid is None:
             raise ValidationError("Could not validate email: {}".format(str(v)))
         self.v = str(v)
