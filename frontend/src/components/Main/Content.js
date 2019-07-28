@@ -21,6 +21,7 @@ import EntityForm from '../EntityForm/EntityForm';
 import AccountForm from '../AccountForm/AccountForm';
 import BotForm from '../BotForm/BotForm';
 import CredentialsForm from '../CredentialsForm/CredentialsForm';
+import Credentials from '../Credentials/Credentials';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -123,7 +124,7 @@ class Content extends React.PureComponent {
             exact
             contentWidth={contentWidth}
             path="/accounts/:accountId/credentials"
-            component={CredentialsForm}
+            component={Credentials}
           />
           <WrappedRoute
             exact
