@@ -32,7 +32,9 @@ export default class Credentials extends React.Component {
     ev.preventDefault();
 
     const cred = this.state.credentials.find(cred => cred.id === credId);
-    if (!window.confirm(`Are you sure you want to delete credentials "${cred.name}" ? This can't be undone!`)) {
+    if (
+      !window.confirm(`Are you sure you want to delete credentials "${cred.name}" ? This can't be undone!`)
+    ) {
       return;
     }
 
