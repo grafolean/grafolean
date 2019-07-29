@@ -3,10 +3,10 @@ import CredentialsFormRender from './CredentialsFormRender';
 
 class CredentialsForm extends React.Component {
   render() {
-    const { accountId, entityId } = this.props.match.params;
-    const editing = Boolean(entityId);
+    const { accountId, credentialsId } = this.props.match.params;
+    const editing = Boolean(credentialsId);
     const resource = editing
-      ? `accounts/${accountId}/credentials/${entityId}`
+      ? `accounts/${accountId}/credentials/${credentialsId}`
       : `accounts/${accountId}/credentials`;
     return (
       <CredentialsFormRender
