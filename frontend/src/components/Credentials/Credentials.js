@@ -32,7 +32,7 @@ export default class Credentials extends React.Component {
     ev.preventDefault();
 
     const cred = this.state.credentials.find(cred => cred.id === credId);
-    if (!window.confirm(`Are you sure you want to delete cred "${cred.name}" ? This can't be undone!`)) {
+    if (!window.confirm(`Are you sure you want to delete credentials "${cred.name}" ? This can't be undone!`)) {
       return;
     }
 
@@ -93,7 +93,7 @@ export default class Credentials extends React.Component {
             )}
 
             <Link className="button green" to={`/accounts/${accountId}/credentials/new`}>
-              <i className="fa fa-plus" /> Add monitored cred
+              <i className="fa fa-plus" /> Add credentials
             </Link>
           </>
         )}
