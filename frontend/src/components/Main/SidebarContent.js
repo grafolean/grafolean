@@ -170,6 +170,11 @@ class _AccountSidebarContent extends React.Component {
             <i className="fa fa-key" /> Credentials
           </Link>
         )}
+        {user && havePermission(`accounts/${accountId}/sensors`, 'GET', user.permissions) && (
+          <Link className="button green" to={`/accounts/${accountId}/sensors`} onClick={onSidebarLinkClick}>
+            <i className="fa fa-thermometer" /> Sensors
+          </Link>
+        )}
       </>
     );
   }
