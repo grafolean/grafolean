@@ -1,69 +1,81 @@
 import React from 'react';
 
-import isForm from '../isForm';
+import isFormikForm from '../isFormikForm';
 import SensorDetailsFormSnmp from './SensorDetailsFormSnmp';
 
 class SensorFormRender extends React.Component {
-  areFormValuesValid() {
-    const {
-      formValues: { name = '', protocol = '' },
-    } = this.props;
-    if (name.length === 0 || protocol.length === 0) {
-      return false;
+  static DEFAULT_VALUES = {
+    name: '',
+    protocol: '',
+  };
+
+  static validate = values => {
+    const { name = '', protocol = '', details } = values;
+    let errors = {};
+    if (name.length === 0) {
+      errors['name'] = 'Name should not be empty';
     }
-    return true;
-  }
-
-  performValidation = () => {
-    const valid = this.areFormValuesValid();
-    this.props.onValidChange(valid);
+    if (protocol.length === 0) {
+      errors['protocol'] = 'Protocol should be chosen';
+    }
+    // we must be careful not to throw an exception in validate() or the results are unpredictable:
+    try {
+      let detailsErrors;
+      switch (protocol) {
+        case 'snmp':
+          detailsErrors = SensorDetailsFormSnmp.validate(details);
+        default:
+          break;
+      }
+      if (Object.keys(detailsErrors).length > 0) {
+        errors['details'] = detailsErrors;
+      }
+    } catch (errorMsg) {
+      errors['details'] = errorMsg;
+    }
+    return errors;
   };
 
-  handleInputChange = ev => {
-    this.props.onInputChangeEvent(ev);
-    this.performValidation();
-  };
-
-  handleDetailsChange = details => {
-    this.props.onInputChange('details', details);
-    this.performValidation();
+  handleProtocolChange = ev => {
+    // when protocol changes, use the protocol component's DEFAULT_VALUES to initialize the values:
+    const fieldName = ev.target.name;
+    const value = ev.target.value;
+    this.props.setFieldValue(fieldName, value, false);
+    switch (value) {
+      case 'snmp':
+        this.props.setFieldValue('details', SensorDetailsFormSnmp.DEFAULT_VALUES, true);
+        break;
+      default:
+        break;
+    }
   };
 
   render() {
     const {
-      formValues: { name = '', protocol = '', details = {} },
+      values: { name = '', protocol = '', details = {} },
+      onChange,
+      onBlur,
     } = this.props;
 
     return (
       <div className="frame">
         <div className="field">
           <label>Name:</label>
-          <input
-            type="text"
-            value={name}
-            name="name"
-            onChange={this.handleInputChange}
-            onBlur={this.performValidation}
-          />
+          <input type="text" value={name} name="name" onChange={onChange} onBlur={onBlur} />
         </div>
         <div className="field">
           <label>Protocol:</label>
-          <select
-            value={protocol}
-            name="protocol"
-            onChange={this.handleInputChange}
-            onBlur={this.performValidation}
-          >
+          <select value={protocol} name="protocol" onChange={this.handleProtocolChange} onBlur={onBlur}>
             <option value="">-- please select --</option>
             <option value="snmp">SNMP</option>
           </select>
         </div>
         {protocol === 'snmp' ? (
-          <SensorDetailsFormSnmp value={details} onChange={this.handleDetailsChange} />
+          <SensorDetailsFormSnmp values={details} namePrefix="details" onChange={onChange} />
         ) : null}
       </div>
     );
   }
 }
 
-export default isForm(SensorFormRender);
+export default isFormikForm(SensorFormRender);
