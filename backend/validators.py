@@ -161,3 +161,16 @@ class CredentialsSchemaInputs(Inputs):
         },
         'required': ['name', 'protocol', 'details'],
     })]
+
+
+class SensorSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'protocol': {'type': 'string'},
+            'details': {'type': 'object'},
+        },
+        'required': ['name', 'protocol', 'details'],
+    })]

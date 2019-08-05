@@ -9,7 +9,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialsSchemaInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialsSchemaInputs, SensorSchemaInputs
 from auth import Auth
 
 
@@ -1138,4 +1138,72 @@ class Credential(object):
     def delete(credential_id, account_id):
         with db.cursor() as c:
             c.execute("DELETE FROM credentials WHERE id = %s AND account = %s;", (credential_id, account_id,))
+            return c.rowcount
+
+
+class Sensor(object):
+    def __init__(self, name, protocol, details, account_id, force_id=None):
+        self.name = name
+        self.protocol = protocol
+        self.details = json.dumps(details)
+        self.account_id = account_id
+        self.force_id = force_id
+
+    @classmethod
+    def forge_from_input(cls, flask_request, account_id, force_id=None):
+        inputs = SensorSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        name = data['name']
+        protocol = data.get('protocol', None)
+        details = data.get('details', None)
+        return cls(name, protocol, details, account_id, force_id=force_id)
+
+    @staticmethod
+    def get_list(account_id):
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, name, protocol, details FROM sensors WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for record_id, name, protocol, details in c:
+                ret.append({
+                    'id': record_id,
+                    'name': name,
+                    'protocol': protocol,
+                    'details': details,
+                })
+            return ret
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO sensors (account, name, protocol, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.protocol, self.details,))
+            record_id, = c.fetchone()
+            return record_id
+
+    @staticmethod
+    def get(record_id, account_id):
+        with db.cursor() as c:
+            c.execute('SELECT name, protocol, details FROM sensors WHERE id = %s AND account = %s;', (record_id, account_id))
+            res = c.fetchone()
+            if not res:
+                return None
+            name, protocol, details = res
+        return {
+            'id': int(record_id),
+            'name': name,
+            'protocol': protocol,
+            'details': details,
+        }
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE sensors SET name = %s, protocol = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.protocol, self.details, self.force_id, self.account_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(credential_id, account_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM sensors WHERE id = %s AND account = %s;", (credential_id, account_id,))
             return c.rowcount
