@@ -27,10 +27,11 @@ class SensorFormRender extends React.Component {
         default:
           break;
       }
-      if (Object.keys(detailsErrors).length > 0) {
+      if (detailsErrors && Object.keys(detailsErrors).length > 0) {
         errors['details'] = detailsErrors;
       }
     } catch (errorMsg) {
+      console.error(errorMsg);
       errors['details'] = errorMsg;
     }
     return errors;
@@ -53,6 +54,7 @@ class SensorFormRender extends React.Component {
   render() {
     const {
       values: { name = '', protocol = '', details = {} },
+      errors,
       onChange,
       onBlur,
     } = this.props;
@@ -71,7 +73,12 @@ class SensorFormRender extends React.Component {
           </select>
         </div>
         {protocol === 'snmp' ? (
-          <SensorDetailsFormSnmp values={details} namePrefix="details" onChange={onChange} />
+          <SensorDetailsFormSnmp
+            values={details}
+            namePrefix="details"
+            onChange={onChange}
+            errors={errors['details']}
+          />
         ) : null}
       </div>
     );

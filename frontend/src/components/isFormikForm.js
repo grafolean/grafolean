@@ -9,11 +9,21 @@ import Button from './Button';
 
 import './form.scss';
 
-export const FormErrorWarning = ({ msg }) => (
-  <p>
-    <i className="fa fa-exclamation-triangle" /> {msg}
-  </p>
-);
+export const FormError = ({ msg }) => {
+  if (typeof msg === 'object' && Object.keys(msg).length === 0) {
+    return null;
+  }
+  // if we get the object, we dive into it and use the first string (non-object actually) value we find:
+  let firstStringInMsg = msg;
+  while (typeof firstStringInMsg === 'object') {
+    firstStringInMsg = firstStringInMsg[Object.keys(firstStringInMsg)[0]];
+  }
+  return (
+    <p>
+      <i className="fa fa-exclamation-triangle" /> {firstStringInMsg}
+    </p>
+  );
+};
 
 const isFormikForm = WrappedComponent => {
   const wrappedComponent = class FormikForm extends React.Component {
@@ -114,14 +124,16 @@ const isFormikForm = WrappedComponent => {
                     <WrappedComponent
                       {...passThroughProps}
                       values={values}
+                      errors={errors}
                       onChange={handleChange}
                       setFieldValue={setFieldValue}
                       onBlur={handleBlur}
                     />
                     {editing && warnChangedOnServer && (
-                      <FormErrorWarning msg="Warning: record has changed on server!" />
+                      <FormError msg="Warning: record has changed on server!" />
                     )}
-                    {errorMsg && <FormErrorWarning msg={errorMsg} />}
+                    {errorMsg && <FormError msg={errorMsg} />}
+                    {!isValid && <FormError msg={errors} />}
                     <Button
                       className={isValid ? 'green' : 'red'}
                       type="submit"
