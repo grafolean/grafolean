@@ -282,3 +282,16 @@ def migration_step_10():
         c.execute(_construct_plsql_randid_function('credentials'))
         c.execute('CREATE TABLE credentials ({id}, {account}, name TEXT NOT NULL, credentials_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE UNIQUE INDEX credentials_name ON credentials (account, name);')
+
+def migration_step_11():
+    """ Add sensors, rename *_type fields to protocol. """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='sensors')
+    ACCOUNT_ID_FIELD = 'account INTEGER NULL REFERENCES accounts(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('sensors'))
+        c.execute('CREATE TABLE sensors ({id}, {account}, name TEXT NOT NULL, protocol TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX sensors_name ON sensors (account, name);')
+
+        c.execute('ALTER TABLE bots RENAME COLUMN bot_type TO protocol;')
+        c.execute('ALTER TABLE entities RENAME COLUMN entity_type TO protocol;')
+        c.execute('ALTER TABLE credentials RENAME COLUMN credentials_type TO protocol;')

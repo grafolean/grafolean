@@ -751,9 +751,9 @@ class Permission(object):
 
 
 class Bot(object):
-    def __init__(self, name, bot_type, config, force_account=None, force_id=None):
+    def __init__(self, name, protocol, config, force_account=None, force_id=None):
         self.name = name
-        self.bot_type = bot_type
+        self.protocol = protocol
         self.config = config
         self.force_account = force_account
         self.force_id = force_id
@@ -768,25 +768,25 @@ class Bot(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        bot_type = data.get('bot_type', None)
+        protocol = data.get('protocol', None)
         config = data.get('config', None)
-        return cls(name, bot_type, config, force_account=force_account, force_id=force_id)
+        return cls(name, protocol, config, force_account=force_account, force_id=force_id)
 
     @staticmethod
     def get_list(force_account=None):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, bot_type, token, insert_time FROM bots ORDER BY insert_time DESC;')
+                c.execute('SELECT user_id, name, protocol, token, insert_time FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT b.user_id, b.name, b.bot_type, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, bot_type, token, insert_time in c:
+            for user_id, name, protocol, token, insert_time in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
-                    'bot_type': bot_type,
+                    'protocol': protocol,
                     'token': token,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
                 })
@@ -796,7 +796,7 @@ class Bot(object):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('bot') RETURNING id;")
             user_id, = c.fetchone()
-            c.execute("INSERT INTO bots (user_id, name, bot_type) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.bot_type,))
+            c.execute("INSERT INTO bots (user_id, name, protocol) VALUES (%s, %s, %s) RETURNING token;", (user_id, self.name, self.protocol,))
             bot_token, = c.fetchone()
             if self.force_account:
                 c.execute("INSERT INTO users_accounts (user_id, account, config) VALUES (%s, %s, %s);", (user_id, self.force_account, self.config,))
@@ -827,7 +827,7 @@ class Bot(object):
                 if not Bot._is_tied_to_account(self.force_id, self.force_account):
                     return 0
 
-            c.execute("UPDATE bots SET name = %s, bot_type = %s WHERE user_id = %s;", (self.name, self.bot_type, self.force_id,))
+            c.execute("UPDATE bots SET name = %s, protocol = %s WHERE user_id = %s;", (self.name, self.protocol, self.force_id,))
             if not c.rowcount:
                 return 0
             # if account id is known, we must update config information in users_accounts table:
@@ -854,20 +854,20 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT name, token, bot_type, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT name, token, protocol, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.name, b.token, b.bot_type, ua.config, b.insert_time ' +
+                c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            name, token, bot_type, config, insert_time = res
+            name, token, protocol, config, insert_time = res
         return {
             'id': int(user_id),
             'name': name,
             'token': token,
-            'bot_type': bot_type,
+            'protocol': protocol,
             'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
         }
@@ -1006,9 +1006,9 @@ class PersonCredentials(object):
 
 
 class Entity(object):
-    def __init__(self, name, entity_type, details, account_id, force_id=None):
+    def __init__(self, name, protocol, details, account_id, force_id=None):
         self.name = name
-        self.entity_type = entity_type
+        self.protocol = protocol
         self.details = json.dumps(details)
         self.account_id = account_id
         self.force_id = force_id
@@ -1020,42 +1020,42 @@ class Entity(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        entity_type = data.get('entity_type', None)
+        protocol = data.get('protocol', None)
         details = data.get('details', None)
-        return cls(name, entity_type, details, account_id, force_id=force_id)
+        return cls(name, protocol, details, account_id, force_id=force_id)
 
     @staticmethod
     def get_list(account_id):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
-            for entity_id, name, entity_type, details in c:
+            c.execute('SELECT id, name, protocol, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for entity_id, name, protocol, details in c:
                 ret.append({
                     'id': entity_id,
                     'name': name,
-                    'entity_type': entity_type,
+                    'protocol': protocol,
                     'details': details,
                 })
             return ret
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO entities (account, name, entity_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.details,))
+            c.execute("INSERT INTO entities (account, name, protocol, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.protocol, self.details,))
             entity_id, = c.fetchone()
             return entity_id
 
     @staticmethod
     def get(entity_id, account_id):
         with db.cursor() as c:
-            c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
+            c.execute('SELECT name, protocol, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
             res = c.fetchone()
             if not res:
                 return None
-            name, entity_type, details = res
+            name, protocol, details = res
         return {
             'id': int(entity_id),
             'name': name,
-            'entity_type': entity_type,
+            'protocol': protocol,
             'details': details,
         }
 
@@ -1063,7 +1063,7 @@ class Entity(object):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            c.execute("UPDATE entities SET name = %s, entity_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.entity_type, self.details, self.force_id, self.account_id,))
+            c.execute("UPDATE entities SET name = %s, protocol = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.protocol, self.details, self.force_id, self.account_id,))
             return c.rowcount
 
     @staticmethod
@@ -1074,9 +1074,9 @@ class Entity(object):
 
 
 class Credential(object):
-    def __init__(self, name, credentials_type, details, account_id, force_id=None):
+    def __init__(self, name, protocol, details, account_id, force_id=None):
         self.name = name
-        self.credentials_type = credentials_type
+        self.protocol = protocol
         self.details = json.dumps(details)
         self.account_id = account_id
         self.force_id = force_id
@@ -1088,42 +1088,42 @@ class Credential(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        credentials_type = data.get('credentials_type', None)
+        protocol = data.get('protocol', None)
         details = data.get('details', None)
-        return cls(name, credentials_type, details, account_id, force_id=force_id)
+        return cls(name, protocol, details, account_id, force_id=force_id)
 
     @staticmethod
     def get_list(account_id):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, name, credentials_type, details FROM credentials WHERE account = %s ORDER BY id ASC;', (account_id,))
-            for credential_id, name, credentials_type, details in c:
+            c.execute('SELECT id, name, protocol, details FROM credentials WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for credential_id, name, protocol, details in c:
                 ret.append({
                     'id': credential_id,
                     'name': name,
-                    'credentials_type': credentials_type,
+                    'protocol': protocol,
                     'details': details,
                 })
             return ret
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO credentials (account, name, credentials_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.credentials_type, self.details,))
+            c.execute("INSERT INTO credentials (account, name, protocol, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.protocol, self.details,))
             credential_id, = c.fetchone()
             return credential_id
 
     @staticmethod
     def get(credential_id, account_id):
         with db.cursor() as c:
-            c.execute('SELECT name, credentials_type, details FROM credentials WHERE id = %s AND account = %s;', (credential_id, account_id))
+            c.execute('SELECT name, protocol, details FROM credentials WHERE id = %s AND account = %s;', (credential_id, account_id))
             res = c.fetchone()
             if not res:
                 return None
-            name, credentials_type, details = res
+            name, protocol, details = res
         return {
             'id': int(credential_id),
             'name': name,
-            'credentials_type': credentials_type,
+            'protocol': protocol,
             'details': details,
         }
 
@@ -1131,7 +1131,7 @@ class Credential(object):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            c.execute("UPDATE credentials SET name = %s, credentials_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.credentials_type, self.details, self.force_id, self.account_id,))
+            c.execute("UPDATE credentials SET name = %s, protocol = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.protocol, self.details, self.force_id, self.account_id,))
             return c.rowcount
 
     @staticmethod

@@ -35,9 +35,9 @@ def profile_accounts():
     }), 200
 
 
-@profile_api.route('/accounts/<int:account_id>/config/<string:bot_type>', methods=['GET'])
+@profile_api.route('/accounts/<int:account_id>/config/<string:protocol>', methods=['GET'])
 @auth_no_permissions
-def profile_account_bot_config_get(account_id, bot_type):
+def profile_account_bot_config_get(account_id, protocol):
     """
         Returns the configuration of a certain bot type (ping, snmp,...) for an account.
     """

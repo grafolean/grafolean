@@ -763,7 +763,7 @@ def test_bots_crud(app_client, admin_authorization_header):
             {
                 'id': bot_id,
                 'name': data['name'],
-                'bot_type': None,
+                'protocol': None,
                 'token': token,
                 'insert_time': actual['list'][0]['insert_time'],
             },
@@ -1260,9 +1260,9 @@ def test_profile_accounts_bot_config_get(app_client, account_id, first_admin_id,
     actual = json.loads(r.data.decode('utf-8'))
     assert account_id == actual['list'][0]['id']
 
-    # the bot should be able to access config for some bot_type:
-    bot_type = 'ping'
-    r = app_client.get('/api/profile/accounts/{}/config/{}?b={}'.format(account_id, bot_type, bot_token))
+    # the bot should be able to access config for some protocol:
+    protocol = 'ping'
+    r = app_client.get('/api/profile/accounts/{}/config/{}?b={}'.format(account_id, protocol, bot_token))
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert [] == actual
@@ -1330,7 +1330,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     actual = json.loads(r.data.decode('utf-8'))
     expected = {
         'name': BOT_NAME1,
-        'bot_type': None,
+        'protocol': None,
         'id': account_bot_id,
         'token': actual['list'][0]['token'],
         'insert_time': actual['list'][0]['insert_time'],
@@ -1346,7 +1346,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert actual == expected
 
     # then we update it:
-    data = {'name': BOT_NAME1 + "123", 'bot_type': 'ping', 'config': '{"a": 123}'}
+    data = {'name': BOT_NAME1 + "123", 'protocol': 'ping', 'config': '{"a": 123}'}
     r = app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
     assert r.status_code == 204
 
@@ -1354,7 +1354,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['name'] == BOT_NAME1 + "123"
-    assert actual['bot_type'] == 'ping'
+    assert actual['protocol'] == 'ping'
     assert actual['config'] == {"a": 123}
 
     # now remove the bot:
@@ -1367,21 +1367,29 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert actual['list'] == []
 
 
-def test_account_entities(app_client, admin_authorization_header, account_id):
+@pytest.mark.parametrize("resourceName,resourcesName", [
+    ('entity','entities',),
+    ('credential','credentials',),
+    ('sensor','sensors',),
+])
+def test_account_protocol_resource_crud(app_client, admin_authorization_header, account_id, resourceName, resourcesName):
     """
-        Fetch a list of entities for account (must be empty), create one, check it, edit, check, delete, check.
+        Fetch a list of resources (credentials, entities, sensors) for account (must be empty), create one, check it, edit, check, delete, check.
     """
-    ENTITY_NAME1 = 'My first device'
-    ENTITY_DETAILS1 = {
-        'ipv4': '1.1.1.1',
+    RESOURCE_NAME1 = 'res 1'
+    RESOURCE_PROTOCOL1 = 'snmp'
+    RESOURCE_DETAILS1 = {
+        'key1': 'value1',
+        'key2': 'value2',
     }
-    ENTITY_NAME2 = 'My first device - renamed'
-    ENTITY_DETAILS2 = {
-        'ipv4': '2.2.2.2',
+    RESOURCE_NAME2 = 'res 1 - renamed'
+    RESOURCE_PROTOCOL2 = 'wmi'
+    RESOURCE_DETAILS2 = {
+        'key3': 'value3',
     }
 
-    # the list of entities for account must be empty at first:
-    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
+    # the list of records for account must be empty at first:
+    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [],
@@ -1389,169 +1397,71 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
-    # create an entity:
+    # create a record:
     data = {
-        'name': ENTITY_NAME1,
-        'entity_type': 'device',
-        'details': ENTITY_DETAILS1,
+        'name': RESOURCE_NAME1,
+        'protocol': RESOURCE_PROTOCOL1,
+        'details': RESOURCE_DETAILS1,
     }
-    r = app_client.post('/api/accounts/{}/entities'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/accounts/{}/{}'.format(account_id, resourcesName), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    entity_id = json.loads(r.data.decode('utf-8'))['id']
+    record_id = json.loads(r.data.decode('utf-8'))['id']
 
     # check result:
-    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [
             {
-                'id': entity_id,
-                'name': ENTITY_NAME1,
-                'entity_type': 'device',
-                'details': ENTITY_DETAILS1,
+                'id': record_id,
+                'name': RESOURCE_NAME1,
+                'protocol': RESOURCE_PROTOCOL1,
+                'details': RESOURCE_DETAILS1,
             },
         ],
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
-    # get only the entity:
-    r = app_client.get('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
+    # get only the record:
+    r = app_client.get('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
-        'id': entity_id,
-        'name': ENTITY_NAME1,
-        'entity_type': 'device',
-        'details': ENTITY_DETAILS1,
+        'id': record_id,
+        'name': RESOURCE_NAME1,
+        'protocol': RESOURCE_PROTOCOL1,
+        'details': RESOURCE_DETAILS1,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
     # update it:
     data = {
-        'name': ENTITY_NAME2,
-        'entity_type': 'device2',
-        'details': ENTITY_DETAILS2,
+        'name': RESOURCE_NAME2,
+        'protocol': RESOURCE_PROTOCOL2,
+        'details': RESOURCE_DETAILS2,
     }
-    r = app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.put('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
-    # get only the entity:
-    r = app_client.get('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
+    # get only the record:
+    r = app_client.get('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
-        'id': entity_id,
-        'name': ENTITY_NAME2,  # the name has changed
-        'entity_type': 'device2',
-        'details': ENTITY_DETAILS2,
+        'id': record_id,
+        'name': RESOURCE_NAME2,  # the name has changed
+        'protocol': RESOURCE_PROTOCOL2,  # and so has type
+        'details': RESOURCE_DETAILS2,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
-    # delete the entity:
-    r = app_client.delete('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 204
-
-    # the list is again empty:
-    r = app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
-
-
-def test_account_credentials(app_client, admin_authorization_header, account_id):
-    """
-        Fetch a list of credentials for account (must be empty), create one, check it, edit, check, delete, check.
-    """
-    CREDENTIAL_NAME1 = 'cred 1'
-    CREDENTIAL_TYPE1 = 'snmp'
-    CREDENTIAL_DETAILS1 = {
-        'version': 'snmpv12',
-        'snmpv12_community': 'public',
-    }
-    CREDENTIAL_NAME2 = 'cred 1 - renamed'
-    CREDENTIAL_TYPE2 = 'wmi'
-    CREDENTIAL_DETAILS2 = {
-        'token': 'asdf',
-    }
-
-    # the list of credentials for account must be empty at first:
-    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
-
-    # create a credential:
-    data = {
-        'name': CREDENTIAL_NAME1,
-        'credentials_type': CREDENTIAL_TYPE1,
-        'details': CREDENTIAL_DETAILS1,
-    }
-    r = app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-    credential_id = json.loads(r.data.decode('utf-8'))['id']
-
-    # check result:
-    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
-    expected = {
-        'list': [
-            {
-                'id': credential_id,
-                'name': CREDENTIAL_NAME1,
-                'credentials_type': CREDENTIAL_TYPE1,
-                'details': CREDENTIAL_DETAILS1,
-            },
-        ],
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
-
-    # get only the credential:
-    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
-    expected = {
-        'id': credential_id,
-        'name': CREDENTIAL_NAME1,
-        'credentials_type': CREDENTIAL_TYPE1,
-        'details': CREDENTIAL_DETAILS1,
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
-
-    # update it:
-    data = {
-        'name': CREDENTIAL_NAME2,
-        'credentials_type': CREDENTIAL_TYPE2,
-        'details': CREDENTIAL_DETAILS2,
-    }
-    r = app_client.put('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 204
-
-    # get only the credential:
-    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
-    expected = {
-        'id': credential_id,
-        'name': CREDENTIAL_NAME2,  # the name has changed
-        'credentials_type': CREDENTIAL_TYPE2,  # and so has type
-        'details': CREDENTIAL_DETAILS2,
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
-
-    # delete the credential:
-    r = app_client.delete('/api/accounts/{}/credentials/{}'.format(account_id, credential_id), headers={'Authorization': admin_authorization_header})
+    # delete the record:
+    r = app_client.delete('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # the list is again empty:
-    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [],
