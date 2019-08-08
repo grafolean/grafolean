@@ -34,7 +34,7 @@ const isFormikForm = WrappedComponent => {
       afterSubmitRedirectTo: '',
     };
     state = {
-      formValues: this.props.initialFormValues,
+      fetchedFormValues: null,
       loading: this.props.editing ? true : false,
       submitted: false,
       warnChangedOnServer: false,
@@ -42,7 +42,7 @@ const isFormikForm = WrappedComponent => {
       afterSubmitUrl: null,
     };
 
-    handleValuesBackendChange = formValues => {
+    handleValuesBackendChange = fetchedFormValues => {
       if (!this.state.loading) {
         // oops - someone has changed the record while we are editing it! Let's warn user:
         this.setState({
@@ -51,11 +51,11 @@ const isFormikForm = WrappedComponent => {
         return;
       }
 
-      delete formValues['id']; // server might return an id too, which we don't need
-      delete formValues['insert_time'];
-      delete formValues['token'];
+      delete fetchedFormValues['id']; // server might return an id too, which we don't need
+      delete fetchedFormValues['insert_time'];
+      delete fetchedFormValues['token'];
       this.setState({
-        formValues: formValues,
+        fetchedFormValues: fetchedFormValues,
         loading: false,
       });
     };
@@ -94,7 +94,14 @@ const isFormikForm = WrappedComponent => {
 
     render() {
       const { editing, resource, afterSubmitRedirectTo, ...passThroughProps } = this.props;
-      const { formValues, loading, warnChangedOnServer, afterSubmitUrl, submitted, errorMsg } = this.state;
+      const {
+        fetchedFormValues,
+        loading,
+        warnChangedOnServer,
+        afterSubmitUrl,
+        submitted,
+        errorMsg,
+      } = this.state;
 
       return (
         <>
@@ -103,7 +110,7 @@ const isFormikForm = WrappedComponent => {
             <Loading />
           ) : (
             <Formik
-              initialValues={editing ? formValues : WrappedComponent.DEFAULT_VALUES}
+              initialValues={editing ? fetchedFormValues : WrappedComponent.DEFAULT_VALUES}
               validate={WrappedComponent.validate}
               onSubmit={this.handleSubmit}
               isInitialValid={editing ? true : false} // we assume that default values are not enough to make form values valid
