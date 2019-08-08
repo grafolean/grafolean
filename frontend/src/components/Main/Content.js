@@ -137,6 +137,12 @@ class Content extends React.PureComponent {
           <WrappedRoute
             exact
             contentWidth={contentWidth}
+            path="/accounts/:accountId/credentials/edit/:credentialId"
+            component={CredentialsForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
             path="/accounts/:accountId/sensors"
             component={Sensors}
           />
