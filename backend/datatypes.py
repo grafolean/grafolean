@@ -1006,9 +1006,9 @@ class PersonCredentials(object):
 
 
 class Entity(object):
-    def __init__(self, name, protocol, details, account_id, force_id=None):
+    def __init__(self, name, entity_type, details, account_id, force_id=None):
         self.name = name
-        self.protocol = protocol
+        self.entity_type = entity_type
         self.details = json.dumps(details)
         self.account_id = account_id
         self.force_id = force_id
@@ -1020,42 +1020,42 @@ class Entity(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        protocol = data.get('protocol', None)
+        entity_type = data.get('entity_type', None)
         details = data.get('details', None)
-        return cls(name, protocol, details, account_id, force_id=force_id)
+        return cls(name, entity_type, details, account_id, force_id=force_id)
 
     @staticmethod
     def get_list(account_id):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, name, protocol, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
-            for entity_id, name, protocol, details in c:
+            c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for entity_id, name, entity_type, details in c:
                 ret.append({
                     'id': entity_id,
                     'name': name,
-                    'protocol': protocol,
+                    'entity_type': entity_type,
                     'details': details,
                 })
             return ret
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO entities (account, name, protocol, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.protocol, self.details,))
+            c.execute("INSERT INTO entities (account, name, entity_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.details,))
             entity_id, = c.fetchone()
             return entity_id
 
     @staticmethod
     def get(entity_id, account_id):
         with db.cursor() as c:
-            c.execute('SELECT name, protocol, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
+            c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
             res = c.fetchone()
             if not res:
                 return None
-            name, protocol, details = res
+            name, entity_type, details = res
         return {
             'id': int(entity_id),
             'name': name,
-            'protocol': protocol,
+            'entity_type': entity_type,
             'details': details,
         }
 
@@ -1063,7 +1063,7 @@ class Entity(object):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            c.execute("UPDATE entities SET name = %s, protocol = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.protocol, self.details, self.force_id, self.account_id,))
+            c.execute("UPDATE entities SET name = %s, entity_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.entity_type, self.details, self.force_id, self.account_id,))
             return c.rowcount
 
     @staticmethod

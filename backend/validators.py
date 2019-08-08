@@ -143,10 +143,10 @@ class EntitySchemaInputs(Inputs):
         'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
-            'protocol': {'type': 'string'},
+            'entity_type': {'type': 'string'},
             'details': {'type': 'object'},
         },
-        'required': ['name', 'protocol', 'details'],
+        'required': ['name', 'entity_type', 'details'],
     })]
 
 

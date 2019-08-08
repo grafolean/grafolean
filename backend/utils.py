@@ -293,5 +293,4 @@ def migration_step_11():
         c.execute('CREATE UNIQUE INDEX sensors_name ON sensors (account, name);')
 
         c.execute('ALTER TABLE bots RENAME COLUMN bot_type TO protocol;')
-        c.execute('ALTER TABLE entities RENAME COLUMN entity_type TO protocol;')
         c.execute('ALTER TABLE credentials RENAME COLUMN credentials_type TO protocol;')
