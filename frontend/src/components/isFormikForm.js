@@ -103,9 +103,10 @@ const isFormikForm = WrappedComponent => {
             <Loading />
           ) : (
             <Formik
-              initialValues={WrappedComponent.DEFAULT_VALUES}
+              initialValues={editing ? formValues : WrappedComponent.DEFAULT_VALUES}
               validate={WrappedComponent.validate}
               onSubmit={this.handleSubmit}
+              isInitialValid={editing ? true : false} // we assume that default values are not enough to make form values valid
             >
               {({
                 values,

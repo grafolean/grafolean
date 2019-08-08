@@ -24,6 +24,7 @@ class SensorFormRender extends React.Component {
       switch (protocol) {
         case 'snmp':
           detailsErrors = SensorDetailsFormSnmp.validate(details);
+          break;
         default:
           break;
       }
