@@ -75,7 +75,7 @@ export default class Credentials extends React.Component {
                   </tr>
                   {credentials.map(cred => (
                     <tr key={cred.id}>
-                      <td>{cred.credentials_type}</td>
+                      <td>{cred.protocol}</td>
                       <td>{cred.name}</td>
                       <td>/</td>
                       <td>

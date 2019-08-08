@@ -6,9 +6,9 @@ import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
 class CredentialsFormRender extends React.Component {
   areFormValuesValid() {
     const {
-      formValues: { name = '', credentials_type = '' },
+      formValues: { name = '', protocol = '' },
     } = this.props;
-    if (name.length === 0 || credentials_type.length === 0) {
+    if (name.length === 0 || protocol.length === 0) {
       return false;
     }
     return true;
@@ -37,7 +37,7 @@ class CredentialsFormRender extends React.Component {
 
   render() {
     const {
-      formValues: { name = '', credentials_type = '', details = {} },
+      formValues: { name = '', protocol = '', details = {} },
     } = this.props;
 
     return (
@@ -55,8 +55,8 @@ class CredentialsFormRender extends React.Component {
         <div className="field">
           <label>Monitored credentials type:</label>
           <select
-            value={credentials_type}
-            name="credentials_type"
+            value={protocol}
+            name="protocol"
             onChange={this.handleCredentialsTypeChange}
             onBlur={this.performValidation}
           >
@@ -64,7 +64,7 @@ class CredentialsFormRender extends React.Component {
             <option value="snmp">SNMP</option>
           </select>
         </div>
-        {credentials_type === 'snmp' ? (
+        {protocol === 'snmp' ? (
           <CredentialsDetailsFormSnmp value={details} onChange={this.handleDetailsChange} />
         ) : null}
       </div>
