@@ -100,12 +100,16 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
 6) Important final step - setup automatic certificate renewal process. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
   ```
     #!/bin/sh
-    /usr/bin/certbot renew --webroot --webroot-path /etc/letsencrypt/acme-challenge/ -n --post-hook "docker exec -ti grafolean service nginx reload"
+    /usr/bin/certbot renew --webroot --webroot-path /etc/letsencrypt/acme-challenge/ -n --post-hook "docker restart grafolean"
   ```
   Also make the file executable:
   ```bash
     $ sudo chmod 755 /etc/cron.daily/certbot-renew
   ```
+
+  Note: the reason that `--post-hook` restarts the whole container instead of restarting just nginx is because certbot changes the inodes of the
+  certificate files on renewal, which means they are not updated inside the container. If restarting container presents a problem, it can be
+  solved by mounting the directory instead of certificate files (and changing configs appropriately).
 
 # Sending values
 
