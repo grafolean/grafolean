@@ -25,6 +25,8 @@ stories.add('multiselect', () => {
             '4',
             '6',
           ]}
+          onChangeSelected={selectedOptionsIds => console.log({ selectedOptionsIds })}
+          onChangeFilteredSelected={selectedFilteredOptionsIds => console.log({ selectedFilteredOptionsIds })}
         />
       </div>
     </div>
@@ -42,6 +44,8 @@ stories.add('multiselect dark mode', () => {
             '4',
             '6',
           ]}
+          onChangeSelected={selectedOptionsIds => console.log({ selectedOptionsIds })}
+          onChangeFilteredSelected={selectedFilteredOptionsIds => console.log({ selectedFilteredOptionsIds })}
           isDarkMode={true}
         />
       </div>

@@ -9,24 +9,48 @@ export default class MultiSelect extends React.Component {
   static defaultProps = {
     options: [], // { id: '...', label: '...', color: '' }
     initialSelectedOptionsIds: [],
-    onChangeSelected: null, // function: selectedOptionsIds => {}
-    onChangeFilteredSelected: null, // function: filteredSelectedOptionsIds => {}
+    onChangeSelected: selectedOptionsIds => {},
+    onChangeFilteredSelected: filteredSelectedOptionsIds => {},
   };
   state = {
     filterValue: '',
     selectedOptionsIdsSet: new Set(this.props.initialSelectedOptionsIds),
   };
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.filterValue !== this.state.filterValue ||
+      prevState.selectedOptionsIdsSet !== this.state.selectedOptionsIdsSet
+    ) {
+      const { selectedOptionsIdsSet } = this.state;
+      this.props.onChangeSelected([...selectedOptionsIdsSet]);
+
+      const filteredOptionsIdsSet = this.getFilteredOptionsIdsSet();
+      const selectedFilteredOptionsIds = [...filteredOptionsIdsSet].filter(optionId =>
+        selectedOptionsIdsSet.has(optionId),
+      );
+      this.props.onChangeFilteredSelected(selectedFilteredOptionsIds);
+    }
+  }
+
   handleFilterChange = filterValue => {
-    this.setState(
-      {
-        filterValue: filterValue,
-      },
-      this.callOnChange,
-    );
+    this.setState({
+      filterValue: filterValue,
+    });
   };
 
-  callOnChange = () => {};
+  callOnChangeFilteredSelected = () => {
+    const { onChangeFilteredSelected } = this.props;
+    if (onChangeFilteredSelected === null) {
+      return;
+    }
+    const { selectedOptionsIdsSet } = this.state;
+    const filteredOptionsIdsSet = this.getFilteredOptionsIdsSet();
+    const selectedFilteredOptionsIds = [...filteredOptionsIdsSet].filter(optionId =>
+      selectedOptionsIdsSet.has(optionId),
+    );
+    onChangeFilteredSelected(selectedFilteredOptionsIds);
+  };
 
   getFilteredOptionsIdsSet() {
     const { options } = this.props;
@@ -81,7 +105,7 @@ export default class MultiSelect extends React.Component {
     });
   };
 
-  // exchange filtered selected:
+  // toggle all filtered selected:
   exchange = () => {
     this.setState(oldState => {
       const { selectedOptionsIdsSet } = oldState;
