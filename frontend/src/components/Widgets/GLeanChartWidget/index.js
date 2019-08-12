@@ -13,7 +13,7 @@ import RePinchy from '../../RePinchy';
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
 import { LineChartCanvas } from './LineChartCanvas';
-import Legend from './Legend';
+import Legend from './Legend/Legend';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
