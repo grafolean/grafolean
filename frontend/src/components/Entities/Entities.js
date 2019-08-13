@@ -75,7 +75,14 @@ export default class Entities extends React.Component {
                   {entities.map(entity => (
                     <tr key={entity.id}>
                       <td>{entity.entity_type}</td>
-                      <td>{entity.name}</td>
+                      <td>
+                        <Link
+                          className="button green"
+                          to={`/accounts/${accountId}/entities/view/${entity.id}`}
+                        >
+                          <i className="fa fa-cube" /> {entity.name}
+                        </Link>
+                      </td>
                       <td>
                         <EntityDetails details={entity.details} />
                       </td>
