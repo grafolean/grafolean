@@ -145,12 +145,29 @@ class EntitySchemaInputs(Inputs):
             'name': {'type': 'string'},
             'entity_type': {'type': 'string'},
             'details': {'type': 'object'},
+            'protocols': {
+                'type': 'object',
+                'additionalProperties': {
+                    # we don't define any properties (because keys are protocols and are not know in advance), but any
+                    # protocol definition must conform to this sub-schema:
+                    'type': 'object',
+                    'properties': {
+                        'credential': {'type': 'number'},
+                        'sensors': {
+                            'type': 'array',
+                            'items': {'type': 'number'},
+                            'uniqueItems': True,
+                        },
+                    },
+                    'additionalProperties': False,
+                },
+            },
         },
-        'required': ['name', 'entity_type', 'details'],
+        'required': ['name', 'entity_type', 'details'],  # note that 'protocols' is not required
     })]
 
 
-class CredentialsSchemaInputs(Inputs):
+class CredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,

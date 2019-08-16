@@ -146,6 +146,28 @@ def bot_token(bot_data):
     return bot_data['token']
 
 @pytest.fixture
+def account_credentials_factory(app_client, admin_authorization_header, account_id):
+    def gen(*credential_data):
+        for protocol, name in credential_data:
+            data = { 'name': name, 'protocol': protocol, 'details': {} }
+            r = app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            assert r.status_code == 201
+            credential_id = json.loads(r.data.decode('utf-8'))['id']
+            yield credential_id
+    yield gen
+
+@pytest.fixture
+def account_sensors_factory(app_client, admin_authorization_header, account_id):
+    def gen(*sensor_data):
+        for protocol, name in sensor_data:
+            data = { 'name': name, 'protocol': protocol, 'details': {} }
+            r = app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            assert r.status_code == 201
+            sensor_id = json.loads(r.data.decode('utf-8'))['id']
+            yield sensor_id
+    yield gen
+
+@pytest.fixture
 def person_id(app_client, admin_authorization_header):
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
     r = app_client.post('/api/admin/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
@@ -1367,7 +1389,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert actual['list'] == []
 
 
-def test_account_entities(app_client, admin_authorization_header, account_id):
+def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory):
     """
         Fetch a list of entities for account (must be empty), create one, check it, edit, check, delete, check.
     """
@@ -1375,6 +1397,15 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
     ENTITY_DETAILS1 = {
         'ipv4': '1.1.1.1',
     }
+    credential_id, = account_credentials_factory(('snmp', 'SNMP credentials 1'))
+    sensor1_id, sensor2_id = account_sensors_factory(('snmp', 'Sensor 1'), ('snmp', 'Sensor 2'))
+    ENTITY_PROTOCOLS1 = {
+        'snmp': {
+            'credential': credential_id,
+            'sensors': [sensor1_id, sensor2_id],
+        },
+    }
+
     ENTITY_NAME2 = 'My first device - renamed'
     ENTITY_DETAILS2 = {
         'ipv4': '2.2.2.2',
@@ -1394,6 +1425,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
         'name': ENTITY_NAME1,
         'entity_type': 'device',
         'details': ENTITY_DETAILS1,
+        'protocols': ENTITY_PROTOCOLS1,
     }
     r = app_client.post('/api/accounts/{}/entities'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
@@ -1423,7 +1455,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
         'name': ENTITY_NAME1,
         'entity_type': 'device',
         'details': ENTITY_DETAILS1,
-        'protocols': {},
+        'protocols': ENTITY_PROTOCOLS1,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
@@ -1431,8 +1463,9 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
     # update it:
     data = {
         'name': ENTITY_NAME2,
-        'entity_type': 'device2',
+        'entity_type': 'teapot',
         'details': ENTITY_DETAILS2,
+        'protocols': {},
     }
     r = app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
@@ -1443,12 +1476,22 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
     expected = {
         'id': entity_id,
         'name': ENTITY_NAME2,  # the name has changed
-        'entity_type': 'device2',
+        'entity_type': 'teapot',
         'details': ENTITY_DETAILS2,
         'protocols': {},
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
+
+    # try to update with invalid data, make sure it fails:
+    credential_id_ping, = account_credentials_factory(('ping', 'PING credentials 1'))
+    sensor_ping1_id, = account_sensors_factory(('ping', 'Sensor ping 1'))
+    ENTITY_PROTOCOLS_INVALID1 = { 'snmp': { 'credential': credential_id_ping, 'sensors': [sensor1_id, sensor2_id] } }
+    ENTITY_PROTOCOLS_INVALID2 = { 'snmp': { 'credential': credential_id, 'sensors': [sensor_ping1_id] } }
+    for protocols in [ENTITY_PROTOCOLS_INVALID1, ENTITY_PROTOCOLS_INVALID2]:
+        data['protocols'] = protocols
+        r = app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 400
 
     # delete the entity:
     r = app_client.delete('/api/accounts/{}/entities/{}'.format(account_id, entity_id), headers={'Authorization': admin_authorization_header})

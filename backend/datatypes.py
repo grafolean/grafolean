@@ -9,7 +9,7 @@ import re
 from slugify import slugify
 
 from utils import db, log, ADMIN_ACCOUNT_ID
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialsSchemaInputs, SensorSchemaInputs
+from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs, SensorSchemaInputs
 from auth import Auth
 
 
@@ -1006,11 +1006,12 @@ class PersonCredentials(object):
 
 
 class Entity(object):
-    def __init__(self, name, entity_type, details, account_id, force_id=None):
+    def __init__(self, name, entity_type, details, account_id, protocols, force_id=None):
         self.name = name
         self.entity_type = entity_type
         self.details = json.dumps(details)
         self.account_id = account_id
+        self.protocols = protocols
         self.force_id = force_id
 
     @classmethod
@@ -1020,9 +1021,36 @@ class Entity(object):
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
         name = data['name']
-        entity_type = data.get('entity_type', None)
-        details = data.get('details', None)
-        return cls(name, entity_type, details, account_id, force_id=force_id)
+        entity_type = data['entity_type']
+        details = data['details']
+        protocols = data.get('protocols', {})
+        Entity.validate_protocols(protocols, account_id)
+        return cls(name, entity_type, details, account_id, protocols, force_id=force_id)
+
+    @staticmethod
+    def validate_protocols(protocols, account_id):
+        # For each of the protocols, make sure that the credential and all of the sensors indeed have
+        # the correct protocol and account.
+        #
+        #   protocols = {
+        #     'snmp': {
+        #       'credential': credential_id,
+        #       'sensors': [sensor1_id, sensor2_id],
+        #     },
+        #   }
+        with db.cursor() as c:
+            for protocol in protocols:
+                credential_id = protocols[protocol]['credential']
+                c.execute('SELECT id FROM credentials WHERE id = %s AND account = %s AND protocol = %s;', (credential_id, account_id, protocol,))
+                res = c.fetchone()
+                if not res:
+                    raise ValidationError("Invalid credential for this account/protocol combination: {}".format(credential_id))
+
+                for sensor_id in protocols[protocol]['sensors']:
+                    c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_id, account_id, protocol,))
+                    res = c.fetchone()
+                    if not res:
+                        raise ValidationError("Invalid sensor for this account/protocol combination: {}".format(sensor_id))
 
     @staticmethod
     def get_list(account_id):
@@ -1042,7 +1070,22 @@ class Entity(object):
         with db.cursor() as c:
             c.execute("INSERT INTO entities (account, name, entity_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.details,))
             entity_id, = c.fetchone()
+
+            Entity.set_protocols(c, entity_id, self.protocols, clear_existing=False)
             return entity_id
+
+    @staticmethod
+    def set_protocols(db_cursor, entity_id, protocols, clear_existing=True):
+        # db_cursor: we would like to perform these changes inside the same DB transaction
+        if clear_existing:
+            db_cursor.execute("DELETE FROM entities_credentials WHERE entity = %s;", (entity_id,))
+            db_cursor.execute("DELETE FROM entities_sensors WHERE entity = %s;", (entity_id,))
+
+        for protocol in protocols:
+            credential_id = protocols[protocol]['credential']
+            db_cursor.execute("INSERT INTO entities_credentials (entity, credential) VALUES (%s, %s);", (entity_id, credential_id,))
+            for sensor_id in protocols[protocol]['sensors']:
+                db_cursor.execute("INSERT INTO entities_sensors (entity, sensor) VALUES (%s, %s);", (entity_id, sensor_id,))
 
     @staticmethod
     def get(entity_id, account_id):
@@ -1061,14 +1104,11 @@ class Entity(object):
                     'sensors': [],
                 }
 
-            c.execute('SELECT s.id, s.name, s.protocol FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
-            for sensor_id, sensor_name, protocol in c:
+            c.execute('SELECT s.id, s.protocol FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
+            for sensor_id, protocol in c:
                 if protocol not in protocols:
                     continue  # this might happen, depending on how we implement POST, PUT and DELETE methods... better safe than sorry.
-                protocols[protocol]['sensors'].append({
-                    'id': sensor_id,
-                    'name': sensor_name,
-                })
+                protocols[protocol]['sensors'].append(sensor_id)
 
         return {
             'id': int(entity_id),
@@ -1091,7 +1131,10 @@ class Entity(object):
             return 0
         with db.cursor() as c:
             c.execute("UPDATE entities SET name = %s, entity_type = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.entity_type, self.details, self.force_id, self.account_id,))
-            return c.rowcount
+            was_updated = c.rowcount
+            if was_updated:
+                Entity.set_protocols(c, self.force_id, self.protocols, clear_existing=True)
+            return was_updated
 
     @staticmethod
     def delete(entity_id, account_id):
@@ -1110,7 +1153,7 @@ class Credential(object):
 
     @classmethod
     def forge_from_input(cls, flask_request, account_id, force_id=None):
-        inputs = CredentialsSchemaInputs(flask_request)
+        inputs = CredentialSchemaInputs(flask_request)
         if not inputs.validate():
             raise ValidationError(inputs.errors[0])
         data = flask_request.get_json()
