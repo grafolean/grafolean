@@ -294,3 +294,16 @@ def migration_step_11():
 
         c.execute('ALTER TABLE bots RENAME COLUMN bot_type TO protocol;')
         c.execute('ALTER TABLE credentials RENAME COLUMN credentials_type TO protocol;')
+
+def migration_step_12():
+    """ Tie credentials and sensors to entities. """
+    ENTITY_ID_FIELD = 'entity INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE'
+    CREDENTIAL_ID_FIELD = 'credential INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE'
+    SENSOR_ID_FIELD = 'sensor INTEGER NOT NULL REFERENCES sensors(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute('CREATE TABLE entities_sensors ({entity}, {sensor});'.format(entity=ENTITY_ID_FIELD, sensor=SENSOR_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX entities_sensors_entity_sensor ON entities_sensors (entity, sensor);')
+        c.execute('CREATE TABLE entities_credentials ({entity}, {credential});'.format(entity=ENTITY_ID_FIELD, credential=CREDENTIAL_ID_FIELD))
+        # there can be many records with the same entity id, but the referenced credentials must have different protocols
+        # until we figure out how to constrain that on DB level (or what a better schema design would be) we will need to
+        # be more careful on app level

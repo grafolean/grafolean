@@ -1052,11 +1052,38 @@ class Entity(object):
             if not res:
                 return None
             name, entity_type, details = res
+
+            protocols = {}
+            c.execute('SELECT c.id, c.protocol FROM entities_credentials ec, credentials c WHERE ec.entity = %s AND ec.credential = c.id AND c.account = %s;', (entity_id, account_id))
+            for credential_id, protocol in c:
+                protocols[protocol] = {
+                    'credential': credential_id,
+                    'sensors': [],
+                }
+
+            c.execute('SELECT s.id, s.name, s.protocol FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
+            for sensor_id, sensor_name, protocol in c:
+                if protocol not in protocols:
+                    continue  # this might happen, depending on how we implement POST, PUT and DELETE methods... better safe than sorry.
+                protocols[protocol]['sensors'].append({
+                    'id': sensor_id,
+                    'name': sensor_name,
+                })
+
         return {
             'id': int(entity_id),
             'name': name,
             'entity_type': entity_type,
             'details': details,
+            'protocols': protocols,
+            #   'protocols': {
+            #       'snmp': {
+            #           'credential': credential_id,
+            #           'sensors': [
+            #             { 'id': sensor_id1, 'name': sensor_name1 },
+            #           ],
+            #       },
+            #   }
         }
 
     def update(self):

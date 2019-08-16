@@ -1423,6 +1423,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
         'name': ENTITY_NAME1,
         'entity_type': 'device',
         'details': ENTITY_DETAILS1,
+        'protocols': {},
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
@@ -1444,6 +1445,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id):
         'name': ENTITY_NAME2,  # the name has changed
         'entity_type': 'device2',
         'details': ENTITY_DETAILS2,
+        'protocols': {},
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
