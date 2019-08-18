@@ -1046,7 +1046,7 @@ class Entity(object):
                 if not res:
                     raise ValidationError("Invalid credential for this account/protocol combination: {}".format(credential_id))
 
-                for sensor_id in protocols[protocol]['sensors']:
+                for sensor_id in protocols[protocol].get('sensors', []):
                     c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_id, account_id, protocol,))
                     res = c.fetchone()
                     if not res:
@@ -1084,7 +1084,7 @@ class Entity(object):
         for protocol in protocols:
             credential_id = protocols[protocol]['credential']
             db_cursor.execute("INSERT INTO entities_credentials (entity, credential) VALUES (%s, %s);", (entity_id, credential_id,))
-            for sensor_id in protocols[protocol]['sensors']:
+            for sensor_id in protocols[protocol].get('sensors', []):
                 db_cursor.execute("INSERT INTO entities_sensors (entity, sensor) VALUES (%s, %s);", (entity_id, sensor_id,))
 
     @staticmethod

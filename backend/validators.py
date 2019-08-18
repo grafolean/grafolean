@@ -152,10 +152,10 @@ class EntitySchemaInputs(Inputs):
                     # protocol definition must conform to this sub-schema:
                     'type': 'object',
                     'properties': {
-                        'credential': {'type': 'number'},
+                        'credential': {'type': ['string', 'number']},
                         'sensors': {
                             'type': 'array',
-                            'items': {'type': 'number'},
+                            'items': {'type': ['string', 'number']},
                             'uniqueItems': True,
                         },
                     },
