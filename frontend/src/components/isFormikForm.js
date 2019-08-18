@@ -65,6 +65,9 @@ const isFormikForm = WrappedComponent => {
         this.setState({
           errorMsg: null,
         });
+        if (this.props.fixValuesBeforeSubmit) {
+          formValues = this.props.fixValuesBeforeSubmit(formValues);
+        }
         // create new record:
         const responseCreate = await fetchAuth(`${ROOT_URL}/${this.props.resource}`, {
           headers: {

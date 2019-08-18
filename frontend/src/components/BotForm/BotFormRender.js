@@ -1,6 +1,7 @@
 import React from 'react';
 
 import isForm from '../isForm';
+import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
 class BotFormRender extends React.Component {
   areFormValuesValid() {
@@ -34,8 +35,11 @@ class BotFormRender extends React.Component {
           <label>Bot type:</label>
           <select value={protocol} name="protocol" onChange={this.handleInputChange}>
             <option value="">Custom</option>
-            <option value="ping">ICMP Ping</option>
-            <option value="snmp">SNMP</option>
+            {SUPPORTED_PROTOCOLS.map(protocol => (
+              <option key={protocol.slug} value={protocol.slug}>
+                {protocol.label}
+              </option>
+            ))}
           </select>
         </div>
       </>

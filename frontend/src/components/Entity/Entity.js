@@ -17,6 +17,12 @@ class Entity extends React.Component {
   render() {
     const { accountId, entityId } = this.props.match.params;
     const { entity } = this.state;
+    const numberOfSensors = entity
+      ? Object.keys(entity.protocols).reduce(
+          (sum, protocolSlug) => sum + entity.protocols[protocolSlug].sensors.length,
+          0,
+        )
+      : 0;
     return (
       <>
         <PersistentFetcher
@@ -35,7 +41,10 @@ class Entity extends React.Component {
             </div>
 
             <div className="frame">
-              <LinkButton to={`/accounts/${accountId}/entities/view/${entityId}/sensors`}>Sensors</LinkButton>
+              <LinkButton to={`/accounts/${accountId}/entities/view/${entityId}/protocols`}>
+                Sensors
+              </LinkButton>
+              <p>Currently selected: {numberOfSensors}</p>
             </div>
           </>
         )}

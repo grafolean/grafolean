@@ -2,6 +2,7 @@ import React from 'react';
 
 import isForm from '../isForm';
 import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
+import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
 class CredentialsFormRender extends React.Component {
   areFormValuesValid() {
@@ -61,7 +62,9 @@ class CredentialsFormRender extends React.Component {
             onBlur={this.performValidation}
           >
             <option value="">-- please select the type of credentials --</option>
-            <option value="snmp">SNMP</option>
+            {SUPPORTED_PROTOCOLS.map(protocol => (
+              <option value={protocol.slug}>{protocol.label}</option>
+            ))}
           </select>
         </div>
         {protocol === 'snmp' ? (

@@ -162,7 +162,7 @@ export default class MultiSelect extends React.Component {
         </div>
 
         {filteredOptions.length === 0 ? (
-          <div className="path-filter-noresults">No paths match the filter "{this.state.filter}"</div>
+          <div className="path-filter-noresults">Nothing matches the filter: "{this.state.filter}"</div>
         ) : (
           <div className="options">
             {filteredOptions.map(option => (
