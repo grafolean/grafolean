@@ -159,8 +159,8 @@ def account_credentials_factory(app_client, admin_authorization_header, account_
 @pytest.fixture
 def account_sensors_factory(app_client, admin_authorization_header, account_id):
     def gen(*sensor_data):
-        for protocol, name in sensor_data:
-            data = { 'name': name, 'protocol': protocol, 'details': {} }
+        for protocol, name, interval in sensor_data:
+            data = { 'name': name, 'protocol': protocol, 'default_interval': interval, 'details': {} }
             r = app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
             sensor_id = json.loads(r.data.decode('utf-8'))['id']
@@ -1398,7 +1398,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
         'ipv4': '1.1.1.1',
     }
     credential_id, = account_credentials_factory(('snmp', 'SNMP credentials 1'))
-    sensor1_id, sensor2_id = account_sensors_factory(('snmp', 'Sensor 1'), ('snmp', 'Sensor 2'))
+    sensor1_id, sensor2_id = account_sensors_factory(('snmp', 'Sensor 1', 60), ('snmp', 'Sensor 2', 120))
     ENTITY_PROTOCOLS1 = {
         'snmp': {
             'credential': credential_id,
@@ -1485,7 +1485,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
 
     # try to update with invalid data, make sure it fails:
     credential_id_ping, = account_credentials_factory(('ping', 'PING credentials 1'))
-    sensor_ping1_id, = account_sensors_factory(('ping', 'Sensor ping 1'))
+    sensor_ping1_id, = account_sensors_factory(('ping', 'Sensor ping 1', 300))
     ENTITY_PROTOCOLS_INVALID1 = { 'snmp': { 'credential': credential_id_ping, 'sensors': [sensor1_id, sensor2_id] } }
     ENTITY_PROTOCOLS_INVALID2 = { 'snmp': { 'credential': credential_id, 'sensors': [sensor_ping1_id] } }
     for protocols in [ENTITY_PROTOCOLS_INVALID1, ENTITY_PROTOCOLS_INVALID2]:
@@ -1507,28 +1507,24 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
     assert actual == expected
 
 
-@pytest.mark.parametrize("resourceName,resourcesName", [
-    ('credential','credentials',),
-    ('sensor','sensors',),
-])
-def test_account_protocol_resource_crud(app_client, admin_authorization_header, account_id, resourceName, resourcesName):
+def test_account_credentials_crud(app_client, admin_authorization_header, account_id):
     """
         Fetch a list of resources (credentials, entities, sensors) for account (must be empty), create one, check it, edit, check, delete, check.
     """
-    RESOURCE_NAME1 = 'res 1'
-    RESOURCE_PROTOCOL1 = 'snmp'
-    RESOURCE_DETAILS1 = {
+    CREDENTIAL_NAME1 = 'res 1'
+    CREDENTIAL_PROTOCOL1 = 'snmp'
+    CREDENTIAL_DETAILS1 = {
         'key1': 'value1',
         'key2': 'value2',
     }
-    RESOURCE_NAME2 = 'res 1 - renamed'
-    RESOURCE_PROTOCOL2 = 'wmi'
-    RESOURCE_DETAILS2 = {
+    CREDENTIAL_NAME2 = 'res 1 - renamed'
+    CREDENTIAL_PROTOCOL2 = 'wmi'
+    CREDENTIAL_DETAILS2 = {
         'key3': 'value3',
     }
 
     # the list of records for account must be empty at first:
-    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [],
@@ -1538,24 +1534,24 @@ def test_account_protocol_resource_crud(app_client, admin_authorization_header, 
 
     # create a record:
     data = {
-        'name': RESOURCE_NAME1,
-        'protocol': RESOURCE_PROTOCOL1,
-        'details': RESOURCE_DETAILS1,
+        'name': CREDENTIAL_NAME1,
+        'protocol': CREDENTIAL_PROTOCOL1,
+        'details': CREDENTIAL_DETAILS1,
     }
-    r = app_client.post('/api/accounts/{}/{}'.format(account_id, resourcesName), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     record_id = json.loads(r.data.decode('utf-8'))['id']
 
     # check result:
-    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [
             {
                 'id': record_id,
-                'name': RESOURCE_NAME1,
-                'protocol': RESOURCE_PROTOCOL1,
-                'details': RESOURCE_DETAILS1,
+                'name': CREDENTIAL_NAME1,
+                'protocol': CREDENTIAL_PROTOCOL1,
+                'details': CREDENTIAL_DETAILS1,
             },
         ],
     }
@@ -1563,44 +1559,147 @@ def test_account_protocol_resource_crud(app_client, admin_authorization_header, 
     assert actual == expected
 
     # get only the record:
-    r = app_client.get('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'id': record_id,
-        'name': RESOURCE_NAME1,
-        'protocol': RESOURCE_PROTOCOL1,
-        'details': RESOURCE_DETAILS1,
+        'name': CREDENTIAL_NAME1,
+        'protocol': CREDENTIAL_PROTOCOL1,
+        'details': CREDENTIAL_DETAILS1,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
     # update it:
     data = {
-        'name': RESOURCE_NAME2,
-        'protocol': RESOURCE_PROTOCOL2,
-        'details': RESOURCE_DETAILS2,
+        'name': CREDENTIAL_NAME2,
+        'protocol': CREDENTIAL_PROTOCOL2,
+        'details': CREDENTIAL_DETAILS2,
     }
-    r = app_client.put('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.put('/api/accounts/{}/credentials/{}'.format(account_id, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # get only the record:
-    r = app_client.get('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/credentials/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'id': record_id,
-        'name': RESOURCE_NAME2,  # the name has changed
-        'protocol': RESOURCE_PROTOCOL2,  # and so has type
-        'details': RESOURCE_DETAILS2,
+        'name': CREDENTIAL_NAME2,  # the name has changed
+        'protocol': CREDENTIAL_PROTOCOL2,  # and so has type
+        'details': CREDENTIAL_DETAILS2,
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
 
     # delete the record:
-    r = app_client.delete('/api/accounts/{}/{}/{}'.format(account_id, resourcesName, record_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.delete('/api/accounts/{}/credentials/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # the list is again empty:
-    r = app_client.get('/api/accounts/{}/{}'.format(account_id, resourcesName), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+def test_account_sensors_crud(app_client, admin_authorization_header, account_id):
+    """
+        Fetch a list of resources (credentials, entities, sensors) for account (must be empty), create one, check it, edit, check, delete, check.
+    """
+    SENSOR_NAME1 = 'res 1'
+    SENSOR_PROTOCOL1 = 'snmp'
+    SENSOR_DEFAULT_INTERVAL1 = 60
+    SENSOR_DETAILS1 = {
+        'key1': 'value1',
+        'key2': 'value2',
+    }
+    SENSOR_NAME2 = 'res 1 - renamed'
+    SENSOR_PROTOCOL2 = 'wmi'
+    SENSOR_DETAILS2 = {
+        'key3': 'value3',
+    }
+
+    # the list of records for account must be empty at first:
+    r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # create a record:
+    data = {
+        'name': SENSOR_NAME1,
+        'protocol': SENSOR_PROTOCOL1,
+        'default_interval': SENSOR_DEFAULT_INTERVAL1,
+        'details': SENSOR_DETAILS1,
+    }
+    r = app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+    record_id = json.loads(r.data.decode('utf-8'))['id']
+
+    # check result:
+    r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'list': [
+            {
+                'id': record_id,
+                'name': SENSOR_NAME1,
+                'protocol': SENSOR_PROTOCOL1,
+                'default_interval': SENSOR_DEFAULT_INTERVAL1,
+                'details': SENSOR_DETAILS1,
+            },
+        ],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # get only the record:
+    r = app_client.get('/api/accounts/{}/sensors/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': record_id,
+        'name': SENSOR_NAME1,
+        'protocol': SENSOR_PROTOCOL1,
+        'default_interval': SENSOR_DEFAULT_INTERVAL1,
+        'details': SENSOR_DETAILS1,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # update it:
+    data = {
+        'name': SENSOR_NAME2,
+        'protocol': SENSOR_PROTOCOL2,
+        'default_interval': None,
+        'details': SENSOR_DETAILS2,
+    }
+    r = app_client.put('/api/accounts/{}/sensors/{}'.format(account_id, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # get only the record:
+    r = app_client.get('/api/accounts/{}/sensors/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'id': record_id,
+        'name': SENSOR_NAME2,  # the name has changed
+        'protocol': SENSOR_PROTOCOL2,  # and so has type
+        'default_interval': None,
+        'details': SENSOR_DETAILS2,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert actual == expected
+
+    # delete the record:
+    r = app_client.delete('/api/accounts/{}/sensors/{}'.format(account_id, record_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    # the list is again empty:
+    r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'list': [],

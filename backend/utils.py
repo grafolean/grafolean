@@ -307,3 +307,11 @@ def migration_step_12():
         # there can be many records with the same entity id, but the referenced credentials must have different protocols
         # until we figure out how to constrain that on DB level (or what a better schema design would be) we will need to
         # be more careful on app level
+
+def migration_step_13():
+    """ Sensors should have a default interval (if they are pull, or NULL if they are push), and it
+        should  be possible to override this when selecting a sensor for entity.
+    """
+    with db.cursor() as c:
+        c.execute('ALTER TABLE sensors ADD COLUMN default_interval INTEGER NULL;')  # NULL: no interval (push), otherwise interval in seconds
+        c.execute('ALTER TABLE entities_sensors ADD COLUMN interval INTEGER NULL;')  # NULL: use sensors::default_interval, otherwise interval in seconds

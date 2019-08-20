@@ -187,7 +187,8 @@ class SensorSchemaInputs(Inputs):
         'properties': {
             'name': {'type': 'string'},
             'protocol': {'type': 'string'},
+            'default_interval': {'type': ['number', 'null']},
             'details': {'type': 'object'},
         },
-        'required': ['name', 'protocol', 'details'],
+        'required': ['name', 'protocol', 'default_interval', 'details'],
     })]

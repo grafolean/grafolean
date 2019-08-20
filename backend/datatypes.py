@@ -1212,9 +1212,10 @@ class Credential(object):
 
 
 class Sensor(object):
-    def __init__(self, name, protocol, details, account_id, force_id=None):
+    def __init__(self, name, protocol, default_interval, details, account_id, force_id=None):
         self.name = name
         self.protocol = protocol
+        self.default_interval = default_interval
         self.details = json.dumps(details)
         self.account_id = account_id
         self.force_id = force_id
@@ -1227,41 +1228,45 @@ class Sensor(object):
         data = flask_request.get_json()
         name = data['name']
         protocol = data.get('protocol', None)
+        default_interval = data.get('default_interval', None)
         details = data.get('details', None)
-        return cls(name, protocol, details, account_id, force_id=force_id)
+        return cls(name, protocol, default_interval, details, account_id, force_id=force_id)
 
     @staticmethod
     def get_list(account_id):
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, name, protocol, details FROM sensors WHERE account = %s ORDER BY id ASC;', (account_id,))
-            for record_id, name, protocol, details in c:
+            c.execute('SELECT id, name, protocol, default_interval, details FROM sensors WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for record_id, name, protocol, default_interval, details in c:
                 ret.append({
                     'id': record_id,
                     'name': name,
                     'protocol': protocol,
+                    'default_interval': default_interval,
                     'details': details,
                 })
             return ret
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO sensors (account, name, protocol, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.protocol, self.details,))
+            c.execute("INSERT INTO sensors (account, name, protocol, default_interval, details) VALUES (%s, %s, %s, %s, %s) RETURNING id;",
+                (self.account_id, self.name, self.protocol, self.default_interval, self.details,))
             record_id, = c.fetchone()
             return record_id
 
     @staticmethod
     def get(record_id, account_id):
         with db.cursor() as c:
-            c.execute('SELECT name, protocol, details FROM sensors WHERE id = %s AND account = %s;', (record_id, account_id))
+            c.execute('SELECT name, protocol, default_interval, details FROM sensors WHERE id = %s AND account = %s;', (record_id, account_id))
             res = c.fetchone()
             if not res:
                 return None
-            name, protocol, details = res
+            name, protocol, default_interval, details = res
         return {
             'id': int(record_id),
             'name': name,
             'protocol': protocol,
+            'default_interval': default_interval,
             'details': details,
         }
 
@@ -1269,7 +1274,8 @@ class Sensor(object):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
-            c.execute("UPDATE sensors SET name = %s, protocol = %s, details = %s WHERE id = %s AND account = %s;", (self.name, self.protocol, self.details, self.force_id, self.account_id,))
+            c.execute("UPDATE sensors SET name = %s, protocol = %s, default_interval = %s, details = %s WHERE id = %s AND account = %s;",
+                (self.name, self.protocol, self.default_interval, self.details, self.force_id, self.account_id,))
             return c.rowcount
 
     @staticmethod
