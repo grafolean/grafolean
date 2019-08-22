@@ -155,8 +155,14 @@ class EntitySchemaInputs(Inputs):
                         'credential': {'type': ['string', 'number']},
                         'sensors': {
                             'type': 'array',
-                            'items': {'type': ['string', 'number']},
-                            'uniqueItems': True,
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'sensor': {'type': ['string', 'number']},
+                                    'interval': {'type': ['number', 'null']},
+                                },
+                                'additionalProperties': False,
+                            },
                         },
                     },
                     'additionalProperties': False,

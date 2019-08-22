@@ -1046,11 +1046,11 @@ class Entity(object):
                 if not res:
                     raise ValidationError("Invalid credential for this account/protocol combination: {}".format(credential_id))
 
-                for sensor_id in protocols[protocol].get('sensors', []):
-                    c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_id, account_id, protocol,))
+                for sensor_info in protocols[protocol].get('sensors', []):
+                    c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_info['sensor'], account_id, protocol,))
                     res = c.fetchone()
                     if not res:
-                        raise ValidationError("Invalid sensor for this account/protocol combination: {}".format(sensor_id))
+                        raise ValidationError("Invalid sensor for this account/protocol combination: {}".format(sensor_info['sensor']))
 
     @staticmethod
     def get_list(account_id):
@@ -1084,8 +1084,8 @@ class Entity(object):
         for protocol in protocols:
             credential_id = protocols[protocol]['credential']
             db_cursor.execute("INSERT INTO entities_credentials (entity, credential) VALUES (%s, %s);", (entity_id, credential_id,))
-            for sensor_id in protocols[protocol].get('sensors', []):
-                db_cursor.execute("INSERT INTO entities_sensors (entity, sensor) VALUES (%s, %s);", (entity_id, sensor_id,))
+            for sensor_info in protocols[protocol].get('sensors', []):
+                db_cursor.execute("INSERT INTO entities_sensors (entity, sensor, interval) VALUES (%s, %s, %s);", (entity_id, sensor_info['sensor'], sensor_info['interval'],))
 
     @staticmethod
     def get(entity_id, account_id):
@@ -1104,11 +1104,14 @@ class Entity(object):
                     'sensors': [],
                 }
 
-            c.execute('SELECT s.id, s.protocol FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
-            for sensor_id, protocol in c:
+            c.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
+            for sensor_id, protocol, interval in c:
                 if protocol not in protocols:
                     continue  # this might happen, depending on how we implement POST, PUT and DELETE methods... better safe than sorry.
-                protocols[protocol]['sensors'].append(sensor_id)
+                protocols[protocol]['sensors'].append({
+                    'sensor': sensor_id,
+                    'interval': interval,
+                })
 
         return {
             'id': int(entity_id),

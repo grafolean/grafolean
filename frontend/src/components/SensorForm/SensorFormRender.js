@@ -2,21 +2,27 @@ import React from 'react';
 
 import isFormikForm from '../isFormikForm';
 import SensorDetailsFormSnmp from './SensorDetailsFormSnmp';
+import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
 class SensorFormRender extends React.Component {
   static DEFAULT_VALUES = {
     name: '',
     protocol: '',
+    default_interval: 300,
+    details: {},
   };
 
   static validate = values => {
-    const { name = '', protocol = '', details } = values;
+    const { name = '', default_interval = '', protocol = '', details } = values;
     let errors = {};
     if (name.length === 0) {
       errors['name'] = 'Name should not be empty';
     }
     if (protocol.length === 0) {
       errors['protocol'] = 'Protocol should be chosen';
+    }
+    if (default_interval.length === 0) {
+      errors['protocol'] = 'Default interval should be entered';
     }
     // we must be careful not to throw an exception in validate() or the results are unpredictable:
     try {
@@ -54,7 +60,7 @@ class SensorFormRender extends React.Component {
 
   render() {
     const {
-      values: { name = '', protocol = '', details = {} },
+      values: { name = '', default_interval = '', protocol = '', details = {} },
       errors,
       onChange,
       onBlur,
@@ -70,8 +76,22 @@ class SensorFormRender extends React.Component {
           <label>Protocol:</label>
           <select value={protocol} name="protocol" onChange={this.handleProtocolChange} onBlur={onBlur}>
             <option value="">-- please select --</option>
-            <option value="snmp">SNMP</option>
+            {SUPPORTED_PROTOCOLS.map(protocol => (
+              <option key={protocol.slug} value={protocol.slug}>
+                {protocol.label}
+              </option>
+            ))}
           </select>
+        </div>
+        <div className="field">
+          <label>Default fetching interval: [s]</label>
+          <input
+            type="number"
+            value={default_interval}
+            name="default_interval"
+            onChange={onChange}
+            onBlur={onBlur}
+          />
         </div>
         {protocol === 'snmp' ? (
           <SensorDetailsFormSnmp

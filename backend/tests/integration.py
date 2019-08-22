@@ -1402,7 +1402,10 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
     ENTITY_PROTOCOLS1 = {
         'snmp': {
             'credential': credential_id,
-            'sensors': [sensor1_id, sensor2_id],
+            'sensors': [
+                {'sensor': sensor1_id, 'interval': 300},
+                {'sensor': sensor2_id, 'interval': 600},
+            ],
         },
     }
 
