@@ -74,12 +74,12 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   (replace `yourdomain.example.org` with the actual domain or IP address)
 
-3.b) Create a directory that will allow container to serve certbot challenge:
+4) Create a directory that will allow container to serve certbot challenge:
   ```bash
     $ sudo mkdir -p /etc/letsencrypt/acme-challenge
   ```
 
-4) Edit `docker-compose.yml` and make sure the following lines are enabled in `grafolean` service:
+5) Edit `docker-compose.yml` and make sure the following lines are enabled in `grafolean` service:
   ```
     ports:
       - "80:80"
@@ -91,13 +91,13 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   (replace `yourdomain.example.org` with the actual domain or IP address)
 
-5) Run Grafolean:
+6) Run Grafolean:
   ```bash
     $ sudo docker-compose up -d
   ```
   If everything went according to plan, you should now be able to access the service at `https://yourdomain.example.org/`. Congratulations!
 
-6) Important final step - setup automatic certificate renewal process. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
+7) Important final step - setup automatic certificate renewal process. Edit `/etc/cron.daily/certbot-renew` and enter the following content:
   ```
     #!/bin/sh
     /usr/bin/certbot renew --webroot --webroot-path /etc/letsencrypt/acme-challenge/ -n --post-hook "docker restart grafolean"
