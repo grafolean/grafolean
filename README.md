@@ -74,7 +74,7 @@ IMPORTANT: you need to replace `yourdomain.example.org` everywhere in this guide
   ```
   (replace `yourdomain.example.org` with the actual domain or IP address)
 
-3.b) (might not be needed?)
+3.b) Create a directory that will allow container to serve certbot challenge:
   ```bash
     $ sudo mkdir -p /etc/letsencrypt/acme-challenge
   ```
