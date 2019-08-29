@@ -11,7 +11,6 @@ import WidgetForm from '../WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import { fetchAuth, havePermission } from '../../utils/fetch';
-import DashboardDeleteLink from '../DashboardDeleteLink';
 
 class _DashboardView extends React.Component {
   state = {
@@ -133,7 +132,7 @@ class _DashboardView extends React.Component {
           <span>
             Dashboard: <EditableLabel label={this.state.name} onChange={this.setDashboardName} />
           </span>
-          {loading ? <Loading overlayParent={true} /> : <DashboardDeleteLink slug={dashboardSlug} />}
+          {loading && <Loading overlayParent={true} />}
         </div>
 
         {this.state.widgets.length > 0 && (

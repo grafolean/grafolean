@@ -3,14 +3,13 @@ import { connect } from 'react-redux';
 import { Link, withRouter, Switch, Route } from 'react-router-dom';
 
 import store from '../../store';
-import { ROOT_URL, onReceiveDashboardsListSuccess, handleFetchErrors, onFailure } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { PersistentFetcher, havePermission, fetchAuth } from '../../utils/fetch';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
 import EditableLabel from '../EditableLabel';
 import LinkButton from '../LinkButton/LinkButton';
-import Loading from '../Loading';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
 
@@ -76,10 +75,6 @@ class _AccountSidebarContent extends React.Component {
     accountName: this.props.accountName,
   };
 
-  onDashboardsListUpdate = json => {
-    store.dispatch(onReceiveDashboardsListSuccess(json));
-  };
-
   onAccountUpdate = json => {
     this.setState({
       accountName: json.name,
@@ -103,7 +98,7 @@ class _AccountSidebarContent extends React.Component {
   };
 
   render() {
-    const { onSidebarLinkClick, dashboards, fetching, valid, user } = this.props;
+    const { onSidebarLinkClick, user } = this.props;
     const { accountName } = this.state;
 
     const accountId = this.props.match.params.accountId;
@@ -111,10 +106,6 @@ class _AccountSidebarContent extends React.Component {
     return (
       <>
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
-        <PersistentFetcher
-          resource={`accounts/${accountId}/dashboards`}
-          onUpdate={this.onDashboardsListUpdate}
-        />
 
         <div className="account-name">
           <EditableLabel
@@ -124,33 +115,15 @@ class _AccountSidebarContent extends React.Component {
           />
         </div>
 
-        {fetching ? (
-          <Loading />
-        ) : !valid ? (
-          <div>
-            <i className="fa fa-exclamation-triangle" title="Error fetching dashboards" />
-          </div>
-        ) : (
-          dashboards &&
-          dashboards.map(dash => (
-            <Link
-              key={dash.slug}
-              className="button blue"
-              to={`/accounts/${accountId}/dashboards/view/${dash.slug}`}
-              onClick={onSidebarLinkClick}
-            >
-              <i className="fa fa-dashboard" /> {dash.name}
-            </Link>
-          ))
+        {user && havePermission(`accounts/${accountId}/dashboards`, 'GET', user.permissions) && (
+          <Link
+            className="button green"
+            to={`/accounts/${accountId}/dashboards`}
+            onClick={onSidebarLinkClick}
+          >
+            <i className="fa fa-dashboard" /> Dashboards
+          </Link>
         )}
-
-        <Link
-          className="button green"
-          to={`/accounts/${accountId}/dashboards/new`}
-          onClick={onSidebarLinkClick}
-        >
-          <i className="fa fa-plus" /> Add dashboard
-        </Link>
         {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
           <Link className="button green" to={`/accounts/${accountId}/entities`} onClick={onSidebarLinkClick}>
             <i className="fa fa-cube" /> Monitored entities
@@ -179,14 +152,7 @@ class _AccountSidebarContent extends React.Component {
     );
   }
 }
-const mapDashboardsListToProps = store => ({
-  dashboards: store.dashboards.list.data,
-  fetching: store.dashboards.list.fetching,
-  valid: store.dashboards.list.valid,
-  user: store.user,
-  accounts: store.accounts,
-});
-const AccountSidebarContent = connect(mapDashboardsListToProps)(_AccountSidebarContent);
+const AccountSidebarContent = connect(mapUserToProps)(_AccountSidebarContent);
 
 class DefaultSidebarContent extends React.Component {
   render() {
