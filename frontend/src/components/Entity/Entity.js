@@ -42,9 +42,9 @@ class Entity extends React.Component {
 
             <div className="frame">
               <LinkButton to={`/accounts/${accountId}/entities/view/${entityId}/protocols`}>
-                Sensors
+                Protocols and sensors
               </LinkButton>
-              <p>Currently selected: {numberOfSensors}</p>
+              <p>Sensors enabled: {numberOfSensors}</p>
             </div>
           </>
         )}
