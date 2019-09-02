@@ -20,16 +20,6 @@ div.multiselect {
     }
   }
 
-  div.checkbox-parent {
-    position: relative;
-    min-height: 18px;
-
-    & > div.checkbox-label {
-      padding-left: 25px;
-      margin-bottom: 5px;
-    }
-  }
-
   div.header-controls {
     display: flex;
     flex-direction: row;
@@ -52,6 +42,27 @@ div.multiselect {
     }
   }
 
+  div.path-filter-noresults {
+    font-size: 12px;
+    font-style: italic;
+    padding: 5px 20px;
+  }
+}
+
+span.legend-label {
+  font-size: 10px;
+  overflow-wrap: break-word;
+}
+
+div.checkbox-parent {
+  position: relative;
+  min-height: 18px;
+
+  & > div.checkbox-label {
+    padding-left: 25px;
+    margin-bottom: 5px;
+  }
+
   div.checkbox {
     padding: 1px;
     background-color: #ffffff;
@@ -69,14 +80,4 @@ div.multiselect {
       height: 10px;
     }
   }
-  div.path-filter-noresults {
-    font-size: 12px;
-    font-style: italic;
-    padding: 5px 20px;
-  }
-}
-
-span.legend-label {
-  font-size: 10px;
-  overflow-wrap: break-word;
 }

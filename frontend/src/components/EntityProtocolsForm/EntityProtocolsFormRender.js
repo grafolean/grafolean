@@ -26,9 +26,15 @@ class EntityProtocolsFormRender extends React.Component {
     } = this.props;
     const { accountCredentials, accountSensors } = this.state;
 
-    const credentialId = protocols[protocol.slug] ? protocols[protocol.slug]['credential'] : null;
+    const credentialId =
+      protocols[protocol.slug] && protocols[protocol.slug]['credential']
+        ? protocols[protocol.slug]['credential']
+        : null;
     const sensors = accountSensors.filter(s => s.protocol === protocol.slug);
-    const selectedSensors = protocols[protocol.slug] ? protocols[protocol.slug]['sensors'] : null;
+    const selectedSensors =
+      protocols[protocol.slug] && protocols[protocol.slug]['sensors']
+        ? protocols[protocol.slug]['sensors']
+        : [];
     const credentials = accountCredentials.filter(c => c.protocol === protocol.slug);
     return (
       <div className="field">
@@ -57,8 +63,9 @@ class EntityProtocolsFormRender extends React.Component {
             <SensorsMultiSelect
               sensors={sensors}
               selectedSensors={selectedSensors}
-              onChange={onChange}
-              setFieldValue={setFieldValue}
+              onChange={newSelectedSensors =>
+                setFieldValue(`protocols[${protocol.slug}][sensors]`, newSelectedSensors)
+              }
             />
           )}
         </div>

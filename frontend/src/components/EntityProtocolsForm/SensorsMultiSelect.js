@@ -1,32 +1,34 @@
 import React from 'react';
+import Checkbox from '../MultiSelect/Checkbox';
 
 export default class SensorsMultiSelect extends React.Component {
+  handleCheckboxChange = sensorId => {
+    const { selectedSensors } = this.props;
+    const newSelectedSensors = selectedSensors.find(s => s.sensor === sensorId)
+      ? selectedSensors.filter(s => s.sensor !== sensorId)
+      : [...selectedSensors, { sensor: sensorId, interval: null }];
+    this.props.onChange(newSelectedSensors);
+  };
+
   render() {
-    const { sensors } = this.props;
+    const { sensors, selectedSensors } = this.props;
     return (
-      <table>
-        <thead>
-          <tr>
-            <th>[ ]</th>
-            <th>
-              <input type="text" />
-              <i className="fa fa-filter" />
-            </th>
-            <th>Override default interval</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sensors.map(sensor => (
-            <tr key={sensor.id}>
-              <td>[ ]</td>
-              <td>{sensor.name}</td>
-              <td>
-                [ ] <input type="number" />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="sensors-multi-select">
+        {sensors.map(sensor => (
+          <div key={sensor.id}>
+            <span>
+              <Checkbox
+                color="#ff6600"
+                value={sensor.id}
+                onChange={this.handleCheckboxChange}
+                checked={selectedSensors && Boolean(selectedSensors.find(s => s.sensor === sensor.id))}
+              >
+                {sensor.name}
+              </Checkbox>
+            </span>
+          </div>
+        ))}
+      </div>
     );
   }
 }
