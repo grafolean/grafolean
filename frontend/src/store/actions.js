@@ -18,29 +18,6 @@ export function onLogout() {
   };
 }
 
-export const ON_REQUEST_DASHBOARDS_LIST = 'ON_REQUEST_DASHBOARDS_LIST';
-export function onRequestDashboardsList() {
-  return {
-    type: ON_REQUEST_DASHBOARDS_LIST,
-  };
-}
-
-export const ON_RECEIVE_DASHBOARDS_LIST_SUCCESS = 'ON_RECEIVE_DASHBOARDS_LIST_SUCCESS';
-export function onReceiveDashboardsListSuccess(json) {
-  return {
-    type: ON_RECEIVE_DASHBOARDS_LIST_SUCCESS,
-    json,
-  };
-}
-
-export const ON_RECEIVE_DASHBOARDS_LIST_FAILURE = 'ON_RECEIVE_DASHBOARDS_LIST_FAILURE';
-export function onReceiveDashboardsListFailure(errMsg) {
-  return {
-    type: ON_RECEIVE_DASHBOARDS_LIST_FAILURE,
-    errMsg,
-  };
-}
-
 export const ON_REQUEST_BACKEND_STATUS = 'ON_REQUEST_BACKEND_STATUS';
 export function onRequestBackendStatus() {
   return {

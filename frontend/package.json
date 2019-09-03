@@ -5,6 +5,7 @@
   "dependencies": {
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
+    "formik": "^1.5.8",
     "lodash": "^4.17.4",
     "mathjs": "^6.0.0",
     "moment": "^2.19.3",

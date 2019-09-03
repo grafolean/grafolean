@@ -3,7 +3,7 @@ import json
 import psycopg2
 import time
 
-from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
+from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
 from .common import mqtt_publish_changed
 
 
@@ -157,6 +157,52 @@ def account_credential_crud(account_id, credential_id):
         mqtt_publish_changed([
             'accounts/{}/credentials'.format(account_id),
             'accounts/{}/credentials/{}'.format(account_id, credential_id),
+        ])
+        return "", 204
+
+
+@accounts_api.route('/<string:account_id>/sensors', methods=['GET', 'POST'])
+def account_sensors(account_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Sensor.get_list(account_id)
+        return json.dumps({'list': rec}), 200
+
+    elif flask.request.method == 'POST':
+        sensor = Sensor.forge_from_input(flask.request, account_id)
+        sensor_id = sensor.insert()
+        rec = {'id': sensor_id}
+        mqtt_publish_changed([
+            'accounts/{}/sensors'.format(account_id),
+        ])
+        return json.dumps(rec), 201
+
+
+@accounts_api.route('/<string:account_id>/sensors/<string:sensor_id>', methods=['GET', 'PUT', 'DELETE'])
+def account_sensor_crud(account_id, sensor_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Sensor.get(sensor_id, account_id)
+        if not rec:
+            return "No such sensor", 404
+        return json.dumps(rec), 200
+
+    elif flask.request.method == 'PUT':
+        sensor = Sensor.forge_from_input(flask.request, account_id, force_id=sensor_id)
+        rowcount = sensor.update()
+        if not rowcount:
+            return "No such sensor", 404
+        mqtt_publish_changed([
+            'accounts/{}/sensors'.format(account_id),
+            'accounts/{}/sensors/{}'.format(account_id, sensor_id),
+        ])
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        rowcount = Sensor.delete(sensor_id, account_id)
+        if not rowcount:
+            return "No such sensor", 404
+        mqtt_publish_changed([
+            'accounts/{}/sensors'.format(account_id),
+            'accounts/{}/sensors/{}'.format(account_id, sensor_id),
         ])
         return "", 204
 

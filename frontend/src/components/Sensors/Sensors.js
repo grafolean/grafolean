@@ -8,83 +8,81 @@ import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
 import Button from '../Button';
 
-export default class Credentials extends React.Component {
+export default class Sensors extends React.Component {
   state = {
-    credentials: null,
+    sensors: null,
     fetchError: false,
   };
 
-  onCredentialsUpdate = credentials => {
+  onSensorsUpdate = sensors => {
     this.setState({
-      credentials: credentials.list,
+      sensors: sensors.list,
       fetchError: false,
     });
   };
 
-  onCredentialsUpdateError = errMsg => {
+  onSensorsUpdateError = errMsg => {
     this.setState({
-      credentials: [],
+      sensors: [],
       fetchError: true,
     });
   };
 
-  performDelete = (ev, credId) => {
+  performDelete = (ev, sensorId) => {
     ev.preventDefault();
 
-    const cred = this.state.credentials.find(cred => cred.id === credId);
-    if (
-      !window.confirm(`Are you sure you want to delete credentials "${cred.name}" ? This can't be undone!`)
-    ) {
+    const sensor = this.state.sensors.find(sensor => sensor.id === sensorId);
+    if (!window.confirm(`Are you sure you want to delete sensor "${sensor.name}" ? This can't be undone!`)) {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/credentials/${credId}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/sensors/${sensorId}`, {
       method: 'DELETE',
     });
   };
 
   render() {
-    const { credentials, fetchError } = this.state;
+    const { sensors, fetchError } = this.state;
     const accountId = this.props.match.params.accountId;
 
     return (
-      <div className="credentials frame">
+      <div className="sensors frame">
         <PersistentFetcher
-          resource={`accounts/${accountId}/credentials`}
-          onUpdate={this.onCredentialsUpdate}
-          onError={this.onCredentialsUpdateError}
+          resource={`accounts/${accountId}/sensors`}
+          onUpdate={this.onSensorsUpdate}
+          onError={this.onSensorsUpdateError}
         />
 
-        {credentials === null ? (
+        {sensors === null ? (
           <Loading />
         ) : fetchError ? (
           <>
-            <i className="fa fa-exclamation-triangle" /> Error fetching credentials
+            <i className="fa fa-exclamation-triangle" /> Error fetching sensors
           </>
         ) : (
           <>
-            {credentials.length > 0 && (
+            {sensors.length > 0 && (
               <table className="list">
                 <tbody>
                   <tr>
-                    <th>Type</th>
+                    <th>Protocol</th>
                     <th>Name</th>
                     <th>Details</th>
                     <th />
                     <th />
                   </tr>
-                  {credentials.map(cred => (
-                    <tr key={cred.id}>
-                      <td>{cred.protocol}</td>
-                      <td>{cred.name}</td>
+                  {sensors.map(sensor => (
+                    <tr key={sensor.id}>
+                      <td>{sensor.protocol}</td>
+                      <td>{sensor.name}</td>
                       <td>/</td>
                       <td>
-                        <LinkButton title="Edit" to={`/accounts/${accountId}/credentials/edit/${cred.id}`}>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/sensors/edit/${sensor.id}`}>
                           <i className="fa fa-pencil" /> Edit
                         </LinkButton>
                       </td>
                       <td>
-                        <Button className="red" onClick={ev => this.performDelete(ev, cred.id)}>
+                        <Button className="red" onClick={ev => this.performDelete(ev, sensor.id)}>
                           <i className="fa fa-trash" /> Delete
                         </Button>
                       </td>
@@ -94,8 +92,8 @@ export default class Credentials extends React.Component {
               </table>
             )}
 
-            <Link className="button green" to={`/accounts/${accountId}/credentials/new`}>
-              <i className="fa fa-plus" /> Add credentials
+            <Link className="button green" to={`/accounts/${accountId}/sensors/new`}>
+              <i className="fa fa-plus" /> Add sensor
             </Link>
           </>
         )}

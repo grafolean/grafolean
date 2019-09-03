@@ -118,7 +118,7 @@ class BotSchemaInputs(Inputs):
         'additionalProperties': False,  # do not allow fields which are not specified in schema
         'properties': {
             'name': {'type': 'string'},
-            'bot_type': {'type': ['string', 'null']},
+            'protocol': {'type': ['string', 'null']},
         },
         'required': ['name'],
     })]
@@ -130,7 +130,7 @@ class AccountBotSchemaInputs(Inputs):
         'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
-            'bot_type': {'type': ['string', 'null']},
+            'protocol': {'type': ['string', 'null']},
             'config': {'type': ['string', 'null']},
         },
         'required': ['name'],
@@ -145,19 +145,56 @@ class EntitySchemaInputs(Inputs):
             'name': {'type': 'string'},
             'entity_type': {'type': 'string'},
             'details': {'type': 'object'},
+            'protocols': {
+                'type': 'object',
+                'additionalProperties': {
+                    # we don't define any properties (because keys are protocols and are not know in advance), but any
+                    # protocol definition must conform to this sub-schema:
+                    'type': 'object',
+                    'properties': {
+                        'credential': {'type': ['string', 'number']},
+                        'sensors': {
+                            'type': 'array',
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    'sensor': {'type': ['string', 'number']},
+                                    'interval': {'type': ['number', 'null']},
+                                },
+                                'additionalProperties': False,
+                            },
+                        },
+                    },
+                    'additionalProperties': False,
+                },
+            },
         },
-        'required': ['name', 'entity_type', 'details'],
+        'required': ['name', 'entity_type', 'details'],  # note that 'protocols' is not required
     })]
 
 
-class CredentialsSchemaInputs(Inputs):
+class CredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
         'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
-            'credentials_type': {'type': 'string'},
+            'protocol': {'type': 'string'},
             'details': {'type': 'object'},
         },
-        'required': ['name', 'credentials_type', 'details'],
+        'required': ['name', 'protocol', 'details'],
+    })]
+
+
+class SensorSchemaInputs(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'name': {'type': 'string'},
+            'protocol': {'type': 'string'},
+            'default_interval': {'type': ['number', 'null']},
+            'details': {'type': 'object'},
+        },
+        'required': ['name', 'protocol', 'default_interval', 'details'],
     })]

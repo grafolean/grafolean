@@ -1,0 +1,86 @@
+div.multiselect {
+  display: flex;
+  flex-direction: column;
+
+  div.filter {
+    margin-bottom: 3px;
+    position: relative;
+
+    input {
+      margin: 0;
+      box-sizing: border-box;
+      width: 100%;
+      padding-right: 30px;
+      padding-bottom: 0;
+    }
+    i.fa-backspace {
+      position: absolute;
+      right: 4px;
+      top: 6px;
+    }
+  }
+
+  div.header-controls {
+    display: flex;
+    flex-direction: row;
+
+    div.checkbox-all {
+      margin-bottom: 10px;
+      // flex-grow: 1;
+
+      i.fa.fa-check {
+        color: #009900;
+        font-size: 10px;
+      }
+    }
+    div.exchange {
+      padding-left: 25px;
+      padding-right: 5px;
+      .fa.fa-exchange.disabled {
+        color: #999;
+      }
+    }
+  }
+
+  div.path-filter-noresults {
+    font-size: 12px;
+    font-style: italic;
+    padding: 5px 20px;
+  }
+}
+
+span.legend-label {
+  font-size: 10px;
+  overflow-wrap: break-word;
+}
+
+div.checkbox-parent {
+  position: relative;
+  min-height: 18px;
+
+  & > div.checkbox-label {
+    padding-left: 25px;
+    margin-bottom: 5px;
+    padding-top: 5px;
+    font-size: 12px;
+  }
+
+  div.checkbox {
+    padding: 1px;
+    background-color: #ffffff;
+    position: absolute;
+    left: 5px;
+    top: 4px;
+    border: 1px solid #ff6600;
+
+    .dark-mode & {
+      background-color: #161616;
+      opacity: 0.9;
+    }
+
+    & > div {
+      width: 10px;
+      height: 10px;
+    }
+  }
+}

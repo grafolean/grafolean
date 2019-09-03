@@ -22,6 +22,11 @@ import AccountForm from '../AccountForm/AccountForm';
 import BotForm from '../BotForm/BotForm';
 import CredentialsForm from '../CredentialsForm/CredentialsForm';
 import Credentials from '../Credentials/Credentials';
+import Sensors from '../Sensors/Sensors';
+import SensorForm from '../SensorForm/SensorForm';
+import Entity from '../Entity/Entity';
+import EntityProtocolsForm from '../EntityProtocolsForm/EntityProtocolsForm';
+import Dashboards from '../Dashboards/Dashboards';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -111,6 +116,18 @@ class Content extends React.PureComponent {
           <WrappedRoute
             exact
             contentWidth={contentWidth}
+            path="/accounts/:accountId/entities/view/:entityId"
+            component={Entity}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/entities/view/:entityId/protocols"
+            component={EntityProtocolsForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
             path="/accounts/:accountId/bots/new"
             component={BotForm}
           />
@@ -135,8 +152,32 @@ class Content extends React.PureComponent {
           <WrappedRoute
             exact
             contentWidth={contentWidth}
-            path="/accounts/:accountId/credentials/edit/:credentialsId"
+            path="/accounts/:accountId/credentials/edit/:credentialId"
             component={CredentialsForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/sensors"
+            component={Sensors}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/sensors/new"
+            component={SensorForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/sensors/edit/:sensorId"
+            component={SensorForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/dashboards"
+            component={Dashboards}
           />
           <WrappedRoute
             exact

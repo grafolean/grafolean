@@ -282,3 +282,36 @@ def migration_step_10():
         c.execute(_construct_plsql_randid_function('credentials'))
         c.execute('CREATE TABLE credentials ({id}, {account}, name TEXT NOT NULL, credentials_type TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
         c.execute('CREATE UNIQUE INDEX credentials_name ON credentials (account, name);')
+
+def migration_step_11():
+    """ Add sensors, rename *_type fields to protocol. """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='sensors')
+    ACCOUNT_ID_FIELD = 'account INTEGER NULL REFERENCES accounts(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('sensors'))
+        c.execute('CREATE TABLE sensors ({id}, {account}, name TEXT NOT NULL, protocol TEXT NOT NULL, details JSON NOT NULL);'.format(id=ID_FIELD, account=ACCOUNT_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX sensors_name ON sensors (account, name);')
+
+        c.execute('ALTER TABLE bots RENAME COLUMN bot_type TO protocol;')
+        c.execute('ALTER TABLE credentials RENAME COLUMN credentials_type TO protocol;')
+
+def migration_step_12():
+    """ Tie credentials and sensors to entities. """
+    ENTITY_ID_FIELD = 'entity INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE'
+    CREDENTIAL_ID_FIELD = 'credential INTEGER NOT NULL REFERENCES credentials(id) ON DELETE CASCADE'
+    SENSOR_ID_FIELD = 'sensor INTEGER NOT NULL REFERENCES sensors(id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute('CREATE TABLE entities_sensors ({entity}, {sensor});'.format(entity=ENTITY_ID_FIELD, sensor=SENSOR_ID_FIELD))
+        c.execute('CREATE UNIQUE INDEX entities_sensors_entity_sensor ON entities_sensors (entity, sensor);')
+        c.execute('CREATE TABLE entities_credentials ({entity}, {credential});'.format(entity=ENTITY_ID_FIELD, credential=CREDENTIAL_ID_FIELD))
+        # there can be many records with the same entity id, but the referenced credentials must have different protocols
+        # until we figure out how to constrain that on DB level (or what a better schema design would be) we will need to
+        # be more careful on app level
+
+def migration_step_13():
+    """ Sensors should have a default interval (if they are pull, or NULL if they are push), and it
+        should  be possible to override this when selecting a sensor for entity.
+    """
+    with db.cursor() as c:
+        c.execute('ALTER TABLE sensors ADD COLUMN default_interval INTEGER NULL;')  # NULL: no interval (push), otherwise interval in seconds
+        c.execute('ALTER TABLE entities_sensors ADD COLUMN interval INTEGER NULL;')  # NULL: use sensors::default_interval, otherwise interval in seconds
