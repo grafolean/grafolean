@@ -1,0 +1,24 @@
+.sensors-multi-select {
+  margin: 5px 0 15px;
+  max-height: 200px;
+  overflow: auto;
+  border: 1px solid #ccc;
+
+  div.interval {
+    padding: 3px 0 10px 25px;
+    font-size: 12px;
+
+    & > input {
+      width: 40px;
+      min-width: auto;
+      height: 14px;
+    }
+    i.fa.fa-pencil {
+      margin-left: 8px;
+    }
+    i.fa.fa-undo {
+      margin-left: 20px;
+    }
+  }
+
+}

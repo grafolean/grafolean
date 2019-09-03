@@ -61,6 +61,8 @@ div.checkbox-parent {
   & > div.checkbox-label {
     padding-left: 25px;
     margin-bottom: 5px;
+    padding-top: 5px;
+    font-size: 12px;
   }
 
   div.checkbox {
@@ -70,6 +72,7 @@ div.checkbox-parent {
     left: 5px;
     top: 4px;
     border: 1px solid #ff6600;
+
     .dark-mode & {
       background-color: #161616;
       opacity: 0.9;

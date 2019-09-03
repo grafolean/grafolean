@@ -37,7 +37,7 @@ class EntityProtocolsFormRender extends React.Component {
         : [];
     const credentials = accountCredentials.filter(c => c.protocol === protocol.slug);
     return (
-      <div className="field">
+      <div key={protocol.slug} className="field">
         <label>{protocol.label}:</label>
 
         <div className="nested-field">
@@ -47,14 +47,16 @@ class EntityProtocolsFormRender extends React.Component {
             </p>
           ) : (
             <select
-              value={credentialId}
+              value={credentialId || ''}
               name={`protocols[${protocol.slug}][credential]`}
               onChange={onChange}
               onBlur={onBlur}
             >
               <option value="">-- disabled --</option>
               {credentials.map(c => (
-                <option value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           )}

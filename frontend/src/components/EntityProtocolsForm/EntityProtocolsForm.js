@@ -5,10 +5,23 @@ import EntityProtocolsFormRender from './EntityProtocolsFormRender';
 
 class EntityProtocolsForm extends React.Component {
   fixValuesBeforeSubmit = formValues => {
+    // if credential is not selected, filter out the protocol:
+    let protocols = pickBy(formValues.protocols, p => Boolean(p.credential));
+    for (let protocol in protocols) {
+      // if user enabled protocol (selected credential) without choosing the sensors, the array might
+      // be undefined, which is not allowed by backend:
+      if (!protocols[protocol].sensors) {
+        protocols[protocol].sensors = [];
+      }
+      // fix data type of intervals to a number:
+      protocols[protocol].sensors = protocols[protocol].sensors.map(s => ({
+        sensor: s.sensor,
+        interval: s.interval === null ? null : Number(s.interval),
+      }));
+    }
     return {
       ...formValues,
-      // if credential is not selected, filter out the protocol:
-      protocols: pickBy(formValues.protocols, p => Boolean(p.credential)),
+      protocols: protocols,
     };
   };
 

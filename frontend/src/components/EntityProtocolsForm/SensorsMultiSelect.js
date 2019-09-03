@@ -1,6 +1,8 @@
 import React from 'react';
 import Checkbox from '../MultiSelect/Checkbox';
 
+import './SensorsMultiSelect.scss';
+
 export default class SensorsMultiSelect extends React.Component {
   DEFAULT_INTERVAL = 300;
 
@@ -18,7 +20,7 @@ export default class SensorsMultiSelect extends React.Component {
       ...selectedSensors.filter(s => s.sensor !== sensorId),
       {
         sensor: sensorId,
-        interval: newInterval ? Number(newInterval) : null,
+        interval: newInterval,
       },
     ];
     this.props.onChange(newSelectedSensors);
@@ -39,15 +41,15 @@ export default class SensorsMultiSelect extends React.Component {
         {isSensorSelected && (
           <div className="interval">
             Interval:{' '}
-            {selectedSensor.interval ? (
+            {selectedSensor.interval !== null ? (
               <>
                 <input
-                  type="number"
+                  type="text"
                   onChange={ev => this.handleIntervalChange(sensor.id, ev.target.value)}
                   value={selectedSensor.interval}
                 />
                 s
-                <i className="fa fa-refresh" onClick={() => this.handleIntervalChange(sensor.id, null)} />
+                <i className="fa fa-undo" onClick={() => this.handleIntervalChange(sensor.id, null)} />
               </>
             ) : (
               <>
