@@ -4,7 +4,7 @@ import psycopg2
 import time
 
 from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
-from .common import mqtt_publish_changed
+from .common import auth_no_permissions, mqtt_publish_changed
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
@@ -13,6 +13,17 @@ accounts_api = flask.Blueprint('accounts_api', __name__)
 # --------------
 # /accounts/
 # --------------
+
+@accounts_api.route('/', methods=['GET'])
+@auth_no_permissions
+def accounts_root():
+    """
+        Returns the list of accounts that this user (person or bot) has permission to access.
+    """
+    user_id = flask.g.grafolean_data['user_id']
+    rec = Account.get_list(user_id)
+    return json.dumps({'list': rec}), 200
+
 
 @accounts_api.route('/<string:account_id>', methods=['GET', 'PUT'])
 def account_crud(account_id):

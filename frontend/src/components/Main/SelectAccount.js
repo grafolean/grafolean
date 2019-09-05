@@ -22,7 +22,7 @@ class SelectAccount extends React.Component {
     return (
       <div className="frame">
         <PersistentFetcher
-          resource="profile/accounts"
+          resource="accounts"
           onUpdate={this.handleAccountsUpdate}
           onError={this.handleAccountsUpdateError}
         />
