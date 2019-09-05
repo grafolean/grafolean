@@ -4,6 +4,24 @@ import { fetchAuth } from '../../utils/fetch';
 import { handleFetchErrors, ROOT_URL } from '../../store/actions';
 
 class BotForm extends React.Component {
+  requestPermission = async (accountId, botId, resourcePrefix, methods) => {
+    const responsePermissions = await fetchAuth(
+      `${ROOT_URL}/accounts/${accountId}/bots/${botId}/permissions`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({
+          resource_prefix: resourcePrefix,
+          methods: methods,
+        }),
+      },
+    );
+    await handleFetchErrors(responsePermissions);
+  };
+
   afterSubmit = async response => {
     // if we have created a new bot, we should assign it appropriate permissions too:
     const { accountId, botId } = this.props.match.params;
@@ -16,21 +34,8 @@ class BotForm extends React.Component {
     const responseJson = await response.json();
     const newId = responseJson.id;
     // assign permissions to bot:
-    const responsePermissions = await fetchAuth(
-      `${ROOT_URL}/accounts/${accountId}/bots/${newId}/permissions`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          resource_prefix: `accounts/${accountId}/values`,
-          methods: ['POST', 'PUT'],
-        }),
-      },
-    );
-    await handleFetchErrors(responsePermissions);
+    await this.requestPermission(accountId, newId, `accounts/${accountId}/values`, ['POST', 'PUT']);
+    await this.requestPermission(accountId, newId, `accounts/${accountId}/entities`, ['GET']);
     const redirectTo = `/accounts/${accountId}/bots?infoAbout=${newId}`;
     return redirectTo;
   };
