@@ -36,6 +36,8 @@ class BotForm extends React.Component {
     // assign permissions to bot:
     await this.requestPermission(accountId, newId, `accounts/${accountId}/values`, ['POST', 'PUT']);
     await this.requestPermission(accountId, newId, `accounts/${accountId}/entities`, ['GET']);
+    await this.requestPermission(accountId, newId, `accounts/${accountId}/credentials`, ['GET']);
+    await this.requestPermission(accountId, newId, `accounts/${accountId}/sensors`, ['GET']);
     const redirectTo = `/accounts/${accountId}/bots?infoAbout=${newId}`;
     return redirectTo;
   };
