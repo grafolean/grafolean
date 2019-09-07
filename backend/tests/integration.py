@@ -1208,12 +1208,11 @@ def test_profile_permissions_get_as_unauthorized(app_client):
 def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, admin_authorization_header, person_id, person_authorization_header):
     """ As admin / normal person, fetch the accounts that you have read permissions for """
     # initially the list of accounts should be empty:
-    r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     expected_empty = {
         'list': [],
-        'user_id': first_admin_id,
     }
     assert expected_empty == actual
 
@@ -1221,7 +1220,6 @@ def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, ad
     expected_admin = copy.deepcopy(expected_empty)
     expected_person_empty = {
         'list': [],
-        'user_id': person_id,
     }
     for acc_nr in range(3):
         # create new account:
@@ -1234,13 +1232,13 @@ def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, ad
         expected_admin['list'].append(new_record)
 
         # make sure it becomes available to admin:
-        r = app_client.get('/api/profile/accounts', headers={'Authorization': admin_authorization_header})
+        r = app_client.get('/api/accounts', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
         assert expected_admin == actual
 
         # but not to person:
-        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        r = app_client.get('/api/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
         assert expected_person_empty == actual
@@ -1257,38 +1255,11 @@ def test_profile_accounts_get(app_client, account_id_factory, first_admin_id, ad
         assert r.status_code == 201
 
         # now it should appear in the person's list:
-        r = app_client.get('/api/profile/accounts', headers={'Authorization': person_authorization_header})
+        r = app_client.get('/api/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
         expected['list'].append(account)
         assert expected == actual
-
-
-def test_profile_accounts_bot_config_get(app_client, account_id, first_admin_id, admin_authorization_header, bot_id, bot_token):
-    """
-        Assign permissions for an account to a bot, make sure it is able to get config from profile.
-    """
-    # assign a permission for bot to post values to the account:
-    data = {
-        'resource_prefix': 'accounts/{}/values/'.format(account_id),
-        'methods': [ 'POST' ],
-    }
-    r = app_client.post('/api/admin/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-
-    # the bot should be able to see that they have access to the account:
-    r = app_client.get('/api/profile/accounts?b={}'.format(bot_token))
-    assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
-    assert account_id == actual['list'][0]['id']
-
-    # the bot should be able to access config for some protocol:
-    protocol = 'ping'
-    r = app_client.get('/api/profile/accounts/{}/config/{}?b={}'.format(account_id, protocol, bot_token))
-    assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
-    assert [] == actual
-
 
 def test_account_update(app_client, admin_authorization_header, account_id):
     """

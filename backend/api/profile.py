@@ -19,19 +19,3 @@ def profile_permissions():
     user_id = flask.g.grafolean_data['user_id']
     rec = Permission.get_list(user_id)
     return json.dumps({'list': rec}), 200
-
-
-@profile_api.route('/accounts/<int:account_id>/config/<string:protocol>', methods=['GET'])
-@auth_no_permissions
-def profile_account_bot_config_get(account_id, protocol):
-    """
-        Returns the configuration of a certain bot type (ping, snmp,...) for an account.
-    """
-    user_id = flask.g.grafolean_data['user_id']
-
-    if not Bot.is_bot(user_id):
-        return 'Only bots are allowed to access this endpoint', 400
-
-    # !!! this information should be generated dynamically from the sensors
-    res = []
-    return json.dumps(res), 200
