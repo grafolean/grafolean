@@ -295,6 +295,7 @@ def values_post(account_id):
     data = []
     now = time.time()
     json_data = flask.request.get_json()
+    query_params_p = flask.request.args.get('p')
     if json_data:
         for x in json_data:
             if x.get('t'):
@@ -304,8 +305,7 @@ def values_post(account_id):
                 'v': x['v'],
                 't': now,
                 } for x in json_data]
-    query_params_p = flask.request.args.get('p')
-    if query_params_p:
+    elif query_params_p:
         if flask.request.args.get('t'):
             return "Query parameter 't' shouldn't be specified with POST", 400
         data.append({
@@ -313,7 +313,7 @@ def values_post(account_id):
             'v': flask.request.args.get('v'),
             't': now,
         })
-    if not data:
+    else:
         return "Missing data", 400
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
