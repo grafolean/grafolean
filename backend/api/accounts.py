@@ -285,7 +285,7 @@ def values_put(account_id):
             mqtt_publish_changed(['accounts/{}/values/{}'.format(account_id, d['p'])], { 'v': d['v'], 't': d['t'] })
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
-    return ""
+    return "", 204
 
 
 @accounts_api.route("/<string:account_id>/values", methods=['POST'])
