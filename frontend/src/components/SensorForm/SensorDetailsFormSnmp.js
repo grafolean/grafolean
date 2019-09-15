@@ -132,7 +132,7 @@ export default class SensorDetailsFormSnmp extends React.Component {
           />
           {output_path && (
             <p className="hint">
-              &lt;entity_id&gt;.snmp.{output_path || '...'}
+              Data will be saved to path: entity.&lt;entity_id&gt;.snmp.{output_path || '...'}
               {oidWithWalkPresent ? '.<snmpwalk_index>' : ''}
             </p>
           )}
