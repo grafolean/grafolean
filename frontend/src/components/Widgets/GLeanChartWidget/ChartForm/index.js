@@ -1,6 +1,4 @@
 import React from 'react';
-import { Creatable } from 'react-select';
-import 'react-select/dist/react-select.css';
 import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
@@ -29,8 +27,6 @@ const KNOWN_UNITS = {
   bps: { name: 'bits per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
   B: { name: 'byte', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
   Bps: { name: 'bytes per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
-  ETH: { name: 'Ether', allowedPrefixes: '' },
-  BTC: { name: 'Bitcoin', allowedPrefixes: '' },
 };
 
 export default class ChartForm extends React.Component {
@@ -129,6 +125,9 @@ export default class ChartForm extends React.Component {
     }));
     // we need to list all possible units, otherwise they won't be visible as selected options:
     for (let sg of this.state.seriesGroups) {
+      if (sg.unit === '') {
+        continue;
+      }
       if (allUnits.find(u => u.value === sg.unit)) {
         // we already know this unit, skip it
         continue;
@@ -162,6 +161,9 @@ export default class ChartForm extends React.Component {
                         value={sg.pathFilter}
                         onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
                       />
+                      <p className="hint markdown">
+                        `*` (multiple segments) and `?` (single segment) wildcards can be used.
+                      </p>
                     </div>
                     <div className="field">
                       <label>Series label:</label>
@@ -196,19 +198,23 @@ export default class ChartForm extends React.Component {
 
               <div className="form-item field">
                 <label>Unit:</label>
-                <Creatable
+                <input
+                  type="text"
                   value={sg.unit || ''}
-                  onChange={selectedOption =>
-                    this.setSeriesGroupProperty(
-                      sgIndex,
-                      'unit',
-                      selectedOption === null ? '' : selectedOption.value,
-                    )
-                  }
-                  options={allUnits}
-                  promptTextCreator={label => `Use custom unit (${label})`}
-                  newOptionCreator={this.userUnitCreator}
+                  onChange={ev => this.setSeriesGroupProperty(sgIndex, 'unit', ev.target.value)}
                 />
+                <p className="hint markdown">
+                  Commonly used units:
+                  {allUnits.map(u => (
+                    <span
+                      className="set-unit"
+                      onClick={ev => this.setSeriesGroupProperty(sgIndex, 'unit', u.value)}
+                      title={u.label}
+                    >
+                      {u.value}
+                    </span>
+                  ))}
+                </p>
               </div>
             </div>
           ))}

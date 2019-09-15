@@ -11,6 +11,14 @@
     p.hint {
       font-size: 11px;
       font-style: italic;
+      margin: 5px 0;
+
+      span.set-unit {
+        text-decoration: underline;
+        color: #3b60b3;
+        margin: 0 0 0 8px;
+        cursor: pointer;
+      }
     }
   }
 }
