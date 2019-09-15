@@ -23,6 +23,7 @@ import './index.scss';
 // ];
 const KNOWN_UNITS = {
   '%': { name: 'percent', allowedPrefixes: '' },
+  '°C': { name: 'degrees Celcius', allowedPrefixes: '' },
   s: { name: 'second', allowedPrefixes: 'mµnp' },
   m: { name: 'meter', allowedPrefixes: 'pnµmcdk' },
   bps: { name: 'bits per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
@@ -194,7 +195,7 @@ export default class ChartForm extends React.Component {
               </div>
 
               <div className="form-item field">
-                <label>Base unit:</label>
+                <label>Unit:</label>
                 <Creatable
                   value={sg.unit || ''}
                   onChange={selectedOption =>
