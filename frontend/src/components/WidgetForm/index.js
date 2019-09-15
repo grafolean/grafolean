@@ -134,6 +134,9 @@ class WidgetForm extends React.Component {
       .then(handleFetchErrors)
       .then(() => {
         this.props.onUpdate();
+        if (this.props.afterUpdateRedirectTo) {
+          this.props.history.push(this.props.afterUpdateRedirectTo);
+        }
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
