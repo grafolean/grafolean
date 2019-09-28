@@ -71,15 +71,16 @@ export default class SensorDetailsFormSnmp extends React.Component {
     expression: '$1',
     output_path: '',
   };
-  static OUTPUT_PATH_REGEX = '^[0-9a-zA-Z_-]+([.][0-9a-zA-Z_-]+)*$';
+  static OUTPUT_PATH_REGEX = '^([0-9a-zA-Z_-]+|[{][^}]+[}])([.]([0-9a-zA-Z_-]+|[{][^}]+[}]))*$';
 
   static validate = values => {
     const { oids, expression, output_path } = values;
     let errors = {};
     // expression should include $X for each X in range from 1 to oids.length:
     for (let i = 0; i < oids.length; i++) {
-      if (!expression.includes(`$${i + 1}`)) {
-        errors['expression'] = `Expression should contain $${i + 1}`;
+      const varName = `$${i + 1}`;
+      if (!expression.includes(varName) && !output_path.includes(varName)) {
+        errors['expression'] = `Either expression or output path should contain $${i + 1}`;
         break;
       }
     }
@@ -88,7 +89,7 @@ export default class SensorDetailsFormSnmp extends React.Component {
       errors['output_path'] = 'Output path should not be empty';
     } else if (!output_path.match(SensorDetailsFormSnmp.OUTPUT_PATH_REGEX)) {
       errors['output_path'] =
-        'Output path should containt only digits, ASCII letters, dashes and underscores, separated by dots';
+        'Output path should containt only digits, ASCII letters, dashes and underscores, separated by dots. Vars can be added by including {$1}, {$2},... for values, and {$index} for OID index if SNMP WALK is used.';
     }
     // !!! this doesn't play well with Formik's error handling:
     // if (oids.length === 0) {
@@ -130,10 +131,13 @@ export default class SensorDetailsFormSnmp extends React.Component {
             onChange={onChange}
             pattern={SensorDetailsFormSnmp.OUTPUT_PATH_REGEX}
           />
-          {output_path && (
+          <p className="hint">
+            Data will be saved to path: entity.&lt;entity_id&gt;.snmp.{output_path || '???'}
+          </p>
+          {output_path && oidWithWalkPresent && !output_path.includes('{$index}') && (
             <p className="hint">
-              Data will be saved to path: entity.&lt;entity_id&gt;.snmp.{output_path || '...'}
-              {oidWithWalkPresent ? '.<snmpwalk_index>' : ''}
+              Don't forget to include {"'{$index}'"}in this field to distinguish between multiple SNMP WALK
+              results!
             </p>
           )}
         </div>
