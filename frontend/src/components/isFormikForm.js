@@ -15,7 +15,7 @@ export const FormError = ({ msg }) => {
   }
   // if we get the object, we dive into it and use the first string (non-object actually) value we find:
   let firstStringInMsg = msg;
-  while (typeof firstStringInMsg === 'object') {
+  while (typeof firstStringInMsg === 'object' && firstStringInMsg !== null) {
     firstStringInMsg = firstStringInMsg[Object.keys(firstStringInMsg)[0]];
   }
   return (

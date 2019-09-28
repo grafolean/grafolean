@@ -207,6 +207,7 @@ export default class ChartForm extends React.Component {
                   Commonly used units:
                   {allUnits.map(u => (
                     <span
+                      key={u.label}
                       className="set-unit"
                       onClick={ev => this.setSeriesGroupProperty(sgIndex, 'unit', u.value)}
                       title={u.label}
