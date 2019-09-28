@@ -2,10 +2,12 @@ from colors import color
 from contextlib import contextmanager
 import logging
 import os
+import sys
+import copy
+import json
 import psycopg2
 from psycopg2.pool import ThreadedConnectionPool
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import sys
 
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
@@ -315,3 +317,19 @@ def migration_step_13():
     with db.cursor() as c:
         c.execute('ALTER TABLE sensors ADD COLUMN default_interval INTEGER NULL;')  # NULL: no interval (push), otherwise interval in seconds
         c.execute('ALTER TABLE entities_sensors ADD COLUMN interval INTEGER NULL;')  # NULL: use sensors::default_interval, otherwise interval in seconds
+
+def migration_step_14():
+    """ SNMP sensors have a field 'output_path' which was treated differently depending on whether SNMP WALK
+        was used or not. After this upgrade users are expected to use '{$index}' to explicitly compose the
+        output path. This migration fixes old path expressions to prevent any change in behaviour of existing sensors.
+    """
+    with db.cursor() as c, db.cursor() as c2:
+        c.execute("SELECT id, details FROM sensors WHERE protocol = 'snmp';")
+        # note: with JSON fields we get the parsed object from SELECTs, but must use a json string with UPDATEs and INSERTs
+        for sensor_id, details in c:
+            is_snmp_walk_present = any([o['fetch_method'] == 'walk' for o in details['oids']])
+            if not is_snmp_walk_present:
+                continue  # nothing to do here
+            new_details = copy.deepcopy(details)
+            new_details['output_path'] = details['output_path'] + '.{$index}'
+            c2.execute("UPDATE sensors SET details = %s WHERE id = %s;", (json.dumps(new_details), sensor_id,))
