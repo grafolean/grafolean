@@ -8,6 +8,7 @@ import store from '../store';
 
 import { VERSION_INFO } from '../VERSION';
 import { doLogout } from '../store/helpers';
+import { getValidJwtToken } from './auth';
 
 const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   if (!authHeader) {
@@ -21,44 +22,22 @@ const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   };
 };
 
-export const fetchAuth = (url, fetchOptions = {}) => {
-  const oldAuthHeader = 'Bearer ' + window.sessionStorage.getItem('grafolean_jwt_token');
-  const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions, oldAuthHeader);
-  return new Promise((resolve, reject) => {
-    fetch(url, fetchOptionsWithAuth)
-      .then(response => {
-        // we handle 401 errors by issuing /api/refresh, refreshing a JWT token, and issuing another request
-        if (response.status !== 401) {
-          resolve(response);
-          return;
-        }
-        // refresh jwt token:
-        fetch(`${ROOT_URL}/auth/refresh`, {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            Authorization: oldAuthHeader,
-          },
-          method: 'POST',
-        })
-          .then(handleFetchErrors)
-          .then(response => {
-            // now that you have refreshed jwt token, request resource again:
-            const newAuthHeader = response.headers.get('X-JWT-Token');
-            const jwtToken = newAuthHeader.substring('Bearer '.length);
-            window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
-            const fetchOptionsWithNewAuth = _addAuthHeaderToParams(fetchOptions, newAuthHeader);
-            fetch(url, fetchOptionsWithNewAuth)
-              .then(resp => resolve(resp))
-              .catch(err => reject(err));
-          })
-          .catch(() => {
-            doLogout();
-            reject('Error refreshing session.');
-          });
-      })
-      .catch(err => reject(err));
-  });
+export const fetchAuth = async (url, fetchOptions = {}) => {
+  // get the JWT token (it is not expired - if it were, it would have been refreshed) and
+  // handle possible errors:
+  let token;
+  try {
+    token = await getValidJwtToken();
+  } catch (ex) {
+    console.log(ex);
+    doLogout();
+    return Promise.reject(ex);
+  }
+
+  // return normal fetch promise, except that we add the auth header:
+  const authHeader = 'Bearer ' + token;
+  const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions, authHeader);
+  return fetch(url, fetchOptionsWithAuth);
 };
 
 export const havePermission = (resource, method, permissions) => {
