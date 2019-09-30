@@ -182,11 +182,11 @@ class MQTTFetcher {
   };
 
   _subscribe = fetchId => {
-    const { topic, onErrorCallback } = this.fetches[fetchId];
     if (!this.isConnected()) {
-      console.warn(`Not connected to MQTT, not subscribing to [${topic}]`);
+      console.warn(`Not connected to MQTT, not subscribing`);
       return;
     }
+    const { topic, onErrorCallback } = this.fetches[fetchId];
     this.mqttClient.subscribe(`changed/${topic}`, {
       onSuccess: () => console.log('Successfully subscribed to topic: ' + topic),
       onFailure: () => {
