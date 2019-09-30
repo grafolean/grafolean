@@ -105,7 +105,7 @@ export function fetchBackendStatus() {
   return function(dispatch) {
     dispatch(onRequestBackendStatus());
     // return function that will start the request from server:
-    return fetchAuth(`${ROOT_URL}/status/info`)
+    return fetch(`${ROOT_URL}/status/info`)
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
