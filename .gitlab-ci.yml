@@ -46,7 +46,7 @@ grafolean to docker hub:
   script:
     - apk add --no-cache git
     # we need to know what the latest (non-rc) version is - if it is the same as CI_COMMIT_TAG, we will mark it as 'latest':
-    - export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | grep -v "-rc." | head -n 1 | tr -d '[:space:]'`
+    - export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | grep -v rc | head -n 1 | tr -d '[:space:]'`
     - echo "Deploying..."
     - cp ./install/docker-compose/Dockerfile .
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
