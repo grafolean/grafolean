@@ -1,7 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { LineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
-import { ChartView } from '../src/components/Widgets/GLeanChartWidget';
+import { ChartView } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
 
 const stories = storiesOf('LineChartCanvas', module);
 

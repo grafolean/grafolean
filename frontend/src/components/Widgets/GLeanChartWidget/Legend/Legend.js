@@ -1,8 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import './index.scss';
-
 import { generateSerieColor } from '../utils';
 import isDockable from './isDockable';
 import MultiSelect from '../../../MultiSelect/MultiSelect';

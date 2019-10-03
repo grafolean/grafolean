@@ -1,7 +1,5 @@
 import React from 'react';
 
-import './index.scss';
-
 export default class Status extends React.PureComponent {
   render() {
     if (!this.props.fetching && !this.props.errorMsg) {

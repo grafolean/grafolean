@@ -8,7 +8,7 @@ import Button from '../Button';
 import EditableLabel from '../EditableLabel';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
-import GLeanChartWidget from '../Widgets/GLeanChartWidget';
+import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import { fetchAuth, havePermission } from '../../utils/fetch';
 
