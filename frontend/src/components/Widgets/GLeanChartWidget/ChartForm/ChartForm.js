@@ -3,7 +3,7 @@ import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
-import './index.scss';
+import './ChartForm.scss';
 
 // const METRIC_PREFIXES = [
 //   { prefix: 'P', name: 'peta', power: 15 },

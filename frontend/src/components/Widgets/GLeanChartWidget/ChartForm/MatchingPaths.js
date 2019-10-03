@@ -6,8 +6,6 @@ import { stringify } from 'qs';
 import { ROOT_URL, handleFetchErrors } from '../../../../store/actions';
 import { fetchAuth } from '../../../../utils/fetch';
 
-import './index.scss';
-
 class MatchingPaths extends React.Component {
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When

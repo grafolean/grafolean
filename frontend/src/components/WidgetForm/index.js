@@ -9,7 +9,7 @@ import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
 import Loading from '../Loading';
 
-import ChartForm from '../Widgets/GLeanChartWidget/ChartForm';
+import ChartForm from '../Widgets/GLeanChartWidget/ChartForm/ChartForm';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 
 import '../form.scss';
