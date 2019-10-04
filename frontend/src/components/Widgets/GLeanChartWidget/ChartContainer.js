@@ -314,6 +314,7 @@ export class ChartContainer extends React.Component {
         fetchedIntervalsData={this.state.fetchedIntervalsData}
         errorMsg={this.state.errorMsg}
         isAggr={this.state.aggrLevel >= 0}
+        aggrLevel={this.state.aggrLevel}
         minKnownTs={this.getMinKnownTs()}
         yAxesProperties={this.state.yAxesProperties}
         onMinYChange={this.onMinYChange}
