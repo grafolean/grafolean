@@ -246,16 +246,6 @@ class Aggregation(object):
             if self._parent_aggr:
                 self._parent_aggr.fix_aggregations()
 
-    @classmethod
-    def times_aligned_to_aggr(cls, times, aggr_level):
-        if not aggr_level:
-            return True
-        interval_size = 3600 * (cls.FACTOR ** aggr_level)
-        for t in times:
-            if int(t) % interval_size != 0:
-                return False
-        return True
-
 
 class Measurement(object):
 
