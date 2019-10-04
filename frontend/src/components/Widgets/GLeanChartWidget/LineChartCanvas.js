@@ -111,7 +111,7 @@ class LineChartSingleCanvas extends React.PureComponent {
 
   render() {
     const { timeFrom, timeTo, scale, height } = this.props;
-    const width = (timeTo - timeFrom) * scale;
+    const width = Math.round((timeTo - timeFrom) * scale);
     return (
       <foreignObject width={width} height={height}>
         <canvas ref={this.canvasRef} width={width} height={height} />
