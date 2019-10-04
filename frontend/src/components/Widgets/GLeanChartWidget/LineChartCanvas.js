@@ -2,7 +2,7 @@ import React from 'react';
 
 import { generateSerieColor } from './utils';
 
-export class LineChartCanvases extends React.PureComponent {
+export class LineChartCanvases extends React.Component {
   CANVAS_WIDTH_PX = 1000;
   N_ADDITIONAL = 0; // n additional canvases to each of the sides
 
