@@ -149,6 +149,19 @@ class Timestamp(_RegexValidatedInputValue):
     def __int__(self):
         return int(self.v)
 
+    def __lt__(self, other):
+        return float(self.v) < float(other.v)
+    def __le__(self, other):
+        return float(self.v) <= float(other.v)
+    def __gt__(self, other):
+        return float(self.v) > float(other.v)
+    def __ge__(self, other):
+        return float(self.v) >= float(other.v)
+    def __eq__(self, other):
+        return float(self.v) == float(other.v)
+    def __ne__(self, other):
+        return float(self.v) != float(other.v)
+
 
 class MeasuredValue(object):
     def __init__(self, v):
