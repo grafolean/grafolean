@@ -67,5 +67,5 @@ COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.d
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
-CMD ["/bin/bash", "-c", "/grafolean/apply_env.sh && service nginx start && uwsgi --enable-threads --ini /etc/uwsgi.ini"]
+CMD ["/bin/bash", "-c", "/grafolean/apply_env.sh && service nginx start && uwsgi --ini /etc/uwsgi.ini"]
 
