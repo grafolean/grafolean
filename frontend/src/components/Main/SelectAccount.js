@@ -4,7 +4,8 @@ import { Link, withRouter } from 'react-router-dom';
 
 import store from '../../store';
 import { onReceiveAccountsListSuccess } from '../../store/actions';
-import { PersistentFetcher, havePermission } from '../../utils/fetch';
+import { havePermission } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 

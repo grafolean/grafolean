@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { fetchAuth, PersistentFetcher } from '../../utils/fetch';
+import { fetchAuth } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
 
 import LinkButton from '../LinkButton/LinkButton';

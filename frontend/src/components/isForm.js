@@ -1,7 +1,8 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 
-import { fetchAuth, PersistentFetcher } from '../utils/fetch';
+import { fetchAuth } from '../utils/fetch';
+import { PersistentFetcher } from '../utils/fetch/PersistentFetcher';
 import { ROOT_URL, handleFetchErrors } from '../store/actions';
 import Loading from './Loading';
 import Button from './Button';

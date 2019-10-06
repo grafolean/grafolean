@@ -1,5 +1,5 @@
 import React from 'react';
-import { PersistentFetcher } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 import LinkButton from '../LinkButton/LinkButton';
 
