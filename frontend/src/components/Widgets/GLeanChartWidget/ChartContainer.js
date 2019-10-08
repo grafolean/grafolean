@@ -376,8 +376,7 @@ export class ChartContainer extends React.Component {
     const { drawnChartSeries } = this.props;
     const { aggrLevel, fetchedPathsValues } = this.state;
 
-    const result = [];
-    Object.values(fetchedPathsValues).forEach(fetched => {
+    const result = Object.values(fetchedPathsValues).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
       const csData = {};
       drawnChartSeries.forEach(cs => {
@@ -386,11 +385,12 @@ export class ChartContainer extends React.Component {
         }
         csData[cs.chartSerieId] = this._applyExpression(paths[cs.path].data, cs.expression, aggrLevel >= 0);
       });
-      result.push({
+
+      return {
         csData: csData,
         fromTs: fromTs,
         toTs: toTs,
-      });
+      };
     });
     return result;
   };
