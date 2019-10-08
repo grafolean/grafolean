@@ -2,7 +2,6 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 
 import { generateSerieColor } from './utils';
-import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 export class LineChartCanvases extends React.Component {
   CANVAS_WIDTH_PX = 1000;
@@ -111,36 +110,11 @@ class _LineChartSingleCanvas extends React.PureComponent {
     });
   }
 
-  onNotification = (mqttPayload, topic) => {
-    console.log('GOT LOAD', mqttPayload, topic);
-  };
-  onFetchError = errorMsg => {
-    console.error(errorMsg);
-  };
-  onUpdateData = json => {
-    console.log(json);
-  };
-
   render() {
-    const { fromTs, toTs, scale, height, drawnChartSeries, aggrLevel } = this.props;
+    const { fromTs, toTs, scale, height } = this.props;
     const width = Math.round((toTs - fromTs) * scale);
-    const allPaths = drawnChartSeries.map(cs => cs.path);
-    const queryParams = {
-      p: allPaths.join(','),
-      t0: fromTs,
-      t1: toTs,
-      a: aggrLevel < 0 ? 'no' : aggrLevel,
-    };
     return (
       <foreignObject width={width} height={height}>
-        <PersistentFetcher
-          resource={`accounts/${this.props.match.params.accountId}/values`}
-          mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
-          queryParams={queryParams}
-          onNotification={this.onNotification}
-          onUpdate={this.onUpdateData}
-          onError={this.onFetchError}
-        />
         <canvas ref={this.canvasRef} width={width} height={height} />
       </foreignObject>
     );

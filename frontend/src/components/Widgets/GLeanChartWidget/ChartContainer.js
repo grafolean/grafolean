@@ -9,10 +9,11 @@ import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
 import { fetchAuth } from '../../../utils/fetch';
 
 import ChartView from './ChartView';
+import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 export class ChartContainer extends React.Component {
   state = {
-    fetchedIntervalsData: [],
+    fetchedPathsValues: {},
     errorMsg: null,
     yAxesProperties: {},
   };
@@ -55,6 +56,30 @@ export class ChartContainer extends React.Component {
     ) {
       this.ensureData();
     }
+  }
+
+  getFetchIntervals() {
+    /*
+      We put multiple PersistentFetchers on the DOM so that each takes care of a smaller part of fetching. Their data
+      is being held by us though, and we need to know which intervals should be fetched.
+    */
+    const { fromTs, toTs } = this.props;
+    const intervalSizeTs = Math.round((toTs - fromTs) * 1.5); // chunk size - it could (and will) still happen that we are showing two chunks
+    const marginTs = Math.round((toTs - fromTs) / 4.0); // behave like the screen is bigger, to avoid fetching only when the data reaches the corner of the visible chart
+    const fromTsWithMargin = fromTs - marginTs;
+    const toTsWithMargin = toTs + marginTs;
+
+    let result = [];
+    for (
+      let i = Math.floor(fromTsWithMargin / intervalSizeTs);
+      i < Math.ceil(toTsWithMargin / intervalSizeTs);
+      i++
+    ) {
+      const fromTsInterval = i * intervalSizeTs;
+      const toTsInterval = (i + 1) * intervalSizeTs;
+      result.push({ fromTs: fromTsInterval, toTs: toTsInterval });
+    }
+    return result;
   }
 
   ensureData() {
@@ -306,20 +331,107 @@ export class ChartContainer extends React.Component {
     });
   };
 
+  onNotification = (mqttPayload, topic) => {
+    const { drawnChartSeries } = this.props;
+    const fetchIntervals = this.getFetchIntervals();
+    const interval = fetchIntervals.find(fi => fi.fromTs <= mqttPayload.t && fi.toTs > mqttPayload.t);
+    if (!interval) {
+      return false; // none of our intervals cares about this timestamp, ignore
+    }
+    const path = topic.substring('accounts/1/values/'.length);
+    if (!drawnChartSeries.find(cs => cs.path === path)) {
+      return false; // unknown path, ignore
+    }
+    return true;
+  };
+  onFetchError = errorMsg => {
+    console.error(errorMsg);
+  };
+  onUpdateData = (json, listenerInfo) => {
+    console.log('GOT IT', json);
+    const queryParams = listenerInfo.queryParams;
+    const fetchIntervals = this.getFetchIntervals();
+    const interval = fetchIntervals.find(fi => fi.fromTs === queryParams.t0 && fi.toTs === queryParams.t1);
+    if (!interval) {
+      console.error(
+        'Oops, this should not happen - interval not found, nowhere to write, ignoring fetched data',
+      );
+      return;
+    }
+    const intervalId = `${interval.fromTs}-${interval.toTs}`;
+    this.setState(prevState => ({
+      fetchedPathsValues: {
+        ...prevState.fetchedPathsValues,
+        [intervalId]: {
+          fromTs: interval.fromTs,
+          toTs: interval.toTs,
+          paths: json.paths,
+        },
+      },
+    }));
+  };
+
+  getDataInFetchedIntervalsDataFormat = () => {
+    // this function converts our internal data to the format that ChartView expects
+    const { drawnChartSeries } = this.props;
+    const { aggrLevel, fetchedPathsValues } = this.state;
+
+    const result = [];
+    Object.values(fetchedPathsValues).forEach(fetched => {
+      const { fromTs, toTs, paths } = fetched;
+      const csData = {};
+      drawnChartSeries.forEach(cs => {
+        if (!paths[cs.path]) {
+          return;
+        }
+        csData[cs.chartSerieId] = this._applyExpression(paths[cs.path].data, cs.expression, aggrLevel >= 0);
+      });
+      result.push({
+        csData: csData,
+        fromTs: fromTs,
+        toTs: toTs,
+      });
+    });
+    return result;
+  };
+
   render() {
+    const { drawnChartSeries } = this.props;
+    const { aggrLevel } = this.state;
+    const allPaths = drawnChartSeries.map(cs => cs.path);
+    const fetchIntervals = this.getFetchIntervals();
     return (
-      <ChartView
-        {...this.props}
-        fetching={this.state.fetching}
-        fetchedIntervalsData={this.state.fetchedIntervalsData}
-        errorMsg={this.state.errorMsg}
-        isAggr={this.state.aggrLevel >= 0}
-        aggrLevel={this.state.aggrLevel}
-        minKnownTs={this.getMinKnownTs()}
-        yAxesProperties={this.state.yAxesProperties}
-        onMinYChange={this.onMinYChange}
-        onMaxYChange={this.onMaxYChange}
-      />
+      <>
+        {fetchIntervals.map(fi => (
+          <PersistentFetcher
+            key={fi.fromTs}
+            resource={`accounts/${this.props.match.params.accountId}/values`}
+            mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
+            queryParams={{
+              p: allPaths.join(','),
+              t0: fi.fromTs,
+              t1: fi.toTs,
+              a: aggrLevel < 0 ? 'no' : aggrLevel,
+            }}
+            onNotification={this.onNotification}
+            onUpdate={this.onUpdateData}
+            onError={this.onFetchError}
+          />
+        ))}
+        <ChartView
+          {...this.props}
+          fetching={this.state.fetching}
+          // fetchedIntervalsData={this.state.fetchedIntervalsData}
+          fetchedIntervalsData={this.getDataInFetchedIntervalsDataFormat()}
+          errorMsg={this.state.errorMsg}
+          isAggr={this.state.aggrLevel >= 0}
+          aggrLevel={this.state.aggrLevel}
+          minKnownTs={this.getMinKnownTs()}
+          yAxesProperties={this.state.yAxesProperties}
+          onMinYChange={this.onMinYChange}
+          onMaxYChange={this.onMaxYChange}
+        />
+      </>
     );
   }
 }
