@@ -180,7 +180,13 @@ export class ChartContainer extends React.Component {
       mergedBlock,
       ...this.fetchedData[aggrLevel].filter(b => b.fromTs > mergedBlock.toTs),
     ];
+    this.updateYAxisProperties(csData);
+    this.setState({
+      fetchedIntervalsData: this.fetchedData[aggrLevel],
+    });
+  }
 
+  updateYAxisProperties(csData) {
     // while you are saving data, update min/max value:
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
@@ -193,11 +199,11 @@ export class ChartContainer extends React.Component {
           };
         }
         newYAxesProperties[cs.unit].minYValue = csData[cs.chartSerieId].reduce(
-          (prevValue, d) => Math.min(prevValue, aggrLevel < 0 ? d.v : d.minv),
+          (prevValue, d) => Math.min(prevValue, prevState.aggrLevel < 0 ? d.v : d.minv),
           newYAxesProperties[cs.unit].minYValue,
         );
         newYAxesProperties[cs.unit].maxYValue = csData[cs.chartSerieId].reduce(
-          (prevValue, d) => Math.max(prevValue, aggrLevel < 0 ? d.v : d.maxv),
+          (prevValue, d) => Math.max(prevValue, prevState.aggrLevel < 0 ? d.v : d.maxv),
           newYAxesProperties[cs.unit].maxYValue,
         );
       }
@@ -208,10 +214,6 @@ export class ChartContainer extends React.Component {
       return {
         yAxesProperties: newYAxesProperties,
       };
-    });
-
-    this.setState({
-      fetchedIntervalsData: this.fetchedData[aggrLevel],
     });
   }
 
@@ -346,7 +348,10 @@ export class ChartContainer extends React.Component {
     return true;
   };
   onFetchError = errorMsg => {
-    this.setState({ fetching: false });
+    this.setState({
+      fetching: false,
+      errorMsg: errorMsg,
+    });
     console.error(errorMsg);
   };
   onUpdateData = (json, listenerInfo) => {
