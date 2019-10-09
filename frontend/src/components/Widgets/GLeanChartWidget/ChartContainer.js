@@ -342,13 +342,15 @@ export class ChartContainer extends React.Component {
     if (!drawnChartSeries.find(cs => cs.path === path)) {
       return false; // unknown path, ignore
     }
+    this.setState({ fetching: true });
     return true;
   };
   onFetchError = errorMsg => {
+    this.setState({ fetching: false });
     console.error(errorMsg);
   };
   onUpdateData = (json, listenerInfo) => {
-    console.log('GOT IT', json);
+    this.setState({ fetching: false });
     const queryParams = listenerInfo.queryParams;
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs === queryParams.t0 && fi.toTs === queryParams.t1);
@@ -421,7 +423,6 @@ export class ChartContainer extends React.Component {
         <ChartView
           {...this.props}
           fetching={this.state.fetching}
-          // fetchedIntervalsData={this.state.fetchedIntervalsData}
           fetchedIntervalsData={this.getDataInFetchedIntervalsDataFormat()}
           errorMsg={this.state.errorMsg}
           isAggr={this.state.aggrLevel >= 0}
