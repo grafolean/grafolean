@@ -1,12 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
-import { stringify } from 'qs';
 import { compile } from 'mathjs';
-
-import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
-import { getSuggestedAggrLevel, getMissingIntervals } from './utils';
-import { fetchAuth } from '../../../utils/fetch';
 
 import ChartView from './ChartView';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
@@ -17,44 +12,12 @@ export class ChartContainer extends React.Component {
     errorMsg: null,
     yAxesProperties: {},
   };
-  requestsInProgress = [
-    // {
-    //   aggrLevel: ...
-    //   fromTs: ...,
-    //   toTs: ...,
-    // },
-  ];
-  fetchedData = {
-    /*
-    aggrLevel: [
-      {
-        fromTs,
-        toTs,
-        csData: {
-          <csId0> : [
-            { t:..., v:..., vmin:..., max:... },  // aggregation
-            { t:..., v:... },  // no aggregation
-          ],
-        },
-      },
-       ...
-    ]
-    */
-  };
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
-  componentDidMount() {
-    this.ensureData();
-  }
-
   componentDidUpdate(prevProps) {
-    if (
-      prevProps.allChartSeries !== this.props.allChartSeries ||
-      prevProps.fromTs !== this.props.fromTs ||
-      prevProps.toTs !== this.props.toTs
-    ) {
-      this.ensureData();
+    if (prevProps.allChartSeries !== this.props.allChartSeries) {
+      this.updateYAxisProperties({});
     }
   }
 
@@ -80,47 +43,6 @@ export class ChartContainer extends React.Component {
       result.push({ fromTs: fromTsInterval, toTs: toTsInterval });
     }
     return result;
-  }
-
-  ensureData() {
-    const { fromTs, toTs, allChartSeries, width } = this.props;
-    if (allChartSeries.length === 0) {
-      return; // we didn't receive the list of paths that match our path filters yet
-    }
-    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * width) / 100;
-    const aggrLevel = getSuggestedAggrLevel(fromTs, toTs, maxPointsOnChart, -1); // -1 for no aggregation
-    this.setState({
-      aggrLevel: aggrLevel,
-      fetchedIntervalsData: this.fetchedData[aggrLevel] || [],
-    });
-    const existingIntervals = [
-      // anything that we might have already fetched for this aggrLevel:
-      ...(this.fetchedData[`${aggrLevel}`] || []),
-      // and anything that is being fetched:
-      ...this.requestsInProgress.filter(v => v.aggrLevel === aggrLevel),
-    ];
-
-    const diffTs = toTs - fromTs;
-    const wantedIntervals = getMissingIntervals(existingIntervals, {
-      fromTs: fromTs - diffTs / 2,
-      toTs: toTs + diffTs / 2,
-    });
-    // do we have everything we need, plus some more?
-    if (wantedIntervals.length === 0) {
-      return;
-    }
-
-    // fetch a bit more than we checked for, so that we don't fetch too often (and make
-    // sure that the timestamps are aligned according to aggr. level)
-    const alignedFromTs = this.alignTs(fromTs - diffTs, aggrLevel, Math.floor);
-    const alignedToTs = this.alignTs(toTs + diffTs, aggrLevel, Math.ceil);
-    const intervalsToBeFetched = getMissingIntervals(existingIntervals, {
-      fromTs: alignedFromTs,
-      toTs: alignedToTs,
-    });
-    for (let intervalToBeFetched of intervalsToBeFetched) {
-      this.startFetchRequest(intervalToBeFetched.fromTs, intervalToBeFetched.toTs, aggrLevel); // take exactly what is needed, so you'll be able to merge intervals easily
-    }
   }
 
   // API requests the timestamps to be aligned to correct times according to aggr. level:
@@ -149,44 +71,7 @@ export class ChartContainer extends React.Component {
     }
   }
 
-  saveResponseData(fromTs, toTs, aggrLevel, json) {
-    // make sure aggregation level exists:
-    this.fetchedData[aggrLevel] = this.fetchedData[aggrLevel] || [];
-
-    // find all existing intervals which are touching our interval so you can merge
-    // them to a single block:
-    const existingBlockBefore = this.fetchedData[aggrLevel].find(b => b.toTs === fromTs);
-    const existingBlockAfter = this.fetchedData[aggrLevel].find(b => b.fromTs === toTs);
-    // if there are any, merge them together:
-    let csData = {};
-    for (let cs of this.props.allChartSeries) {
-      const { path, chartSerieId, expression = '$1' } = cs;
-      const newData = this._applyExpression(json.paths[path].data, expression, aggrLevel >= 0);
-      csData[chartSerieId] = [
-        ...(existingBlockBefore ? existingBlockBefore.csData[chartSerieId] : []),
-        ...newData,
-        ...(existingBlockAfter ? existingBlockAfter.csData[chartSerieId] : []),
-      ];
-    }
-    const mergedBlock = {
-      fromTs: existingBlockBefore ? existingBlockBefore.fromTs : fromTs,
-      toTs: existingBlockAfter ? existingBlockAfter.toTs : toTs,
-      csData: csData,
-    };
-
-    // then construct new this.fetchedData from data blocks that came before, our merged block and those that are after:
-    this.fetchedData[aggrLevel] = [
-      ...this.fetchedData[aggrLevel].filter(b => b.toTs < mergedBlock.fromTs),
-      mergedBlock,
-      ...this.fetchedData[aggrLevel].filter(b => b.fromTs > mergedBlock.toTs),
-    ];
-    this.updateYAxisProperties(csData);
-    this.setState({
-      fetchedIntervalsData: this.fetchedData[aggrLevel],
-    });
-  }
-
-  updateYAxisProperties(csData) {
+  updateYAxisProperties(pathsValues) {
     // while you are saving data, update min/max value:
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
@@ -198,11 +83,14 @@ export class ChartContainer extends React.Component {
             maxYValue: Number.NEGATIVE_INFINITY,
           };
         }
-        newYAxesProperties[cs.unit].minYValue = csData[cs.chartSerieId].reduce(
+        if (!pathsValues[cs.path]) {
+          continue;
+        }
+        newYAxesProperties[cs.unit].minYValue = pathsValues[cs.path].data.reduce(
           (prevValue, d) => Math.min(prevValue, prevState.aggrLevel < 0 ? d.v : d.minv),
           newYAxesProperties[cs.unit].minYValue,
         );
-        newYAxesProperties[cs.unit].maxYValue = csData[cs.chartSerieId].reduce(
+        newYAxesProperties[cs.unit].maxYValue = pathsValues[cs.path].data.reduce(
           (prevValue, d) => Math.max(prevValue, prevState.aggrLevel < 0 ? d.v : d.maxv),
           newYAxesProperties[cs.unit].maxYValue,
         );
@@ -245,48 +133,6 @@ export class ChartContainer extends React.Component {
     }
   };
 
-  startFetchRequest(fromTs, toTs, aggrLevel) {
-    const requestInProgress = {
-      // prepare an object and remember its reference; you will need it when removing it from the list
-      aggrLevel,
-      fromTs,
-      toTs,
-    };
-    this.requestsInProgress.push(requestInProgress);
-    this.setState({
-      fetching: true,
-    });
-
-    const allPaths = this.props.allChartSeries.map(cs => cs.path);
-    fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/values?${stringify({
-        p: allPaths.join(','),
-        t0: fromTs,
-        t1: toTs,
-        a: aggrLevel < 0 ? 'no' : aggrLevel,
-      })}`,
-    )
-      .then(handleFetchErrors)
-      .then(
-        response =>
-          response.json().then(json => {
-            this.saveResponseData(fromTs, toTs, aggrLevel, json);
-            return null;
-          }),
-        errorMsg => {
-          return errorMsg;
-        },
-      )
-      .then(errorMsg => {
-        // whatever happened, remove the info about this particular request:
-        this.requestsInProgress = this.requestsInProgress.filter(r => r !== requestInProgress);
-        this.setState({
-          fetching: this.requestsInProgress.length > 0,
-          errorMsg,
-        });
-      });
-  }
-
   getMinKnownTs() {
     /*
       Fun fact: did you know the coordinate system in SVG is limited (by implementation)? It turns out that the circle in the
@@ -301,12 +147,15 @@ export class ChartContainer extends React.Component {
       More details here: https://oreillymedia.github.io/Using_SVG/extras/ch08-precision.html
 
       How is this important? We were drawing with coordinate system translated by fromTs * scale. That simplified maths but
-      lead to largish numbers being used, so the points weren't being displayed.
+      lead to largish numbers being used, so the points weren't being displayed. Instead we now need to find minKnownTs,
+      which is then our point of reference.
     */
-    if (!this.fetchedData[this.state.aggrLevel] || this.fetchedData[this.state.aggrLevel].length === 0) {
+    const { fetchedPathsValues } = this.state;
+    const fetchedPathsValuesArray = Object.values(fetchedPathsValues);
+    if (fetchedPathsValuesArray.length === 0) {
       return 0;
     }
-    return this.fetchedData[this.state.aggrLevel][0].fromTs;
+    return fetchedPathsValuesArray[0].fromTs;
   }
 
   onMinYChange = (unit, y) => {
@@ -376,6 +225,7 @@ export class ChartContainer extends React.Component {
         },
       },
     }));
+    this.updateYAxisProperties(json.paths);
   };
 
   getDataInFetchedIntervalsDataFormat = () => {
