@@ -141,7 +141,13 @@ class MQTTFetcher {
     await fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
-      .then(json => this.listeners[listenerId].onFetchCallback(json, this.listeners[listenerId]))
+      .then(json => {
+        try {
+          this.listeners[listenerId].onFetchCallback(json, this.listeners[listenerId]);
+        } catch (err) {
+          console.error(err);
+        }
+      })
       .catch(err => {
         console.error(err);
         if (err.name !== 'AbortError') {
