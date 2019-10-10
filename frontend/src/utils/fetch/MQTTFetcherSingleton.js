@@ -231,7 +231,7 @@ class MQTTFetcher {
   };
 
   disconnect = () => {
-    Object.keys(this.listeners).forEach(listenerId => this.stop(listenerId));
+    Object.keys(this.listeners).forEach(listenerId => this.removeListener(listenerId));
     if (this._mqttClient) {
       this._mqttClient.disconnect();
       this._mqttClient = null;
