@@ -73,6 +73,9 @@ class _LineChartSingleCanvas extends React.PureComponent {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           return;
         }
+        if (!this.props.yAxesProperties[cs.unit]) {
+          return;
+        }
         const v2y = this.props.yAxesProperties[cs.unit].derived.v2y;
         const pathPoints = interval.csData[cs.chartSerieId].map(p => ({
           x: ts2x(p.t),

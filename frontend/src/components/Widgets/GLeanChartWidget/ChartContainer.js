@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { compile } from 'mathjs';
 
+import { getSuggestedAggrLevel } from './utils';
+
 import ChartView from './ChartView';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
@@ -15,10 +17,34 @@ export class ChartContainer extends React.Component {
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
+  componentDidMount() {
+    this.updateAggrLevel();
+  }
+
   componentDidUpdate(prevProps) {
     if (prevProps.allChartSeries !== this.props.allChartSeries) {
       this.updateYAxisProperties({});
     }
+
+    if (
+      prevProps.allChartSeries !== this.props.allChartSeries ||
+      prevProps.fromTs !== this.props.fromTs ||
+      prevProps.toTs !== this.props.toTs
+    ) {
+      this.updateAggrLevel();
+    }
+  }
+
+  updateAggrLevel() {
+    const { fromTs, toTs, allChartSeries, width } = this.props;
+    if (allChartSeries.length === 0) {
+      return; // we didn't receive the list of paths that match our path filters yet
+    }
+    const maxPointsOnChart = (this.MAX_POINTS_PER_100PX * width) / 100;
+    const aggrLevel = getSuggestedAggrLevel(fromTs, toTs, maxPointsOnChart, -1); // -1 for no aggregation
+    this.setState({
+      aggrLevel: aggrLevel,
+    });
   }
 
   getFetchIntervals() {
@@ -72,7 +98,7 @@ export class ChartContainer extends React.Component {
   }
 
   updateYAxisProperties(pathsValues) {
-    // while you are saving data, update min/max value:
+    // update min/max value and similar:
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
 
@@ -86,15 +112,23 @@ export class ChartContainer extends React.Component {
         if (!pathsValues[cs.path]) {
           continue;
         }
-        newYAxesProperties[cs.unit].minYValue = pathsValues[cs.path].data.reduce(
-          (prevValue, d) => Math.min(prevValue, prevState.aggrLevel < 0 ? d.v : d.minv),
-          newYAxesProperties[cs.unit].minYValue,
-        );
-        newYAxesProperties[cs.unit].maxYValue = pathsValues[cs.path].data.reduce(
-          (prevValue, d) => Math.max(prevValue, prevState.aggrLevel < 0 ? d.v : d.maxv),
-          newYAxesProperties[cs.unit].maxYValue,
-        );
+        const mathExpression = compile(cs.expression);
+
+        const data = pathsValues[cs.path].data;
+        const lowestV = Math.min(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.minv)));
+        const highestV = Math.max(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.maxv)));
+        const minYValue = mathExpression.evaluate({ $1: lowestV });
+        const maxYValue = mathExpression.evaluate({ $1: highestV });
+        newYAxesProperties[cs.unit].minYValue = Math.min(newYAxesProperties[cs.unit].minYValue, minYValue);
+        newYAxesProperties[cs.unit].maxYValue = Math.max(newYAxesProperties[cs.unit].maxYValue, maxYValue);
       }
+
+      // clean up any entry that doesn't have any values:
+      Object.keys(newYAxesProperties).forEach(unit => {
+        if (newYAxesProperties[unit].maxYValue === Number.NEGATIVE_INFINITY) {
+          delete newYAxesProperties[unit];
+        }
+      });
 
       // now that you have updated minYValue and maxYValue for each unit, prepare some of the derived data that you
       // will need often - minY, maxY, ticks, v2y(), y2v(), ticks and similar:
@@ -196,6 +230,7 @@ export class ChartContainer extends React.Component {
     this.setState({ fetching: true });
     return true;
   };
+
   onFetchError = errorMsg => {
     this.setState({
       fetching: false,
@@ -203,6 +238,7 @@ export class ChartContainer extends React.Component {
     });
     console.error(errorMsg);
   };
+
   onUpdateData = (json, listenerInfo) => {
     this.setState({ fetching: false });
     const queryParams = listenerInfo.queryParams;
@@ -215,17 +251,19 @@ export class ChartContainer extends React.Component {
       return;
     }
     const intervalId = `${interval.fromTs}-${interval.toTs}`;
-    this.setState(prevState => ({
-      fetchedPathsValues: {
-        ...prevState.fetchedPathsValues,
-        [intervalId]: {
-          fromTs: interval.fromTs,
-          toTs: interval.toTs,
-          paths: json.paths,
+    this.setState(
+      prevState => ({
+        fetchedPathsValues: {
+          ...prevState.fetchedPathsValues,
+          [intervalId]: {
+            fromTs: interval.fromTs,
+            toTs: interval.toTs,
+            paths: json.paths,
+          },
         },
-      },
-    }));
-    this.updateYAxisProperties(json.paths);
+      }),
+      () => this.updateYAxisProperties(json.paths),
+    );
   };
 
   getDataInFetchedIntervalsDataFormat = () => {

@@ -148,6 +148,9 @@ export default class ChartView extends React.Component {
           // do we have fetched data for this cs?
           continue;
         }
+        if (!this.props.yAxesProperties[cs.unit]) {
+          continue;
+        }
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
