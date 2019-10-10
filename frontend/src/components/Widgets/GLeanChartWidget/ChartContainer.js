@@ -80,9 +80,12 @@ export class ChartContainer extends React.Component {
     return floorCeilFunc(originalTs / interval) * interval;
   }
 
-  _applyExpression(data, expression, isAggr) {
+  _applyExpression(data, expression) {
+    if (data.length === 0) {
+      return [];
+    }
     const mathExpression = compile(expression);
-    if (isAggr) {
+    if (data[0].minv) {
       return data.map(d => ({
         t: d.t,
         v: mathExpression.evaluate({ $1: d.v }),
@@ -269,7 +272,7 @@ export class ChartContainer extends React.Component {
   getDataInFetchedIntervalsDataFormat = () => {
     // this function converts our internal data to the format that ChartView expects
     const { drawnChartSeries } = this.props;
-    const { aggrLevel, fetchedPathsValues } = this.state;
+    const { fetchedPathsValues } = this.state;
 
     const result = Object.values(fetchedPathsValues).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
@@ -278,7 +281,7 @@ export class ChartContainer extends React.Component {
         if (!paths[cs.path]) {
           return;
         }
-        csData[cs.chartSerieId] = this._applyExpression(paths[cs.path].data, cs.expression, aggrLevel >= 0);
+        csData[cs.chartSerieId] = this._applyExpression(paths[cs.path].data, cs.expression);
       });
 
       return {
