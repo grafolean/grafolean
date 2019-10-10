@@ -259,22 +259,23 @@ export class ChartContainer extends React.Component {
     const fetchIntervals = this.getFetchIntervals();
     return (
       <>
-        {fetchIntervals.map(fi => (
-          <PersistentFetcher
-            key={fi.fromTs}
-            resource={`accounts/${this.props.match.params.accountId}/values`}
-            mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
-            queryParams={{
-              p: allPaths.join(','),
-              t0: fi.fromTs,
-              t1: fi.toTs,
-              a: aggrLevel < 0 ? 'no' : aggrLevel,
-            }}
-            onNotification={this.onNotification}
-            onUpdate={this.onUpdateData}
-            onError={this.onFetchError}
-          />
-        ))}
+        {allPaths.length > 0 &&
+          fetchIntervals.map(fi => (
+            <PersistentFetcher
+              key={fi.fromTs}
+              resource={`accounts/${this.props.match.params.accountId}/values`}
+              mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
+              queryParams={{
+                p: allPaths.join(','),
+                t0: fi.fromTs,
+                t1: fi.toTs,
+                a: aggrLevel < 0 ? 'no' : aggrLevel,
+              }}
+              onNotification={this.onNotification}
+              onUpdate={this.onUpdateData}
+              onError={this.onFetchError}
+            />
+          ))}
         <ChartView
           {...this.props}
           fetching={this.state.fetching}
