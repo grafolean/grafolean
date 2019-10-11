@@ -149,10 +149,10 @@ class GLeanChartWidget extends React.Component {
     const yAxesWidth = yAxesCount * yAxisWidth;
 
     const toTs = moment()
-      .add(1, 'day')
+      .add(1, 'minute')
       .unix();
     const fromTs = moment()
-      .subtract(1, 'month')
+      .subtract(30, 'minute')
       .unix();
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = -fromTs * initialScale;
