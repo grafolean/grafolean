@@ -1,7 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { LineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
-import { ChartView } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
+import ChartView from '../src/components/Widgets/GLeanChartWidget/ChartView';
 
 const stories = storiesOf('LineChartCanvas', module);
 
@@ -77,6 +77,16 @@ stories.add('random data - raw', () => {
     v2y: {
       '': v2y_empty_unit,
     },
+    yAxesProperties: {
+      '': {
+        minYValue: minY,
+        maxYValue: maxY,
+        derived: {
+          ticks: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+          v2y: v2y_empty_unit,
+        },
+      },
+    },
   };
 
   return (
@@ -120,6 +130,16 @@ stories.add('random data - aggregated', () => {
     isAggr: true,
     v2y: {
       '': v2y_empty_unit,
+    },
+    yAxesProperties: {
+      '': {
+        minYValue: minY,
+        maxYValue: maxY,
+        derived: {
+          ticks: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+          v2y: v2y_empty_unit,
+        },
+      },
     },
   };
 
