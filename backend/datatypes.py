@@ -149,6 +149,19 @@ class Timestamp(_RegexValidatedInputValue):
     def __int__(self):
         return int(self.v)
 
+    def __lt__(self, other):
+        return float(self.v) < float(other.v)
+    def __le__(self, other):
+        return float(self.v) <= float(other.v)
+    def __gt__(self, other):
+        return float(self.v) > float(other.v)
+    def __ge__(self, other):
+        return float(self.v) >= float(other.v)
+    def __eq__(self, other):
+        return float(self.v) == float(other.v)
+    def __ne__(self, other):
+        return float(self.v) != float(other.v)
+
 
 class MeasuredValue(object):
     def __init__(self, v):
@@ -245,16 +258,6 @@ class Aggregation(object):
         finally:
             if self._parent_aggr:
                 self._parent_aggr.fix_aggregations()
-
-    @classmethod
-    def times_aligned_to_aggr(cls, times, aggr_level):
-        if not aggr_level:
-            return True
-        interval_size = 3600 * (cls.FACTOR ** aggr_level)
-        for t in times:
-            if int(t) % interval_size != 0:
-                return False
-        return True
 
 
 class Measurement(object):

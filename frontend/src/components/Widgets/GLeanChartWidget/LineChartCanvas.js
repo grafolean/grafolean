@@ -1,37 +1,50 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 
 import { generateSerieColor } from './utils';
 
-export class LineChartCanvas extends React.PureComponent {
-  /*
-    This class is an optimization. Instead of drawing on a canvas for each fromTs / toTs pair,
-    we align fromTs and toTs so that their interval is bigger, and just move them around (as long
-    as possible). When no longer possible (we go out of interval) we still redraw the canvas.
-  */
+export class LineChartCanvases extends React.Component {
+  CANVAS_WIDTH_PX = 1000;
+  N_ADDITIONAL = 0; // n additional canvases to each of the sides
 
-  getIntervalAlignment(fromTs, toTs) {
-    const diffTs = Math.round(toTs - fromTs);
-    const fromTsAligned = Math.floor(fromTs / diffTs) * diffTs;
-    const toTsAligned = Math.ceil(toTs / diffTs) * diffTs;
-    // we only need a number which is somehow close to the diffTs, but
-    return {
-      fromTsAligned: fromTsAligned,
-      toTsAligned: toTsAligned,
-    };
+  getCanvasIntervals() {
+    // each canvas covers a smaller part of the whole area, and we draw each one of them with a separate transform:
+    const { fromTs, toTs, scale } = this.props;
+    // the width of each canvas influences the timespan we draw on each of the canvases:
+    const diffTs = Math.round(this.CANVAS_WIDTH_PX / scale);
+
+    let result = [];
+    for (
+      let i = Math.floor(fromTs / diffTs) - this.N_ADDITIONAL;
+      i < Math.ceil(toTs / diffTs) + this.N_ADDITIONAL;
+      i++
+    ) {
+      const fromTsCanvas = i * diffTs;
+      const toTsCanvas = (i + 1) * diffTs;
+      result.push({ fromTsCanvas: fromTsCanvas, toTsCanvas: toTsCanvas });
+    }
+    return result;
   }
 
   render() {
-    const { timeFrom, timeTo, ...rest } = this.props;
-    const { fromTsAligned, toTsAligned } = this.getIntervalAlignment(timeFrom, timeTo);
+    const { fromTs, toTs, ...rest } = this.props;
+    const canvasIntervals = this.getCanvasIntervals();
     return (
-      <g transform={`translate(${(fromTsAligned - timeFrom) * this.props.scale} 0)`}>
-        <LineChartCanvasUnaligned {...rest} timeFrom={fromTsAligned} timeTo={toTsAligned} />
-      </g>
+      <>
+        {canvasIntervals.map(ci => (
+          <g
+            key={ci.fromTsCanvas}
+            transform={`translate(${(ci.fromTsCanvas - fromTs) * this.props.scale} 0)`}
+          >
+            <LineChartSingleCanvas {...rest} fromTs={ci.fromTsCanvas} toTs={ci.toTsCanvas} />
+          </g>
+        ))}
+      </>
     );
   }
 }
 
-class LineChartCanvasUnaligned extends React.PureComponent {
+class _LineChartSingleCanvas extends React.PureComponent {
   constructor(props) {
     super(props);
     this.canvasRef = React.createRef();
@@ -48,8 +61,8 @@ class LineChartCanvasUnaligned extends React.PureComponent {
 
   drawOnCanvas() {
     const ctx = this.canvasContext;
-    const { timeFrom, scale } = this.props;
-    const ts2x = ts => (ts - timeFrom) * scale;
+    const { fromTs, scale } = this.props;
+    const ts2x = ts => (ts - fromTs) * scale;
     ctx.clearRect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
     // debugging:
     // ctx.strokeStyle = `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, 0)}`; // random color
@@ -58,6 +71,9 @@ class LineChartCanvasUnaligned extends React.PureComponent {
     this.props.drawnChartSeries.forEach(cs => {
       this.props.intervals.forEach(interval => {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
+          return;
+        }
+        if (!this.props.yAxesProperties[cs.unit]) {
           return;
         }
         const v2y = this.props.yAxesProperties[cs.unit].derived.v2y;
@@ -98,8 +114,8 @@ class LineChartCanvasUnaligned extends React.PureComponent {
   }
 
   render() {
-    const { timeFrom, timeTo, scale, height } = this.props;
-    const width = (timeTo - timeFrom) * scale;
+    const { fromTs, toTs, scale, height } = this.props;
+    const width = Math.round((toTs - fromTs) * scale);
     return (
       <foreignObject width={width} height={height}>
         <canvas ref={this.canvasRef} width={width} height={height} />
@@ -107,3 +123,4 @@ class LineChartCanvasUnaligned extends React.PureComponent {
     );
   }
 }
+const LineChartSingleCanvas = withRouter(_LineChartSingleCanvas);

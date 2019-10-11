@@ -1,4 +1,4 @@
-import { MQTTFetcherSingleton } from '../utils/fetch';
+import { MQTTFetcherSingleton } from '../utils/fetch/MQTTFetcherSingleton';
 import store from '.';
 import { clearNotifications, onLogout } from './actions';
 
