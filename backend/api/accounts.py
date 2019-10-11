@@ -398,6 +398,11 @@ def values_get(account_id, path_input=None):
     except:
         return "Invalid parameter: limit\n\n", 400
 
+    if not Aggregation.times_aligned_to_aggr(t_froms, aggr_level):
+        return "Starting date(s) is/are not aligned to aggregation level\n\n", 400
+    if not Aggregation.times_aligned_to_aggr([t_to], aggr_level):
+        return "End date is not aligned to aggregation level\n\n", 400
+
     # finally, return the data:
     paths_data = Measurement.fetch_data(account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
     return json.dumps({

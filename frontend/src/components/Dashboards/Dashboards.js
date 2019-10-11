@@ -1,8 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { fetchAuth } from '../../utils/fetch';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { fetchAuth, PersistentFetcher } from '../../utils/fetch';
 import { ROOT_URL } from '../../store/actions';
 
 import Loading from '../Loading';

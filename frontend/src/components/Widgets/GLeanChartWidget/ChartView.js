@@ -4,7 +4,7 @@ import { generateGridColor } from './utils';
 
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import { LineChartCanvases } from './LineChartCanvas';
+import { LineChartCanvas } from './LineChartCanvas';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
@@ -148,9 +148,6 @@ export default class ChartView extends React.Component {
           // do we have fetched data for this cs?
           continue;
         }
-        if (!this.props.yAxesProperties[cs.unit]) {
-          continue;
-        }
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
@@ -252,15 +249,14 @@ export default class ChartView extends React.Component {
 
           <g clipPath="url(#chartContentArea)">
             <g transform={`translate(${yAxesWidth} 0)`}>
-              <LineChartCanvases
+              <LineChartCanvas
                 key={`i-${this.props.aggrLevel}`}
-                fromTs={this.props.fromTs}
-                toTs={this.props.fromTs + (this.props.width - yAxesWidth) / this.props.scale}
+                timeFrom={this.props.fromTs}
+                timeTo={this.props.fromTs + (this.props.width - yAxesWidth) / this.props.scale}
                 height={yAxisHeight}
                 intervals={this.props.fetchedIntervalsData}
                 scale={this.props.scale}
                 isAggr={this.props.isAggr}
-                aggrLevel={this.props.aggrLevel}
                 drawnChartSeries={this.props.drawnChartSeries}
                 yAxesProperties={this.props.yAxesProperties}
               />

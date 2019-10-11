@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { PersistentFetcher } from '../../utils/fetch';
 
 import Loading from '../Loading';
 

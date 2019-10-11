@@ -4,8 +4,7 @@ import { Link, withRouter, Switch, Route } from 'react-router-dom';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { havePermission, fetchAuth } from '../../utils/fetch';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { PersistentFetcher, havePermission, fetchAuth } from '../../utils/fetch';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';

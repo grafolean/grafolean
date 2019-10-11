@@ -3,7 +3,7 @@ import { withRouter } from 'react-router-dom';
 
 import isFormikForm from '../isFormikForm';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { PersistentFetcher } from '../../utils/fetch';
 import Loading from '../Loading';
 import SensorsMultiSelect from './SensorsMultiSelect';
 
