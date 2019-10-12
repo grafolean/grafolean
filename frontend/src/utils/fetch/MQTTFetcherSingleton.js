@@ -139,13 +139,19 @@ class MQTTFetcher {
     return this._connectingToMqttPromise;
   };
 
-  _doFetchHttp = async listenerId => {
+  _doFetchHttp = listenerId => {
+    if (!this.listeners[listenerId]) {
+      // we are sometimes called via debounce, so by the time this is executed, the listener
+      // might have been removed already. Let's just not do anything then.
+      return;
+    }
+
     const paramsString = this.listeners[listenerId].queryParams
       ? `?${stringify(this.listeners[listenerId].queryParams)}`
       : '';
     const url = `${ROOT_URL}/${this.listeners[listenerId].topic}${paramsString}`;
     this.listeners[listenerId].abortController = new window.AbortController();
-    await fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
+    fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
