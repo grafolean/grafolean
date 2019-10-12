@@ -1,5 +1,6 @@
 import moment from 'moment';
 import { stringify } from 'qs';
+import debounce from 'lodash/debounce';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
@@ -55,6 +56,12 @@ class MQTTFetcher {
       onNotification: onNotification,
       mqttTopicOverride: mqttTopicOverride,
       abortController: null,
+      // When we want do debounce HTTP calls (for example if we receive many MQTT messages because many values
+      // got updated, but they all affect the same listener - like for charts' autoupdating), we can't just use
+      // debounce directly, because multiple listeners might want to trigger the fetching at approximately the
+      // same time, and debounce would only trigger one of them. The solution is to have a debouncedFetch function
+      // for each listener:
+      debouncedDoFetchHttp: debounce(() => this._doFetchHttp(listenerId), 1000),
     };
 
     // make sure we are connected to MQTT, that we can subscribe, and that we got the initial value:
@@ -223,7 +230,9 @@ class MQTTFetcher {
             return;
           }
         }
-        this._doFetchHttp(listenerId);
+        // some other notification might trigger the same fetch, so we debounce it to avoid multiple
+        // identical calls in quick succession:
+        this.listeners[listenerId].debouncedDoFetchHttp();
       } catch (e) {
         console.error('Error handling MQTT message', e);
       }
