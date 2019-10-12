@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { compile } from 'mathjs';
+import get from 'lodash/get';
 
 import { getSuggestedAggrLevel } from './utils';
 
@@ -187,8 +188,8 @@ export class ChartContainer extends React.Component {
       lead to largish numbers being used, so the points weren't being displayed. Instead we now need to find minKnownTs,
       which is then our point of reference.
     */
-    const { fetchedPathsValues } = this.state;
-    const fetchedPathsValuesArray = Object.values(fetchedPathsValues);
+    const { fetchedPathsValues, aggrLevel } = this.state;
+    const fetchedPathsValuesArray = Object.values(get(fetchedPathsValues, aggrLevel, {}));
     if (fetchedPathsValuesArray.length === 0) {
       return 0;
     }
@@ -258,10 +259,13 @@ export class ChartContainer extends React.Component {
       prevState => ({
         fetchedPathsValues: {
           ...prevState.fetchedPathsValues,
-          [intervalId]: {
-            fromTs: interval.fromTs,
-            toTs: interval.toTs,
-            paths: json.paths,
+          [prevState.aggrLevel]: {
+            ...get(prevState.fetchedPathsValues, prevState.aggrLevel, {}),
+            [intervalId]: {
+              fromTs: interval.fromTs,
+              toTs: interval.toTs,
+              paths: json.paths,
+            },
           },
         },
       }),
@@ -272,9 +276,9 @@ export class ChartContainer extends React.Component {
   getDataInFetchedIntervalsDataFormat = () => {
     // this function converts our internal data to the format that ChartView expects
     const { drawnChartSeries } = this.props;
-    const { fetchedPathsValues } = this.state;
+    const { fetchedPathsValues, aggrLevel } = this.state;
 
-    const result = Object.values(fetchedPathsValues).map(fetched => {
+    const result = Object.values(get(fetchedPathsValues, aggrLevel, {})).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
       const csData = {};
       drawnChartSeries.forEach(cs => {
