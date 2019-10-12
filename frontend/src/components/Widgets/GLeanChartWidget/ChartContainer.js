@@ -54,7 +54,8 @@ export class ChartContainer extends React.Component {
       is being held by us though, and we need to know which intervals should be fetched.
     */
     const { fromTs, toTs } = this.props;
-    const intervalSizeTs = Math.round((toTs - fromTs) * 1.5); // chunk size - it could (and will) still happen that we are showing two chunks
+    const { aggrLevel } = this.state;
+    const intervalSizeTs = 360000 * 3 ** aggrLevel;
     const marginTs = Math.round((toTs - fromTs) / 4.0); // behave like the screen is bigger, to avoid fetching only when the data reaches the corner of the visible chart
     const fromTsWithMargin = fromTs - marginTs;
     const toTsWithMargin = toTs + marginTs;
