@@ -1,5 +1,6 @@
 import moment from 'moment';
 import { stringify } from 'qs';
+import debounce from 'lodash/debounce';
 
 import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
@@ -55,6 +56,12 @@ class MQTTFetcher {
       onNotification: onNotification,
       mqttTopicOverride: mqttTopicOverride,
       abortController: null,
+      // When we want do debounce HTTP calls (for example if we receive many MQTT messages because many values
+      // got updated, but they all affect the same listener - like for charts' autoupdating), we can't just use
+      // debounce directly, because multiple listeners might want to trigger the fetching at approximately the
+      // same time, and debounce would only trigger one of them. The solution is to have a debouncedFetch function
+      // for each listener:
+      debouncedDoFetchHttp: debounce(() => this._doFetchHttp(listenerId), 1000),
     };
 
     // make sure we are connected to MQTT, that we can subscribe, and that we got the initial value:
@@ -132,13 +139,19 @@ class MQTTFetcher {
     return this._connectingToMqttPromise;
   };
 
-  _doFetchHttp = async listenerId => {
+  _doFetchHttp = listenerId => {
+    if (!this.listeners[listenerId]) {
+      // we are sometimes called via debounce, so by the time this is executed, the listener
+      // might have been removed already. Let's just not do anything then.
+      return;
+    }
+
     const paramsString = this.listeners[listenerId].queryParams
       ? `?${stringify(this.listeners[listenerId].queryParams)}`
       : '';
     const url = `${ROOT_URL}/${this.listeners[listenerId].topic}${paramsString}`;
     this.listeners[listenerId].abortController = new window.AbortController();
-    await fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
+    fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
@@ -151,7 +164,11 @@ class MQTTFetcher {
       .catch(err => {
         console.error(err);
         if (err.name !== 'AbortError') {
-          this.listeners[listenerId].onErrorCallback(err, false);
+          try {
+            this.listeners[listenerId].onErrorCallback(err, false);
+          } catch (callbackErr) {
+            console.error(callbackErr);
+          }
         }
       });
   };
@@ -223,7 +240,9 @@ class MQTTFetcher {
             return;
           }
         }
-        this._doFetchHttp(listenerId);
+        // some other notification might trigger the same fetch, so we debounce it to avoid multiple
+        // identical calls in quick succession:
+        this.listeners[listenerId].debouncedDoFetchHttp();
       } catch (e) {
         console.error('Error handling MQTT message', e);
       }

@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { compile } from 'mathjs';
+import get from 'lodash/get';
 
 import { getSuggestedAggrLevel } from './utils';
 
@@ -53,7 +54,8 @@ export class ChartContainer extends React.Component {
       is being held by us though, and we need to know which intervals should be fetched.
     */
     const { fromTs, toTs } = this.props;
-    const intervalSizeTs = Math.round((toTs - fromTs) * 1.5); // chunk size - it could (and will) still happen that we are showing two chunks
+    const { aggrLevel } = this.state;
+    const intervalSizeTs = 360000 * 3 ** aggrLevel;
     const marginTs = Math.round((toTs - fromTs) / 4.0); // behave like the screen is bigger, to avoid fetching only when the data reaches the corner of the visible chart
     const fromTsWithMargin = fromTs - marginTs;
     const toTsWithMargin = toTs + marginTs;
@@ -187,8 +189,8 @@ export class ChartContainer extends React.Component {
       lead to largish numbers being used, so the points weren't being displayed. Instead we now need to find minKnownTs,
       which is then our point of reference.
     */
-    const { fetchedPathsValues } = this.state;
-    const fetchedPathsValuesArray = Object.values(fetchedPathsValues);
+    const { fetchedPathsValues, aggrLevel } = this.state;
+    const fetchedPathsValuesArray = Object.values(get(fetchedPathsValues, aggrLevel, {}));
     if (fetchedPathsValuesArray.length === 0) {
       return 0;
     }
@@ -258,10 +260,13 @@ export class ChartContainer extends React.Component {
       prevState => ({
         fetchedPathsValues: {
           ...prevState.fetchedPathsValues,
-          [intervalId]: {
-            fromTs: interval.fromTs,
-            toTs: interval.toTs,
-            paths: json.paths,
+          [prevState.aggrLevel]: {
+            ...get(prevState.fetchedPathsValues, prevState.aggrLevel, {}),
+            [intervalId]: {
+              fromTs: interval.fromTs,
+              toTs: interval.toTs,
+              paths: json.paths,
+            },
           },
         },
       }),
@@ -272,9 +277,9 @@ export class ChartContainer extends React.Component {
   getDataInFetchedIntervalsDataFormat = () => {
     // this function converts our internal data to the format that ChartView expects
     const { drawnChartSeries } = this.props;
-    const { fetchedPathsValues } = this.state;
+    const { fetchedPathsValues, aggrLevel } = this.state;
 
-    const result = Object.values(fetchedPathsValues).map(fetched => {
+    const result = Object.values(get(fetchedPathsValues, aggrLevel, {})).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
       const csData = {};
       drawnChartSeries.forEach(cs => {
