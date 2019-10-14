@@ -14,6 +14,7 @@ export class ChartContainer extends React.Component {
     fetchedPathsValues: {},
     errorMsg: null,
     yAxesProperties: {},
+    derivedFetchedIntervalsData: [], // optimization for faster rendering - derived from fetchedPathsValues
   };
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
@@ -257,8 +258,8 @@ export class ChartContainer extends React.Component {
     }
     const intervalId = `${interval.fromTs}-${interval.toTs}`;
     this.setState(
-      prevState => ({
-        fetchedPathsValues: {
+      prevState => {
+        const fetchedPathsValues = {
           ...prevState.fetchedPathsValues,
           [prevState.aggrLevel]: {
             ...get(prevState.fetchedPathsValues, prevState.aggrLevel, {}),
@@ -268,16 +269,24 @@ export class ChartContainer extends React.Component {
               paths: json.paths,
             },
           },
-        },
-      }),
+        };
+        return {
+          fetchedPathsValues: fetchedPathsValues,
+          // Optimization: this is derived information (data in format which is understood by ChartView), but
+          // if we calculate it in every render, the charts become very sluggish. The solution is to put it in state:
+          derivedFetchedIntervalsData: this.getDataInFetchedIntervalsDataFormat(
+            fetchedPathsValues,
+            prevState.aggrLevel,
+          ),
+        };
+      },
       () => this.updateYAxisProperties(json.paths),
     );
   };
 
-  getDataInFetchedIntervalsDataFormat = () => {
+  getDataInFetchedIntervalsDataFormat = (fetchedPathsValues, aggrLevel) => {
     // this function converts our internal data to the format that ChartView expects
     const { drawnChartSeries } = this.props;
-    const { fetchedPathsValues, aggrLevel } = this.state;
 
     const result = Object.values(get(fetchedPathsValues, aggrLevel, {})).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
@@ -325,7 +334,7 @@ export class ChartContainer extends React.Component {
         <ChartView
           {...this.props}
           fetching={this.state.fetching}
-          fetchedIntervalsData={this.getDataInFetchedIntervalsDataFormat()}
+          fetchedIntervalsData={this.state.derivedFetchedIntervalsData}
           errorMsg={this.state.errorMsg}
           isAggr={this.state.aggrLevel >= 0}
           aggrLevel={this.state.aggrLevel}
