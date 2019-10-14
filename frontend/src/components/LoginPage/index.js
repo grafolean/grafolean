@@ -62,6 +62,7 @@ export class LoginPage extends React.Component {
       if (response.status === 401) {
         this.setState({
           loginError: 'Invalid credentials!',
+          processingLogin: false,
         });
         return;
       }
@@ -77,9 +78,6 @@ export class LoginPage extends React.Component {
       console.error(errorMsg.toString());
       this.setState({
         loginError: errorMsg.toString(),
-      });
-    } finally {
-      this.setState({
         processingLogin: false,
       });
     }
