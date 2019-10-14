@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import Redirect from 'react-router-dom/Redirect';
 
 import store from '../../store';
 import { onLoginSuccess, ROOT_URL } from '../../store/actions';
@@ -21,7 +20,6 @@ export class LoginPage extends React.Component {
       },
       processingLogin: false,
       loginError: undefined,
-      redirectToReferrer: this.props.loggedIn ? true : false,
     };
   }
 
@@ -75,10 +73,6 @@ export class LoginPage extends React.Component {
       const json = await response.json();
       window.sessionStorage.setItem('grafolean_jwt_token', jwtToken);
       store.dispatch(onLoginSuccess(json, jwtToken));
-
-      this.setState({
-        redirectToReferrer: true,
-      });
     } catch (errorMsg) {
       console.error(errorMsg.toString());
       this.setState({
@@ -96,14 +90,7 @@ export class LoginPage extends React.Component {
       formValues: { username, password },
       processingLogin,
       loginError,
-      redirectToReferrer,
     } = this.state;
-    if (redirectToReferrer === true) {
-      const { fromLocation } = this.props.location.state || {
-        fromLocation: '/',
-      };
-      return <Redirect to={fromLocation} />;
-    }
     return (
       <div className="login-page">
         <form className="login-box" onSubmit={this.handleLoginSubmit}>
