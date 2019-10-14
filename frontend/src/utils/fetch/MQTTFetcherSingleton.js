@@ -66,20 +66,22 @@ class MQTTFetcher {
 
     // make sure we are connected to MQTT, that we can subscribe, and that we got the initial value:
     try {
-      this._mqttSubscribeToTopic(listener);
-
       this.listeners[listenerId] = listener;
-
+      this._mqttSubscribeToTopic(listenerId);
       this._doFetchHttp(listenerId); // start the network request - it might fail, but we don't care here (listener will be notified via callbacks)
       return listenerId;
     } catch (err) {
       console.error(`Listening to topic [${topic}] failed: ${err}`);
-      delete this.listeners[listenerId];
+      this.removeListener(listenerId);
       return null;
     }
   };
 
   removeListener = listenerId => {
+    if (!this.listeners[listenerId]) {
+      console.debug(`Not removing listener, not there at all: ${listenerId}.`);
+      return;
+    }
     const { topic, mqttTopicOverride } = this.listeners[listenerId];
     const mqttTopic = mqttTopicOverride !== null ? mqttTopicOverride : topic;
 
@@ -155,6 +157,9 @@ class MQTTFetcher {
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
+        if (!this.listeners[listenerId]) {
+          return; // not subscribed anymore? silently ignore response.
+        }
         try {
           this.listeners[listenerId].onFetchCallback(json, this.listeners[listenerId]);
         } catch (err) {
@@ -162,8 +167,8 @@ class MQTTFetcher {
         }
       })
       .catch(err => {
-        console.error(err);
         if (err.name !== 'AbortError') {
+          console.error(err);
           try {
             this.listeners[listenerId].onErrorCallback(err, false);
           } catch (callbackErr) {
@@ -173,10 +178,17 @@ class MQTTFetcher {
       });
   };
 
-  _mqttSubscribeToTopic = listener => {
-    const { topic, mqttTopicOverride } = listener;
+  _mqttSubscribeToTopic = listenerId => {
+    if (!this.listeners[listenerId]) {
+      return;
+    }
+    const { topic, mqttTopicOverride } = this.listeners[listenerId];
     const mqttTopic = mqttTopicOverride !== null ? mqttTopicOverride : topic;
-    if (Object.values(this.listeners).find(f => f.topic === mqttTopic || f.mqttTopicOverride === mqttTopic)) {
+    if (
+      Object.values(this.listeners).find(
+        f => f.listenerId !== listenerId && (f.topic === mqttTopic || f.mqttTopicOverride === mqttTopic),
+      )
+    ) {
       // some other listener is already subscribed to this topic, let it be:
       console.debug(
         'Some existing listener is already subscribed to (or is in the process of subscribing to) the topic, no need to subscribe again: ' +
