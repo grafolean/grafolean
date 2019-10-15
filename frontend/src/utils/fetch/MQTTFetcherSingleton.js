@@ -199,8 +199,10 @@ class MQTTFetcher {
     console.debug('MQTT subscribing to: ' + mqttTopic);
     this._mqttClient.subscribe(`changed/${mqttTopic}`, {
       onSuccess: () => console.debug('Successfully subscribed to topic: ' + mqttTopic),
-      onFailure: () => {
-        console.error('Error subscribing to topic: ' + mqttTopic);
+      onFailure: onFailureErr => {
+        console.error(
+          `Error subscribing to topic: ${mqttTopic}; ${onFailureErr.errorCode} ${onFailureErr.errorMessage}`,
+        );
         // if this happens, we should nuke every listener that listens to this topic:
         Object.values(this.listeners)
           .filter(f => f.topic === mqttTopic || f.mqttTopicOverride === mqttTopic)
