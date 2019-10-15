@@ -273,6 +273,7 @@ class MQTTFetcher {
     this.listeners = {};
     this._nextListenerId = 1;
     this._connectingToMqttPromise = null;
+    this._mqttSettings = null;
   };
 }
 
