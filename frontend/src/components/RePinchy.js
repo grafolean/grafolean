@@ -9,8 +9,8 @@ export default class RePinchy extends React.Component {
     Twin fingers:
       Multitouch with >2 fingers is ignored. Multitouch with 2 fingers allows user to set pan and zoom.
     Wheel:
-      If kidnapScroll is set to false, scrolling the page should not be affected, so wheel is ignored unless Ctrl is pressed.
-      Instead a helpful overlay is displayed ("Use Ctrl + mousewheel to zoom").
+      If kidnapScroll is set to false, scrolling the page should not be affected, so wheel is ignored unless Shift is pressed.
+      Instead a helpful overlay is displayed ("Use Shift + mousewheel to zoom").
     Mouse click, double click:
       Should be let through to the underlying components. Optionally, double click can be used to zoom in (or is that up to
         underlying component to call zoom in function?)
@@ -70,7 +70,7 @@ export default class RePinchy extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener('keyup', this.handleCtrlKeyUp, true);
+    window.addEventListener('keyup', this.handleShiftKeyUp, true);
     window.addEventListener('touchstart', this.maybeKillDefaultTouchHandler, {
       passive: false,
     });
@@ -80,7 +80,7 @@ export default class RePinchy extends React.Component {
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keyup', this.handleCtrlKeyUp, true);
+    window.removeEventListener('keyup', this.handleShiftKeyUp, true);
     window.removeEventListener('touchstart', this.maybeKillDefaultTouchHandler, { passive: false });
     window.removeEventListener('touchmove', this.maybeKillDefaultTouchHandler, {
       passive: false,
@@ -236,14 +236,14 @@ export default class RePinchy extends React.Component {
   }
 
   handleWheel = event => {
-    if (!this.props.kidnapScroll && !event.ctrlKey) {
-      this.ensureOverlayShown('Use CTRL + mouse wheel to zoom');
+    if (!this.props.kidnapScroll && !event.shiftKey) {
+      this.ensureOverlayShown('Use SHIFT + mouse wheel to zoom');
       return;
     }
 
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
-    this.log('Wheel CTRL!', event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
+    this.log('Wheel SHIFT!', event.deltaMode, event.deltaX, event.deltaY, event.deltaZ);
     const event_offsetX = event.pageX - currentTargetRect.left + this.props.activeArea.x;
     const event_offsetY = event.pageY - currentTargetRect.top + this.props.activeArea.y;
 
@@ -252,8 +252,8 @@ export default class RePinchy extends React.Component {
       zoomInProgress: this.zoomInProgress,
     });
     // listening for keyUp for Ctrl doesn't always work for unknown reasons (not because of onblur), so
-    // we use a failsafe:
-    window.addEventListener('mousemove', this.handleMouseMoveCheckCtrl, true);
+    // we use a failsafe: (though we now use Shift instead of Ctrl so this might not be needed)
+    window.addEventListener('mousemove', this.handleMouseMoveCheckShift, true);
 
     let scaleFactor;
     if (event.deltaY < 0) {
@@ -283,28 +283,30 @@ export default class RePinchy extends React.Component {
     event.preventDefault();
   };
 
-  handleCtrlKeyUp = event => {
-    if (event.keyCode === 17) {
-      this.onCtrlKeyUp();
+  handleShiftKeyUp = event => {
+    if (event.keyCode === 16) {
+      // Shift: 16, Ctrl: 17
+      this.onShiftKeyUp();
     }
   };
 
-  // safeguard because sometimes handleCtrlKeyUp() is not called :
-  handleMouseMoveCheckCtrl = event => {
+  // safeguard because sometimes handleShiftKeyUp() is not called :
+  // note that this has been happening with Ctrl, and we don't know how it is with Shift.
+  handleMouseMoveCheckShift = event => {
     // https://stackoverflow.com/a/8875522/593487
-    if (event.ctrlKey) {
-      return; // it seems all is ok (Ctrl is still pressed)
+    if (event.shiftKey) {
+      return; // it seems all is ok (Shift is still pressed)
     }
-    console.log('KeyUp event failed to detect Ctrl key up, fixing with workaround');
-    this.onCtrlKeyUp();
+    console.warn('KeyUp event failed to detect Shift key up, fixing with workaround');
+    this.onShiftKeyUp();
   };
 
-  onCtrlKeyUp() {
+  onShiftKeyUp() {
     this.zoomInProgress = false;
     this.setState({
       zoomInProgress: this.zoomInProgress,
     });
-    window.removeEventListener('mousemove', this.handleMouseMoveCheckCtrl, true); // no need for the workaround anymore
+    window.removeEventListener('mousemove', this.handleMouseMoveCheckShift, true); // no need for the workaround anymore
   }
 
   handleMouseDownDrag = event => {
