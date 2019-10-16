@@ -44,6 +44,7 @@ class MQTTFetcher {
     onErrorCallback,
     onNotification,
     mqttTopicOverride = null,
+    fetchOptions = {},
   ) => {
     const listenerId = '' + this._nextListenerId;
     this._nextListenerId += 1;
@@ -62,6 +63,9 @@ class MQTTFetcher {
       // same time, and debounce would only trigger one of them. The solution is to have a debouncedFetch function
       // for each listener:
       debouncedDoFetchHttp: debounce(() => this._doFetchHttp(listenerId), 1000),
+      // fetch() init parameter:
+      //  https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/fetch
+      fetchOptions: fetchOptions,
     };
 
     // make sure we are connected to MQTT, that we can subscribe, and that we got the initial value:
@@ -153,7 +157,10 @@ class MQTTFetcher {
       : '';
     const url = `${ROOT_URL}/${this.listeners[listenerId].topic}${paramsString}`;
     this.listeners[listenerId].abortController = new window.AbortController();
-    fetchAuth(url, { signal: this.listeners[listenerId].abortController.signal })
+    fetchAuth(url, {
+      ...this.listeners[listenerId].fetchOptions,
+      signal: this.listeners[listenerId].abortController.signal,
+    })
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json => {
