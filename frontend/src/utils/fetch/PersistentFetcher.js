@@ -14,6 +14,7 @@ class _PersistentFetcher extends React.Component {
       errorMsg => (this.props.onError ? this.props.onError(errorMsg) : console.error(errorMsg.toString())),
       this.props.onNotification,
       this.props.mqttTopic ? this.props.mqttTopic : null,
+      this.props.fetchOptions ? this.props.fetchOptions : {},
     );
   };
 

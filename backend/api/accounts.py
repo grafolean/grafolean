@@ -324,15 +324,25 @@ def values_post(account_id):
 
 
 @accounts_api.route("/<string:account_id>/values", methods=['GET'])
+@accounts_api.route("/<string:account_id>/getvalues", methods=['POST'])
 @accounts_api.route("/<string:account_id>/values/<string:path_input>", methods=['GET'])
 def values_get(account_id, path_input=None):
+    # when we request data for too many paths at once, we run in trouble with URLs being too long. Using
+    # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
+    # we use the same arguments:
+    if flask.request.method == 'POST':
+        args = flask.request.get_json()
+    else:
+        args = flask.request.args
+
     # validate and convert input parameters:
     if path_input:
         if "," in path_input:
             return "Only a single path is allowed as part of URL\n\n", 400
         paths_input = path_input
     else:
-        paths_input = flask.request.args.get('p')
+        paths_input = args.get('p')
+
     if paths_input is None:
         return "Path(s) not specified\n\n", 400
     try:
@@ -340,28 +350,34 @@ def values_get(account_id, path_input=None):
     except:
         return "Path(s) not specified correctly\n\n", 400
 
-    t_from_input = flask.request.args.get('t0')
+    t_from_input = args.get('t0')
     if t_from_input:
-        t_froms = [Timestamp(t) for t in t_from_input.split(',')]
-        if len(t_froms) == 1:
-            t_froms = [t_froms[0] for _ in paths]
-        elif len(t_froms) == len(paths):
-            pass
-        else:
-            return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
+        try:
+            t_froms = [Timestamp(t) for t in str(t_from_input).split(',')]
+            if len(t_froms) == 1:
+                t_froms = [t_froms[0] for _ in paths]
+            elif len(t_froms) == len(paths):
+                pass
+            else:
+                return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
+        except:
+            return "Error parsing t0\n\n", 400
     else:
         t_from = Measurement.get_oldest_measurement_time(account_id, paths)
         if not t_from:
             t_from = Timestamp(time.time())
         t_froms = [t_from for _ in paths]
 
-    t_to_input = flask.request.args.get('t1')
+    t_to_input = args.get('t1')
     if t_to_input:
-        t_to = Timestamp(t_to_input)
+        try:
+            t_to = Timestamp(t_to_input)
+        except:
+            return "Error parsing t1\n\n", 400
     else:
         t_to = Timestamp(time.time())
 
-    aggr_level_input = flask.request.args.get('a')
+    aggr_level_input = str(args.get('a'))
     if not aggr_level_input:
         # suggest the aggr. level based on paths and time interval and redirect to it:
         suggested_aggr_level = Measurement.get_suggested_aggr_level(min(t_froms), t_to)
@@ -381,18 +397,13 @@ def values_get(account_id, path_input=None):
         if not (0 <= aggr_level <= 6):
             return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
 
-    sort_order_input = flask.request.args.get('sort', 'asc')
-    try:
-        sort_order = str(sort_order_input)
-        if sort_order not in ['asc', 'desc']:
-            return "Invalid parameter: sort (should be 'asc' or 'desc')\n\n", 400
-        should_sort_asc = True if sort_order == 'asc' else False
-    except:
-        return "Invalid parameter: sort\n\n", 400
+    sort_order = str(args.get('sort', 'asc'))
+    if sort_order not in ['asc', 'desc']:
+        return "Invalid parameter: sort (should be 'asc' or 'desc')\n\n", 400
+    should_sort_asc = True if sort_order == 'asc' else False
 
-    max_records_input = flask.request.args.get('limit', Measurement.MAX_DATAPOINTS_RETURNED)
     try:
-        max_records = int(max_records_input)
+        max_records = int(args.get('limit', Measurement.MAX_DATAPOINTS_RETURNED))
         if max_records > Measurement.MAX_DATAPOINTS_RETURNED:
             return "Invalid parameter: limit (max. value is {})\n\n".format(Measurement.MAX_DATAPOINTS_RETURNED), 400
     except:

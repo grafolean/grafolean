@@ -247,7 +247,7 @@ export class ChartContainer extends React.Component {
 
   onUpdateData = (json, listenerInfo) => {
     this.setState({ fetching: false });
-    const queryParams = listenerInfo.queryParams;
+    const queryParams = JSON.parse(listenerInfo.fetchOptions.body);
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs === queryParams.t0 && fi.toTs === queryParams.t1);
     if (!interval) {
@@ -318,13 +318,19 @@ export class ChartContainer extends React.Component {
           fetchIntervals.map(fi => (
             <PersistentFetcher
               key={fi.fromTs}
-              resource={`accounts/${this.props.match.params.accountId}/values`}
+              resource={`accounts/${this.props.match.params.accountId}/getvalues`}
               mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
-              queryParams={{
-                p: allPaths.join(','),
-                t0: fi.fromTs,
-                t1: fi.toTs,
-                a: aggrLevel < 0 ? 'no' : aggrLevel,
+              fetchOptions={{
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  p: allPaths.join(','),
+                  t0: fi.fromTs,
+                  t1: fi.toTs,
+                  a: aggrLevel < 0 ? 'no' : aggrLevel,
+                }),
               }}
               onNotification={this.onNotification}
               onUpdate={this.onUpdateData}
