@@ -280,7 +280,8 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
+    assert r.status_code == 204
+
     r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
@@ -304,6 +305,42 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     # remove entry: !!! not implemented
     # r = app_client.delete('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891'.format(account_id), headers={'Authorization': admin_authorization_header})
     # assert r.status_code == 200
+
+def test_values_put_get_via_post(app_client, admin_authorization_header, account_id, mqtt_messages):
+    """
+        Put a value, get a value - this time get it via POST.
+    """
+    assert mqtt_messages.empty()
+
+    data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    args = {
+        "p": "qqqq.wwww",
+        "t0": 1234567890,
+        "t1": 1234567891,
+        "a": "no",
+    }
+    r = app_client.post('/api/accounts/{}/getvalues/'.format(account_id), data=json.dumps(args), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'paths': {
+            'qqqq.wwww': {
+                'next_data_point': None,
+                'data': [
+                    {'t': 1234567890.123456, 'v': 111.22 }
+                ]
+            }
+        }
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    mqtt_message = mqtt_messages.get(timeout=10.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
+    assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
+    assert mqtt_messages.empty()
 
 def test_values_put_get_none(app_client, admin_authorization_header, account_id):
     """
@@ -329,7 +366,7 @@ def test_values_put_get_all_formats(app_client, admin_authorization_header, acco
     json_body = '[{{ "p": "qqqq.wwww", "t": 1234567890.123456, "v": {} }}]'.format(value_str)
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json_body, content_type='application/json', headers={'Authorization': admin_authorization_header})
     print(r.data.decode('utf-8'))
-    assert r.status_code == 200
+    assert r.status_code == 204
     r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
@@ -345,6 +382,7 @@ def test_values_put_get_all_formats(app_client, admin_authorization_header, acco
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
+@pytest.mark.skip("We no longer demand aligned timestamps when requesting values")
 def test_values_put_get_noaggrparam_redirect(app_client, admin_authorization_header, account_id):
     """
         Try to get values without aggr param, get redirected.
@@ -364,7 +402,7 @@ def test_values_put_get_noaggrparam_redirect(app_client, admin_authorization_hea
 
 def test_values_put_get_sort_limit(app_client, admin_authorization_header, account_id):
     """
-        Try to get values without aggr param, get redirected.
+        Limit the number of values you get.
     """
     TEST_PATH = 'test.values.put.few.sort.limit'
     data = [
@@ -373,7 +411,8 @@ def test_values_put_get_sort_limit(app_client, admin_authorization_header, accou
         {'p': TEST_PATH, 't': 1330002000 + 560, 'v': 140},
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
-    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
 
     url = '/api/accounts/{}/values/?p={}&a=no&sort=desc&limit=2'.format(account_id, TEST_PATH)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
@@ -392,7 +431,6 @@ def test_values_put_get_sort_limit(app_client, admin_authorization_header, accou
 
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    #pprint(actual)
     assert expected == actual
 
 def test_values_put_few_get_aggr(app_client, admin_authorization_header, account_id):
@@ -407,12 +445,14 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
 
-    app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
     t_from = 1330002000  # aggr level 0 - every 1 hour
     t_to = t_from + 1*3600
     url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&a=0'.format(account_id, TEST_PATH, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
-
+    assert r.status_code == 200
     expected = {
         'paths': {
             TEST_PATH: {
@@ -423,10 +463,7 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
             },
         },
     }
-
-    assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
-    # pprint(actual)
     assert expected == actual
 
 #@pytest.mark.skip(reason="removing aggregated data is not implemented, so this test fails when repeated! Otherwise it works with fresh DB.")
@@ -439,18 +476,12 @@ def test_values_put_many_get_aggr(app_client, admin_authorization_header, accoun
         t_from = 1330000000 - 1330000000 % (27*3600)  # aggr level 3 - every 3 hours
         t_to = t_from + 27 * 3600
         data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
-        #pprint(data)
-        #import pprint
-        #pprint.pprint(data)
-        # expected = {'aggregation_level': 1, 'data': {'aaaa.bbbb': [
-        #     {'t': 1234567890.123456, 'v': 111.22}
-        # ]}}
 
-        app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        #print(t_from, t_to)
+        r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 204
+
         url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
         r = app_client.get(url, headers={'Authorization': admin_authorization_header})
-
         expected = {
             'paths': {
                 TEST_PATH: {
@@ -461,10 +492,8 @@ def test_values_put_many_get_aggr(app_client, admin_authorization_header, accoun
                 }
             }
         }
-
         assert r.status_code == 200
         actual = json.loads(r.data.decode('utf-8'))
-        #pprint(actual)
         assert expected == actual
     finally:
         r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
@@ -579,7 +608,7 @@ def test_values_put_paths_get(app_client, admin_authorization_header, account_id
     PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
     data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
+    assert r.status_code == 204
 
     r = app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
