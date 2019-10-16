@@ -28,17 +28,17 @@ export default class Dashboards extends React.Component {
     });
   };
 
-  performDelete = (ev, dashboardId) => {
+  performDelete = (ev, dashboardSlug) => {
     ev.preventDefault();
 
-    const dashboard = this.state.dashboards.find(dashboard => dashboard.id === dashboardId);
+    const dashboard = this.state.dashboards.find(dashboard => dashboard.slug === dashboardSlug);
     if (
       !window.confirm(`Are you sure you want to delete dashboard "${dashboard.name}" ? This can't be undone!`)
     ) {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${dashboardId}`, {
+    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${dashboardSlug}`, {
       method: 'DELETE',
     });
   };
