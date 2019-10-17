@@ -107,7 +107,7 @@ export default class UserPermissionsNewForm extends React.PureComponent {
           </div>
           <div className="field">
             <label>Methods:</label>
-            <div className="checkbox-parent">
+            <div>
               {this.ALL_METHODS.map(method => (
                 <Checkbox
                   key={method}
