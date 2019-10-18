@@ -63,5 +63,5 @@ Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/mast
 
 # Development
 
-Please see [doc/HOWTO-DEV.md](doc/HOWTO-DEV.md) for details.
+Please see [doc/HOWTO-dev.md](doc/HOWTO-dev.md) for details.
 
