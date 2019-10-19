@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 from apispec import APISpec
 from apispec_webframeworks.flask import FlaskPlugin
 from dotenv import load_dotenv
@@ -258,14 +259,37 @@ def generate_api_docs(filename):
         openapi_yaml_file.write(apidoc.to_yaml())
 
 
+def print_usage():
+    print("""
+    This is the Grafolean backend.
+
+    Usage:
+
+        grafolean.py
+            *** DO NOT USE THIS IN PRODUCTION! ***
+            Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
+            for development purposes.
+
+        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml
+            Auto-generates API documentation in Swagger/OpenAPI format and
+            writes it to the specified output file.
+    """)
+
+
 if __name__ == "__main__":
 
     # When docs are generated, they can be served via Swagger-UI:
     #  $ docker run -d --rm -p 9000:8080 --name swagger-ui -e SWAGGER_JSON=/api_docs/openapi.yaml -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
     # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
-    # Generate the docs:
-    # generate_api_docs('/tmp/api_docs/openapi.yaml')
+    if len(sys.argv) > 1:
+        if len(sys.argv) == 3 and sys.argv[1] == 'generate-api-doc-yaml':
+            output_filename = sys.argv[2]
+            generate_api_docs(output_filename)
+            sys.exit(0)
+        else:
+            print_usage()
+            sys.exit(1)
 
     log.info("Starting main")
     app.run()
