@@ -17,9 +17,6 @@ logging.addLevelName(logging.WARNING, color('WRN', fg='red'))
 logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
 log = logging.getLogger("{}.{}".format(__name__, "base"))
 
-# currently, we only work with a single account:
-ADMIN_ACCOUNT_ID = 1
-
 
 db_pool = None
 
