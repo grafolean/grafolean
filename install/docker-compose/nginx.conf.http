@@ -14,7 +14,7 @@ server {
         uwsgi_pass unix:///tmp/uwsgi.socket;
     }
 
-    location /api-doc/ {
+    location /api-doc {
         # serve API documentation static files from /grafolean/api-doc/:
         root  /grafolean/;
         index index.html;
