@@ -184,6 +184,7 @@ def generate_api_docs(filename):
         openapi_version="3.0.2",
         plugins=[FlaskPlugin()],
     )
+
     apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
     botGETSchema = {
         'type': 'object',
@@ -249,6 +250,25 @@ def generate_api_docs(filename):
     apidoc.components.schema("PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema)
 
     apidoc.components.schema("Permission", validators.PermissionSchemaInputs.json[0].schema)
+
+    apidoc.components.schema("AccountPOST", validators.AccountSchemaInputs.json[0].schema)
+    accountGETSchema = {
+        'type': 'object',
+        'properties': {
+            'id': {
+                'type': 'integer',
+                'description': "Account id",
+                'example': 123,
+            },
+            'name': {
+                'type': 'string',
+                'description': "Account name",
+                'example': 'My First Account',
+            },
+        },
+        'required': ['id', 'name'],
+    }
+    apidoc.components.schema("AccountGET", accountGETSchema)
 
     with app.test_request_context():
         for rule in app.url_map.iter_rules():
