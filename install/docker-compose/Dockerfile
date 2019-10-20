@@ -22,6 +22,7 @@ COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 #  - /api-doc.yml
 #  - /grafolean/backend/
 FROM python:3.6-slim-stretch as build-backend
+ARG VERSION="0.0.0"
 WORKDIR /grafolean/backend
 COPY ./backend/ /grafolean/backend/
 # - prepare pip requirements.txt for backend:
@@ -39,7 +40,7 @@ RUN \
     apt-get update && \
     apt-get install -q -y git && \
     pipenv install --dev && \
-    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc.yml
+    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc.yml $VERSION
 
 
 # Convert API doc from Swagger/OpenAPI to static HTML:

@@ -173,14 +173,14 @@ def handle_error(e):
     return response
 
 
-def generate_api_docs(filename):
+def generate_api_docs(filename, api_version):
     """
         Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
     """
     import copy
     apidoc = APISpec(
         title="Grafolean API",
-        version="0.0.32",
+        version=api_version,
         openapi_version="3.0.2",
         plugins=[FlaskPlugin()],
     )
@@ -290,9 +290,10 @@ def print_usage():
             Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
             for development purposes.
 
-        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml
+        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0
             Auto-generates API documentation in Swagger/OpenAPI format and
-            writes it to the specified output file.
+            writes it to the specified output file. Last argument is
+            API version.
     """)
 
 
@@ -303,9 +304,9 @@ if __name__ == "__main__":
     # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
     if len(sys.argv) > 1:
-        if len(sys.argv) == 3 and sys.argv[1] == 'generate-api-doc-yaml':
-            output_filename = sys.argv[2]
-            generate_api_docs(output_filename)
+        if len(sys.argv) == 4 and sys.argv[1] == 'generate-api-doc-yaml':
+            _, _, output_filename, version = sys.argv
+            generate_api_docs(output_filename, version)
             sys.exit(0)
         else:
             print_usage()
