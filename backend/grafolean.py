@@ -181,7 +181,7 @@ def generate_api_docs(filename, api_version):
     apidoc = APISpec(
         title="Grafolean API",
         version=api_version,
-        openapi_version="3.0.2",
+        openapi_version="2.0",
         plugins=[FlaskPlugin()],
     )
 
