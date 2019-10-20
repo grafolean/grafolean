@@ -8,7 +8,8 @@ server {
         uwsgi_pass unix:///tmp/uwsgi.socket;
     }
 
-    # any other API call should fail when accessed over port 80: (redirecting would not be safe)
+    # redirecting API calls would not be safe because developers might not realize their mistake, so we
+    # must explicitly reject them on port 80:
     location /api/ {
         return 400 "Please use HTTPS!";
     }
@@ -19,7 +20,7 @@ server {
     }
 
     location / {
-        # redirect all HTTP traffic (permanently) to HTTPS:
+        # redirect all other HTTP traffic (permanently) to HTTPS:
         return 301 https://$host$request_uri;
     }
 }
@@ -36,6 +37,12 @@ server {
     location /api/ {
         include uwsgi_params;
         uwsgi_pass unix:///tmp/uwsgi.socket;
+    }
+
+    location /api-doc/ {
+        # serve API documentation static files from /grafolean/api-doc/:
+        root  /grafolean/;
+        index index.html;
     }
 
     # Handling MQTT websockets connection through nginx saves us a lot of trouble:

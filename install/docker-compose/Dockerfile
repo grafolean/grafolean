@@ -1,3 +1,4 @@
+# Prepare (build) frontend:
 FROM node:10.15-jessie-slim as build-frontend
 WORKDIR /usr/src/app
 # first copy just package.json & lock, so we don't re-install packages on every change:
@@ -14,19 +15,41 @@ RUN sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*
 FROM python:3.6-slim-stretch as python-requirements
 WORKDIR /grafolean/backend
 COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
-RUN \
-    pip install pipenv && \
-    pipenv lock -r > /requirements.txt
 
 
+# Prepare backend:
+#  - /requirements.txt
+#  - /api-doc.yml
+#  - /grafolean/backend/
 FROM python:3.6-slim-stretch as build-backend
 WORKDIR /grafolean/backend
 COPY ./backend/ /grafolean/backend/
+# - prepare pip requirements.txt for backend:
+RUN \
+    pip install pipenv && \
+    pipenv lock -r > /requirements.txt
+# - build .py files to .pyc:
 RUN \
     find ./ ! -name '*.py' -type f -exec rm '{}' ';' && \
     rm -rf tests/ .vscode/ .pytest_cache/ __pycache__/ && \
     python3.6 -m compileall -b ./ && \
     find ./ -name '*.py' -exec rm '{}' ';'
+# - generate API docs from backend source code:
+RUN \
+    apt-get update && \
+    apt-get install -q -y git && \
+    pipenv install --dev && \
+    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc.yml
+
+
+# Convert API doc from Swagger/OpenAPI to static HTML:
+FROM node:10.15-jessie-slim as convert-swagger-to-html
+COPY --from=build-backend /api-doc.yml /api-doc.yml
+WORKDIR /
+RUN \
+    npm install -g --unsafe-perm spectacle-docs && \
+    spectacle /api-doc.yml && \
+    mv /public /api-doc
 
 
 FROM python:3.6-slim-stretch
@@ -54,9 +77,9 @@ RUN \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
-    rm -rf /var/lib/{apt,dpkg,cache,log}/ && \
+    rm -rf /var/lib/{apt,dpkg,cache,log}/ /var/cache/apt/* /tmp/* && \
     echo "alias l='ls -altr'" >> /root/.bashrc
-COPY --from=python-requirements /requirements.txt /requirements.txt
+COPY --from=build-backend /requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
@@ -64,6 +87,7 @@ COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
+COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend

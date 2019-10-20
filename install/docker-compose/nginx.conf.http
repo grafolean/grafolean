@@ -14,6 +14,12 @@ server {
         uwsgi_pass unix:///tmp/uwsgi.socket;
     }
 
+    location /api-doc/ {
+        # serve API documentation static files from /grafolean/api-doc/:
+        root  /grafolean/;
+        index index.html;
+    }
+
     # Handling MQTT websockets connection through nginx saves us a lot of trouble:
     # - easier CORS handling (there is no cross-origin - frontend and mqtt ws are on the same origin)
     # - easier CSP handling ('connect-src' can be 'self') - well, apparently this works only for ws://, not for wss://; thus the need to set MQTT_WS_HOSTNAME env var
