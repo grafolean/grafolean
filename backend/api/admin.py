@@ -57,7 +57,7 @@ def admin_first_post():
               description: "First admin data and credentials"
               required: true
               schema:
-                "$ref": '#/components/schemas/PersonPOST'
+                "$ref": '#/definitions/PersonPOST'
           responses:
             201:
               content:
@@ -209,7 +209,7 @@ def admin_bots():
                       list:
                         type: array
                         items:
-                          "$ref": '#/components/schemas/BotGET'
+                          "$ref": '#/definitions/BotGET'
         post:
           summary: Create a bot
           tags:
@@ -223,13 +223,13 @@ def admin_bots():
               description: "Bot data"
               required: true
               schema:
-                "$ref": '#/components/schemas/BotPOST'
+                "$ref": '#/definitions/BotPOST'
           responses:
             201:
               content:
                 application/json:
                   schema:
-                    "$ref": '#/components/schemas/BotGET'
+                    "$ref": '#/definitions/BotGET'
     """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get_list()
@@ -264,7 +264,7 @@ def admin_bot_crud(user_id):
               content:
                 application/json:
                   schema:
-                    "$ref": '#/components/schemas/BotGET'
+                    "$ref": '#/definitions/BotGET'
             404:
               description: No such bot
         put:
@@ -285,7 +285,7 @@ def admin_bot_crud(user_id):
               description: "Bot data"
               required: true
               schema:
-                "$ref": '#/components/schemas/BotPOST'
+                "$ref": '#/definitions/BotPOST'
           responses:
             204:
               description: Update successful
@@ -355,7 +355,7 @@ def admin_persons():
                       list:
                         type: array
                         items:
-                          "$ref": '#/components/schemas/PersonGET'
+                          "$ref": '#/definitions/PersonGET'
         post:
           summary: Create a person account
           tags:
@@ -368,7 +368,7 @@ def admin_persons():
               description: "Person data"
               required: true
               schema:
-                "$ref": '#/components/schemas/PersonPOST'
+                "$ref": '#/definitions/PersonPOST'
           responses:
             201:
               content:
@@ -413,7 +413,7 @@ def admin_person_crud(user_id):
               content:
                 application/json:
                   schema:
-                    "$ref": '#/components/schemas/PersonGETWithPermissions'
+                    "$ref": '#/definitions/PersonGETWithPermissions'
             404:
               description: No such person
         put:
@@ -434,7 +434,7 @@ def admin_person_crud(user_id):
               description: "Person data"
               required: true
               schema:
-                "$ref": '#/components/schemas/PersonPOST'
+                "$ref": '#/definitions/PersonPOST'
           responses:
             204:
               description: Update successful
@@ -565,7 +565,7 @@ def admin_permissions_get_post(user_id):
               description: "Permission to be granted"
               required: true
               schema:
-                "$ref": '#/components/schemas/Permission'
+                "$ref": '#/definitions/Permission'
           responses:
             201:
               content:

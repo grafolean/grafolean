@@ -35,7 +35,7 @@ def accounts_root():
                       list:
                         type: array
                         items:
-                          "$ref": '#/components/schemas/AccountGET'
+                          "$ref": '#/definitions/AccountGET'
     """
     user_id = flask.g.grafolean_data['user_id']
     rec = Account.get_list(user_id)
