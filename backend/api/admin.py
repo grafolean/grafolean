@@ -26,7 +26,7 @@ def admin_migratedb_post():
         post:
           summary: Migrate database
           tags:
-            - admin
+            - Admin
           description:
             Migrates database to latest schema version if needed.
           responses:
@@ -47,7 +47,7 @@ def admin_first_post():
         post:
           summary: Create first admin user
           tags:
-            - admin
+            - Admin
           description:
             This endpoint helps with setting up a new installation. It allows us to set up just one initial
             admin access (with name, email and password). Later requests to the same endpoint will fail.
@@ -92,7 +92,7 @@ def admin_mqttauth_plug(check_type):
         post:
           summary: Authorization for Mosquitto with mosquitto-auth-plug plugin
           tags:
-            - admin
+            - Admin
           description:
             >
               If using MQTT (with mosquitto-auth-plug plugin), it should be configured
@@ -196,7 +196,7 @@ def admin_bots():
         get:
           summary: Get all bots
           tags:
-            - admin
+            - Admin
           description:
             Returns a list of all bots. The list is returned in a single array (no pagination).
           responses:
@@ -213,7 +213,7 @@ def admin_bots():
         post:
           summary: Create a bot
           tags:
-            - admin
+            - Admin
           description:
             Creates a bot. By default (as any user) a bot is without permissions, so they must be granted to it before it can do anything useful.
 
@@ -249,7 +249,7 @@ def admin_bot_crud(user_id):
         get:
           summary: Get bot data
           tags:
-            - admin
+            - Admin
           description:
             Returns bot data.
           parameters:
@@ -270,7 +270,7 @@ def admin_bot_crud(user_id):
         put:
           summary: Update the bot
           tags:
-            - admin
+            - Admin
           description:
             Updates bot name. Note that all other fields are handled automatically (they can't be changed).
           parameters:
@@ -294,7 +294,7 @@ def admin_bot_crud(user_id):
         delete:
           summary: Remove the bot
           tags:
-            - admin
+            - Admin
           description:
             Removes the bot. Also removes its permissions, if any.
           parameters:
@@ -342,7 +342,7 @@ def admin_persons():
         get:
           summary: Get all persons
           tags:
-            - admin
+            - Admin
           description:
             Returns a list of all persons. The list is returned in a single array (no pagination).
           responses:
@@ -359,7 +359,7 @@ def admin_persons():
         post:
           summary: Create a person account
           tags:
-            - admin
+            - Admin
           description:
             Creates a person account. By default (as any user) a person is without permissions, so they must be granted to it before it can do anything useful.
           parameters:
@@ -398,7 +398,7 @@ def admin_person_crud(user_id):
         get:
           summary: Get person data
           tags:
-            - admin
+            - Admin
           description:
             Returns person data.
           parameters:
@@ -419,7 +419,7 @@ def admin_person_crud(user_id):
         put:
           summary: Update the bot
           tags:
-            - admin
+            - Admin
           description:
             Updates person data.
           parameters:
@@ -443,7 +443,7 @@ def admin_person_crud(user_id):
         delete:
           summary: Remove the person data
           tags:
-            - admin
+            - Admin
           description:
             Removes the person data. Also removes user's permissions, if any.
           parameters:
@@ -494,7 +494,7 @@ def admin_permissions_get_post(user_id):
         get:
           summary: Get a list of all permissions granted to a specified user
           tags:
-            - admin
+            - Admin
           description:
             Returns a list of all permissions granted to the user. The list is returned in a single array (no pagination).
 
@@ -542,7 +542,7 @@ def admin_permissions_get_post(user_id):
         post:
           summary: Grant permission to the user
           tags:
-            - admin
+            - Admin
           description:
             Grants a specified permission to the user. Permissions are defined with a combination of resource prefix and a list of methods.
             Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
@@ -612,7 +612,7 @@ def admin_permission_delete(permission_id, user_id):
         delete:
           summary: Revoke permission
           tags:
-            - admin
+            - Admin
           description:
             Revokes a specific permission, as specified by permission id.
           parameters:

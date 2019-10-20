@@ -22,7 +22,7 @@ def accounts_root():
         get:
           summary: Get all accounts this user has access to
           tags:
-            - accounts
+            - Accounts
           description:
             Returns the list of accounts that this user (person or bot) has permission to access. The list is returned in a single array (no pagination).
           responses:
