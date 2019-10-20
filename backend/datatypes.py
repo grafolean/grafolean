@@ -8,7 +8,7 @@ import psycopg2.extras
 import re
 from slugify import slugify
 
-from utils import db, log, ADMIN_ACCOUNT_ID
+from utils import db, log
 from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs, SensorSchemaInputs
 from auth import Auth
 

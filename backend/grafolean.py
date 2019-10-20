@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import sys
 from apispec import APISpec
 from apispec_webframeworks.flask import FlaskPlugin
 from dotenv import load_dotenv
@@ -172,17 +173,18 @@ def handle_error(e):
     return response
 
 
-def generate_api_docs(filename):
+def generate_api_docs(filename, api_version):
     """
         Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
     """
     import copy
     apidoc = APISpec(
         title="Grafolean API",
-        version="0.0.32",
-        openapi_version="3.0.2",
+        version=api_version,
+        openapi_version="2.0",
         plugins=[FlaskPlugin()],
     )
+
     apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
     botGETSchema = {
         'type': 'object',
@@ -249,6 +251,25 @@ def generate_api_docs(filename):
 
     apidoc.components.schema("Permission", validators.PermissionSchemaInputs.json[0].schema)
 
+    apidoc.components.schema("AccountPOST", validators.AccountSchemaInputs.json[0].schema)
+    accountGETSchema = {
+        'type': 'object',
+        'properties': {
+            'id': {
+                'type': 'integer',
+                'description': "Account id",
+                'example': 123,
+            },
+            'name': {
+                'type': 'string',
+                'description': "Account name",
+                'example': 'My First Account',
+            },
+        },
+        'required': ['id', 'name'],
+    }
+    apidoc.components.schema("AccountGET", accountGETSchema)
+
     with app.test_request_context():
         for rule in app.url_map.iter_rules():
             view = app.view_functions.get(rule.endpoint)
@@ -258,14 +279,38 @@ def generate_api_docs(filename):
         openapi_yaml_file.write(apidoc.to_yaml())
 
 
+def print_usage():
+    print("""
+    This is the Grafolean backend.
+
+    Usage:
+
+        grafolean.py
+            *** DO NOT USE THIS IN PRODUCTION! ***
+            Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
+            for development purposes.
+
+        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0
+            Auto-generates API documentation in Swagger/OpenAPI format and
+            writes it to the specified output file. Last argument is
+            API version.
+    """)
+
+
 if __name__ == "__main__":
 
     # When docs are generated, they can be served via Swagger-UI:
     #  $ docker run -d --rm -p 9000:8080 --name swagger-ui -e SWAGGER_JSON=/api_docs/openapi.yaml -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
     # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
-    # Generate the docs:
-    # generate_api_docs('/tmp/api_docs/openapi.yaml')
+    if len(sys.argv) > 1:
+        if len(sys.argv) == 4 and sys.argv[1] == 'generate-api-doc-yaml':
+            _, _, output_filename, version = sys.argv
+            generate_api_docs(output_filename, version)
+            sys.exit(0)
+        else:
+            print_usage()
+            sys.exit(1)
 
     log.info("Starting main")
     app.run()

@@ -18,7 +18,24 @@ accounts_api = flask.Blueprint('accounts_api', __name__)
 @auth_no_permissions
 def accounts_root():
     """
-        Returns the list of accounts that this user (person or bot) has permission to access.
+        ---
+        get:
+          summary: Get all accounts this user has access to
+          tags:
+            - Accounts
+          description:
+            Returns the list of accounts that this user (person or bot) has permission to access. The list is returned in a single array (no pagination).
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          "$ref": '#/definitions/AccountGET'
     """
     user_id = flask.g.grafolean_data['user_id']
     rec = Account.get_list(user_id)
