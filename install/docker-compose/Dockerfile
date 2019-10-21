@@ -24,12 +24,17 @@ COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 FROM python:3.6-slim-stretch as build-backend
 ARG VERSION="0.0.0"
 WORKDIR /grafolean/backend
-COPY ./backend/ /grafolean/backend/
-# - prepare pip requirements.txt for backend:
 RUN \
-    pip install pipenv && \
-    pipenv lock -r > /requirements.txt
+    apt-get update && \
+    apt-get install -q -y git && \
+    pip install pipenv
+# - prepare pip requirements.txt for backend:
+COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
+RUN \
+    pipenv lock -r > /requirements.txt && \
+    pipenv install --dev
 # - build .py files to .pyc:
+COPY ./backend/ /grafolean/backend/
 RUN \
     find ./ ! -name '*.py' -type f -exec rm '{}' ';' && \
     rm -rf tests/ .vscode/ .pytest_cache/ __pycache__/ && \
@@ -37,9 +42,6 @@ RUN \
     find ./ -name '*.py' -exec rm '{}' ';'
 # - generate API docs from backend source code:
 RUN \
-    apt-get update && \
-    apt-get install -q -y git && \
-    pipenv install --dev && \
     pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc.yml $VERSION
 
 

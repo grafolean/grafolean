@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import os
 import sys
-from apispec import APISpec
-from apispec_webframeworks.flask import FlaskPlugin
 from dotenv import load_dotenv
 import flask
 from werkzeug.exceptions import HTTPException
@@ -177,7 +175,10 @@ def generate_api_docs(filename, api_version):
     """
         Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
     """
+    from apispec import APISpec
+    from apispec_webframeworks.flask import FlaskPlugin
     import copy
+
     apidoc = APISpec(
         title="Grafolean API",
         version=api_version,
