@@ -183,6 +183,14 @@ def generate_api_docs(filename, api_version):
         version=api_version,
         openapi_version="2.0",
         plugins=[FlaskPlugin()],
+        info={
+            "description": """
+              Grafolean is designed API-first. Meaning, every functionality of the system is accessible through the API
+              described below. This allows integration with external systems so that (given the permissions) they too can
+              enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend
+              can also be achieved through API, as frontend is just an UI which uses the API.
+            """
+        }
     )
 
     apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
