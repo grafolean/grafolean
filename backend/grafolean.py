@@ -22,7 +22,7 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
 import validators
 
 
@@ -177,7 +177,6 @@ def generate_api_docs(filename, api_version):
     """
     from apispec import APISpec
     from apispec_webframeworks.flask import FlaskPlugin
-    import copy
 
     apidoc = APISpec(
         title="Grafolean API",
@@ -193,90 +192,10 @@ def generate_api_docs(filename, api_version):
         }
     )
 
-    apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
-    botGETSchema = {
-        'type': 'object',
-        'properties': {
-            'id': {
-                'type': 'integer',
-                'description': "User id",
-                'example': 123,
-            },
-            'name': {
-                'type': 'string',
-                'description': "Bot name",
-                'example': 'My Bot',
-            },
-            'token': {
-                'type': 'string',
-                'format': 'uuid',
-                'description': "Bot authentication token",
-            },
-            'insert_time': {
-                'type': 'integer',
-                'description': "Insert time (UNIX timestamp)",
-                'example': 1234567890,
-            },
-        },
-        'required': ['id', 'name', 'token', 'insert_time'],
-    }
-    apidoc.components.schema("BotGET", botGETSchema)
-
-    personGETSchema = {
-        'type': 'object',
-        'properties': {
-            'user_id': {
-                'type': 'integer',
-                'description': "User id",
-                'example': 123,
-            },
-            'username': {
-                'type': 'string',
-                'description': "Username",
-                'example': 'myusername',
-            },
-            'name': {
-                'type': 'string',
-                'description': "Name",
-                'example': 'Grafo Lean',
-            },
-            'email': {
-                'type': 'string',
-                'format': 'email',
-                'description': "someone@example.org",
-            },
-        },
-    }
-    apidoc.components.schema("PersonGET", personGETSchema)
-
-    personGETWithPermissionsSchema = copy.deepcopy(personGETSchema)
-    personGETWithPermissionsSchema['properties']['permissions'] = {
-        'type': 'array',
-        'items': validators.PermissionSchemaInputs.json[0].schema,
-    }
-    apidoc.components.schema("PersonGETWithPermissions", personGETWithPermissionsSchema)
-    apidoc.components.schema("PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema)
-
-    apidoc.components.schema("Permission", validators.PermissionSchemaInputs.json[0].schema)
-
-    apidoc.components.schema("AccountPOST", validators.AccountSchemaInputs.json[0].schema)
-    accountGETSchema = {
-        'type': 'object',
-        'properties': {
-            'id': {
-                'type': 'integer',
-                'description': "Account id",
-                'example': 123,
-            },
-            'name': {
-                'type': 'string',
-                'description': "Account name",
-                'example': 'My First Account',
-            },
-        },
-        'required': ['id', 'name'],
-    }
-    apidoc.components.schema("AccountGET", accountGETSchema)
+    for schema_name, schema in admin_apidoc_schemas():
+        apidoc.components.schema(schema_name, schema)
+    for schema_name, schema in accounts_apidoc_schemas():
+        apidoc.components.schema(schema_name, schema)
 
     with app.test_request_context():
         for rule in app.url_map.iter_rules():

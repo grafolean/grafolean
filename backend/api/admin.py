@@ -2,7 +2,8 @@ import flask
 import json
 import psycopg2
 import urllib.parse
-
+import validators
+import copy
 
 from datatypes import AccessDeniedError, Account, Bot, Permission, Person
 from auth import Auth, JWT, AuthFailedException
@@ -12,6 +13,72 @@ from .common import noauth, mqtt_publish_changed
 
 
 admin_api = flask.Blueprint('admin_api', __name__)
+
+
+def admin_apidoc_schemas():
+    yield "BotPOST", validators.BotSchemaInputs.json[0].schema
+    yield "BotGET", {
+        'type': 'object',
+        'properties': {
+            'id': {
+                'type': 'integer',
+                'description': "User id",
+                'example': 123,
+            },
+            'name': {
+                'type': 'string',
+                'description': "Bot name",
+                'example': 'My Bot',
+            },
+            'token': {
+                'type': 'string',
+                'format': 'uuid',
+                'description': "Bot authentication token",
+            },
+            'insert_time': {
+                'type': 'integer',
+                'description': "Insert time (UNIX timestamp)",
+                'example': 1234567890,
+            },
+        },
+        'required': ['id', 'name', 'token', 'insert_time'],
+    }
+
+    personGETSchema = {
+        'type': 'object',
+        'properties': {
+            'user_id': {
+                'type': 'integer',
+                'description': "User id",
+                'example': 123,
+            },
+            'username': {
+                'type': 'string',
+                'description': "Username",
+                'example': 'myusername',
+            },
+            'name': {
+                'type': 'string',
+                'description': "Name",
+                'example': 'Grafo Lean',
+            },
+            'email': {
+                'type': 'string',
+                'format': 'email',
+                'description': "someone@example.org",
+            },
+        },
+    }
+    yield "PersonGET", personGETSchema
+
+    personGETWithPermissionsSchema = copy.deepcopy(personGETSchema)
+    personGETWithPermissionsSchema['properties']['permissions'] = {
+        'type': 'array',
+        'items': validators.PermissionSchemaInputs.json[0].schema,
+    }
+    yield "PersonGETWithPermissions", personGETWithPermissionsSchema
+    yield "PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema
+    yield "Permission", validators.PermissionSchemaInputs.json[0].schema
 
 
 # --------------

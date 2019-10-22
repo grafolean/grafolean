@@ -2,12 +2,33 @@ import flask
 import json
 import psycopg2
 import time
+import validators
 
 from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
 from .common import auth_no_permissions, mqtt_publish_changed
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
+
+
+def accounts_apidoc_schemas():
+    yield "AccountPOST", validators.AccountSchemaInputs.json[0].schema
+    yield "AccountGET", {
+        'type': 'object',
+        'properties': {
+            'id': {
+                'type': 'integer',
+                'description': "Account id",
+                'example': 123,
+            },
+            'name': {
+                'type': 'string',
+                'description': "Account name",
+                'example': 'My First Account',
+            },
+        },
+        'required': ['id', 'name'],
+    }
 
 
 # --------------
