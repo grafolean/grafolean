@@ -47,10 +47,11 @@ RUN \
 
 # Convert API doc from Swagger/OpenAPI to static HTML:
 FROM node:10.15-jessie-slim as convert-swagger-to-html
+RUN \
+    npm install -g --unsafe-perm spectacle-docs
 COPY --from=build-backend /api-doc.yml /api-doc.yml
 WORKDIR /
 RUN \
-    npm install -g --unsafe-perm spectacle-docs && \
     spectacle /api-doc.yml && \
     mv /public /api-doc
 
@@ -91,6 +92,7 @@ COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
+COPY --from=build-backend /api-doc.yml /grafolean/api-doc/swagger.yml
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
