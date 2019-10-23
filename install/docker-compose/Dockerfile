@@ -42,17 +42,18 @@ RUN \
     find ./ -name '*.py' -exec rm '{}' ';'
 # - generate API docs from backend source code:
 RUN \
-    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc.yml $VERSION
+    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-2.yml $VERSION 2.0 && \
+    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-3.yml $VERSION 3.0.2
 
 
 # Convert API doc from Swagger/OpenAPI to static HTML:
 FROM node:10.15-jessie-slim as convert-swagger-to-html
 RUN \
     npm install -g --unsafe-perm spectacle-docs
-COPY --from=build-backend /api-doc.yml /api-doc.yml
+COPY --from=build-backend /api-doc-2.yml /api-doc-2.yml
 WORKDIR /
 RUN \
-    spectacle /api-doc.yml && \
+    spectacle /api-doc-2.yml && \
     mv /public /api-doc
 
 
@@ -92,7 +93,8 @@ COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
-COPY --from=build-backend /api-doc.yml /grafolean/api-doc/swagger.yml
+COPY --from=build-backend /api-doc-2.yml /grafolean/api-doc/swagger2.yml
+COPY --from=build-backend /api-doc-3.yml /grafolean/api-doc/swagger3.yml
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend

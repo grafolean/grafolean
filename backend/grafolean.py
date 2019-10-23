@@ -171,7 +171,7 @@ def handle_error(e):
     return response
 
 
-def generate_api_docs(filename, api_version):
+def generate_api_docs(filename, api_version, openapi_version):
     """
         Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
     """
@@ -181,15 +181,15 @@ def generate_api_docs(filename, api_version):
     apidoc = APISpec(
         title="Grafolean API",
         version=api_version,
-        openapi_version="2.0",
+        openapi_version=openapi_version,
         plugins=[FlaskPlugin()],
         info={
             "description":
                 "Grafolean is designed API-first. Meaning, every functionality of the system is accessible through the API " \
                 "described below. This allows integration with external systems so that (given the permissions) they too can " \
                 "enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend " \
-                "can also be achieved through API, as frontend is just an UI which uses the API.\n\n" \
-                "This documentation is also available as [swagger API definition](./swagger.yml)."
+                "can also be achieved through API.\n\n" \
+                "This documentation is also available as Swagger/OpenAPI definition: [OAS2](./swagger2.yml) / [OAS3](./swagger3.yml)."
         }
     )
 
@@ -218,10 +218,12 @@ def print_usage():
             Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
             for development purposes.
 
-        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0
+        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0 2.0
             Auto-generates API documentation in Swagger/OpenAPI format and
-            writes it to the specified output file. Last argument is
-            API version.
+            writes it to the specified output file. Arguments:
+            - output file
+            - API version
+            - OpenAPI version (2.0 or 3.0.2)
     """)
 
 
@@ -232,9 +234,9 @@ if __name__ == "__main__":
     # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
     if len(sys.argv) > 1:
-        if len(sys.argv) == 4 and sys.argv[1] == 'generate-api-doc-yaml':
-            _, _, output_filename, version = sys.argv
-            generate_api_docs(output_filename, version)
+        if len(sys.argv) == 5 and sys.argv[1] == 'generate-api-doc-yaml':
+            _, _, output_filename, version, openapi_version = sys.argv
+            generate_api_docs(output_filename, version, openapi_version)
             sys.exit(0)
         else:
             print_usage()
