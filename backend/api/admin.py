@@ -346,7 +346,7 @@ def admin_bot_crud(user_id):
               description: "User id"
               required: true
               schema:
-              type: integer
+                type: integer
             - name: "body"
               in: body
               description: "Bot data"

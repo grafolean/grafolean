@@ -65,8 +65,59 @@ def accounts_root():
 
 @accounts_api.route('/<string:account_id>', methods=['GET', 'PUT'])
 def account_crud(account_id):
+    """
+        ---
+        get:
+          summary: Get an account
+          tags:
+            - Accounts
+          description:
+            Returns account data.
+          parameters:
+            - name: account_id
+              in: path
+              description: "Account id"
+              required: true
+              schema:
+                type: integer
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    "$ref": '#/definitions/AccountGET'
+            404:
+              description: No such account
+        put:
+          summary: Update the account
+          tags:
+            - Accounts
+          description:
+            Updates account name.
+          parameters:
+            - name: account_id
+              in: path
+              description: "Account id"
+              required: true
+              schema:
+                type: integer
+            - name: "body"
+              in: body
+              description: "Account data"
+              required: true
+              schema:
+                "$ref": '#/definitions/AccountPOST'
+          responses:
+            204:
+              description: Update successful
+            404:
+              description: No such account
+
+    """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Account.get(account_id)
+        if not rec:
+            return "No such account", 404
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
