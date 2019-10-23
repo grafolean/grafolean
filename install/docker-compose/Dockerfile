@@ -49,12 +49,13 @@ RUN \
 # Convert API doc from Swagger/OpenAPI to static HTML:
 FROM node:10.15-jessie-slim as convert-swagger-to-html
 RUN \
-    npm install -g --unsafe-perm spectacle-docs
+    npm install -g redoc-cli
 COPY --from=build-backend /api-doc-2.yml /api-doc-2.yml
 WORKDIR /
 RUN \
-    spectacle /api-doc-2.yml && \
-    mv /public /api-doc
+    redoc-cli bundle /api-doc-2.yml && \
+    mkdir /api-doc && \
+    mv redoc-static.html /api-doc/index.html
 
 
 FROM python:3.6-slim-stretch
