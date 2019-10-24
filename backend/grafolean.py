@@ -22,7 +22,7 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
 import validators
 
 
@@ -171,112 +171,32 @@ def handle_error(e):
     return response
 
 
-def generate_api_docs(filename, api_version):
+def generate_api_docs(filename, api_version, openapi_version):
     """
         Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
     """
     from apispec import APISpec
     from apispec_webframeworks.flask import FlaskPlugin
-    import copy
 
     apidoc = APISpec(
         title="Grafolean API",
         version=api_version,
-        openapi_version="2.0",
+        openapi_version=openapi_version,
         plugins=[FlaskPlugin()],
         info={
             "description":
                 "Grafolean is designed API-first. Meaning, every functionality of the system is accessible through the API " \
                 "described below. This allows integration with external systems so that (given the permissions) they too can " \
                 "enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend " \
-                "can also be achieved through API, as frontend is just an UI which uses the API. "
+                "can also be achieved through API.\n\n" \
+                "This documentation is also available as Swagger/OpenAPI definition: [OAS2](./swagger2.yml) / [OAS3](./swagger3.yml)."
         }
     )
 
-    apidoc.components.schema("BotPOST", validators.BotSchemaInputs.json[0].schema)
-    botGETSchema = {
-        'type': 'object',
-        'properties': {
-            'id': {
-                'type': 'integer',
-                'description': "User id",
-                'example': 123,
-            },
-            'name': {
-                'type': 'string',
-                'description': "Bot name",
-                'example': 'My Bot',
-            },
-            'token': {
-                'type': 'string',
-                'format': 'uuid',
-                'description': "Bot authentication token",
-            },
-            'insert_time': {
-                'type': 'integer',
-                'description': "Insert time (UNIX timestamp)",
-                'example': 1234567890,
-            },
-        },
-        'required': ['id', 'name', 'token', 'insert_time'],
-    }
-    apidoc.components.schema("BotGET", botGETSchema)
-
-    personGETSchema = {
-        'type': 'object',
-        'properties': {
-            'user_id': {
-                'type': 'integer',
-                'description': "User id",
-                'example': 123,
-            },
-            'username': {
-                'type': 'string',
-                'description': "Username",
-                'example': 'myusername',
-            },
-            'name': {
-                'type': 'string',
-                'description': "Name",
-                'example': 'Grafo Lean',
-            },
-            'email': {
-                'type': 'string',
-                'format': 'email',
-                'description': "someone@example.org",
-            },
-        },
-    }
-    apidoc.components.schema("PersonGET", personGETSchema)
-
-    personGETWithPermissionsSchema = copy.deepcopy(personGETSchema)
-    personGETWithPermissionsSchema['properties']['permissions'] = {
-        'type': 'array',
-        'items': validators.PermissionSchemaInputs.json[0].schema,
-    }
-    apidoc.components.schema("PersonGETWithPermissions", personGETWithPermissionsSchema)
-    apidoc.components.schema("PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema)
-
-    apidoc.components.schema("Permission", validators.PermissionSchemaInputs.json[0].schema)
-
-    apidoc.components.schema("AccountPOST", validators.AccountSchemaInputs.json[0].schema)
-    accountGETSchema = {
-        'type': 'object',
-        'properties': {
-            'id': {
-                'type': 'integer',
-                'description': "Account id",
-                'example': 123,
-            },
-            'name': {
-                'type': 'string',
-                'description': "Account name",
-                'example': 'My First Account',
-            },
-        },
-        'required': ['id', 'name'],
-    }
-    apidoc.components.schema("AccountGET", accountGETSchema)
+    for schema_name, schema in admin_apidoc_schemas():
+        apidoc.components.schema(schema_name, schema)
+    for schema_name, schema in accounts_apidoc_schemas():
+        apidoc.components.schema(schema_name, schema)
 
     with app.test_request_context():
         for rule in app.url_map.iter_rules():
@@ -298,10 +218,12 @@ def print_usage():
             Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
             for development purposes.
 
-        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0
+        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0 2.0
             Auto-generates API documentation in Swagger/OpenAPI format and
-            writes it to the specified output file. Last argument is
-            API version.
+            writes it to the specified output file. Arguments:
+            - output file
+            - API version
+            - OpenAPI version (2.0 or 3.0.2)
     """)
 
 
@@ -312,9 +234,9 @@ if __name__ == "__main__":
     # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
     if len(sys.argv) > 1:
-        if len(sys.argv) == 4 and sys.argv[1] == 'generate-api-doc-yaml':
-            _, _, output_filename, version = sys.argv
-            generate_api_docs(output_filename, version)
+        if len(sys.argv) == 5 and sys.argv[1] == 'generate-api-doc-yaml':
+            _, _, output_filename, version, openapi_version = sys.argv
+            generate_api_docs(output_filename, version, openapi_version)
             sys.exit(0)
         else:
             print_usage()

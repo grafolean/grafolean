@@ -1,6 +1,6 @@
-from .admin import admin_api
+from .admin import admin_api, admin_apidoc_schemas
 from .profile import profile_api
-from .accounts import accounts_api
+from .accounts import accounts_api, accounts_apidoc_schemas
 from .status import status_api
 from .auth import auth_api
 
