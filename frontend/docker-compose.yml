@@ -16,7 +16,7 @@ services:
       timeout: 5s
       retries: 3
     volumes:
-      - /grafolean_tmp_db/:/var/lib/postgresql/data/
+      - ${GRAFOLEAN_DB_DIR:-/grafolean_tmp_db/}:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
     networks:
