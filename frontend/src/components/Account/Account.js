@@ -48,7 +48,7 @@ class Account extends React.Component {
   renderNoBotsHelp() {
     const accountId = this.props.match.params.accountId;
     return (
-      <HelpSnippet icon="angle-double-right" title="This account doesn't have any bots configured yet">
+      <HelpSnippet icon="info-circle" title="This account doesn't have any bots configured yet">
         <p>
           <b>Bots</b> are external scripts and applications that send values to Grafolean.
         </p>

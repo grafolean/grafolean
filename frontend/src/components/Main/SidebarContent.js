@@ -7,7 +7,6 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
-import LinkButton from '../LinkButton/LinkButton';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
 
@@ -25,9 +24,6 @@ class SidebarContent extends React.Component {
     return (
       <div className="navigation">
         <div className="back-logout-buttons">
-          <LinkButton className="unselect-account" title="Home" to="/">
-            <i className="fa fa-home" />
-          </LinkButton>
           <Button className="logout" onClick={doLogout} title="Logout">
             <i className="fa fa-sign-out" />
           </Button>
