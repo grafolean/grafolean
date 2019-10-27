@@ -13,6 +13,7 @@ import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
 import LinkButton from '../LinkButton/LinkButton';
+import HelpSnippet from '../HelpSnippet';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -67,10 +68,13 @@ export default class Bots extends React.PureComponent {
       return null;
     }
     return (
-      <div className="bot-help frame">
-        <h1>
-          <i className="fa fa-question-circle" /> How to send values using <b>"{bot.name}"</b> bot
-        </h1>
+      <HelpSnippet
+        title={
+          <>
+            How to send values using <b>"{bot.name}"</b> bot
+          </>
+        }
+      >
         <p>
           To send values to Grafolean, you need to use a bot. Below instructions assume you will be using{' '}
           <i>"{bot.name}"</i> bot.
@@ -103,7 +107,7 @@ export default class Bots extends React.PureComponent {
   '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
           </pre>
         </p>
-      </div>
+      </HelpSnippet>
     );
   }
 
