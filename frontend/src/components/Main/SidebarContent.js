@@ -89,7 +89,9 @@ class _AccountSidebarContent extends React.Component {
       <>
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
 
-        <div className="account-name">{accountName}</div>
+        <Link className="account-name" to={`/accounts/${accountId}`} onClick={onSidebarLinkClick}>
+          {accountName}
+        </Link>
 
         {user && havePermission(`accounts/${accountId}/dashboards`, 'GET', user.permissions) && (
           <Link
