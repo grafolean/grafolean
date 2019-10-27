@@ -10,7 +10,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
 
-class WelcomePage extends React.Component {
+class Account extends React.Component {
   state = {
     botsAvailable: null,
     account: null,
@@ -116,4 +116,4 @@ class WelcomePage extends React.Component {
 const mapStoreToProps = store => ({
   user: store.user,
 });
-export default connect(mapStoreToProps)(WelcomePage);
+export default connect(mapStoreToProps)(Account);
