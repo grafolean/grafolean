@@ -2,14 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Link, withRouter, Switch, Route } from 'react-router-dom';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { havePermission, fetchAuth } from '../../utils/fetch';
+import { havePermission } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
-import EditableLabel from '../EditableLabel';
 import LinkButton from '../LinkButton/LinkButton';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
@@ -82,22 +79,6 @@ class _AccountSidebarContent extends React.Component {
     });
   };
 
-  updateAccountName = newAccountName => {
-    const accountId = this.props.match.params.accountId;
-    const params = {
-      name: newAccountName,
-    };
-    fetchAuth(`${ROOT_URL}/accounts/${accountId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'PUT',
-      body: JSON.stringify(params),
-    })
-      .then(handleFetchErrors)
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
-  };
-
   render() {
     const { onSidebarLinkClick, user } = this.props;
     const { accountName } = this.state;
@@ -108,13 +89,7 @@ class _AccountSidebarContent extends React.Component {
       <>
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
 
-        <div className="account-name">
-          <EditableLabel
-            label={accountName}
-            onChange={this.updateAccountName}
-            isEditable={havePermission(`accounts/${accountId}`, 'POST', user.permissions)}
-          />
-        </div>
+        <div className="account-name">{accountName}</div>
 
         {user && havePermission(`accounts/${accountId}/dashboards`, 'GET', user.permissions) && (
           <Link
