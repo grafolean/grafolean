@@ -67,6 +67,9 @@ export default class Bots extends React.PureComponent {
     if (!bot) {
       return null;
     }
+    if (bot.protocol && bot.protocol !== 'custom') {
+      return null;
+    }
     return (
       <HelpSnippet
         title={
@@ -76,8 +79,11 @@ export default class Bots extends React.PureComponent {
         }
       >
         <p>
-          To send values to Grafolean, you need to use a bot. Below instructions assume you will be using{' '}
-          <i>"{bot.name}"</i> bot.
+          Bot <i>"{bot.name}"</i> is a "custom" bot, which means that it is <strong>not</strong> configured
+          via Grafolean UI. Instead, it should simply periodically send data to Grafolean. Usually this is
+          done with <a href="https://en.wikipedia.org/wiki/Cron">cron</a> jobs, but you can use any other
+          scheduler / platform / script / programming language - we are using regular HTTP(S) API to receive
+          values.
         </p>
         <p>
           Sending values using current time uses <i>POST</i> method:
