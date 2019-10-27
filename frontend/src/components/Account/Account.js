@@ -9,6 +9,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
+import HelpSnippet from '../HelpSnippet';
 
 class Account extends React.Component {
   state = {
@@ -44,6 +45,21 @@ class Account extends React.Component {
     });
   };
 
+  renderNoBotsHelp() {
+    const accountId = this.props.match.params.accountId;
+    return (
+      <HelpSnippet icon="angle-double-right" title="This account doesn't have any bots configured yet">
+        <p>
+          <b>Bots</b> are external scripts and applications that send values to Grafolean.
+        </p>
+        <p>To use them, they need to be configured first:</p>
+        <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+          <i className="fa fa-plus" /> Add a bot
+        </Link>
+      </HelpSnippet>
+    );
+  }
+
   renderHelp() {
     const { botsAvailable } = this.state;
     const accountId = this.props.match.params.accountId;
@@ -51,6 +67,10 @@ class Account extends React.Component {
 
     if (botsAvailable === null) {
       return <Loading />;
+    }
+
+    if (!botsAvailable) {
+      return this.renderNoBotsHelp();
     }
 
     return (
