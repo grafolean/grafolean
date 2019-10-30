@@ -2,7 +2,7 @@ import React from 'react';
 
 export default class HelpSnippet extends React.Component {
   render() {
-    const { title, icon = 'question-circle' } = this.props;
+    const { title, icon = 'info-circle' } = this.props;
     return (
       <div className="bot-help frame">
         <h1>

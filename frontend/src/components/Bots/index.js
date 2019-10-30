@@ -158,7 +158,7 @@ export default class Bots extends React.PureComponent {
                       </td>
                       <td>
                         <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
-                          <i className="fa fa-question-circle" />
+                          <i className="fa fa-info-circle" />
                         </Link>
                       </td>
                     </tr>
