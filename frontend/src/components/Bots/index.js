@@ -56,17 +56,8 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  renderHelp() {
-    const { bots } = this.state;
+  renderHelp(bot) {
     const accountId = this.props.match.params.accountId;
-    const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
-    if (!helpBotIdParam || !bots) {
-      return null;
-    }
-    const bot = bots.find(b => b.id === Number(helpBotIdParam));
-    if (!bot) {
-      return null;
-    }
     if (bot.protocol && bot.protocol !== 'custom') {
       return null;
     }
@@ -117,9 +108,21 @@ export default class Bots extends React.PureComponent {
     );
   }
 
+  renderAboutBots() {
+    return (
+      <HelpSnippet icon="info-circle" title="About bots">
+        <p>
+          <b>Bots</b> are external scripts and applications that send values to Grafolean.
+        </p>
+      </HelpSnippet>
+    );
+  }
+
   render() {
     const { bots } = this.state;
     const accountId = this.props.match.params.accountId;
+    const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
+    const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
     return (
       <>
         <div className="bots frame">
@@ -172,7 +175,7 @@ export default class Bots extends React.PureComponent {
           </Link>
         </div>
 
-        {this.renderHelp()}
+        {helpBot ? this.renderHelp(helpBot) : this.renderAboutBots()}
       </>
     );
   }
