@@ -14,12 +14,20 @@
   }
 }
 
-.bot-help {
+.help-snippet {
   pre {
     border: 1px solid #ddd;
     padding: 10px;
     border-radius: 5px;
     background-color: #fafafa;
     overflow-x: auto;
+  }
+  span.pre {
+    border: 1px solid #ddd;
+    margin: 0 5px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background-color: #fafafa;
+    font-family: 'Courier New', Courier, monospace;
   }
 }

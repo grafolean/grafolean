@@ -56,16 +56,76 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  renderHelp(bot) {
-    const accountId = this.props.match.params.accountId;
-    if (bot.protocol && bot.protocol !== 'custom') {
-      return null;
-    }
+  renderSnmpBotHelp(bot) {
+    const backendUrlIsWrong =
+      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://127.0.0.1') ||
+      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://localhost');
     return (
       <HelpSnippet
         title={
           <>
-            How to send values using <b>"{bot.name}"</b> bot
+            How to send values using <b>"{bot.name}"</b> SNMP bot
+          </>
+        }
+      >
+        <p>
+          Bot <i>"{bot.name}"</i> is a SNMP bot / collector. It needs to be installed on a server which will
+          have access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean
+          via HTTP(S) port.
+        </p>
+        <p>
+          The installation instructions are available on{' '}
+          <a href="https://gitlab.com/grafolean/grafolean-collector-snmp">Grafolean SNMP collector</a> Git
+          repository, but in short:
+          <ol>
+            <li>
+              check that backend is reachable:
+              <pre>
+                {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
+{"alive": true, ...`}
+              </pre>
+              {backendUrlIsWrong && (
+                <p>
+                  <i className="fa fa-exclamation-triangle" />
+                  <b>IMPORTANT:</b> the example URL is incorrect. SNMP collector is running inside a Docker
+                  container, which means that <span class="pre">127.0.0.1</span> and{' '}
+                  <span class="pre">localhost</span> resolve to the container itself, not to the address where
+                  Grafolean backend is. Please change the URL appropriately (here and in the next section), or
+                  the bot will <b>not be able to connect</b>.
+                </p>
+              )}
+            </li>
+
+            <li>
+              install SNMP collector:
+              <pre>
+                {String.raw`$ mkdir ~/snmpcollector
+$ cd ~/snmpcollector
+$ curl https://gitlab.com/grafolean/grafolean-collector-snmp/raw/master/docker-compose.yml -o docker-compose.yml
+$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL} > .env
+$ echo "BOT_TOKEN=${bot.token} >> .env
+$ docker-compose up -d
+`}
+              </pre>
+            </li>
+          </ol>
+          The assumptions are:
+          <ul>
+            <li>required software is already installed (curl, docker, docker-compose), and</li>
+            <li>all the devices which will be monitored are reacheable from this machine.</li>
+          </ul>
+        </p>
+      </HelpSnippet>
+    );
+  }
+
+  renderCustomBotHelp(bot) {
+    const accountId = this.props.match.params.accountId;
+    return (
+      <HelpSnippet
+        title={
+          <>
+            How to send values using <b>"{bot.name}"</b> custom bot
           </>
         }
       >
@@ -175,7 +235,14 @@ export default class Bots extends React.PureComponent {
           </Link>
         </div>
 
-        {helpBot ? this.renderHelp(helpBot) : this.renderAboutBots()}
+        {helpBot ? (
+          <>
+            {helpBot.protocol === 'snmp' && this.renderSnmpBotHelp(helpBot)}
+            {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
+          </>
+        ) : (
+          this.renderAboutBots()
+        )}
       </>
     );
   }
