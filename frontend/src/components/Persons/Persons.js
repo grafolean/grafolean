@@ -87,7 +87,7 @@ export default class Persons extends React.PureComponent {
             </table>
           )
         )}
-        <Link className="button green" to="/users/new">
+        <Link className="button green" to="/users-new">
           <i className="fa fa-plus" /> Add person
         </Link>
       </div>

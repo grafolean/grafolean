@@ -17,6 +17,7 @@ import SidebarContent from './SidebarContent';
 import Content from './Content';
 
 import './Main.scss';
+import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
 
 class Main extends React.Component {
   CONTENT_PADDING_LR = 20;
@@ -158,6 +159,8 @@ class Main extends React.Component {
             <i className="fa fa-bars" />
           </Button>
         )}
+
+        <Breadcrumbs />
 
         <Notifications />
 

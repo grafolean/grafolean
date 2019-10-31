@@ -14,7 +14,7 @@ import Persons from '../Persons/Persons';
 import Profile from '../Profile';
 import UserPermissions from '../UserPermissions/UserPermissions';
 import UserPermissionsNewForm from '../UserPermissionsNewForm/UserPermissionsNewForm';
-import WelcomePage from '../WelcomePage';
+import Account from '../Account/Account';
 import SelectAccount from './SelectAccount';
 import Entities from '../Entities/Entities';
 import EntityForm from '../EntityForm/EntityForm';
@@ -73,7 +73,7 @@ class Content extends React.PureComponent {
           <WrappedRoute exact contentWidth={contentWidth} path="/profile" component={Profile} />
 
           <WrappedRoute exact contentWidth={contentWidth} path="/users" component={Persons} />
-          <WrappedRoute exact contentWidth={contentWidth} path="/users/new" component={PersonNewForm} />
+          <WrappedRoute exact contentWidth={contentWidth} path="/users-new" component={PersonNewForm} />
           <WrappedRoute
             exact
             contentWidth={contentWidth}
@@ -88,12 +88,7 @@ class Content extends React.PureComponent {
           />
 
           <WrappedRoute exact contentWidth={contentWidth} path="/accounts-new/" component={AccountForm} />
-          <WrappedRoute
-            exact
-            contentWidth={contentWidth}
-            path="/accounts/:accountId/"
-            component={WelcomePage}
-          />
+          <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/" component={Account} />
           <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/bots" component={Bots} />
           <WrappedRoute
             exact

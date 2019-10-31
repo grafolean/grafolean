@@ -72,12 +72,11 @@ header {
   }
 
   .account-name, label {
-    padding: 20px 15px 10px;
+    padding: 5px 5px 5px;
+    color: #111;
 
-    i.fa-pencil {
-      margin-left: 10px;
-      font-size: 12px;
-      color: #0f428a;
+    .dark-mode & {
+      color: #ddd;
     }
   }
 }

@@ -101,7 +101,7 @@ class AdminFirst extends React.Component {
         throw await responseAccount.text();
       }
 
-      store.dispatch(onSuccess('Admin user (and first account) successfully created.'));
+      store.dispatch(onSuccess('Congratulations! Admin user and first account were successfully created.'));
       this.setState({
         userCreated: true,
       });

@@ -2,15 +2,11 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Link, withRouter, Switch, Route } from 'react-router-dom';
 
-import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { havePermission, fetchAuth } from '../../utils/fetch';
+import { havePermission } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
-import EditableLabel from '../EditableLabel';
-import LinkButton from '../LinkButton/LinkButton';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
 
@@ -28,9 +24,6 @@ class SidebarContent extends React.Component {
     return (
       <div className="navigation">
         <div className="back-logout-buttons">
-          <LinkButton className="unselect-account" title="Home" to="/">
-            <i className="fa fa-home" />
-          </LinkButton>
           <Button className="logout" onClick={doLogout} title="Logout">
             <i className="fa fa-sign-out" />
           </Button>
@@ -82,22 +75,6 @@ class _AccountSidebarContent extends React.Component {
     });
   };
 
-  updateAccountName = newAccountName => {
-    const accountId = this.props.match.params.accountId;
-    const params = {
-      name: newAccountName,
-    };
-    fetchAuth(`${ROOT_URL}/accounts/${accountId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      method: 'PUT',
-      body: JSON.stringify(params),
-    })
-      .then(handleFetchErrors)
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
-  };
-
   render() {
     const { onSidebarLinkClick, user } = this.props;
     const { accountName } = this.state;
@@ -108,13 +85,9 @@ class _AccountSidebarContent extends React.Component {
       <>
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
 
-        <div className="account-name">
-          <EditableLabel
-            label={accountName}
-            onChange={this.updateAccountName}
-            isEditable={havePermission(`accounts/${accountId}`, 'POST', user.permissions)}
-          />
-        </div>
+        <Link className="account-name" to={`/accounts/${accountId}`} onClick={onSidebarLinkClick}>
+          {accountName}
+        </Link>
 
         {user && havePermission(`accounts/${accountId}/dashboards`, 'GET', user.permissions) && (
           <Link

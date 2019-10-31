@@ -1,0 +1,24 @@
+.breadcrumbs {
+  padding: 13px 30px;
+
+  .breadcrumb-item {
+    a {
+      color: #222;
+      .dark-mode & {
+        color: #ddd;
+      }
+    }
+    b {
+      font-weight: normal;
+      color: #222;
+      .dark-mode & {
+        color: #ddd;
+      }
+    }
+  }
+
+  .separator {
+    font-size: 8px;
+    padding: 0 10px;
+  }
+}

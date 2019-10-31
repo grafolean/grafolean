@@ -13,6 +13,7 @@ import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
 import LinkButton from '../LinkButton/LinkButton';
+import HelpSnippet from '../HelpSnippet';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -55,25 +56,85 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  renderHelp() {
-    const { bots } = this.state;
-    const accountId = this.props.match.params.accountId;
-    const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
-    if (!helpBotIdParam || !bots) {
-      return null;
-    }
-    const bot = bots.find(b => b.id === Number(helpBotIdParam));
-    if (!bot) {
-      return null;
-    }
+  renderSnmpBotHelp(bot) {
+    const backendUrlIsWrong =
+      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://127.0.0.1') ||
+      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://localhost');
     return (
-      <div className="bot-help frame">
-        <h1>
-          <i className="fa fa-question-circle" /> How to send values using <b>"{bot.name}"</b> bot
-        </h1>
+      <HelpSnippet
+        title={
+          <>
+            How to send values using <b>"{bot.name}"</b> SNMP bot
+          </>
+        }
+      >
         <p>
-          To send values to Grafolean, you need to use a bot. Below instructions assume you will be using{' '}
-          <i>"{bot.name}"</i> bot.
+          Bot <i>"{bot.name}"</i> is a SNMP bot / collector. It needs to be installed on a server which will
+          have access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean
+          via HTTP(S) port.
+        </p>
+        <p>
+          The installation instructions are available on{' '}
+          <a href="https://gitlab.com/grafolean/grafolean-collector-snmp">Grafolean SNMP collector</a> Git
+          repository, but in short:
+          <ol>
+            <li>
+              check that backend is reachable:
+              <pre>
+                {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
+{"alive": true, ...`}
+              </pre>
+              {backendUrlIsWrong && (
+                <p>
+                  <i className="fa fa-exclamation-triangle" />
+                  <b>IMPORTANT:</b> the example URL is incorrect. SNMP collector is running inside a Docker
+                  container, which means that <span class="pre">127.0.0.1</span> and{' '}
+                  <span class="pre">localhost</span> resolve to the container itself, not to the address where
+                  Grafolean backend is. Please change the URL appropriately (here and in the next section), or
+                  the bot will <b>not be able to connect</b>.
+                </p>
+              )}
+            </li>
+
+            <li>
+              install SNMP collector:
+              <pre>
+                {String.raw`$ mkdir ~/snmpcollector
+$ cd ~/snmpcollector
+$ curl https://gitlab.com/grafolean/grafolean-collector-snmp/raw/master/docker-compose.yml -o docker-compose.yml
+$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL} > .env
+$ echo "BOT_TOKEN=${bot.token} >> .env
+$ docker-compose up -d
+`}
+              </pre>
+            </li>
+          </ol>
+          The assumptions are:
+          <ul>
+            <li>required software is already installed (curl, docker, docker-compose), and</li>
+            <li>all the devices which will be monitored are reacheable from this machine.</li>
+          </ul>
+        </p>
+      </HelpSnippet>
+    );
+  }
+
+  renderCustomBotHelp(bot) {
+    const accountId = this.props.match.params.accountId;
+    return (
+      <HelpSnippet
+        title={
+          <>
+            How to send values using <b>"{bot.name}"</b> custom bot
+          </>
+        }
+      >
+        <p>
+          Bot <i>"{bot.name}"</i> is a "custom" bot, which means that it is <strong>not</strong> configured
+          via Grafolean UI. Instead, it should simply periodically send data to Grafolean. Usually this is
+          done with <a href="https://en.wikipedia.org/wiki/Cron">cron</a> jobs, but you can use any other
+          scheduler / platform / script / programming language - we are using regular HTTP(S) API to receive
+          values.
         </p>
         <p>
           Sending values using current time uses <i>POST</i> method:
@@ -103,13 +164,25 @@ export default class Bots extends React.PureComponent {
   '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
           </pre>
         </p>
-      </div>
+      </HelpSnippet>
+    );
+  }
+
+  renderAboutBots() {
+    return (
+      <HelpSnippet icon="info-circle" title="About bots">
+        <p>
+          <b>Bots</b> are external scripts and applications that send values to Grafolean.
+        </p>
+      </HelpSnippet>
     );
   }
 
   render() {
     const { bots } = this.state;
     const accountId = this.props.match.params.accountId;
+    const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
+    const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
     return (
       <>
         <div className="bots frame">
@@ -148,7 +221,7 @@ export default class Bots extends React.PureComponent {
                       </td>
                       <td>
                         <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
-                          <i className="fa fa-question-circle" />
+                          <i className="fa fa-info-circle" />
                         </Link>
                       </td>
                     </tr>
@@ -162,7 +235,14 @@ export default class Bots extends React.PureComponent {
           </Link>
         </div>
 
-        {this.renderHelp()}
+        {helpBot ? (
+          <>
+            {helpBot.protocol === 'snmp' && this.renderSnmpBotHelp(helpBot)}
+            {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
+          </>
+        ) : (
+          this.renderAboutBots()
+        )}
       </>
     );
   }
