@@ -197,6 +197,7 @@ $ docker-compose up -d
                     <th>Type</th>
                     <th>Token</th>
                     <th>Insert time (UTC)</th>
+                    <th>Last successful login (UTC)</th>
                     <th />
                     <th />
                     <th />
@@ -209,6 +210,11 @@ $ docker-compose up -d
                         <BotToken token={bot.token} />
                       </td>
                       <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
+                      <td>
+                        {bot.last_login === null
+                          ? 'Never'
+                          : moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                      </td>
                       <td>
                         <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
                           <i className="fa fa-pencil" /> Edit

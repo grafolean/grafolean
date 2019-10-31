@@ -780,18 +780,19 @@ class Bot(object):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, protocol, token, insert_time FROM bots ORDER BY insert_time DESC;')
+                c.execute('SELECT user_id, name, protocol, token, insert_time, last_login FROM bots ORDER BY insert_time DESC;')
             else:
-                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time ' +
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, protocol, token, insert_time in c:
+            for user_id, name, protocol, token, insert_time, last_login in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
                     'protocol': protocol,
                     'token': token,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
+                    'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
                 })
             return ret
 
@@ -857,15 +858,15 @@ class Bot(object):
     def get(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is None:
-                c.execute('SELECT name, token, protocol, NULL, insert_time FROM bots WHERE user_id = %s;', (user_id,))
+                c.execute('SELECT name, token, protocol, NULL, insert_time, last_login FROM bots WHERE user_id = %s;', (user_id,))
             else:
-                c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time ' +
+                c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            name, token, protocol, config, insert_time = res
+            name, token, protocol, config, insert_time, last_login = res
         return {
             'id': int(user_id),
             'name': name,
@@ -873,6 +874,7 @@ class Bot(object):
             'protocol': protocol,
             'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
+            'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
         }
 
     @staticmethod
@@ -884,7 +886,9 @@ class Bot(object):
             return None
         # authenticate against DB:
         with db.cursor() as c:
-            c.execute("SELECT user_id FROM bots WHERE token = %s;", (bot_token,))
+            # instead of just SELECTing the value, update last_login too: (if bot_token is correct of course)
+            # c.execute("SELECT user_id FROM bots WHERE token = %s;", (bot_token,))
+            c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = %s RETURNING user_id;", (bot_token,))
             res = c.fetchone()
             if not res:
                 log.info("No such bot token")

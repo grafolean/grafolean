@@ -330,3 +330,9 @@ def migration_step_14():
             new_details = copy.deepcopy(details)
             new_details['output_path'] = details['output_path'] + '.{$index}'
             c2.execute("UPDATE sensors SET details = %s WHERE id = %s;", (json.dumps(new_details), sensor_id,))
+
+def migration_step_15():
+    """ Bots should save a time of last successful authentication.
+    """
+    with db.cursor() as c:
+        c.execute('ALTER TABLE bots ADD COLUMN last_login TIMESTAMP NULL DEFAULT NULL;')
