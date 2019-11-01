@@ -38,6 +38,9 @@ header {
   }
   a {
     margin: 10px 15px 0;
+    &.sub {
+      margin-left: 40px;
+    }
   }
   .bottom {
     padding: 10px 15px 0px;
