@@ -25,7 +25,7 @@ class SidebarContent extends React.Component {
       <div className="navigation">
         <div className="back-logout-buttons">
           <Button className="logout" onClick={doLogout} title="Logout">
-            <i className="fa fa-sign-out" />
+            <i className="fa fa-power-off" />
           </Button>
         </div>
 
