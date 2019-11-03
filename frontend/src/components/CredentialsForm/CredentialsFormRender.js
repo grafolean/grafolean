@@ -63,7 +63,9 @@ class CredentialsFormRender extends React.Component {
           >
             <option value="">-- please select the type of credentials --</option>
             {SUPPORTED_PROTOCOLS.map(protocol => (
-              <option value={protocol.slug}>{protocol.label}</option>
+              <option key={protocol.slug} value={protocol.slug}>
+                {protocol.label}
+              </option>
             ))}
           </select>
         </div>
