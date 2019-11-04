@@ -1,8 +1,9 @@
 import React from 'react';
 
 import isForm from '../isForm';
-import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
+import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
+import CredentialsDetailsFormPing from './CredentialsDetailsFormPing';
 
 class CredentialsFormRender extends React.Component {
   areFormValuesValid() {
@@ -71,6 +72,8 @@ class CredentialsFormRender extends React.Component {
         </div>
         {protocol === 'snmp' ? (
           <CredentialsDetailsFormSnmp value={details} onChange={this.handleDetailsChange} />
+        ) : protocol === 'ping' ? (
+          <CredentialsDetailsFormPing value={details} onChange={this.handleDetailsChange} />
         ) : null}
       </div>
     );
