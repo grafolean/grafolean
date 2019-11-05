@@ -1,12 +1,6 @@
 .bots {
   table.list {
-    border-collapse: collapse;
-    margin-bottom: 20px;
-
     td, th {
-      border: 1px solid #ccc;
-      padding: 10px 20px;
-
       .bot-token i.fa {
         margin-right: 10px;
       }

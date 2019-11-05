@@ -74,31 +74,34 @@ a.button, button, a.button:visited {
   padding: 6px 12px;
   text-decoration: none;
   margin: 0px;
-  border: none;
   border-radius: 3px;
   cursor: pointer;
   line-height: 14px;  // important to make buttons look exactly the same as (button-ified) links
   display: inline-block;  // fixes height discrepancies between <Link> and <button>
   background-color: initial;
-  color: #111122;
-  border: 1px solid #4cd074;
+  color: #fff;
+  background-color: #4cd074;
+  border: none;
   .dark-mode & {
     color: #ccccdd;
-    border-color: #2b9f4e;
+    background-color: initial;
+    border: 1px solid #2b9f4e;
   }
 
   &.orange {
-    border-color: #ec932f;
+    background-color: #ec932f;
   }
   &.blue {
-    border-color: #5b7ed5;
+    background-color: #5b7ed5;
     .dark-mode & {
+      background-color: initial;
       border-color: #4e6cb6;
     }
   }
   &.red {
-    border-color: #a71818;
+    background-color: #a71818;
     .dark-mode & {
+      background-color: initial;
       border-color: #801212;
     }
   }
@@ -152,7 +155,7 @@ table.list {
   margin-bottom: 20px;
 
   td, th {
-    border: 1px solid #ccc;
+    border: 1px solid #999999;
     padding: 10px 20px;
   }
 }
