@@ -11,12 +11,19 @@ body {
     background-color: #000;
   }
 }
-p, span, div, button, a, pre {
+p, span, div, button, a, pre, label {
   font-family: sans-serif;
   font-size: 14px;
   color: #000;
   .dark-mode & {
-    color: #fafafa;
+    color: #ccccdd;
+  }
+}
+label, .label {
+  font-weight: 800;
+  color: #444455;
+  .dark-mode & {
+    color: #ccccdd;
   }
 }
 pre {
@@ -64,19 +71,21 @@ button.link-button {
 
 /* try to make links look like buttons: (because this is what Link creates) */
 a.button, button, a.button:visited {
-  padding: 5px 10px;
+  padding: 6px 12px;
   text-decoration: none;
   margin: 0px;
-  border: none;
   border-radius: 3px;
   cursor: pointer;
   line-height: 14px;  // important to make buttons look exactly the same as (button-ified) links
   display: inline-block;  // fixes height discrepancies between <Link> and <button>
-  background-color: #4cd074;
+  background-color: initial;
   color: #fff;
+  background-color: #4cd074;
+  border: none;
   .dark-mode & {
-    background-color: #3eaa5f;
-    color: #fff;
+    color: #ccccdd;
+    background-color: initial;
+    border: 1px solid #2b9f4e;
   }
 
   &.orange {
@@ -85,13 +94,15 @@ a.button, button, a.button:visited {
   &.blue {
     background-color: #5b7ed5;
     .dark-mode & {
-      background-color: #4e6cb6;
+      background-color: initial;
+      border-color: #4e6cb6;
     }
   }
   &.red {
     background-color: #a71818;
     .dark-mode & {
-      background-color: #801212;
+      background-color: initial;
+      border-color: #801212;
     }
   }
   &.disabled {
@@ -106,7 +117,6 @@ a.button, button, a.button:visited {
     }
   }
 }
-a.button:hover { color: #fff; }
 
 
 // button {
@@ -145,7 +155,7 @@ table.list {
   margin-bottom: 20px;
 
   td, th {
-    border: 1px solid #ccc;
+    border: 1px solid #999999;
     padding: 10px 20px;
   }
 }
@@ -155,5 +165,17 @@ table.list {
   color: #aa2200;
   .dark-mode & {
     color: #dd2200;
+  }
+}
+
+.frame {
+  padding: 20px;
+  border-radius: 5px;
+  border: 1px solid #eee;
+  background-color: #fff;
+  margin-bottom: 10px;
+  .dark-mode & {
+    background-color: #161616;
+    border: 1px solid #333333;
   }
 }

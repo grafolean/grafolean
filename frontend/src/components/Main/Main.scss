@@ -1,4 +1,10 @@
-a, a:visited { color: #3b60b3; text-decoration: none; }
+a, a:visited {
+  color: #3b60b3;
+  text-decoration: none;
+  .dark-mode & {
+    color: #7ea3d5;
+  }
+}
 a:hover { color: #678bdc; text-decoration: none; }
 
 .hcenter {
@@ -127,17 +133,5 @@ header {
 
   & > .centered {
     margin: auto;
-  }
-}
-
-.frame {
-  padding: 20px;
-  border-radius: 5px;
-  border: 1px solid #eee;
-  background-color: #fff;
-  margin-bottom: 10px;
-  .dark-mode & {
-    background-color: #161616;
-    border: 1px solid #202020;
   }
 }

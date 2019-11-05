@@ -41,7 +41,7 @@ export default class EditableLabel extends React.PureComponent {
     const { label, isEditable } = this.props;
     const { editing, newLabel } = this.state;
     return (
-      <span className="editable-label">
+      <span className="editable-label label">
         {editing ? (
           <>
             <input type="text" value={newLabel} onChange={this.handleLabelChange} />
