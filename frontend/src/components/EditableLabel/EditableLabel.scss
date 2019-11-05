@@ -2,6 +2,9 @@
   i.fa-pencil {
     color: #0f428a;
     margin-left: 2px;
+    .dark-mode & {
+      color: #5e7fac;
+    }
   }
   i.fa-check {
     color: #009900;
