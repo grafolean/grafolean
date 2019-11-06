@@ -126,11 +126,26 @@ class _DashboardView extends React.Component {
       else return <div>Could not fetch data - please try again.</div>;
     }
 
+    const canAddDashboard = havePermission(
+      `accounts/${accountId}/dashboards/${dashboardSlug}`,
+      'POST',
+      user.permissions,
+    );
+    const canEditDashboardTitle = havePermission(
+      `accounts/${accountId}/dashboards/${dashboardSlug}`,
+      'PUT',
+      user.permissions,
+    );
     return (
       <div>
         <div className="frame dashboard-info">
           <span>
-            Dashboard: <EditableLabel label={this.state.name} onChange={this.setDashboardName} />
+            Dashboard:{' '}
+            <EditableLabel
+              label={this.state.name}
+              onChange={this.setDashboardName}
+              isEditable={canEditDashboardTitle}
+            />
           </span>
           {loading && <Loading overlayParent={true} />}
         </div>
@@ -172,7 +187,7 @@ class _DashboardView extends React.Component {
           </div>
         )}
 
-        {havePermission(`accounts/${accountId}/dashboards/${dashboardSlug}`, 'POST', user.permissions) && (
+        {canAddDashboard && (
           <div className="frame">
             {!this.state.newWidgetFormOpened ? (
               <div>
