@@ -108,12 +108,24 @@ header {
 
       &.error {
         background-color: #ffeeee;
+        .dark-mode & {
+          background-color: initial;
+          border-color: #801212;
+        }
       }
       &.warning {
         background-color: #ffeedd;
+        .dark-mode & {
+          background-color: initial;
+          border-color: #f90;
+        }
       }
       &.info {
         background-color: #ddffdd;
+        .dark-mode & {
+          background-color: initial;
+          border-color: #2b9f4e;
+        }
       }
 
       i.fa-close {

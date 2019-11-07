@@ -197,7 +197,7 @@ class _DashboardView extends React.Component {
               </div>
             ) : (
               <div>
-                <Button onClick={this.handleHideNewWidgetForm}>
+                <Button className="red" onClick={this.handleHideNewWidgetForm}>
                   <i className="fa fa-minus" /> cancel
                 </Button>
                 <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
