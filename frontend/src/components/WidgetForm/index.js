@@ -35,7 +35,7 @@ class WidgetForm extends React.Component {
     this.state = {
       loading: this.props.widgetId ? true : false,
       errorFetching: false,
-      widgetType: this.props.widgetId ? null : WIDGET_TYPES[0].type,
+      widgetType: null,
       widgetName: '',
       widgetContent: null,
     };
@@ -151,7 +151,8 @@ class WidgetForm extends React.Component {
       return <div>Error fetching data.</div>;
     }
 
-    const WidgetTypeForm = WIDGET_TYPES.find(wt => wt.type === widgetType).form;
+    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === widgetType);
+    const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.form : null;
     return (
       <div className="widget-form">
         <form>
@@ -172,11 +173,17 @@ class WidgetForm extends React.Component {
             </div>
           )}
 
-          <div className="widget-type-form">
-            <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
-          </div>
+          {WidgetTypeForm && (
+            <div className="widget-type-form">
+              <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
+            </div>
+          )}
 
-          <Button isLoading={submitting} onClick={this.handleSubmit} disabled={widgetName.length === 0}>
+          <Button
+            isLoading={submitting}
+            onClick={this.handleSubmit}
+            disabled={!selectedWidgetType || widgetName.length === 0}
+          >
             Submit
           </Button>
         </form>
