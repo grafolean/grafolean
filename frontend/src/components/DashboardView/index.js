@@ -188,7 +188,7 @@ class _DashboardView extends React.Component {
         )}
 
         {canAddDashboard && (
-          <div className="frame">
+          <div className="frame" style={{ marginBottom: 300 }}>
             {!this.state.newWidgetFormOpened ? (
               <div>
                 <Button onClick={this.handleShowNewWidgetForm}>
