@@ -146,7 +146,7 @@ export default class ChartForm extends React.Component {
           {this.state.seriesGroups.map((sg, sgIndex) => (
             <div className="serie" key={sgIndex}>
               <div className="form-item">
-                <div style={{ display: 'flex', flexDirection: 'row' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
                   <div
                     style={{
                       display: 'flex',
@@ -177,15 +177,6 @@ export default class ChartForm extends React.Component {
                         to display the whole path instead.
                       </p>
                     </div>
-                    <div className="field">
-                      <label>Expression for modifying values:</label>
-                      <input
-                        type="text"
-                        value={sg.expression}
-                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'expression', ev.target.value)}
-                      />
-                      <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
-                    </div>
                   </div>
 
                   <MatchingPaths
@@ -193,6 +184,16 @@ export default class ChartForm extends React.Component {
                     pathRenamer={sg.pathRenamer}
                     displayPaths={true}
                   />
+                </div>
+
+                <div className="field">
+                  <label>Expression for modifying values:</label>
+                  <input
+                    type="text"
+                    value={sg.expression}
+                    onChange={ev => this.setSeriesGroupProperty(sgIndex, 'expression', ev.target.value)}
+                  />
+                  <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
                 </div>
               </div>
 

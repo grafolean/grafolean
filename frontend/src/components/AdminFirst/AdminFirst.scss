@@ -7,6 +7,9 @@ div.admin_first {
   div.info {
     color: #222;
     margin-bottom: 20px;
+    width: 250px;
+    max-width: 90vw;
+    min-width: 150px;
 
     strong {
       font-style: italic;
