@@ -106,6 +106,10 @@ a.button, button, a.button:visited {
   }
   &.disabled {
     color: #ccc;
+    .dark-mode & {
+      color: #555;
+      border-color: #777;
+    }
   }
 
   & > i.fa {
