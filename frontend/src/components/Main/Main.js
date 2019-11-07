@@ -4,7 +4,7 @@ import { withRouter } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, ROOT_URL, setColorScheme } from '../../store/actions';
+import { fetchBackendStatus, ROOT_URL } from '../../store/actions';
 
 import AdminFirst from '../AdminFirst';
 import AdminMigrateDB from '../AdminMigrateDB';
@@ -60,7 +60,8 @@ class Main extends React.Component {
     this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
   };
   mqlPrefersDarkModeChanged = () => {
-    store.dispatch(setColorScheme(this.mqlPrefersDarkMode.matches ? 'dark' : 'light'));
+    // this would set preferred color mode depending on user's settings:
+    // store.dispatch(setColorScheme(this.mqlPrefersDarkMode.matches ? 'dark' : 'light'));
   };
 
   onBurgerClick = event => {

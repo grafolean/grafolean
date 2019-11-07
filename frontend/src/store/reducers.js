@@ -69,7 +69,7 @@ function accounts(state = {}, action) {
   }
 }
 
-function preferences(state = {}, action) {
+function preferences(state = { colorScheme: 'dark' }, action) {
   switch (action.type) {
     case SET_COLOR_SCHEME:
       return {
