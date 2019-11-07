@@ -5,6 +5,8 @@ import { generateSerieColor } from '../utils';
 import isDockable from './isDockable';
 import MultiSelect from '../../../MultiSelect/MultiSelect';
 
+import './index.scss';
+
 class _Legend extends React.Component {
   static defaultProps = {
     width: 200,

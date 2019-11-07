@@ -14,13 +14,13 @@ body {
 p, span, div, button, a, pre, label {
   font-family: sans-serif;
   font-size: 14px;
-  color: #000;
+  color: #222;
   .dark-mode & {
     color: #ccccdd;
   }
 }
 label, .label {
-  color: #444455;
+  color: #222;
   .dark-mode & {
     color: #ccccdd;
   }
