@@ -31,6 +31,15 @@
   max-height: 100px;
   overflow: auto;
 
+  .dark-mode & {
+    background-color: #222;
+    border: 1px solid #777;
+    color: #222;
+    * {
+      color: #ccc;
+    }
+  }
+
   .info {
     font-style: italic;
   }
