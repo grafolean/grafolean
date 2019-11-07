@@ -16,8 +16,8 @@ import '../form.scss';
 import './widgetForm.scss';
 
 const WIDGET_TYPES = [
-  { type: 'chart', label: 'chart', form: ChartForm },
-  { type: 'lastvalue', label: 'last value', form: LastValueForm },
+  { type: 'chart', icon: 'area-chart', label: 'chart', form: ChartForm },
+  { type: 'lastvalue', icon: 'thermometer-half', label: 'last value', form: LastValueForm },
 ];
 
 class WidgetForm extends React.Component {
@@ -163,13 +163,12 @@ class WidgetForm extends React.Component {
           {!lockWidgetType && (
             <div className="field">
               <label>Type:</label>
-              <select onChange={ev => this.setState({ widgetType: ev.target.value })} value={widgetType}>
-                {WIDGET_TYPES.map(wt => (
-                  <option key={wt.type} value={wt.type}>
-                    {wt.label}
-                  </option>
-                ))}
-              </select>
+              {WIDGET_TYPES.map(wt => (
+                <i
+                  className={`fa fa-${wt.icon} widget-type ${widgetType === wt.type && 'selected'}`}
+                  onClick={ev => this.setState({ widgetType: wt.type })}
+                />
+              ))}
             </div>
           )}
 

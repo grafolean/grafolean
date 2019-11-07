@@ -1,5 +1,16 @@
 .widget-form {
   form {
     margin-top: 20px;
+
+    i.fa.widget-type {
+      padding: 20px 20px 10px;
+      font-size: 30px;
+      margin-bottom: 10px;
+
+      &.selected {
+        border-bottom: 4px solid #444;
+      }
+    }
+
   }
 }
