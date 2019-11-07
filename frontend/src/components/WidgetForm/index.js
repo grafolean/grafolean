@@ -175,7 +175,7 @@ class WidgetForm extends React.Component {
           )}
 
           {WidgetTypeForm && (
-            <div className="widget-type-form">
+            <div className="widget-type-form nested-field">
               <WidgetTypeForm onChange={this.handleFormContentChange} initialFormContent={widgetContent} />
             </div>
           )}

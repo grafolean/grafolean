@@ -12,5 +12,13 @@
       }
     }
 
+    .widget-type-form {
+      padding-left: 25px;
+
+      input {
+        height: 20;
+        min-width: 300;
+      }
+    }
   }
 }
