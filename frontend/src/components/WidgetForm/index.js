@@ -166,6 +166,7 @@ class WidgetForm extends React.Component {
               <label>Type:</label>
               {WIDGET_TYPES.map(wt => (
                 <i
+                  key={wt.type}
                   className={`fa fa-${wt.icon} widget-type ${widgetType === wt.type && 'selected'}`}
                   onClick={ev => this.setState({ widgetType: wt.type })}
                 />
