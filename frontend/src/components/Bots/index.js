@@ -82,11 +82,11 @@ export default class Bots extends React.PureComponent {
           </div>
         )}
 
-        <p>
+        <div className="p">
           Bot <i>"{bot.name}"</i> is a SNMP bot / collector. It needs to be installed on a server which will
           have access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean
           via HTTP(S) port.
-        </p>
+        </div>
         <div className="p">
           The installation instructions are available on{' '}
           <a href="https://gitlab.com/grafolean/grafolean-collector-snmp">Grafolean SNMP collector</a> Git
@@ -113,11 +113,15 @@ $ docker-compose up -d
               </pre>
             </li>
           </ol>
-          The assumptions are:
-          <ul>
-            <li>required software is already installed (curl, docker, docker-compose), and</li>
-            <li>all the devices which will be monitored are reachable from this machine.</li>
-          </ul>
+        </div>
+        <div className="p">
+          If installation was successful, you should see the updated "Last successful login" time for this bot
+          in a few minutes. Congratulations, now you can configure Entities (since this is SNMP: devices),
+          their Credentials and Sensors.
+        </div>
+        <div className="p">
+          If not, the best place to start is the logs:{' '}
+          <span className="pre">docker logs -f grafolean-collector-snmp</span>.
         </div>
       </HelpSnippet>
     );
