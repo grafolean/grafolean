@@ -31,6 +31,9 @@
       padding: 20px 50px;
       display: flex;
       flex-direction: column;
+      .dark-mode & {
+        border-left: 1px solid #555;
+      }
 
       .field {
         margin-bottom: 10px;
