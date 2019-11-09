@@ -38,8 +38,8 @@ class AdminMigrateDB extends React.Component {
         <form>
           <div>
             <i className="fa fa-exclamation-triangle" /> The database{' '}
-            {backendStatus.db_version === 0 ? 'is empty and should be created' : 'must be upgraded'} before
-            doing anything else.
+            {backendStatus.db_version === 0 ? 'is empty and must be initialized' : 'must be upgraded'} before
+            we can proceed.
           </div>
           <Button onClick={this.handleSubmit}>
             {backendStatus.db_version === 0 ? 'Create DB' : 'Upgrade DB'}

@@ -1,23 +1,27 @@
-html, body, #root {
+html, body, #root, #theme {
   height: 100%;
 }
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+}
+#theme {
   background-color: #fff;
-
   &.dark-mode {
-    background-color: #000;
+    background-color: #131313;
   }
 }
-p, span, div, button, a, pre, label {
+p, div.p, span, div, button, a, pre, label {
   font-family: sans-serif;
   font-size: 14px;
   color: #222;
   .dark-mode & {
     color: #ccccdd;
   }
+}
+p, div.p {
+  margin: 12px 0;
 }
 label, .label {
   color: #222;

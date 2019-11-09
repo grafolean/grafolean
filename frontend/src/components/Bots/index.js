@@ -58,9 +58,10 @@ export default class Bots extends React.PureComponent {
   };
 
   renderSnmpBotHelp(bot) {
-    const backendUrlIsWrong =
-      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://127.0.0.1') ||
-      process.env.REACT_APP_BACKEND_ROOT_URL.includes('://localhost');
+    const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
+    const backendUrlIsLocalhost =
+      backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
+    const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
     return (
       <HelpSnippet
         title={
@@ -69,12 +70,24 @@ export default class Bots extends React.PureComponent {
           </>
         }
       >
-        <p>
+        {backendUrlIsLocalhost && (
+          <div className="p warning">
+            <i className="fa fa-exclamation-triangle" />
+            <b>IMPORTANT:</b> the example URLs below are incorrect. Since browser is accessing backend via
+            {backendUrlHostnameInPre}, we can't know how SNMP Collector will be able to access it. However it
+            will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on the same
+            machine (because SNMP Collector runs inside the container). In other words, please change the URLs
+            appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP address), otherwise
+            the bot will <b>not be able to connect</b>.
+          </div>
+        )}
+
+        <div className="p">
           Bot <i>"{bot.name}"</i> is a SNMP bot / collector. It needs to be installed on a server which will
           have access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean
           via HTTP(S) port.
-        </p>
-        <p>
+        </div>
+        <div className="p">
           The installation instructions are available on{' '}
           <a href="https://gitlab.com/grafolean/grafolean-collector-snmp">Grafolean SNMP collector</a> Git
           repository, but in short:
@@ -85,16 +98,6 @@ export default class Bots extends React.PureComponent {
                 {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
 {"alive": true, ...`}
               </pre>
-              {backendUrlIsWrong && (
-                <p>
-                  <i className="fa fa-exclamation-triangle" />
-                  <b>IMPORTANT:</b> the example URL is incorrect. SNMP collector is running inside a Docker
-                  container, which means that <span class="pre">127.0.0.1</span> and{' '}
-                  <span class="pre">localhost</span> resolve to the container itself, not to the address where
-                  Grafolean backend is. Please change the URL appropriately (here and in the next section), or
-                  the bot will <b>not be able to connect</b>.
-                </p>
-              )}
             </li>
 
             <li>
@@ -110,18 +113,26 @@ $ docker-compose up -d
               </pre>
             </li>
           </ol>
-          The assumptions are:
-          <ul>
-            <li>required software is already installed (curl, docker, docker-compose), and</li>
-            <li>all the devices which will be monitored are reacheable from this machine.</li>
-          </ul>
-        </p>
+        </div>
+        <div className="p">
+          If installation was successful, you should see the updated "Last successful login" time for this bot
+          in a few minutes. Congratulations, now you can configure Entities (since this is SNMP: devices),
+          their Credentials and Sensors.
+        </div>
+        <div className="p">
+          If not, the best place to start is the logs:{' '}
+          <span className="pre">docker logs -f grafolean-collector-snmp</span>.
+        </div>
       </HelpSnippet>
     );
   }
 
   renderCustomBotHelp(bot) {
     const accountId = this.props.match.params.accountId;
+    const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
+    const backendUrlIsLocalhost =
+      backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
+    const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
     return (
       <HelpSnippet
         title={
@@ -130,22 +141,32 @@ $ docker-compose up -d
           </>
         }
       >
-        <p>
+        {backendUrlIsLocalhost && (
+          <div className="p warning">
+            <i className="fa fa-exclamation-triangle" />
+            <b>IMPORTANT:</b> the example URLs below might be incorrect. Since browser is accessing backend
+            via {backendUrlHostnameInPre}, we can't know how the bot will be able to access it. In other
+            words, please change the URLs appropriately (replace {backendUrlHostnameInPre} with externally
+            domain or IP address), otherwise the bot might not be able to connect.
+          </div>
+        )}
+
+        <div className="p">
           Bot <i>"{bot.name}"</i> is a "custom" bot, which means that it is <strong>not</strong> configured
           via Grafolean UI. Instead, it should simply periodically send data to Grafolean. Usually this is
           done with <a href="https://en.wikipedia.org/wiki/Cron">cron</a> jobs, but you can use any other
           scheduler / platform / script / programming language - we are using regular HTTP(S) API to receive
           values.
-        </p>
-        <p>
+        </div>
+        <div className="p">
           Sending values using current time uses <i>POST</i> method:
           <pre>
             {String.raw`$ curl \
   -X POST \
   '${ROOT_URL}/accounts/${accountId}/values/?p=myhouse.livingroom.humidity&v=57.3&b=${bot.token}'`}
           </pre>
-        </p>
-        <p>
+        </div>
+        <div className="p">
           Sending more values at once is also possible:
           <pre>
             {String.raw`$ curl \
@@ -154,17 +175,17 @@ $ docker-compose up -d
   -d '[ { "p": "myhouse.livingroom.humidity", "v": 57.3 }, { "p": "myhouse.livingroom.temperature.kelvin", "v": 293.2 } ]' \
   '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
           </pre>
-        </p>
-        <p>
+        </div>
+        <div className="p">
           For sending historical data you must use <i>PUT</i> method and specify the time explicitly:
           <pre>
             {String.raw`$ curl \
-  -X POST \
+  -X PUT \
   -H 'Content-Type: application/json' \
   -d '[ { "p": "myhouse.livingroom.humidity", "v": 57.3, "t": 1234567890.012345 }, { "p": "myhouse.livingroom.humidity", "v": 57.2, "t": 1234567899 } ]' \
   '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
           </pre>
-        </p>
+        </div>
       </HelpSnippet>
     );
   }
@@ -172,9 +193,9 @@ $ docker-compose up -d
   renderAboutBots() {
     return (
       <HelpSnippet icon="info-circle" title="About bots">
-        <p>
+        <div className="p">
           <b>Bots</b> are external scripts and applications that send values to Grafolean.
-        </p>
+        </div>
       </HelpSnippet>
     );
   }

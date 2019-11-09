@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
@@ -30,14 +29,10 @@ class Main extends React.Component {
     windowHeight: 0,
   };
   mqlWidthOver800px = window.matchMedia('(min-width: 800px)');
-  mqlPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 
   componentDidMount() {
     this.mqlWidthOver800px.addListener(this.mqlWidthOver800pxChanged);
     this.mqlWidthOver800pxChanged();
-
-    this.mqlPrefersDarkMode.addListener(this.mqlPrefersDarkModeChanged);
-    this.mqlPrefersDarkModeChanged();
 
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
@@ -58,10 +53,6 @@ class Main extends React.Component {
 
   mqlWidthOver800pxChanged = () => {
     this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
-  };
-  mqlPrefersDarkModeChanged = () => {
-    // this would set preferred color mode depending on user's settings:
-    // store.dispatch(setColorScheme(this.mqlPrefersDarkMode.matches ? 'dark' : 'light'));
   };
 
   onBurgerClick = event => {
@@ -175,5 +166,4 @@ const mapBackendStatusToProps = store => ({
   loggedIn: Boolean(store.user),
   isDarkMode: store.preferences.colorScheme === 'dark',
 });
-// withRouter is needed to force re-rendering of this component when URL changes:
-export default withRouter(connect(mapBackendStatusToProps)(Main));
+export default connect(mapBackendStatusToProps)(Main);

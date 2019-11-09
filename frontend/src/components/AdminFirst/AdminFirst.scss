@@ -5,11 +5,14 @@ div.admin_first {
   align-items: center;
 
   div.info {
-    color: #222;
     margin-bottom: 20px;
     width: 250px;
     max-width: 90vw;
     min-width: 150px;
+    color: #222;
+    .dark-mode & {
+      color: #bbb;
+    }
 
     strong {
       font-style: italic;
