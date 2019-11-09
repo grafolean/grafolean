@@ -11,13 +11,16 @@ body {
     background-color: #000;
   }
 }
-p, span, div, button, a, pre, label {
+p, div.p, span, div, button, a, pre, label {
   font-family: sans-serif;
   font-size: 14px;
   color: #222;
   .dark-mode & {
     color: #ccccdd;
   }
+}
+p, div.p {
+  margin: 12px 0;
 }
 label, .label {
   color: #222;
