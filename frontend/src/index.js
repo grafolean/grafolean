@@ -6,14 +6,13 @@ import '@fortawesome/fontawesome-free/css/all.css';
 import '@fortawesome/fontawesome-free/css/v4-shims.css';
 
 import './index.scss';
-import Main from './components/Main/Main';
-// import registerServiceWorker from './registerServiceWorker';
+import ThemedMain from './components/Main/ThemedMain';
 import store from './store';
 
 ReactDOM.render(
   <Provider store={store}>
     <BrowserRouter>
-      <Main />
+      <ThemedMain />
     </BrowserRouter>
   </Provider>,
   document.getElementById('root'),

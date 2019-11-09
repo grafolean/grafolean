@@ -30,14 +30,10 @@ class Main extends React.Component {
     windowHeight: 0,
   };
   mqlWidthOver800px = window.matchMedia('(min-width: 800px)');
-  mqlPrefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)');
 
   componentDidMount() {
     this.mqlWidthOver800px.addListener(this.mqlWidthOver800pxChanged);
     this.mqlWidthOver800pxChanged();
-
-    this.mqlPrefersDarkMode.addListener(this.mqlPrefersDarkModeChanged);
-    this.mqlPrefersDarkModeChanged();
 
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
@@ -58,10 +54,6 @@ class Main extends React.Component {
 
   mqlWidthOver800pxChanged = () => {
     this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
-  };
-  mqlPrefersDarkModeChanged = () => {
-    // this would set preferred color mode depending on user's settings:
-    // store.dispatch(setColorScheme(this.mqlPrefersDarkMode.matches ? 'dark' : 'light'));
   };
 
   onBurgerClick = event => {
