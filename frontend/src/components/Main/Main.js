@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
@@ -167,5 +166,4 @@ const mapBackendStatusToProps = store => ({
   loggedIn: Boolean(store.user),
   isDarkMode: store.preferences.colorScheme === 'dark',
 });
-// withRouter is needed to force re-rendering of this component when URL changes:
-export default withRouter(connect(mapBackendStatusToProps)(Main));
+export default connect(mapBackendStatusToProps)(Main);

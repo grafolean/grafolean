@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { withRouter } from 'react-router-dom';
 
 import Main from './Main';
 
@@ -17,4 +18,5 @@ class ThemedMain extends React.Component {
 const mapDarkModeToProps = store => ({
   isDarkMode: store.preferences.colorScheme === 'dark',
 });
-export default connect(mapDarkModeToProps)(ThemedMain);
+// withRouter is needed to force re-rendering of this component when URL changes:
+export default withRouter(connect(mapDarkModeToProps)(ThemedMain));
