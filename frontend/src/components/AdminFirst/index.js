@@ -1,9 +1,10 @@
 import React from 'react';
 
-import './AdminFirst.scss';
-import Button from '../Button';
 import { ROOT_URL, onSuccess, fetchBackendStatus } from '../../store/actions';
 import store from '../../store';
+import Button from '../Button';
+
+import './AdminFirst.scss';
 
 class AdminFirst extends React.Component {
   formValues = {};

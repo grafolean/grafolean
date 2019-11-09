@@ -10,18 +10,26 @@
 
 .help-snippet {
   pre {
+    font-family: 'Courier New', Courier, monospace;
     border: 1px solid #ddd;
     padding: 10px;
     border-radius: 5px;
-    background-color: #fafafa;
     overflow-x: auto;
+    background-color: #fafafa;
+    .dark-mode & {
+      background-color: initial;
+    }
   }
   span.pre {
+    font-family: 'Courier New', Courier, monospace;
     border: 1px solid #ddd;
     margin: 0 5px;
-    padding: 1px 5px;
+    padding: 1px 5px 0;
     border-radius: 5px;
     background-color: #fafafa;
-    font-family: 'Courier New', Courier, monospace;
+    .dark-mode & {
+      background-color: initial;
+      border-color: #777;
+    }
   }
 }
