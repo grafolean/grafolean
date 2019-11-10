@@ -153,7 +153,7 @@ $ docker-compose up -d
             <b>IMPORTANT:</b> the example URLs below might be incorrect. Since browser is accessing backend
             via {backendUrlHostnameInPre}, we can't know how the bot will be able to access it. In other
             words, please change the URLs appropriately (replace {backendUrlHostnameInPre} with externally
-            domain or IP address), otherwise the bot might not be able to connect.
+            accessible domain or IP address), otherwise the bot might not be able to connect.
           </div>
         )}
 
