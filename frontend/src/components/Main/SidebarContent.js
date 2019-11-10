@@ -42,14 +42,14 @@ class SidebarContent extends React.Component {
 
         {user && havePermission('admin/persons', 'GET', user.permissions) && (
           <Link className="button green" to="/users" onClick={onSidebarLinkClick}>
-            <i className="fa fa-users" /> Users
+            <i className="fa fa-fw fa-users" /> Users
           </Link>
         )}
         <Link className="button green" to="/changelog">
-          <i className="fa fa-list" /> Changelog
+          <i className="fa fa-fw fa-list" /> Changelog
         </Link>
         <Link className="button green" to="/profile" onClick={onSidebarLinkClick}>
-          <i className="fa fa-user" /> Profile
+          <i className="fa fa-fw fa-user" /> Profile
         </Link>
         <div className="bottom">
           <VersionInfo />
@@ -95,7 +95,7 @@ class _AccountSidebarContent extends React.Component {
             to={`/accounts/${accountId}/dashboards`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-dashboard" /> Dashboards
+            <i className="fa fa-fw fa-dashboard" /> Dashboards
           </Link>
         )}
 
@@ -105,12 +105,12 @@ class _AccountSidebarContent extends React.Component {
             to={`/accounts/${accountId}/bots`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-robot" /> Bots
+            <i className="fa fa-fw fa-robot" /> Bots
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
           <Link className="button green" to={`/accounts/${accountId}/entities`} onClick={onSidebarLinkClick}>
-            <i className="fa fa-cube" /> Monitored entities
+            <i className="fa fa-fw fa-cube" /> Monitored entities
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/credentials`, 'GET', user.permissions) && (
@@ -119,12 +119,12 @@ class _AccountSidebarContent extends React.Component {
             to={`/accounts/${accountId}/credentials`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-key" /> Credentials
+            <i className="fa fa-fw fa-key" /> Credentials
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/sensors`, 'GET', user.permissions) && (
           <Link className="button green" to={`/accounts/${accountId}/sensors`} onClick={onSidebarLinkClick}>
-            <i className="fa fa-thermometer" /> Sensors
+            <i className="fa fa-fw fa-thermometer" /> Sensors
           </Link>
         )}
       </>
@@ -138,7 +138,7 @@ class DefaultSidebarContent extends React.Component {
     const { onSidebarLinkClick } = this.props;
     return (
       <Link className="button green" to="/" onClick={onSidebarLinkClick}>
-        <i className="fa fa-dashboard" /> Accounts
+        <i className="fa fa-fw fa-dashboard" /> Accounts
       </Link>
     );
   }
