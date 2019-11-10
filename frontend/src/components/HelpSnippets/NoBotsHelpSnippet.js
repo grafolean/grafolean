@@ -1,9 +1,9 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, withRouter } from 'react-router-dom';
 
 import HelpSnippet from './HelpSnippet';
 
-export default class NoBotsHelpSnippet extends React.PureComponent {
+class NoBotsHelpSnippet extends React.PureComponent {
   render() {
     const accountId = this.props.match.params.accountId;
     return (
@@ -18,3 +18,5 @@ export default class NoBotsHelpSnippet extends React.PureComponent {
     );
   }
 }
+
+export default withRouter(NoBotsHelpSnippet);
