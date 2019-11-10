@@ -4,17 +4,18 @@ import moment from 'moment';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-
 import { fetchAuth } from '../../utils/fetch';
+import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
-import '../form.scss';
-import './bots.scss';
 import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
 import LinkButton from '../LinkButton/LinkButton';
 import HelpSnippet from '../HelpSnippet';
 import When from '../When';
+
+import '../form.scss';
+import './bots.scss';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -29,11 +30,16 @@ export default class Bots extends React.PureComponent {
     fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/`)
       .then(handleFetchErrors)
       .then(response => response.json())
-      .then(json =>
+      .then(json => {
+        // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
+        const bots = json.list.map(bot => ({
+          ...bot,
+          protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+        }));
         this.setState({
-          bots: json.list,
-        }),
-      )
+          bots: bots,
+        });
+      })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
@@ -227,7 +233,7 @@ $ docker-compose up -d
                   {bots.map(bot => (
                     <tr key={bot.id}>
                       <td>{bot.name}</td>
-                      <td>{bot.protocol || 'custom'}</td>
+                      <td>{bot.protocol ? bot.protocol.label : 'custom'}</td>
                       <td>
                         <BotToken token={bot.token} />
                       </td>
