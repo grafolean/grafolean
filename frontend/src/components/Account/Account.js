@@ -48,7 +48,6 @@ class Account extends React.Component {
   renderHelp() {
     const { botsAvailable } = this.state;
     const accountId = this.props.match.params.accountId;
-    const { user } = this.props;
 
     if (botsAvailable === null) {
       return <Loading />;
@@ -59,31 +58,10 @@ class Account extends React.Component {
     }
 
     return (
-      <>
-        {!botsAvailable ? (
-          <>
-            {havePermission(`/accounts/${accountId}/bots`, 'POST', user.permissions) ? (
-              <p>
-                Next step is sending some data to Grafolean. To do that, a "bot" needs to be set up - either
-                To send data to this account, you need to setup at least one{' '}
-                <Link to={`/accounts/${accountId}/bots`}>bot</Link>.
-              </p>
-            ) : (
-              <p>
-                The first step would be to set up bots, but you don't seem to have permissions to do that.
-                Please contact the account admin.
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <p>
-              Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
-              <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
-            </p>
-          </>
-        )}
-      </>
+      <p>
+        Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
+        <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
+      </p>
     );
   }
 

@@ -44,6 +44,7 @@ header {
   }
   a {
     margin: 10px 15px 0;
+    position: relative;
     &.sub {
       margin-left: 40px;
     }
@@ -92,6 +93,24 @@ header {
 
     .dark-mode & {
       color: #ddd;
+    }
+  }
+
+  .fa-stack.notif-red-dot {
+    position: absolute;
+    right: -3px;
+    top: -3px;
+    color: #d95b5b;
+    font-size: 16px;
+    height: initial;
+    line-height: initial;
+    width: 1em;
+
+    .fa.fa-circle {
+      color: #fff;
+      .dark-mode & {
+        color: #161616;
+      }
     }
   }
 }

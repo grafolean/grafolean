@@ -9,6 +9,7 @@ import { doLogout } from '../../store/helpers';
 import Button from '../Button';
 import VersionInfo from './VersionInfo';
 import ColorSchemeSwitch from './ColorSchemeSwitch';
+import SidebarNotificationBadgeNoBots from './SidebarNotificationBadges/SidebarNotificationBadgeNoBots';
 
 class PassPropsRoute extends React.Component {
   render() {
@@ -106,6 +107,7 @@ class _AccountSidebarContent extends React.Component {
             onClick={onSidebarLinkClick}
           >
             <i className="fa fa-fw fa-robot" /> Bots
+            <SidebarNotificationBadgeNoBots />
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
