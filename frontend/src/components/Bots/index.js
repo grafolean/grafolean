@@ -11,7 +11,7 @@ import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
 import LinkButton from '../LinkButton/LinkButton';
-import HelpSnippet from '../HelpSnippet';
+import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import When from '../When';
 
 import '../form.scss';
