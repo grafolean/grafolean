@@ -52,7 +52,6 @@ class Account extends React.Component {
         <p>
           <b>Bots</b> are external scripts and applications that send values to Grafolean.
         </p>
-        <p>To use them, they need to be configured first:</p>
         <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
           <i className="fa fa-plus" /> Add a bot
         </Link>
