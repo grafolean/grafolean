@@ -1,7 +1,8 @@
 import flask
 import json
-import psycopg2
 import time
+import re
+import psycopg2
 import validators
 
 from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
@@ -9,6 +10,20 @@ from .common import auth_no_permissions, mqtt_publish_changed
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
+
+
+@accounts_api.before_request
+def accounts_before_request():
+    # If bot has successfully logged in (and retrieved the list of its accounts), we should
+    # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
+    # show/hide notification badges based on it:
+    if flask.g.grafolean_data['user_is_bot']:
+        m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
+        if m:
+            account_id = m.groups()[0]
+            mqtt_publish_changed([
+                'accounts/{account_id}/bots'.format(account_id=account_id),
+            ])
 
 
 def accounts_apidoc_schemas():
@@ -60,17 +75,6 @@ def accounts_root():
     """
     user_id = flask.g.grafolean_data['user_id']
     accounts = Account.get_list(user_id)
-
-    # If bot has successfully logged in (and retrieved the list of its accounts), we must
-    # publish an MQTT message so that frontend can update 'Last login' field of the bot. This
-    # is not an ideal solution, because it assumes that bot will always hit this endpoint
-    # after login - it would be cleaner if we decorated every '/<account_id/...' endpoint.
-    if flask.g.grafolean_data['user_is_bot']:
-        for account in accounts:
-            mqtt_publish_changed([
-                'accounts/{account_id}/bots'.format(account_id=account["id"]),
-            ])
-
     return json.dumps({'list': accounts}), 200
 
 

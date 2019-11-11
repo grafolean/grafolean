@@ -466,7 +466,6 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-#@pytest.mark.skip(reason="removing aggregated data is not implemented, so this test fails when repeated! Otherwise it works with fresh DB.")
 def test_values_put_many_get_aggr(app_client, admin_authorization_header, account_id):
     """
         Put many values, get aggregated value. Delete path and values.
@@ -1389,6 +1388,36 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual['list'] == []
+
+
+def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_token, mqtt_messages, admin_authorization_header):
+    """
+        Bot sends some data, MQTT message is sent (because last_login was updated).
+    """
+    assert mqtt_messages.empty()
+    data = {
+        'resource_prefix': 'accounts/{}/values/'.format(account_id),
+        'methods': [ 'POST' ],
+    }
+    r = app_client.post('/api/admin/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    mqtt_message = mqtt_messages.get(timeout=3.0)
+    assert mqtt_message.topic == f'changed/admin/persons/{bot_id}'
+    mqtt_message = mqtt_messages.get(timeout=3.0)
+    assert mqtt_message.topic == f'changed/admin/bots/{bot_id}'
+
+    data = [{'p': 'qqqq.wwww', 'v': 111.22}]
+    r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 200
+
+    mqtt_message = mqtt_messages.get(timeout=3.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/bots'
+    mqtt_message = mqtt_messages.get(timeout=3.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
+
+    assert mqtt_messages.empty()
+
 
 
 def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory):
