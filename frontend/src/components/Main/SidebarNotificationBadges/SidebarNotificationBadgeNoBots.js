@@ -5,23 +5,30 @@ import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import SidebarNotificationBadge from './SidebarNotificationBadge';
 
 class SidebarNotificationBadgeNoBots extends React.Component {
+  /*
+    There is something wrong with the bots:
+    - there aren't any
+    - none of them have successfully logged-in yet (ever)
+  */
   state = {
-    botsAvailable: null,
+    bots: null,
   };
 
   onBotsUpdate = json => {
     this.setState({
-      botsAvailable: json.list.length > 0,
+      bots: json.list,
     });
   };
 
   render() {
     const accountId = this.props.match.params.accountId;
-    const { botsAvailable } = this.state;
+    const { bots } = this.state;
+    const botsAvailable = bots && bots.length > 0;
+    const someBotsLoggedIn = bots && bots.filter(b => b.last_login !== null).length > 0;
     return (
       <>
         <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
-        {botsAvailable === false && <SidebarNotificationBadge />}
+        {bots !== null && ((!botsAvailable || !someBotsLoggedIn) && <SidebarNotificationBadge />)}
       </>
     );
   }
