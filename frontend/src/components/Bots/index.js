@@ -17,6 +17,7 @@ import When from '../When';
 
 import '../form.scss';
 import './bots.scss';
+import NotificationBadge from '../Main/SidebarNotificationBadges/NotificationBadge';
 
 export default class Bots extends React.PureComponent {
   state = {
@@ -232,7 +233,10 @@ $ docker-compose up -d
                       <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
                       <td>
                         {bot.last_login === null ? (
-                          'Never'
+                          <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
+                            Never
+                            <NotificationBadge />
+                          </Link>
                         ) : (
                           <>
                             {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (

@@ -2,7 +2,7 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
-import SidebarNotificationBadge from './SidebarNotificationBadge';
+import NotificationBadge from './NotificationBadge';
 
 class SidebarNotificationBadgeNoBots extends React.Component {
   /*
@@ -28,7 +28,7 @@ class SidebarNotificationBadgeNoBots extends React.Component {
     return (
       <>
         <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
-        {bots !== null && ((!botsAvailable || !someBotsLoggedIn) && <SidebarNotificationBadge />)}
+        {bots !== null && ((!botsAvailable || !someBotsLoggedIn) && <NotificationBadge />)}
       </>
     );
   }

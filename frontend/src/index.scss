@@ -186,3 +186,15 @@ table.list {
     border: 1px solid #333333;
   }
 }
+
+.fa-stack.notif-red-dot {
+  color: #d95b5b;
+  font-size: 16px;
+
+  .fa.fa-circle {
+    color: #fff;
+    .dark-mode & {
+      color: #161616;
+    }
+  }
+}

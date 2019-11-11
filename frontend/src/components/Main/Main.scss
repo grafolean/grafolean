@@ -100,19 +100,10 @@ header {
     position: absolute;
     right: -3px;
     top: -3px;
-    color: #d95b5b;
-    font-size: 16px;
     height: initial;
     line-height: initial;
     width: 1em;
-
-    .fa.fa-circle {
-      color: #fff;
-      .dark-mode & {
-        color: #161616;
-      }
     }
-  }
 }
 
 .notifications {

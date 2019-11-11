@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default class SidebarNotificationBadge extends React.Component {
+export default class NotificationBadge extends React.Component {
   render() {
     return (
       <span className="fa-stack notif-red-dot">
