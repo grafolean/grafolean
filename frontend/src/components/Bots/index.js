@@ -272,7 +272,7 @@ $ docker-compose up -d
 
         {helpBot ? (
           <>
-            {helpBot.protocol === 'snmp' && this.renderSnmpBotHelp(helpBot)}
+            {helpBot.protocol && helpBot.protocol.slug === 'snmp' && this.renderSnmpBotHelp(helpBot)}
             {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
           </>
         ) : (
