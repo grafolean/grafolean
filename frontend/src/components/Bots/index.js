@@ -5,6 +5,7 @@ import moment from 'moment';
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
 import Loading from '../Loading';
@@ -22,25 +23,15 @@ export default class Bots extends React.PureComponent {
     bots: null,
   };
 
-  componentDidMount() {
-    this.fetchBots();
-  }
-
-  fetchBots = () => {
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/`)
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json => {
-        // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
-        const bots = json.list.map(bot => ({
-          ...bot,
-          protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
-        }));
-        this.setState({
-          bots: bots,
-        });
-      })
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+  onBotsUpdate = json => {
+    // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
+    const bots = json.list.map(bot => ({
+      ...bot,
+      protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+    }));
+    this.setState({
+      bots: bots,
+    });
   };
 
   handleDelete = (ev, botId) => {
@@ -214,6 +205,7 @@ $ docker-compose up -d
     return (
       <>
         <div className="bots frame">
+          <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
           {bots === null ? (
             <Loading />
           ) : (

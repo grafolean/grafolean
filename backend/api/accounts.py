@@ -59,8 +59,19 @@ def accounts_root():
                           "$ref": '#/definitions/AccountGET'
     """
     user_id = flask.g.grafolean_data['user_id']
-    rec = Account.get_list(user_id)
-    return json.dumps({'list': rec}), 200
+    accounts = Account.get_list(user_id)
+
+    # If bot has successfully logged in (and retrieved the list of its accounts), we must
+    # publish an MQTT message so that frontend can update 'Last login' field of the bot. This
+    # is not an ideal solution, because it assumes that bot will always hit this endpoint
+    # after login - it would be cleaner if we decorated every '/<account_id/...' endpoint.
+    if flask.g.grafolean_data['user_is_bot']:
+        for account in accounts:
+            mqtt_publish_changed([
+                'accounts/{account_id}/bots'.format(account_id=account["id"]),
+            ])
+
+    return json.dumps({'list': accounts}), 200
 
 
 @accounts_api.route('/<string:account_id>', methods=['GET', 'PUT'])
