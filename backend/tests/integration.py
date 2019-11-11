@@ -817,6 +817,7 @@ def test_bots_crud(app_client, admin_authorization_header):
                 'protocol': None,
                 'token': token,
                 'insert_time': actual['list'][0]['insert_time'],
+                'last_login': None,
             },
         ],
     }
@@ -1356,6 +1357,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
         'id': account_bot_id,
         'token': actual['list'][0]['token'],
         'insert_time': actual['list'][0]['insert_time'],
+        'last_login': None
     }
     assert len(actual['list']) == 1
     assert actual['list'][0] == expected
