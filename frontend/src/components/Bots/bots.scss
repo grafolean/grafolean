@@ -22,19 +22,19 @@
   }
   span.pre {
     font-family: 'Courier New', Courier, monospace;
-    border: 1px solid #ddd;
-    margin: 0 3px;
-    padding: 1px 5px 0;
-    border-radius: 5px;
-    background-color: #fafafa;
+    margin: 0 1px;
+    padding: 1px 4px 0;
+    border-radius: 3px;
+    background-color: #ddd;
     .dark-mode & {
-      background-color: initial;
+      background-color: #333;
       border-color: #777;
     }
   }
   .warning {
-    border: 1px solid #777;
+    border: 1px solid #f60;
     padding: 8px 10px;
     border-radius: 5px;
+    margin: 20px 0;
   }
 }
