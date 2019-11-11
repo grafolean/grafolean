@@ -104,8 +104,8 @@ export default class Bots extends React.PureComponent {
                 {String.raw`$ mkdir ~/snmpcollector
 $ cd ~/snmpcollector
 $ curl https://gitlab.com/grafolean/grafolean-collector-snmp/raw/master/docker-compose.yml -o docker-compose.yml
-$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL} > .env
-$ echo "BOT_TOKEN=${bot.token} >> .env
+$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL}" > .env
+$ echo "BOT_TOKEN=${bot.token}" >> .env
 $ docker-compose up -d
 `}
               </pre>
