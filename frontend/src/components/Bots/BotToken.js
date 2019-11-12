@@ -16,7 +16,7 @@ export default class BotToken extends React.PureComponent {
     const { token } = this.props;
     return (
       <div className="bot-token">
-        <i className={`fa fa-eye${showToken ? '-slash' : ''}`} onClick={this.toggleShowToken} />
+        <i className={`fa fa-eye${showToken ? '-slash' : ''} fa-fw`} onClick={this.toggleShowToken} />
         {showToken ? token : '*'.repeat(12)}
       </div>
     );
