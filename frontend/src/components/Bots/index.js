@@ -114,12 +114,82 @@ $ docker-compose up -d
         </div>
         <div className="p">
           If installation was successful, you should see the updated "Last successful login" time for this bot
-          in a few minutes. Congratulations, now you can configure Entities (since this is SNMP: devices),
-          their Credentials and Sensors.
+          in a few minutes. Congratulations, now you can configure Entities (devices), their Credentials and
+          Sensors.
         </div>
         <div className="p">
           If not, the best place to start is the logs:{' '}
           <span className="pre">docker logs -f grafolean-collector-snmp</span>.
+        </div>
+      </HelpSnippet>
+    );
+  }
+
+  renderPingBotHelp(bot) {
+    const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
+    const backendUrlIsLocalhost =
+      backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
+    const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
+    return (
+      <HelpSnippet
+        title={
+          <>
+            How to send values using <b>"{bot.name}"</b> ICMP Ping bot
+          </>
+        }
+      >
+        {backendUrlIsLocalhost && (
+          <div className="p warning">
+            <i className="fa fa-exclamation-triangle" />
+            <b>IMPORTANT:</b> the example URLs below are incorrect. Since browser is accessing backend via
+            {backendUrlHostnameInPre}, we can't know how ICMP Ping Collector will be able to access it.
+            However it will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on
+            the same machine (because ICMP Ping Collector runs inside the container). In other words, please
+            change the URLs appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP
+            address), otherwise the bot will <b>not be able to connect</b>.
+          </div>
+        )}
+
+        <div className="p">
+          Bot <i>"{bot.name}"</i> is a ICMP Ping bot / collector. It needs to be installed on a server which
+          will have access to all the devices it needs to monitor, and it needs to be able to connect to
+          Grafolean via HTTP(S) port.
+        </div>
+        <div className="p">
+          The installation instructions are available on{' '}
+          <a href="https://gitlab.com/grafolean/grafolean-collector-ping">Grafolean ICMP Ping collector</a>{' '}
+          Git repository, but in short:
+          <ol>
+            <li>
+              check that backend is reachable:
+              <pre>
+                {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
+{"alive": true, ...`}
+              </pre>
+            </li>
+
+            <li>
+              install ICMP Ping collector:
+              <pre>
+                {String.raw`$ mkdir ~/pingcollector
+$ cd ~/pingcollector
+$ curl https://gitlab.com/grafolean/grafolean-collector-ping/raw/master/docker-compose.yml -o docker-compose.yml
+$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL}" > .env
+$ echo "BOT_TOKEN=${bot.token}" >> .env
+$ docker-compose up -d
+`}
+              </pre>
+            </li>
+          </ol>
+        </div>
+        <div className="p">
+          If installation was successful, you should see the updated "Last successful login" time for this bot
+          in a few minutes. Congratulations, now you can configure Entities (devices), their Credentials and
+          Sensors.
+        </div>
+        <div className="p">
+          If not, the best place to start is the logs:{' '}
+          <span className="pre">docker logs -f grafolean-collector-ping</span>.
         </div>
       </HelpSnippet>
     );
@@ -273,6 +343,7 @@ $ docker-compose up -d
         {helpBot ? (
           <>
             {helpBot.protocol && helpBot.protocol.slug === 'snmp' && this.renderSnmpBotHelp(helpBot)}
+            {helpBot.protocol && helpBot.protocol.slug === 'ping' && this.renderPingBotHelp(helpBot)}
             {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
           </>
         ) : (
