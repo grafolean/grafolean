@@ -12,7 +12,48 @@
       }
     }
   }
+
+  @media screen and (max-width: 1370px) {
+
+    table {
+      border: 0;
+      border-collapse: collapse;
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        display: block;
+        border: 1px solid #999;
+        border-bottom: 3px solid #999;
+        padding: 0 15px;
+        margin-bottom: 30px;
+
+        td {
+          border: 0;
+          border-bottom: 1px solid #999;
+          display: block;
+          text-align: right;
+
+          &[data-label=""] {
+            text-align: center;
+          }
+        }
+        td:before {
+          content: attr(data-label);
+          float: left;
+          font-weight: bold;
+        }
+        td:last-child {
+          border-bottom: 0;
+        }
+      }
+    }
+  }
 }
+
+
 
 .help-snippet {
   pre {

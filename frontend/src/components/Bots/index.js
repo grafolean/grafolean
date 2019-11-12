@@ -55,6 +55,10 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
+  scrollToHelpSnippet = () => {
+    document.getElementById('help-snippet').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  };
+
   renderSnmpBotHelp(bot) {
     const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
     const backendUrlIsLocalhost =
@@ -282,7 +286,7 @@ $ docker-compose up -d
           ) : (
             bots.length > 0 && (
               <table className="list">
-                <tbody>
+                <thead>
                   <tr>
                     <th>Name</th>
                     <th>Type</th>
@@ -294,17 +298,24 @@ $ docker-compose up -d
                     <th />
                     <th />
                   </tr>
+                </thead>
+                <tbody>
                   {bots.map(bot => (
                     <tr key={bot.id}>
-                      <td>{bot.name}</td>
-                      <td>{bot.protocol ? bot.protocol.label : 'custom'}</td>
-                      <td>
+                      <td data-label="Name">{bot.name}</td>
+                      <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
+                      <td data-label="Token">
                         <BotToken token={bot.token} />
                       </td>
-                      <td>{moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}</td>
-                      <td>
+                      <td data-label="Insert time (UTC)">
+                        {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                      </td>
+                      <td data-label="Last successful login (UTC)">
                         {bot.last_login === null ? (
-                          <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
+                          <Link
+                            to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}
+                            onClick={this.scrollToHelpSnippet}
+                          >
                             Never
                             <NotificationBadge />
                           </Link>
@@ -315,21 +326,24 @@ $ docker-compose up -d
                           </>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Stats">
                         <BotStats bot={bot} accountId={accountId} />
                       </td>
-                      <td>
+                      <td data-label="">
                         <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
                           <i className="fa fa-pencil" /> Edit
                         </LinkButton>
                       </td>
-                      <td>
+                      <td data-label="">
                         <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
                           <i className="fa fa-trash" /> Delete
                         </Button>
                       </td>
-                      <td>
-                        <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
+                      <td data-label="">
+                        <Link
+                          to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}
+                          onClick={this.scrollToHelpSnippet}
+                        >
                           <i className="fa fa-info-circle" />
                         </Link>
                       </td>
@@ -345,11 +359,11 @@ $ docker-compose up -d
         </div>
 
         {helpBot ? (
-          <>
+          <div id="help-snippet">
             {helpBot.protocol && helpBot.protocol.slug === 'snmp' && this.renderSnmpBotHelp(helpBot)}
             {helpBot.protocol && helpBot.protocol.slug === 'ping' && this.renderPingBotHelp(helpBot)}
             {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
-          </>
+          </div>
         ) : (
           this.renderAboutBots()
         )}
