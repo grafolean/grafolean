@@ -289,6 +289,7 @@ $ docker-compose up -d
                     <th>Token</th>
                     <th>Insert time (UTC)</th>
                     <th>Last successful login (UTC)</th>
+                    <th>Stats</th>
                     <th />
                     <th />
                     <th />
@@ -313,6 +314,9 @@ $ docker-compose up -d
                             <When t={bot.last_login} />)
                           </>
                         )}
+                      </td>
+                      <td>
+                        <BotStats bot={bot} accountId={accountId} />
                       </td>
                       <td>
                         <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
@@ -350,6 +354,48 @@ $ docker-compose up -d
           this.renderAboutBots()
         )}
       </>
+    );
+  }
+}
+
+class BotStats extends React.Component {
+  state = {
+    entitiesCount: null,
+  };
+
+  onEntitiesUpdate = json => {
+    const { bot } = this.props;
+    const entitiesWithCorrectProtocol = json.list.filter(e => !!e.protocols[bot.protocol.slug]);
+    let sensorsCount = 0;
+    entitiesWithCorrectProtocol.forEach(e => {
+      sensorsCount += e.protocols[bot.protocol.slug].sensors.length;
+    });
+    this.setState({
+      entitiesCount: entitiesWithCorrectProtocol.length,
+      sensorsCount: sensorsCount,
+    });
+  };
+
+  render() {
+    const { bot, accountId } = this.props;
+    const { entitiesCount, sensorsCount } = this.state;
+    return (
+      <div>
+        {bot.protocol ? (
+          <>
+            <PersistentFetcher resource={`accounts/${accountId}/entities`} onUpdate={this.onEntitiesUpdate} />
+            {entitiesCount !== null && (
+              <>
+                Entities: {entitiesCount}
+                <br />
+                Sensors: {sensorsCount}
+              </>
+            )}
+          </>
+        ) : (
+          '/'
+        )}
+      </div>
     );
   }
 }
