@@ -195,80 +195,87 @@ $ docker-compose up -d
     // const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
     return (
       <>
-        <div className="bots frame">
-          <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
-          {bots === null ? (
-            <Loading />
-          ) : (
-            bots.length > 0 && (
-              <table className="list">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Token</th>
-                    <th>Insert time (UTC)</th>
-                    <th>Last successful login (UTC)</th>
-                    <th />
-                    <th />
-                    <th />
+        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
+        {bots === null ? (
+          <Loading />
+        ) : bots.length > 0 ? (
+          <div className="bots frame">
+            <table className="list">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Token</th>
+                  <th>Insert time (UTC)</th>
+                  <th>Last successful login (UTC)</th>
+                  <th />
+                  <th />
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {bots.map(bot => (
+                  <tr key={bot.id}>
+                    <td data-label="Name">
+                      <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                        <i className="fa fa-robot" /> {bot.name}
+                      </Link>
+                    </td>
+                    <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
+                    <td data-label="Token">
+                      <BotToken token={bot.token} />
+                    </td>
+                    <td data-label="Insert time (UTC)">
+                      {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                    </td>
+                    <td data-label="Last successful login (UTC)">
+                      {bot.last_login === null ? (
+                        <>
+                          Never
+                          <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                            <NotificationBadge />
+                          </Link>
+                        </>
+                      ) : (
+                        <>
+                          {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
+                          <When t={bot.last_login} />)
+                        </>
+                      )}
+                    </td>
+                    <td data-label="">
+                      <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
+                        <i className="fa fa-pencil" /> Edit
+                      </LinkButton>
+                    </td>
+                    <td data-label="">
+                      <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
+                        <i className="fa fa-trash" /> Delete
+                      </Button>
+                    </td>
+                    <td data-label="">
+                      <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
+                        <i className="fa fa-info-circle" />
+                      </Link>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {bots.map(bot => (
-                    <tr key={bot.id}>
-                      <td data-label="Name">
-                        <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
-                          <i className="fa fa-robot" /> {bot.name}
-                        </Link>
-                      </td>
-                      <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
-                      <td data-label="Token">
-                        <BotToken token={bot.token} />
-                      </td>
-                      <td data-label="Insert time (UTC)">
-                        {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
-                      </td>
-                      <td data-label="Last successful login (UTC)">
-                        {bot.last_login === null ? (
-                          <>
-                            Never
-                            <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
-                              <NotificationBadge />
-                            </Link>
-                          </>
-                        ) : (
-                          <>
-                            {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
-                            <When t={bot.last_login} />)
-                          </>
-                        )}
-                      </td>
-                      <td data-label="">
-                        <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
-                          <i className="fa fa-pencil" /> Edit
-                        </LinkButton>
-                      </td>
-                      <td data-label="">
-                        <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
-                          <i className="fa fa-trash" /> Delete
-                        </Button>
-                      </td>
-                      <td data-label="">
-                        <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
-                          <i className="fa fa-info-circle" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )
-          )}
-          <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
-            <i className="fa fa-plus" /> Add bot
-          </Link>
-        </div>
+                ))}
+              </tbody>
+            </table>
+            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+              <i className="fa fa-plus" /> Add bot
+            </Link>
+          </div>
+        ) : (
+          <HelpSnippet title="There are no bots (data collectors) yet" className="first-steps">
+            <p>
+              <b>Bots</b> are external scripts and applications that send values to Grafolean.
+            </p>
+            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+              <i className="fa fa-plus" /> Add bot
+            </Link>
+          </HelpSnippet>
+        )}
 
         {/* {helpBot ? (
           <div id="help-snippet">
@@ -276,23 +283,6 @@ $ docker-compose up -d
             {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
           </div>
         ) : ( */}
-        {bots !== null &&
-          (bots.length > 0 ? (
-            <HelpSnippet title="About bots">
-              <div className="p">
-                <b>Bots</b> are external scripts and applications that send values to Grafolean.
-              </div>
-            </HelpSnippet>
-          ) : (
-            <HelpSnippet title="There are no bots (data collectors) yet" className="first-steps">
-              <p>
-                <b>Bots</b> are external scripts and applications that send values to Grafolean.
-              </p>
-              <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
-                <i className="fa fa-plus" /> Add a bot
-              </Link>
-            </HelpSnippet>
-          ))}
       </>
     );
   }
