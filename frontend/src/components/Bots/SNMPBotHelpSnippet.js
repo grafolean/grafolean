@@ -3,7 +3,7 @@ import HelpSnippet from '../HelpSnippets/HelpSnippet';
 
 export default class SNMPBotHelpSnippet extends React.Component {
   renderInstall() {
-    const { bot, page } = this.props;
+    const { bot } = this.props;
     const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
@@ -15,7 +15,8 @@ export default class SNMPBotHelpSnippet extends React.Component {
             INSTRUCTIONS: How to send values using <b>"{bot.name}"</b> SNMP bot
           </>
         }
-        opened={page === 'install'}
+        foldable={true}
+        initiallyOpened={false}
       >
         {backendUrlIsLocalhost && (
           <div className="p warning">
