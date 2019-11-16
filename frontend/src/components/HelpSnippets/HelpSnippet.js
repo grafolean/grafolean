@@ -1,14 +1,25 @@
 import React from 'react';
 
 export default class HelpSnippet extends React.Component {
+  state = {
+    opened: this.props.initiallyOpened !== undefined ? this.props.initiallyOpened : true,
+  }
+
+  toggleOpened = () => {
+    this.setState(prevState => ({
+      opened: !prevState.opened,
+    }));
+  }
+
   render() {
-    const { title, icon = 'info-circle' } = this.props;
+    const { title } = this.props;
+    const { opened } = this.state;
     return (
       <div className="help-snippet frame">
-        <h1>
-          <i className={`fa fa-${icon}`} /> {title}
+        <h1 onClick={this.toggleOpened}>
+          <i className={`fa ${opened ? 'fa-chevron-down' : 'fa-chevron-right'}`} /> {title}
         </h1>
-        {this.props.children}
+        {opened && this.props.children}
       </div>
     );
   }

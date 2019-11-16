@@ -7,7 +7,7 @@ class NoBotsHelpSnippet extends React.PureComponent {
   render() {
     const accountId = this.props.match.params.accountId;
     return (
-      <HelpSnippet icon="info-circle" title="This account doesn't have any bots configured yet">
+      <HelpSnippet title="This account doesn't have any bots configured yet">
         <p>
           <b>Bots</b> are external scripts and applications that send values to Grafolean.
         </p>
