@@ -11,7 +11,6 @@ import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 import Loading from '../Loading';
 import Button from '../Button';
 import BotToken from './BotToken';
-import LinkButton from '../LinkButton/LinkButton';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import NotificationBadge from '../Main/SidebarNotificationBadges/NotificationBadge';
 import When from '../When';
@@ -210,7 +209,6 @@ $ docker-compose up -d
                   <th>Last successful login (UTC)</th>
                   <th />
                   <th />
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -242,11 +240,6 @@ $ docker-compose up -d
                           <When t={bot.last_login} />)
                         </>
                       )}
-                    </td>
-                    <td data-label="">
-                      <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
-                        <i className="fa fa-pencil" /> Edit
-                      </LinkButton>
                     </td>
                     <td data-label="">
                       <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>

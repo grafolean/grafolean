@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
@@ -8,6 +9,9 @@ import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import SNMPBotHelpSnippet from '../Bots/SNMPBotHelpSnippet';
 
 import './Bot.scss';
+import { havePermission, fetchAuth } from '../../utils/fetch';
+import EditableLabel from '../EditableLabel';
+import { handleFetchErrors, ROOT_URL } from '../../store/actions';
 
 class Bot extends React.Component {
   state = {
@@ -48,6 +52,23 @@ class Bot extends React.Component {
     });
   };
 
+  setBotName = async name => {
+    const { accountId, botId } = this.props.match.params;
+    const { bot } = this.state;
+    const params = {
+      name: name,
+      protocol: bot.protocol,
+    };
+    fetchAuth(`${ROOT_URL}/accounts/${accountId}/bots/${botId}`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+      body: JSON.stringify(params),
+    }).then(handleFetchErrors);
+  };
+
   render() {
     const { accountId, botId } = this.props.match.params;
     const {
@@ -58,6 +79,8 @@ class Bot extends React.Component {
       sensorsCount,
       credentialsWithCorrectProtocolCount,
     } = this.state;
+    const { user } = this.props;
+    const canEditBotName = havePermission(`accounts/${accountId}/bots/${botId}`, 'PUT', user.permissions);
     return (
       <>
         <PersistentFetcher resource={`accounts/${accountId}/bots/${botId}`} onUpdate={this.onBotUpdate} />
@@ -73,7 +96,7 @@ class Bot extends React.Component {
             />
             <div className="frame">
               <span>
-                Bot: {bot.name}, protocol: {protocol ? protocol.label : 'custom'}
+                Bot: <EditableLabel label={bot.name} onChange={this.setBotName} isEditable={canEditBotName} />
               </span>
             </div>
 
@@ -151,4 +174,7 @@ class Bot extends React.Component {
     );
   }
 }
-export default Bot;
+const mapStoreToProps = store => ({
+  user: store.user,
+});
+export default connect(mapStoreToProps)(Bot);

@@ -130,12 +130,6 @@ class Content extends React.PureComponent {
           <WrappedRoute
             exact
             contentWidth={contentWidth}
-            path="/accounts/:accountId/bots/edit/:botId"
-            component={BotForm}
-          />
-          <WrappedRoute
-            exact
-            contentWidth={contentWidth}
             path="/accounts/:accountId/bots/view/:botId"
             component={Bot}
           />
