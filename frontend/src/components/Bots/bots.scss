@@ -55,7 +55,11 @@
 
 
 
-.help-snippet {
+.help-snippet.frame {
+  border: none;
+  border-left: 5px solid #333;
+  border-radius: 0;
+
   pre {
     font-family: 'Courier New', Courier, monospace;
     border: 1px solid #ddd;

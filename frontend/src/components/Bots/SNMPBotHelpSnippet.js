@@ -75,10 +75,6 @@ $ docker-compose up -d
   }
 
   render() {
-    return (
-      <div>
-        {this.renderInstall()}
-      </div>
-    )
+    return <div>{this.renderInstall()}</div>;
   }
 }

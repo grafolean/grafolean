@@ -27,6 +27,7 @@ import SensorForm from '../SensorForm/SensorForm';
 import Entity from '../Entity/Entity';
 import EntityProtocolsForm from '../EntityProtocolsForm/EntityProtocolsForm';
 import Dashboards from '../Dashboards/Dashboards';
+import Bot from '../Bot/Bot';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -131,6 +132,12 @@ class Content extends React.PureComponent {
             contentWidth={contentWidth}
             path="/accounts/:accountId/bots/edit/:botId"
             component={BotForm}
+          />
+          <WrappedRoute
+            exact
+            contentWidth={contentWidth}
+            path="/accounts/:accountId/bots/view/:botId"
+            component={Bot}
           />
           <WrappedRoute
             exact

@@ -14,7 +14,6 @@ import BotToken from './BotToken';
 import LinkButton from '../LinkButton/LinkButton';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import NotificationBadge from '../Main/SidebarNotificationBadges/NotificationBadge';
-import SNMPBotHelpSnippet from './SNMPBotHelpSnippet';
 import When from '../When';
 
 import '../form.scss';
@@ -54,10 +53,6 @@ export default class Bots extends React.PureComponent {
         ),
       )
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
-  };
-
-  scrollToHelpSnippet = () => {
-    document.getElementById('help-snippet').scrollIntoView({ block: 'start', behavior: 'smooth' });
   };
 
   renderPingBotHelp(bot) {
@@ -193,21 +188,11 @@ $ docker-compose up -d
     );
   }
 
-  renderAboutBots() {
-    return (
-      <HelpSnippet title="About bots">
-        <div className="p">
-          <b>Bots</b> are external scripts and applications that send values to Grafolean.
-        </div>
-      </HelpSnippet>
-    );
-  }
-
   render() {
     const { bots } = this.state;
     const accountId = this.props.match.params.accountId;
-    const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
-    const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
+    // const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
+    // const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
     return (
       <>
         <div className="bots frame">
@@ -224,7 +209,6 @@ $ docker-compose up -d
                     <th>Token</th>
                     <th>Insert time (UTC)</th>
                     <th>Last successful login (UTC)</th>
-                    <th>Stats</th>
                     <th />
                     <th />
                     <th />
@@ -233,7 +217,11 @@ $ docker-compose up -d
                 <tbody>
                   {bots.map(bot => (
                     <tr key={bot.id}>
-                      <td data-label="Name">{bot.name}</td>
+                      <td data-label="Name">
+                        <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                          <i className="fa fa-robot" /> {bot.name}
+                        </Link>
+                      </td>
                       <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
                       <td data-label="Token">
                         <BotToken token={bot.token} />
@@ -243,22 +231,18 @@ $ docker-compose up -d
                       </td>
                       <td data-label="Last successful login (UTC)">
                         {bot.last_login === null ? (
-                          <Link
-                            to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}
-                            onClick={this.scrollToHelpSnippet}
-                          >
+                          <>
                             Never
-                            <NotificationBadge />
-                          </Link>
+                            <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                              <NotificationBadge />
+                            </Link>
+                          </>
                         ) : (
                           <>
                             {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
                             <When t={bot.last_login} />)
                           </>
                         )}
-                      </td>
-                      <td data-label="Stats">
-                        <BotStats bot={bot} accountId={accountId} />
                       </td>
                       <td data-label="">
                         <LinkButton title="Edit" to={`/accounts/${accountId}/bots/edit/${bot.id}`}>
@@ -271,10 +255,7 @@ $ docker-compose up -d
                         </Button>
                       </td>
                       <td data-label="">
-                        <Link
-                          to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}
-                          onClick={this.scrollToHelpSnippet}
-                        >
+                        <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
                           <i className="fa fa-info-circle" />
                         </Link>
                       </td>
@@ -289,58 +270,30 @@ $ docker-compose up -d
           </Link>
         </div>
 
-        {helpBot ? (
+        {/* {helpBot ? (
           <div id="help-snippet">
-            {helpBot.protocol && helpBot.protocol.slug === 'snmp' && <SNMPBotHelpSnippet bot={helpBot} />}
             {helpBot.protocol && helpBot.protocol.slug === 'ping' && this.renderPingBotHelp(helpBot)}
             {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
           </div>
-        ) : (
-          this.renderAboutBots()
-        )}
+        ) : ( */}
+        {bots !== null &&
+          (bots.length > 0 ? (
+            <HelpSnippet title="About bots">
+              <div className="p">
+                <b>Bots</b> are external scripts and applications that send values to Grafolean.
+              </div>
+            </HelpSnippet>
+          ) : (
+            <HelpSnippet title="There are no bots (data collectors) yet" className="first-steps">
+              <p>
+                <b>Bots</b> are external scripts and applications that send values to Grafolean.
+              </p>
+              <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+                <i className="fa fa-plus" /> Add a bot
+              </Link>
+            </HelpSnippet>
+          ))}
       </>
-    );
-  }
-}
-
-class BotStats extends React.Component {
-  state = {
-    entitiesCount: null,
-  };
-
-  onEntitiesUpdate = json => {
-    const { bot } = this.props;
-    const entitiesWithCorrectProtocol = json.list.filter(e => !!e.protocols[bot.protocol.slug]);
-    let sensorsCount = 0;
-    entitiesWithCorrectProtocol.forEach(e => {
-      sensorsCount += e.protocols[bot.protocol.slug].sensors.length;
-    });
-    this.setState({
-      entitiesCount: entitiesWithCorrectProtocol.length,
-      sensorsCount: sensorsCount,
-    });
-  };
-
-  render() {
-    const { bot, accountId } = this.props;
-    const { entitiesCount, sensorsCount } = this.state;
-    return (
-      <div>
-        {bot.protocol ? (
-          <>
-            <PersistentFetcher resource={`accounts/${accountId}/entities`} onUpdate={this.onEntitiesUpdate} />
-            {entitiesCount !== null && (
-              <>
-                Entities: {entitiesCount}
-                <br />
-                Sensors: {sensorsCount}
-              </>
-            )}
-          </>
-        ) : (
-          '/'
-        )}
-      </div>
     );
   }
 }
