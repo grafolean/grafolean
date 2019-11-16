@@ -7,6 +7,8 @@ import Loading from '../Loading';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import SNMPBotHelpSnippet from '../Bots/SNMPBotHelpSnippet';
 
+import './Bot.scss';
+
 class Bot extends React.Component {
   state = {
     bot: null,
@@ -79,7 +81,8 @@ class Bot extends React.Component {
               <>
                 {bot.last_login === null ? (
                   <HelpSnippet title="The bot is not installed yet" className="first-steps">
-                    <p>Bot wasn't able to access backend yet.</p>
+                    <p>Bot has never (successfully) connected to Grafolean yet.</p>
+                    <hr />
                     <SNMPBotHelpSnippet bot={bot} />
                   </HelpSnippet>
                 ) : entitiesCount === 0 ? (

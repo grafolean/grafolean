@@ -12,7 +12,7 @@ export default class SNMPBotHelpSnippet extends React.Component {
       <HelpSnippet
         title={
           <>
-            How to send values using <b>"{bot.name}"</b> SNMP bot
+            INSTRUCTIONS: How to send values using <b>"{bot.name}"</b> SNMP bot
           </>
         }
         opened={page === 'install'}
@@ -40,7 +40,7 @@ export default class SNMPBotHelpSnippet extends React.Component {
           repository, but in short:
           <ol>
             <li>
-              check that backend is reachable:
+              make sure that backend is reachable:
               <pre>
                 {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
 {"alive": true, ...`}

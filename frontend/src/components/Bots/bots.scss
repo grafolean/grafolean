@@ -5,7 +5,7 @@
         margin-right: 10px;
       }
 
-      .notif-red-dot {
+      .notif-badge-dot {
         margin-top: -10px;
         width: 1.5em;
         font-size: 14px;
@@ -55,13 +55,19 @@
 
 
 
-.help-snippet.frame {
+.help-snippet.frame.first-steps {
   border: none;
-  border-left: 5px solid #333;
+  border-left: 5px solid #9d9c4e;
   border-radius: 0;
+}
 
+.help-snippet.frame {
   & > a.button {
     margin-top: 10px;
+  }
+  & > hr {
+    border: none;
+    border-top: 1px solid #333;
   }
   pre {
     font-family: 'Courier New', Courier, monospace;
