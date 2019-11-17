@@ -1414,6 +1414,8 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
     mqtt_message = mqtt_messages.get(timeout=3.0)
     assert mqtt_message.topic == f'changed/accounts/{account_id}/bots'
     mqtt_message = mqtt_messages.get(timeout=3.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/bots/{bot_id}'
+    mqtt_message = mqtt_messages.get(timeout=3.0)
     assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
 
     assert mqtt_messages.empty()
@@ -1475,6 +1477,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
                 'name': ENTITY_NAME1,
                 'entity_type': 'device',
                 'details': ENTITY_DETAILS1,
+                'protocols': ENTITY_PROTOCOLS1,
             },
         ],
     }
