@@ -21,8 +21,10 @@ def accounts_before_request():
         m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
         if m:
             account_id = m.groups()[0]
+            bot_id = flask.g.grafolean_data['user_id']
             mqtt_publish_changed([
                 'accounts/{account_id}/bots'.format(account_id=account_id),
+                'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
             ])
 
 
@@ -158,6 +160,7 @@ def account_bots(account_id):
         rec = Bot.get(user_id)
         mqtt_publish_changed([
             'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
         ])
         return json.dumps(rec), 201
 
@@ -175,6 +178,11 @@ def account_bot_crud(account_id, user_id):
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
+
+        mqtt_publish_changed([
+            'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
@@ -186,6 +194,7 @@ def account_bot_crud(account_id, user_id):
             return "No such bot", 404
         mqtt_publish_changed([
             'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
         ])
         return "", 204
 

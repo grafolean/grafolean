@@ -1,17 +1,19 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
+import moment from 'moment';
 
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
+import { havePermission, fetchAuth } from '../../utils/fetch';
+import { handleFetchErrors, ROOT_URL } from '../../store/actions';
 import Loading from '../Loading';
+import When from '../When';
+import EditableLabel from '../EditableLabel';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import SNMPBotHelpSnippet from '../Bots/SNMPBotHelpSnippet';
 
 import './Bot.scss';
-import { havePermission, fetchAuth } from '../../utils/fetch';
-import EditableLabel from '../EditableLabel';
-import { handleFetchErrors, ROOT_URL } from '../../store/actions';
 
 class Bot extends React.Component {
   state = {
@@ -156,6 +158,19 @@ class Bot extends React.Component {
 
                 {entitiesCount !== null && (
                   <div className="frame">
+                    Protocol: {protocol.label}
+                    <br />
+                    Last succesful login to this account:{' '}
+                    {bot.last_login === null ? (
+                      'Never'
+                    ) : (
+                      <>
+                        {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (
+                        <When t={bot.last_login} />)
+                      </>
+                    )}
+                    <br />
+                    <br />
                     Entities: {entitiesCount}
                     <br />
                     Credentials for {protocol.label}: {credentialsWithCorrectProtocolCount}
