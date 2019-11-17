@@ -84,6 +84,7 @@ def before_request():
     if not hasattr(view_func, '_noauth'):
         try:
             user_id = None
+            user_is_bot = False
             authorization_header = flask.request.headers.get('Authorization')
             query_params_bot_token = flask.request.args.get('b')
             if authorization_header is not None:
@@ -92,6 +93,7 @@ def before_request():
                 user_id = received_jwt.data['user_id']
             elif query_params_bot_token is not None:
                 user_id = Bot.authenticate_token(query_params_bot_token)
+                user_is_bot = True
 
             if user_id is None:
                 log.info("Authentication failed")
@@ -110,6 +112,7 @@ def before_request():
                     return "Access denied", 401
 
             flask.g.grafolean_data['user_id'] = user_id
+            flask.g.grafolean_data['user_is_bot'] = user_is_bot
         except AuthFailedException:
             log.info("Authentication failed")
             return "Access denied", 401

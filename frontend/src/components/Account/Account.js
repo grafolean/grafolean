@@ -9,7 +9,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import HelpSnippet from '../HelpSnippet';
+import NoBotsHelpSnippet from '../HelpSnippets/NoBotsHelpSnippet';
 
 class Account extends React.Component {
   state = {
@@ -45,59 +45,23 @@ class Account extends React.Component {
     });
   };
 
-  renderNoBotsHelp() {
-    const accountId = this.props.match.params.accountId;
-    return (
-      <HelpSnippet icon="info-circle" title="This account doesn't have any bots configured yet">
-        <p>
-          <b>Bots</b> are external scripts and applications that send values to Grafolean.
-        </p>
-        <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
-          <i className="fa fa-plus" /> Add a bot
-        </Link>
-      </HelpSnippet>
-    );
-  }
-
   renderHelp() {
     const { botsAvailable } = this.state;
     const accountId = this.props.match.params.accountId;
-    const { user } = this.props;
 
     if (botsAvailable === null) {
       return <Loading />;
     }
 
     if (!botsAvailable) {
-      return this.renderNoBotsHelp();
+      return <NoBotsHelpSnippet />;
     }
 
     return (
-      <>
-        {!botsAvailable ? (
-          <>
-            {havePermission(`/accounts/${accountId}/bots`, 'POST', user.permissions) ? (
-              <p>
-                Next step is sending some data to Grafolean. To do that, a "bot" needs to be set up - either
-                To send data to this account, you need to setup at least one{' '}
-                <Link to={`/accounts/${accountId}/bots`}>bot</Link>.
-              </p>
-            ) : (
-              <p>
-                The first step would be to set up bots, but you don't seem to have permissions to do that.
-                Please contact the account admin.
-              </p>
-            )}
-          </>
-        ) : (
-          <>
-            <p>
-              Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
-              <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
-            </p>
-          </>
-        )}
-      </>
+      <p>
+        Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
+        <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
+      </p>
     );
   }
 

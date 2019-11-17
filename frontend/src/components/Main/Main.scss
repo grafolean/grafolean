@@ -44,11 +44,15 @@ header {
   }
   a {
     margin: 10px 15px 0;
+    position: relative;
     &.sub {
       margin-left: 40px;
     }
     &.space-before {
       margin-top: 20px;
+    }
+    i.fa {
+      width: 1.2em;
     }
   }
   .bottom {
@@ -91,6 +95,15 @@ header {
       color: #ddd;
     }
   }
+
+  .fa-stack.notif-badge-dot {
+    position: absolute;
+    right: -3px;
+    top: -3px;
+    height: initial;
+    line-height: initial;
+    width: 1em;
+    }
 }
 
 .notifications {

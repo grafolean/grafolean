@@ -63,3 +63,4 @@ services:
 
 networks:
   grafoleandev:
+    name: grafolean

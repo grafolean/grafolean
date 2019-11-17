@@ -1054,15 +1054,34 @@ class Entity(object):
 
     @staticmethod
     def get_list(account_id):
-        with db.cursor() as c:
+        with db.cursor() as c, db.cursor() as c2:
             ret = []
             c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
             for entity_id, name, entity_type, details in c:
+
+                # get protocols and sensors too: (when we are accessing /entities/, we will follow up with separate entity details requests anyway)
+                protocols = {}
+                c2.execute('SELECT c.id, c.protocol FROM entities_credentials ec, credentials c WHERE ec.entity = %s AND ec.credential = c.id AND c.account = %s;', (entity_id, account_id))
+                for credential_id, protocol in c2:
+                    protocols[protocol] = {
+                        'credential': credential_id,
+                        'sensors': [],
+                    }
+                c2.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
+                for sensor_id, protocol, interval in c2:
+                    if protocol not in protocols:
+                        continue  # this might happen, depending on how we implement POST, PUT and DELETE methods... better safe than sorry.
+                    protocols[protocol]['sensors'].append({
+                        'sensor': sensor_id,
+                        'interval': interval,
+                    })
+
                 ret.append({
                     'id': entity_id,
                     'name': name,
                     'entity_type': entity_type,
                     'details': details,
+                    'protocols': protocols,
                 })
             return ret
 

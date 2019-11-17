@@ -73,8 +73,14 @@ class Breadcrumbs extends React.Component {
           render={props => <BreadcrumbItem label="Add new bot" match={props.match} />}
         />
         <Route
-          path="/accounts/:accountId/bots/edit/:botId"
-          render={props => <BreadcrumbItem label="Edit bot" match={props.match} />}
+          path="/accounts/:accountId/bots/view/:botId"
+          render={props => (
+            <FetchedLabelBreadcrumbItem
+              recordId={props.match.params.botId}
+              resource={`accounts/${props.match.params.accountId}/bots/${props.match.params.botId}`}
+              match={props.match}
+            />
+          )}
         />
         <Route
           path="/accounts/:accountId/entities"

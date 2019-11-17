@@ -1,7 +1,8 @@
 import flask
 import json
-import psycopg2
 import time
+import re
+import psycopg2
 import validators
 
 from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
@@ -9,6 +10,22 @@ from .common import auth_no_permissions, mqtt_publish_changed
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
+
+
+@accounts_api.before_request
+def accounts_before_request():
+    # If bot has successfully logged in (and retrieved the list of its accounts), we should
+    # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
+    # show/hide notification badges based on it:
+    if flask.g.grafolean_data['user_is_bot']:
+        m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
+        if m:
+            account_id = m.groups()[0]
+            bot_id = flask.g.grafolean_data['user_id']
+            mqtt_publish_changed([
+                'accounts/{account_id}/bots'.format(account_id=account_id),
+                'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
+            ])
 
 
 def accounts_apidoc_schemas():
@@ -59,8 +76,8 @@ def accounts_root():
                           "$ref": '#/definitions/AccountGET'
     """
     user_id = flask.g.grafolean_data['user_id']
-    rec = Account.get_list(user_id)
-    return json.dumps({'list': rec}), 200
+    accounts = Account.get_list(user_id)
+    return json.dumps({'list': accounts}), 200
 
 
 @accounts_api.route('/<string:account_id>', methods=['GET', 'PUT'])
@@ -141,6 +158,10 @@ def account_bots(account_id):
         bot = Bot.forge_from_input(flask.request, force_account=account_id)
         user_id, _ = bot.insert()
         rec = Bot.get(user_id)
+        mqtt_publish_changed([
+            'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+        ])
         return json.dumps(rec), 201
 
 
@@ -157,6 +178,11 @@ def account_bot_crud(account_id, user_id):
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
+
+        mqtt_publish_changed([
+            'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
@@ -166,6 +192,10 @@ def account_bot_crud(account_id, user_id):
         rowcount = Bot.delete(user_id, force_account=account_id)
         if not rowcount:
             return "No such bot", 404
+        mqtt_publish_changed([
+            'accounts/{account_id}/bots'.format(account_id=account_id),
+            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+        ])
         return "", 204
 
 

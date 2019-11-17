@@ -53,7 +53,7 @@ h1 {
   margin: 0;
 
   .dark-mode & {
-    color: #efefef;
+    color: #ddd;
   }
 }
 
@@ -184,5 +184,17 @@ table.list {
   .dark-mode & {
     background-color: #161616;
     border: 1px solid #333333;
+  }
+}
+
+.fa-stack.notif-badge-dot {
+  color: #e8e55b;
+  font-size: 16px;
+
+  .fa.fa-circle {
+    color: #fff;
+    .dark-mode & {
+      color: #161616;
+    }
   }
 }
