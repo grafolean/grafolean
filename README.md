@@ -3,6 +3,8 @@
 Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses
 PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on Linux PC (and probably elsewhere).
 
+![screenshot](doc/screenshot-dark.png)
+
 Project priorities are:
 - correctness and security
 - usability (UX)
