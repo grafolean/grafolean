@@ -4,7 +4,7 @@ import moment from 'moment';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { fetchAuth } from '../../utils/fetch';
+import { fetchAuth, backendHostname } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
@@ -55,7 +55,7 @@ export default class Bots extends React.PureComponent {
   };
 
   renderPingBotHelp(bot) {
-    const backendUrlHostname = new URL(ROOT_URL).hostname;
+    const backendUrlHostname = backendHostname();
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
     const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
@@ -126,7 +126,7 @@ $ docker-compose up -d
 
   renderCustomBotHelp(bot) {
     const accountId = this.props.match.params.accountId;
-    const backendUrlHostname = new URL(ROOT_URL).hostname;
+    const backendUrlHostname = backendHostname();
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
     const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;

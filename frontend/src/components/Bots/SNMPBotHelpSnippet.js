@@ -1,11 +1,12 @@
 import React from 'react';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import { ROOT_URL } from '../../store/actions';
+import { backendHostname } from '../../utils/fetch';
 
 export default class SNMPBotHelpSnippet extends React.Component {
   renderInstall() {
     const { bot } = this.props;
-    const backendUrlHostname = new URL(ROOT_URL).hostname;
+    const backendUrlHostname = backendHostname();
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
     const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;

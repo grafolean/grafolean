@@ -1,5 +1,6 @@
 import { doLogout } from '../../store/helpers';
 import { getValidJwtToken } from '../auth';
+import { ROOT_URL } from '../../store/actions';
 
 const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   if (!authHeader) {
@@ -43,4 +44,14 @@ export const havePermission = (resource, method, permissions) => {
     }
   }
   return false;
+};
+
+export const backendHostname = () => {
+  let hostname;
+  try {
+    hostname = new URL(ROOT_URL).hostname;
+  } catch (e) {
+    hostname = window.location.hostname;
+  }
+  return hostname;
 };
