@@ -55,7 +55,7 @@ export default class Bots extends React.PureComponent {
   };
 
   renderPingBotHelp(bot) {
-    const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
+    const backendUrlHostname = new URL(ROOT_URL).hostname;
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
     const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
@@ -92,7 +92,7 @@ export default class Bots extends React.PureComponent {
             <li>
               make sure that backend is reachable:
               <pre>
-                {String.raw`$ curl ${process.env.REACT_APP_BACKEND_ROOT_URL}/status/info
+                {String.raw`$ curl ${ROOT_URL}/status/info
 {"alive": true, ...`}
               </pre>
             </li>
@@ -103,7 +103,7 @@ export default class Bots extends React.PureComponent {
                 {String.raw`$ mkdir ~/pingcollector
 $ cd ~/pingcollector
 $ curl https://gitlab.com/grafolean/grafolean-collector-ping/raw/master/docker-compose.yml -o docker-compose.yml
-$ echo "BACKEND_URL=${process.env.REACT_APP_BACKEND_ROOT_URL}" > .env
+$ echo "BACKEND_URL=${ROOT_URL}" > .env
 $ echo "BOT_TOKEN=${bot.token}" >> .env
 $ docker-compose up -d
 `}
@@ -126,7 +126,7 @@ $ docker-compose up -d
 
   renderCustomBotHelp(bot) {
     const accountId = this.props.match.params.accountId;
-    const backendUrlHostname = new URL(process.env.REACT_APP_BACKEND_ROOT_URL).hostname;
+    const backendUrlHostname = new URL(ROOT_URL).hostname;
     const backendUrlIsLocalhost =
       backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
     const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
