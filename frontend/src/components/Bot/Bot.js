@@ -12,6 +12,7 @@ import When from '../When';
 import EditableLabel from '../EditableLabel';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import SNMPBotHelpSnippet from '../Bots/SNMPBotHelpSnippet';
+import PingBotHelpSnippet from '../Bots/PingBotHelpSnippet';
 
 import './Bot.scss';
 
@@ -108,7 +109,8 @@ class Bot extends React.Component {
                   <HelpSnippet title="The bot is not installed yet" className="first-steps">
                     <p>Bot has never (successfully) connected to Grafolean yet.</p>
                     <hr />
-                    <SNMPBotHelpSnippet bot={bot} />
+                    {protocol.slug === 'snmp' && <SNMPBotHelpSnippet bot={bot} />}
+                    {protocol.slug === 'ping' && <PingBotHelpSnippet bot={bot} />}
                   </HelpSnippet>
                 ) : entitiesCount === 0 ? (
                   <HelpSnippet title="There are no entities (devices) yet" className="first-steps">
