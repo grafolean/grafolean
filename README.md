@@ -1,17 +1,8 @@
 # About Grafolean
 
-Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses
-PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes. Being also packaged as Docker image, it is very easy to install on Linux PC (and probably elsewhere).
+Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes.
 
 ![screenshot](doc/screenshot-dark.png)
-
-Project priorities are:
-- correctness and security
-- usability (UX)
-- maintainability
-- performance
-
-Feel free to create an [issue](https://gitlab.com/grafolean/grafolean/issues) if you encounter a problem.
 
 [^1]: though running any software that writes to SD card is in general not a good idea due to SD cards' reliability issues (especially on power failure)
 
@@ -42,16 +33,15 @@ All the services necessary can be run with a few simple steps:
     - optional but recommended: DB admin credentials, and
     - optional: the path where the DB data will be saved locally (`/grafolean/db/` by default).
 3) run: `docker-compose up -d`
-4) point your browser to http://localhost/ (or other appropriate URL) and follow post-installation instructions
+4) point your browser to http://<IP or domain>/ and follow any further instructions
+
+See [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for details on how to setup HTTPS.
 
 ## Upgrade
 
 1) `docker-compose pull`
-2) `docker-compose down && sleep 1 && docker-compose up -d`
-
-## HTTPS
-
-See [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for details on how to setup HTTPS.
+2) `docker-compose down`
+3) `docker-compose up -d`
 
 # How to use
 
