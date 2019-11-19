@@ -55,7 +55,7 @@ class CredentialsFormRender extends React.Component {
           />
         </div>
         <div className="field">
-          <label>Monitored credentials type:</label>
+          <label>Protocol:</label>
           <select
             value={protocol}
             name="protocol"
