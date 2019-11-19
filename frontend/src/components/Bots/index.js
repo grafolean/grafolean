@@ -4,7 +4,7 @@ import moment from 'moment';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { fetchAuth, backendHostname } from '../../utils/fetch';
+import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
@@ -53,139 +53,6 @@ export default class Bots extends React.PureComponent {
       )
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
-
-  renderPingBotHelp(bot) {
-    const backendUrlHostname = backendHostname();
-    const backendUrlIsLocalhost =
-      backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
-    const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
-    return (
-      <HelpSnippet
-        title={
-          <>
-            How to send values using <b>"{bot.name}"</b> ICMP Ping bot
-          </>
-        }
-      >
-        {backendUrlIsLocalhost && (
-          <div className="p warning">
-            <i className="fa fa-exclamation-triangle" />
-            <b>IMPORTANT:</b> the example URLs below are incorrect. Since browser is accessing backend via
-            {backendUrlHostnameInPre}, we can't know how ICMP Ping Collector will be able to access it.
-            However it will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on
-            the same machine (because ICMP Ping Collector runs inside the container). In other words, please
-            change the URLs appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP
-            address), otherwise the bot will <b>not be able to connect</b>.
-          </div>
-        )}
-
-        <div className="p">
-          Bot <i>"{bot.name}"</i> is a ICMP Ping bot / collector. It needs to be installed on a server which
-          will have access to all the devices it needs to monitor, and it needs to be able to connect to
-          Grafolean via HTTP(S) port.
-        </div>
-        <div className="p">
-          The installation instructions are available on{' '}
-          <a href="https://gitlab.com/grafolean/grafolean-collector-ping">Grafolean ICMP Ping collector</a>{' '}
-          Git repository, but in short:
-          <ol>
-            <li>
-              make sure that backend is reachable:
-              <pre>
-                {String.raw`$ curl ${ROOT_URL}/status/info
-{"alive": true, ...`}
-              </pre>
-            </li>
-
-            <li>
-              install ICMP Ping collector:
-              <pre>
-                {String.raw`$ mkdir ~/pingcollector
-$ cd ~/pingcollector
-$ curl https://gitlab.com/grafolean/grafolean-collector-ping/raw/master/docker-compose.yml -o docker-compose.yml
-$ echo "BACKEND_URL=${ROOT_URL}" > .env
-$ echo "BOT_TOKEN=${bot.token}" >> .env
-$ docker-compose up -d
-`}
-              </pre>
-            </li>
-          </ol>
-        </div>
-        <div className="p">
-          If installation was successful, you should see the updated "Last successful login" time for this bot
-          in a few minutes. Congratulations, now you can configure Entities (devices), their Credentials and
-          Sensors.
-        </div>
-        <div className="p">
-          If not, the best place to start is the logs:{' '}
-          <span className="pre">docker logs -f grafolean-collector-ping</span>.
-        </div>
-      </HelpSnippet>
-    );
-  }
-
-  renderCustomBotHelp(bot) {
-    const accountId = this.props.match.params.accountId;
-    const backendUrlHostname = backendHostname();
-    const backendUrlIsLocalhost =
-      backendUrlHostname === 'localhost' || backendUrlHostname.match(/^127[.]0[.]0[.][0-9]{1,3}$/);
-    const backendUrlHostnameInPre = <span className="pre">{backendUrlHostname}</span>;
-    return (
-      <HelpSnippet
-        title={
-          <>
-            How to send values using <b>"{bot.name}"</b> custom bot
-          </>
-        }
-      >
-        {backendUrlIsLocalhost && (
-          <div className="p warning">
-            <i className="fa fa-exclamation-triangle" />
-            <b>IMPORTANT:</b> the example URLs below might be incorrect. Since browser is accessing backend
-            via {backendUrlHostnameInPre}, we can't know how the bot will be able to access it. In other
-            words, please change the URLs appropriately (replace {backendUrlHostnameInPre} with externally
-            accessible domain or IP address), otherwise the bot might not be able to connect.
-          </div>
-        )}
-
-        <div className="p">
-          Bot <i>"{bot.name}"</i> is a "custom" bot, which means that it is <strong>not</strong> configured
-          via Grafolean UI. Instead, it should simply periodically send data to Grafolean. Usually this is
-          done with <a href="https://en.wikipedia.org/wiki/Cron">cron</a> jobs, but you can use any other
-          scheduler / platform / script / programming language - we are using regular HTTP(S) API to receive
-          values.
-        </div>
-        <div className="p">
-          Sending values using current time uses <i>POST</i> method:
-          <pre>
-            {String.raw`$ curl \
-  -X POST \
-  '${ROOT_URL}/accounts/${accountId}/values/?p=myhouse.livingroom.humidity&v=57.3&b=${bot.token}'`}
-          </pre>
-        </div>
-        <div className="p">
-          Sending more values at once is also possible:
-          <pre>
-            {String.raw`$ curl \
-  -X POST \
-  -H 'Content-Type: application/json' \
-  -d '[ { "p": "myhouse.livingroom.humidity", "v": 57.3 }, { "p": "myhouse.livingroom.temperature.kelvin", "v": 293.2 } ]' \
-  '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
-          </pre>
-        </div>
-        <div className="p">
-          For sending historical data you must use <i>PUT</i> method and specify the time explicitly:
-          <pre>
-            {String.raw`$ curl \
-  -X PUT \
-  -H 'Content-Type: application/json' \
-  -d '[ { "p": "myhouse.livingroom.humidity", "v": 57.3, "t": 1234567890.012345 }, { "p": "myhouse.livingroom.humidity", "v": 57.2, "t": 1234567899 } ]' \
-  '${ROOT_URL}/accounts/${accountId}/values/?b=${bot.token}'`}
-          </pre>
-        </div>
-      </HelpSnippet>
-    );
-  }
 
   render() {
     const { bots } = this.state;
@@ -269,13 +136,6 @@ $ docker-compose up -d
             </Link>
           </HelpSnippet>
         )}
-
-        {/* {helpBot ? (
-          <div id="help-snippet">
-            {helpBot.protocol && helpBot.protocol.slug === 'ping' && this.renderPingBotHelp(helpBot)}
-            {!helpBot.protocol && this.renderCustomBotHelp(helpBot)}
-          </div>
-        ) : ( */}
       </>
     );
   }
