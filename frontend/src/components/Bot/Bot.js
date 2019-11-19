@@ -23,7 +23,7 @@ class Bot extends React.Component {
     entitiesCount: null,
     entitiesWithCorrectProtocolCount: null,
     sensorsCount: null,
-    credentials: null,
+    credentialsWithCorrectProtocolCount: null,
   };
 
   onBotUpdate = json => {
@@ -51,7 +51,7 @@ class Bot extends React.Component {
   onCredentialsUpdate = json => {
     const { bot } = this.state;
     this.setState({
-      credentialsWithCorrectProtocolCount: json.list.map(c => c.protocol === bot.protocol).length,
+      credentialsWithCorrectProtocolCount: json.list.filter(c => c.protocol === bot.protocol).length,
     });
   };
 
