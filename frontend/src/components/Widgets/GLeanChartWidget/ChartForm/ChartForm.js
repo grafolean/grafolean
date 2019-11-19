@@ -142,7 +142,7 @@ export default class ChartForm extends React.Component {
     return (
       <div className="chart-form">
         <div className="field">
-          <label>Series definitions:</label>
+          <label>Chart series:</label>
           {this.state.seriesGroups.map((sg, sgIndex) => (
             <div className="serie" key={sgIndex}>
               <div className="form-item">

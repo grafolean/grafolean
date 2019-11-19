@@ -53,15 +53,21 @@ All the services necessary can be run with a few simple steps:
 
 See [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for details on how to setup HTTPS.
 
-# Sending values
+# How to use
 
-To send values to Grafolean, you first need to create a bot account (via UI) and obtain its bot token. Then you can use a regular POST request to send values:
+[Grafolean user guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
+
+## Sending values
+
+To send values to Grafolean with a *custom* bot, you first need to create a bot (via UI) and obtain its token. Then you can use a regular POST request to send values:
 
 ```bash
 $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
 ```
 
 Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
+
+Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean user guide](doc/user-guide.md) for more information.
 
 # Development
 

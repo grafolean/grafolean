@@ -171,7 +171,7 @@ class Bot extends React.Component {
                     <br />
                     Last succesful login to this account:{' '}
                     {bot.last_login === null ? (
-                      'Never'
+                      'never'
                     ) : (
                       <>
                         {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (
