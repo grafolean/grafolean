@@ -13,6 +13,7 @@ import EditableLabel from '../EditableLabel';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import SNMPBotHelpSnippet from '../Bots/SNMPBotHelpSnippet';
 import PingBotHelpSnippet from '../Bots/PingBotHelpSnippet';
+import CustomBotHelpSnippet from '../Bots/CustomBotHelpSnippet';
 
 import './Bot.scss';
 
@@ -103,14 +104,20 @@ class Bot extends React.Component {
               </span>
             </div>
 
-            {protocol && (
+            {bot && (
               <>
                 {bot.last_login === null ? (
                   <HelpSnippet title="The bot is not installed yet" className="first-steps">
                     <p>Bot has never (successfully) connected to Grafolean yet.</p>
                     <hr />
-                    {protocol.slug === 'snmp' && <SNMPBotHelpSnippet bot={bot} />}
-                    {protocol.slug === 'ping' && <PingBotHelpSnippet bot={bot} />}
+                    {bot.protocol === null ? (
+                      <CustomBotHelpSnippet bot={bot} />
+                    ) : (
+                      <>
+                        {protocol.slug === 'snmp' && <SNMPBotHelpSnippet bot={bot} />}
+                        {protocol.slug === 'ping' && <PingBotHelpSnippet bot={bot} />}
+                      </>
+                    )}
                   </HelpSnippet>
                 ) : entitiesCount === 0 ? (
                   <HelpSnippet title="There are no entities (devices) yet" className="first-steps">
@@ -160,7 +167,7 @@ class Bot extends React.Component {
 
                 {entitiesCount !== null && (
                   <div className="frame">
-                    Protocol: {protocol.label}
+                    Protocol: {protocol ? protocol.label : 'custom'}
                     <br />
                     Last succesful login to this account:{' '}
                     {bot.last_login === null ? (
@@ -171,16 +178,20 @@ class Bot extends React.Component {
                         <When t={bot.last_login} />)
                       </>
                     )}
-                    <br />
-                    <br />
-                    Entities: {entitiesCount}
-                    <br />
-                    Credentials for {protocol.label}: {credentialsWithCorrectProtocolCount}
-                    <br />
-                    Entities that have credentials for {protocol.label} enabled:{' '}
-                    {entitiesWithCorrectProtocolCount}
-                    <br />
-                    Total number of sensors enabled on these entities: {sensorsCount}
+                    {protocol && (
+                      <>
+                        <br />
+                        <br />
+                        Entities: {entitiesCount}
+                        <br />
+                        Credentials for {protocol.label}: {credentialsWithCorrectProtocolCount}
+                        <br />
+                        Entities that have credentials for {protocol.label} enabled:{' '}
+                        {entitiesWithCorrectProtocolCount}
+                        <br />
+                        Total number of sensors enabled on these entities: {sensorsCount}
+                      </>
+                    )}
                   </div>
                 )}
               </>
