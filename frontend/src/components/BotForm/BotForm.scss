@@ -1,0 +1,12 @@
+span.protocol-choice {
+  display: inline-block;
+  font-size: 20px;
+  padding: 2px 10px 5px;
+  margin: 10px;
+  cursor: pointer;
+
+  &.chosen {
+    border-bottom: 4px solid #777;
+    color: #ccd;
+  }
+}

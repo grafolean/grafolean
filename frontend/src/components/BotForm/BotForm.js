@@ -3,6 +3,8 @@ import BotFormRender from './BotFormRender';
 import { fetchAuth } from '../../utils/fetch';
 import { handleFetchErrors, ROOT_URL } from '../../store/actions';
 
+import './BotForm.scss';
+
 class BotForm extends React.Component {
   requestPermission = async (accountId, botId, resourcePrefix, methods) => {
     const responsePermissions = await fetchAuth(

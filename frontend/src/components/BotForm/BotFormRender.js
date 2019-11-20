@@ -16,9 +16,12 @@ class BotFormRender extends React.Component {
 
   handleInputChange = ev => {
     this.props.onInputChangeEvent(ev);
+    this.props.onValidChange(this.areFormValuesValid());
+  };
 
-    const valid = this.areFormValuesValid();
-    this.props.onValidChange(valid);
+  handleProtocolChange = newValue => {
+    this.props.onInputChange('protocol', newValue);
+    this.props.onValidChange(this.areFormValuesValid());
   };
 
   render() {
@@ -32,15 +35,24 @@ class BotFormRender extends React.Component {
           <input type="text" name="name" value={name} onChange={this.handleInputChange} />
         </div>
         <div className="field">
-          <label>Bot type:</label>
-          <select value={protocol} name="protocol" onChange={this.handleInputChange}>
-            <option value="">Custom</option>
-            {SUPPORTED_PROTOCOLS.map(protocol => (
-              <option key={protocol.slug} value={protocol.slug}>
-                {protocol.label}
-              </option>
-            ))}
-          </select>
+          <label>Protocol:</label>
+          <span
+            className={`protocol-choice ${!protocol && 'chosen'}`}
+            value=""
+            onClick={() => this.handleProtocolChange('')}
+          >
+            Custom
+          </span>
+          {SUPPORTED_PROTOCOLS.map(p => (
+            <span
+              key={p.slug}
+              className={`protocol-choice ${p.slug === protocol && 'chosen'}`}
+              value={p.slug}
+              onClick={() => this.handleProtocolChange(p.slug)}
+            >
+              {p.label}
+            </span>
+          ))}
         </div>
       </>
     );
