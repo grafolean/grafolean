@@ -28,9 +28,9 @@ For Ping the sensors are currently "boring", as they only need to be enabled on 
 
 ### Paths
 
-As values are being collected and sent to Grafolean, they must somehow carry the information wbout *what* the measured value represents. Grafolean uses a concept of **paths** to mark the context of every value. For example, path *entity.1234567.snmp.network.eth-1.ifoctets-in* could mark that inbound traffic on "eth-1" network interface on entity with ID "1234567" is being measured.
+As values are being collected and sent to Grafolean, they must somehow carry the information about *what* the measured value represents. Grafolean uses a concept of **paths** to mark the context of every value. For example, path *entity.1234567.snmp.network.eth-1.ifoctets-in* could mark that inbound traffic on "eth-1" network interface on entity with ID "1234567" is being measured.
 
-SNMP and Ping bots do enforce the leading part of the paths, but in general, it is up to the user to create a meaningful representation of the data. The paths should include any labels that might need to be displayed in the legends of the charts (any part between the dots can later be used as part of chart legend label).
+SNMP and Ping bots *do* enforce the leading part of the paths, but in general, it is up to the user to create a meaningful representation of the data. The paths should include any labels that might need to be displayed in the legends of the charts (any part between the dots can later be used as part of chart legend label).
 
 ### Dashboards and widgets
 
