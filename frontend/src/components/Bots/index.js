@@ -75,7 +75,6 @@ export default class Bots extends React.PureComponent {
                   <th>Insert time (UTC)</th>
                   <th>Last successful login (UTC)</th>
                   <th />
-                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -112,11 +111,6 @@ export default class Bots extends React.PureComponent {
                       <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
                         <i className="fa fa-trash" /> Delete
                       </Button>
-                    </td>
-                    <td data-label="">
-                      <Link to={`/accounts/${accountId}/bots/?infoAbout=${bot.id}`}>
-                        <i className="fa fa-info-circle" />
-                      </Link>
                     </td>
                   </tr>
                 ))}

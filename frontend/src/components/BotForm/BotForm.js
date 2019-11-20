@@ -29,7 +29,7 @@ class BotForm extends React.Component {
     const { accountId, botId } = this.props.match.params;
     const editing = Boolean(botId);
     if (editing) {
-      const redirectTo = `/accounts/${accountId}/bots?infoAbout=${botId}`;
+      const redirectTo = `/accounts/${accountId}/bots`;
       return redirectTo;
     }
 
@@ -40,7 +40,7 @@ class BotForm extends React.Component {
     await this.requestPermission(accountId, newId, `accounts/${accountId}/entities`, ['GET']);
     await this.requestPermission(accountId, newId, `accounts/${accountId}/credentials`, ['GET']);
     await this.requestPermission(accountId, newId, `accounts/${accountId}/sensors`, ['GET']);
-    const redirectTo = `/accounts/${accountId}/bots?infoAbout=${newId}`;
+    const redirectTo = `/accounts/${accountId}/bots`;
     return redirectTo;
   };
 
