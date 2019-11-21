@@ -57,8 +57,6 @@ export default class Bots extends React.PureComponent {
   render() {
     const { bots } = this.state;
     const accountId = this.props.match.params.accountId;
-    // const helpBotIdParam = new URLSearchParams(this.props.location.search).get('infoAbout');
-    // const helpBot = bots === null ? null : bots.find(b => b.id === Number(helpBotIdParam));
     return (
       <>
         <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
