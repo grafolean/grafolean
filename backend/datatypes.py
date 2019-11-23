@@ -9,7 +9,12 @@ import re
 from slugify import slugify
 
 from utils import db, log
-from validators import DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs, SensorSchemaInputs
+from validators import (
+    DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT,
+    PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs,
+    BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs, SensorSchemaInputs,
+    PersonChangePasswordSchemaInputsPOST
+)
 from auth import Auth
 
 
@@ -950,9 +955,34 @@ class Person(object):
                 c.execute("UPDATE persons SET username = %s WHERE user_id = %s;", (self.username, self.force_id,))
             if self.email:
                 c.execute("UPDATE persons SET email = %s WHERE user_id = %s;", (str(self.email), self.force_id,))
-            if self.password:
-                pass_hash = Auth.password_hash(self.password)
-                c.execute("UPDATE persons SET passhash = %s WHERE user_id = %s;", (pass_hash, self.force_id,))
+            # changing password is disabled here - it is only allowed through change_password(), which requests the old password too.
+            # if self.password:
+            #     pass_hash = Auth.password_hash(self.password)
+            #     c.execute("UPDATE persons SET passhash = %s WHERE user_id = %s;", (pass_hash, self.force_id,))
+            return c.rowcount
+
+    @staticmethod
+    def change_password(user_id, flask_request):
+        inputs = PersonChangePasswordSchemaInputsPOST(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        old_password = data['old_password']
+        new_password = data['new_password']
+
+        with db.cursor() as c:
+            c.execute("SELECT passhash FROM persons WHERE user_id = %s;", (user_id,))
+            res = c.fetchone()
+            if not res:
+                log.info("No such user")
+                return 0
+            old_passhash, = res
+            if not Auth.is_password_valid(old_password, old_passhash):
+                log.info("Old password does not match")
+                return 0
+
+            new_passhash = Auth.password_hash(new_password)
+            c.execute("UPDATE persons SET passhash = %s WHERE user_id = %s;", (new_passhash, user_id,))
             return c.rowcount
 
     @staticmethod

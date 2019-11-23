@@ -7,8 +7,9 @@ import Button from '../Button';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import { fetchAuth } from '../../utils/fetch';
+import { fetchAuth, havePermission } from '../../utils/fetch';
 import { handleFetchErrors, ROOT_URL } from '../../store/actions';
+import LinkButton from '../LinkButton/LinkButton';
 
 class Profile extends React.Component {
   state = {
@@ -74,8 +75,15 @@ class Profile extends React.Component {
               E-mail: <EditableLabel label={person.email} onChange={this.changeEmail} isEditable={true} />
             </p>
             <hr />
+            <LinkButton
+              to="/profile/change-password"
+              disabled={!havePermission(`persons/${userId}/password`, 'POST')}
+            >
+              <i className="fa fa-fw fa-key" /> Change password
+            </LinkButton>
+            <hr />
             <Button onClick={doLogout}>
-              <i className="fa fa-power-off" /> Logout
+              <i className="fa fa-fw fa-power-off" /> Logout
             </Button>
           </>
         )}

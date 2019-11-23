@@ -68,6 +68,18 @@ class PersonSchemaInputsPUT(Inputs):
     })]
 
 
+class PersonChangePasswordSchemaInputsPOST(Inputs):
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'additionalProperties': False,
+        'properties': {
+            'old_password': {'type': 'string'},
+            'new_password': {'type': 'string'},
+        },
+        'required': ['old_password', 'new_password'],
+    })]
+
+
 class PersonCredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
