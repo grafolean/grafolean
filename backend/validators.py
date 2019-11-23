@@ -64,7 +64,6 @@ class PersonSchemaInputsPUT(Inputs):
             'username': {'type': 'string'},
             'name': {'type': 'string'},
             'email': {'type': 'string'},
-            'password': {'type': 'string'},
         },
     })]
 
