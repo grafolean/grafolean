@@ -62,6 +62,9 @@
 }
 
 .help-snippet.frame {
+  & > h1 {
+    margin-bottom: 10px;
+  }
   & > a.button {
     margin-top: 10px;
   }
