@@ -119,7 +119,7 @@ class Bot extends React.Component {
                       </>
                     )}
                   </HelpSnippet>
-                ) : entitiesCount === 0 ? (
+                ) : entitiesCount === 0 && bot.protocol !== null ? (
                   <HelpSnippet title="There are no entities (devices) yet" className="first-steps">
                     <p>
                       <b>Entities</b> are the things you wish to monitor (for example devices, webpages,
@@ -129,7 +129,7 @@ class Bot extends React.Component {
                       <i className="fa fa-plus" /> Add an entity
                     </Link>
                   </HelpSnippet>
-                ) : credentialsWithCorrectProtocolCount === 0 ? (
+                ) : credentialsWithCorrectProtocolCount === 0 && bot.protocol !== null ? (
                   <HelpSnippet
                     title={`There are no credentials (protocol configurations) for ${protocol.label} yet`}
                     className="first-steps"
@@ -141,7 +141,7 @@ class Bot extends React.Component {
                       <i className="fa fa-plus" /> Add a credential
                     </Link>
                   </HelpSnippet>
-                ) : entitiesWithCorrectProtocolCount === 0 ? (
+                ) : entitiesWithCorrectProtocolCount === 0 && bot.protocol !== null ? (
                   <HelpSnippet
                     title={`None of the entities (devices) have ${protocol.label} credentials enabled yet`}
                     className="first-steps"
@@ -152,7 +152,7 @@ class Bot extends React.Component {
                       fix its settings.
                     </p>
                   </HelpSnippet>
-                ) : sensorsCount === 0 ? (
+                ) : sensorsCount === 0 && bot.protocol !== null ? (
                   <HelpSnippet
                     title={`Last step: enable sensors for ${protocol.label} on entities`}
                     className="first-steps"
