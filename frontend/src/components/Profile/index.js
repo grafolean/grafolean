@@ -1,22 +1,43 @@
 import React from 'react';
-import { connect } from 'react-redux';
 
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import Loading from '../Loading';
 
 class Profile extends React.Component {
+  state = {
+    person: null,
+  };
+
+  handlePersonUpdate = json => {
+    this.setState({
+      person: json,
+    });
+  };
+
   render() {
+    const { person } = this.state;
     return (
       <div>
-        <p>User ID: {this.props.userData.user_id}</p>
-        <Button onClick={doLogout}>Logout</Button>
+        <PersistentFetcher resource={`profile/person`} onUpdate={this.handlePersonUpdate} />
+        {person === null ? (
+          <Loading />
+        ) : (
+          <>
+            <p>User ID: {person.user_id}</p>
+            <p>Name: {person.name}</p>
+            <p>Username: {person.username}</p>
+            <p>E-mail: {person.email}</p>
+            <Button onClick={doLogout}>
+              <i className="fa fa-power-off" /> Logout
+            </Button>
+          </>
+        )}
       </div>
     );
   }
 }
 
-const mapStoreToProps = store => ({
-  userData: store.user,
-});
-export default connect(mapStoreToProps)(Profile);
+export default Profile;
