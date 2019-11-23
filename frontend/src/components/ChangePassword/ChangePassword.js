@@ -17,6 +17,7 @@ class ChangePassword extends React.Component {
       <ChangePasswordFormRender
         resource={`persons/${userId}/password`}
         fixValuesBeforeSubmit={this.fixValuesBeforeSubmit}
+        afterSubmitRedirectTo="/profile"
       />
     );
   }
