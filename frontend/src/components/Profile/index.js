@@ -7,8 +7,9 @@ import Button from '../Button';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import { fetchAuth } from '../../utils/fetch';
+import { fetchAuth, havePermission } from '../../utils/fetch';
 import { handleFetchErrors, ROOT_URL } from '../../store/actions';
+import LinkButton from '../LinkButton/LinkButton';
 
 class Profile extends React.Component {
   state = {
@@ -33,14 +34,14 @@ class Profile extends React.Component {
 
   updatePerson = changes => {
     const { person } = this.state;
-    const { userId } = this.props;
+    const { user } = this.props;
     const personData = {
       name: person.name,
       username: person.username,
       email: person.email,
       ...changes,
     };
-    fetchAuth(`${ROOT_URL}/persons/${userId}`, {
+    fetchAuth(`${ROOT_URL}/persons/${user.user_id}`, {
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -54,28 +55,40 @@ class Profile extends React.Component {
 
   render() {
     const { person } = this.state;
-    const { userId } = this.props;
+    const { user } = this.props;
+    const canChangePassword = havePermission(`persons/${user.user_id}/password`, 'POST', user.permissions);
+    const canChangePerson = havePermission(`persons/${user.user_id}`, 'PUT', user.permissions);
     return (
       <div>
-        <PersistentFetcher resource={`persons/${userId}`} onUpdate={this.handlePersonUpdate} />
+        <PersistentFetcher resource={`persons/${user.user_id}`} onUpdate={this.handlePersonUpdate} />
         {person === null ? (
           <Loading />
         ) : (
           <>
             <p>User ID: {person.user_id}</p>
             <p>
-              Name: <EditableLabel label={person.name} onChange={this.changeName} isEditable={true} />
+              Name:{' '}
+              <EditableLabel label={person.name} onChange={this.changeName} isEditable={canChangePerson} />
             </p>
             <p>
               Username:{' '}
-              <EditableLabel label={person.username} onChange={this.changeUsername} isEditable={true} />
+              <EditableLabel
+                label={person.username}
+                onChange={this.changeUsername}
+                isEditable={canChangePerson}
+              />
             </p>
             <p>
-              E-mail: <EditableLabel label={person.email} onChange={this.changeEmail} isEditable={true} />
+              E-mail:{' '}
+              <EditableLabel label={person.email} onChange={this.changeEmail} isEditable={canChangePerson} />
             </p>
             <hr />
+            <LinkButton to="/profile/change-password" disabled={!canChangePassword}>
+              <i className="fa fa-fw fa-key" /> Change password
+            </LinkButton>
+            <hr />
             <Button onClick={doLogout}>
-              <i className="fa fa-power-off" /> Logout
+              <i className="fa fa-fw fa-power-off" /> Logout
             </Button>
           </>
         )}
@@ -85,6 +98,6 @@ class Profile extends React.Component {
 }
 
 const mapStoreToProps = store => ({
-  userId: store.user.user_id,
+  user: store.user,
 });
 export default connect(mapStoreToProps)(Profile);

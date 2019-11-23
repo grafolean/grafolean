@@ -25,6 +25,10 @@ class Breadcrumbs extends React.Component {
           component={props => <BreadcrumbItem label="Changelog" match={props.match} />}
         />
         <Route path="/profile" component={props => <BreadcrumbItem label="Profile" match={props.match} />} />
+        <Route
+          path="/profile/change-password"
+          component={props => <BreadcrumbItem label="Change password" match={props.match} />}
+        />
 
         <Route path="/users" render={props => <BreadcrumbItem label="Users" match={props.match} />} />
         <Route

@@ -31,3 +31,11 @@ def person_put(user_id):
         'bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204
+
+
+@persons_api.route('/<int:user_id>/password', methods=['POST'])
+def person_change_password(user_id):
+    rowcount = Person.change_password(user_id, flask.request)
+    if not rowcount:
+        return "Change failed", 400
+    return "", 204

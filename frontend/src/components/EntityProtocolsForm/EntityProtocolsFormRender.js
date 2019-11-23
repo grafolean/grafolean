@@ -13,7 +13,7 @@ class EntityProtocolsFormRender extends React.Component {
     accountSensors: null,
   };
 
-  validate = values => {
+  static validate = values => {
     return {};
   };
 

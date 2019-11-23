@@ -121,7 +121,7 @@ class _AccountSidebarContent extends React.Component {
             to={`/accounts/${accountId}/credentials`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-fw fa-key" /> Credentials
+            <i className="fa fa-fw fa-network-wired" /> Credentials
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/sensors`, 'GET', user.permissions) && (
