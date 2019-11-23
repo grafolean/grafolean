@@ -8,6 +8,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
 import Loading from '../Loading';
+import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 
 import ChartForm from '../Widgets/GLeanChartWidget/ChartForm/ChartForm';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
@@ -156,6 +157,7 @@ class WidgetForm extends React.Component {
     return (
       <div className="widget-form">
         <form>
+          <NoPathsHelpSnippet />
           <div className="field">
             <label>Widget title:</label>
             <input type="text" name="name" value={widgetName} onChange={this.handleNameChange} />
