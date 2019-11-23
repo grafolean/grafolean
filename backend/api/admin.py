@@ -660,6 +660,8 @@ def admin_permissions_get_post(user_id):
             mqtt_publish_changed([
                 'admin/persons/{user_id}'.format(user_id=user_id),
                 'admin/bots/{user_id}'.format(user_id=user_id),
+                'persons/{user_id}'.format(user_id=user_id),
+                'bots/{user_id}'.format(user_id=user_id),
             ])
             return json.dumps({
                 'id': permission_id,
@@ -707,6 +709,8 @@ def admin_permission_delete(permission_id, user_id):
     mqtt_publish_changed([
         'admin/persons/{user_id}'.format(user_id=user_id),
         'admin/bots/{user_id}'.format(user_id=user_id),
+        'persons/{user_id}'.format(user_id=user_id),
+        'bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204
 

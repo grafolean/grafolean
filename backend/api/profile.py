@@ -2,7 +2,7 @@ import flask
 import json
 
 from .common import auth_no_permissions
-from datatypes import Account, Bot, Permission
+from datatypes import Account, Bot, Permission, Person
 
 
 profile_api = flask.Blueprint('profile_api', __name__)

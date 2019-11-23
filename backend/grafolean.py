@@ -22,7 +22,7 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, persons_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
 import validators
 
 
@@ -31,6 +31,7 @@ app.url_map.strict_slashes = False
 # register the blueprints for different api endpoints:
 app.register_blueprint(admin_api, url_prefix='/api/admin')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
+app.register_blueprint(persons_api, url_prefix='/api/persons')
 app.register_blueprint(accounts_api, url_prefix='/api/accounts')
 app.register_blueprint(status_api, url_prefix='/api/status')
 app.register_blueprint(auth_api, url_prefix='/api/auth')

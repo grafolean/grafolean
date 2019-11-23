@@ -28,7 +28,6 @@ export default class EditableLabel extends React.PureComponent {
       editing: false,
       newLabel: null,
     });
-    this.props.onChange(this.state.newLabel);
   };
 
   handleLabelChange = ev => {
