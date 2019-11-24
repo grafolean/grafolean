@@ -22,7 +22,7 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, accounts_apidoc_schemas
 import validators
 
 
@@ -197,7 +197,7 @@ def generate_api_docs(filename, api_version, openapi_version):
         }
     )
 
-    for schema_name, schema in admin_apidoc_schemas():
+    for schema_name, schema in users_apidoc_schemas():
         apidoc.components.schema(schema_name, schema)
     for schema_name, schema in accounts_apidoc_schemas():
         apidoc.components.schema(schema_name, schema)

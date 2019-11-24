@@ -28,7 +28,7 @@ export default class UserPermissions extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
+    fetchAuth(`${ROOT_URL}/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
       method: 'DELETE',
     })
       .then(handleFetchErrors)
@@ -76,7 +76,7 @@ export default class UserPermissions extends React.PureComponent {
     const { userId } = this.props.match.params;
     return (
       <div className="user-permissions frame">
-        <PersistentFetcher resource={`admin/persons/${userId}`} onUpdate={this.onUserUpdate} />
+        <PersistentFetcher resource={`persons/${userId}`} onUpdate={this.onUserUpdate} />
 
         {this.renderInner()}
 

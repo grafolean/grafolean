@@ -41,7 +41,7 @@ class SidebarContent extends React.Component {
 
         <div className="spacer" />
 
-        {user && havePermission('admin/persons', 'GET', user.permissions) && (
+        {user && havePermission('persons', 'GET', user.permissions) && (
           <Link className="button green" to="/users" onClick={onSidebarLinkClick}>
             <i className="fa fa-fw fa-users" /> Users
           </Link>

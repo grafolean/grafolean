@@ -40,7 +40,7 @@ class Breadcrumbs extends React.Component {
           render={props => (
             <FetchedLabelBreadcrumbItem
               recordId={props.match.params.userId}
-              resource={`admin/persons/${props.match.params.userId}`}
+              resource={`persons/${props.match.params.userId}`}
               match={props.match}
             />
           )}
