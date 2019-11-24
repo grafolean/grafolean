@@ -774,9 +774,9 @@ def test_permissions_post_get(app_client, first_admin_id, admin_authorization_he
     new_permission_id = response['id']
     # check mqtt:
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/persons/{}'.format(person_id)
+    assert m.topic == 'changed/persons/{}'.format(person_id)
     m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/admin/bots/{}'.format(person_id)
+    assert m.topic == 'changed/bots/{}'.format(person_id)
     assert mqtt_messages.empty()
 
     r = app_client.get('/api/admin/persons/{}/permissions'.format(person_id), headers={'Authorization': admin_authorization_header})
@@ -1403,9 +1403,9 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
     assert r.status_code == 201
 
     mqtt_message = mqtt_messages.get(timeout=3.0)
-    assert mqtt_message.topic == f'changed/admin/persons/{bot_id}'
+    assert mqtt_message.topic == f'changed/persons/{bot_id}'
     mqtt_message = mqtt_messages.get(timeout=3.0)
-    assert mqtt_message.topic == f'changed/admin/bots/{bot_id}'
+    assert mqtt_message.topic == f'changed/bots/{bot_id}'
 
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')

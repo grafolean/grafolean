@@ -357,8 +357,8 @@ def account_bot_permissions(account_id, user_id):
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
-                'admin/persons/{}'.format(permission.user_id),
-                'admin/bots/{}'.format(permission.user_id),
+                'persons/{}'.format(permission.user_id),
+                'bots/{}'.format(permission.user_id),
             ])
             return json.dumps({
                 'user_id': permission.user_id,
@@ -388,8 +388,8 @@ def account_bot_permission_delete(account_id, user_id, permission_id):
     if not rowcount:
         return "No such permission", 404
     mqtt_publish_changed([
-        'admin/persons/{user_id}'.format(user_id=user_id),
-        'admin/bots/{user_id}'.format(user_id=user_id),
+        'persons/{user_id}'.format(user_id=user_id),
+        'bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204
 
