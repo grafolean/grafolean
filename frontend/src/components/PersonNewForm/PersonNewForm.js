@@ -1,7 +1,7 @@
 import React from 'react';
 import { Redirect } from 'react-router-dom';
 
-import { ROOT_URL } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors } from '../../store/actions';
 
 import { fetchAuth } from '../../utils/fetch';
 
@@ -32,6 +32,24 @@ export default class PersonNewForm extends React.PureComponent {
     }));
   };
 
+  requestPermission = async (userId, resourcePrefix, methods) => {
+    const responsePermissions = await fetchAuth(`${ROOT_URL}/persons/${userId}/permissions`, {
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({
+        resource_prefix: resourcePrefix,
+        methods: methods,
+      }),
+    });
+    await handleFetchErrors(responsePermissions);
+    if (!responsePermissions.ok) {
+      throw await responsePermissions.text();
+    }
+  };
+
   handleSubmit = async event => {
     try {
       const { formValues } = this.state;
@@ -57,21 +75,9 @@ export default class PersonNewForm extends React.PureComponent {
       }
       const responseJson = await responseCreate.json();
 
+      const newId = responseJson.id;
       // assign permissions to person:
-      const responsePermissions = await fetchAuth(`${ROOT_URL}/persons/${responseJson.id}/permissions/`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          resource_prefix: `accounts/${this.props.match.params.accountId}`,
-          methods: null,
-        }),
-      });
-      if (!responsePermissions.ok) {
-        throw await responsePermissions.text();
-      }
+      await this.requestPermission(newId, `persons/${newId}`, ['GET', 'PUT', 'POST']);
 
       this.setState({ submitted: true });
     } catch (errorMsg) {
