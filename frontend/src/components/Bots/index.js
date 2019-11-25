@@ -20,17 +20,29 @@ import './bots.scss';
 
 export default class Bots extends React.PureComponent {
   state = {
-    bots: null,
+    accountBots: null,
+    systemwideBots: null,
   };
 
-  onBotsUpdate = json => {
+  onAccountBotsUpdate = json => {
     // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+      isSystemwide: false,
     }));
     this.setState({
-      bots: bots,
+      accountBots: bots,
+    });
+  };
+  onSystemwideBotsUpdate = json => {
+    const bots = json.list.map(bot => ({
+      ...bot,
+      protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+      isSystemwide: true,
+    }));
+    this.setState({
+      systemwideBots: bots,
     });
   };
 
@@ -47,11 +59,13 @@ export default class Bots extends React.PureComponent {
   };
 
   render() {
-    const { bots } = this.state;
+    const { accountBots, systemwideBots } = this.state;
     const accountId = this.props.match.params.accountId;
+    const bots = accountBots === null || systemwideBots === null ? null : accountBots.concat(systemwideBots);
     return (
       <>
-        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
+        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onAccountBotsUpdate} />
+        <PersistentFetcher resource={`bots`} onUpdate={this.onSystemwideBotsUpdate} />
         {bots === null ? (
           <Loading />
         ) : bots.length > 0 ? (
@@ -64,16 +78,20 @@ export default class Bots extends React.PureComponent {
                   <th>Token</th>
                   <th>Insert time (UTC)</th>
                   <th>Last successful login (UTC)</th>
-                  <th />
+                  <th>Removal</th>
                 </tr>
               </thead>
               <tbody>
                 {bots.map(bot => (
                   <tr key={bot.id}>
                     <td data-label="Name">
-                      <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
-                        <i className="fa fa-robot" /> {bot.name}
-                      </Link>
+                      {bot.isSystemwide ? (
+                        bot.name
+                      ) : (
+                        <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                          <i className="fa fa-robot" /> {bot.name}
+                        </Link>
+                      )}
                     </td>
                     <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
                     <td data-label="Token">
@@ -86,9 +104,11 @@ export default class Bots extends React.PureComponent {
                       {bot.last_login === null ? (
                         <>
                           Never
-                          <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
-                            <NotificationBadge />
-                          </Link>
+                          {!bot.isSystemwide && (
+                            <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                              <NotificationBadge />
+                            </Link>
+                          )}
                         </>
                       ) : (
                         <>
@@ -98,9 +118,13 @@ export default class Bots extends React.PureComponent {
                       )}
                     </td>
                     <td data-label="">
-                      <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
-                        <i className="fa fa-trash" /> Delete
-                      </Button>
+                      {bot.isSystemwide ? (
+                        <i className="systemwide">N/A (systemwide)</i>
+                      ) : (
+                        <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
+                          <i className="fa fa-trash" /> Delete
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}

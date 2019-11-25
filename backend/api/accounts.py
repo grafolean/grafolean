@@ -18,13 +18,18 @@ def accounts_before_request():
     # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
     # show/hide notification badges based on it:
     if flask.g.grafolean_data['user_is_bot']:
+        bot_id = flask.g.grafolean_data['user_id']
         m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
         if m:
             account_id = m.groups()[0]
-            bot_id = flask.g.grafolean_data['user_id']
             mqtt_publish_changed([
                 'accounts/{account_id}/bots'.format(account_id=account_id),
                 'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
+            ])
+        else:
+            mqtt_publish_changed([
+                'bots',
+                'bots/{bot_id}'.format(bot_id=bot_id),
             ])
 
 
