@@ -41,6 +41,11 @@ class SidebarContent extends React.Component {
 
         <div className="spacer" />
 
+        {user && havePermission('bots', 'GET', user.permissions) && (
+          <Link className="button green" to="/bots" onClick={onSidebarLinkClick}>
+            <i className="fa fa-fw fa-robot" /> Systemwide Bots
+          </Link>
+        )}
         {user && havePermission('persons', 'GET', user.permissions) && (
           <Link className="button green" to="/users" onClick={onSidebarLinkClick}>
             <i className="fa fa-fw fa-users" /> Users

@@ -87,11 +87,11 @@ def users_bots():
     """
         ---
         get:
-          summary: Get all bots
+          summary: Get systemwide bots
           tags:
             - Admin
           description:
-            Returns a list of all bots. The list is returned in a single array (no pagination).
+            Returns a list of all systemwide bots (bots which are not tied to a specific account). The list is returned in a single array (no pagination).
           responses:
             200:
               content:
@@ -104,11 +104,11 @@ def users_bots():
                         items:
                           "$ref": '#/definitions/BotGET'
         post:
-          summary: Create a bot
+          summary: Create a systemwide bot
           tags:
             - Admin
           description:
-            Creates a bot. By default (as any user) a bot is without permissions, so they must be granted to it before it can do anything useful.
+            Creates a systemwide bot. By default, a created bot is without permissions, so they must be granted to it before it can do anything useful.
 
           parameters:
             - name: "body"
@@ -132,6 +132,9 @@ def users_bots():
         bot = Bot.forge_from_input(flask.request)
         user_id, _ = bot.insert()
         rec = Bot.get(user_id)
+        mqtt_publish_changed([
+            'bots',
+        ])
         return json.dumps(rec), 201
 
 
@@ -216,6 +219,10 @@ def users_bot_crud(user_id):
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
+        mqtt_publish_changed([
+            'bots/{user_id}'.format(user_id=user_id),
+            'bots',
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
@@ -225,6 +232,10 @@ def users_bot_crud(user_id):
         rowcount = Bot.delete(user_id)
         if not rowcount:
             return "No such bot", 404
+        mqtt_publish_changed([
+            'bots/{user_id}'.format(user_id=user_id),
+            'bots',
+        ])
         return "", 204
 
 
@@ -279,6 +290,9 @@ def users_persons():
     elif flask.request.method == 'POST':
         person = Person.forge_from_input(flask.request)
         user_id = person.insert()
+        mqtt_publish_changed([
+            'persons',
+        ])
         return json.dumps({
             'id': user_id,
         }), 201
@@ -368,6 +382,7 @@ def users_person_crud(user_id):
             return "No such person", 404
         mqtt_publish_changed([
             'persons/{user_id}'.format(user_id=user_id),
+            'persons',
         ])
         return "", 204
 
@@ -380,6 +395,7 @@ def users_person_crud(user_id):
             return "No such person", 404
         mqtt_publish_changed([
             'persons/{user_id}'.format(user_id=user_id),
+            'persons',
         ])
         return "", 204
 

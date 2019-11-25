@@ -785,8 +785,15 @@ class Bot(object):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, protocol, token, insert_time, last_login FROM bots ORDER BY insert_time DESC;')
+                # return systemwide bots:
+                # Note: in hindsight, it would probably make sense to have a field "account" in a bots
+                # table, instead of having a separate users_account table. This SELECT finds those
+                # rows that *don't* have a corresponding entry in users_accounts:
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL ORDER BY b.insert_time DESC;')
             else:
+                # return bots tied to a specific account:
                 c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))

@@ -3,22 +3,17 @@ import { Link } from 'react-router-dom';
 import moment from 'moment';
 
 import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
-import { fetchAuth } from '../../utils/fetch';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
-
+import { fetchAuth } from '../../utils/fetch';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
-import Button from '../Button';
-import BotToken from './BotToken';
-import HelpSnippet from '../HelpSnippets/HelpSnippet';
-import NotificationBadge from '../Main/SidebarNotificationBadges/NotificationBadge';
+import BotToken from '../Bots/BotToken';
 import When from '../When';
+import HelpSnippet from '../HelpSnippets/HelpSnippet';
+import Button from '../Button';
 
-import '../form.scss';
-import './bots.scss';
-
-export default class Bots extends React.PureComponent {
+export default class SystemwideBots extends React.Component {
   state = {
     bots: null,
   };
@@ -41,17 +36,16 @@ export default class Bots extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/${botId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/bots/${botId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
   render() {
     const { bots } = this.state;
-    const accountId = this.props.match.params.accountId;
     return (
       <>
-        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
+        <PersistentFetcher resource={`bots`} onUpdate={this.onBotsUpdate} />
         {bots === null ? (
           <Loading />
         ) : bots.length > 0 ? (
@@ -71,7 +65,7 @@ export default class Bots extends React.PureComponent {
                 {bots.map(bot => (
                   <tr key={bot.id}>
                     <td data-label="Name">
-                      <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                      <Link className="button green" to={`/bots/edit/${bot.id}`}>
                         <i className="fa fa-robot" /> {bot.name}
                       </Link>
                     </td>
@@ -84,12 +78,7 @@ export default class Bots extends React.PureComponent {
                     </td>
                     <td data-label="Last successful login (UTC)">
                       {bot.last_login === null ? (
-                        <>
-                          Never
-                          <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
-                            <NotificationBadge />
-                          </Link>
-                        </>
+                        <>Never</>
                       ) : (
                         <>
                           {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
@@ -106,17 +95,18 @@ export default class Bots extends React.PureComponent {
                 ))}
               </tbody>
             </table>
-            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+            <Link className="button green" to={`/bots/new`}>
               <i className="fa fa-plus" /> Add bot
             </Link>
           </div>
         ) : (
-          <HelpSnippet title="There are no bots (data collectors) yet" className="first-steps">
+          <HelpSnippet title="There are no systemwide bots (data collectors) yet" className="first-steps">
             <p>
-              <b>Bots</b> are external scripts and applications that send values to Grafolean.
+              <b>Bots</b> are external scripts and applications that send values to Grafolean. Systemwide bots
+              can be used by multiple accounts.
             </p>
-            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
-              <i className="fa fa-plus" /> Add bot
+            <Link className="button green" to={`/bots/new`}>
+              <i className="fa fa-plus" /> Add a systemwide bot
             </Link>
           </HelpSnippet>
         )}

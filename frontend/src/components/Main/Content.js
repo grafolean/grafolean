@@ -29,6 +29,7 @@ import EntityProtocolsForm from '../EntityProtocolsForm/EntityProtocolsForm';
 import Dashboards from '../Dashboards/Dashboards';
 import Bot from '../Bot/Bot';
 import ChangePassword from '../ChangePassword/ChangePassword';
+import SystemwideBots from '../SystemwideBots/SystemwideBots';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -80,6 +81,9 @@ class Content extends React.PureComponent {
             component={ChangePassword}
           />
 
+          <WrappedRoute exact contentWidth={contentWidth} path="/bots" component={SystemwideBots} />
+          <WrappedRoute exact contentWidth={contentWidth} path="/bots/new" component={BotForm} />
+          <WrappedRoute exact contentWidth={contentWidth} path="/bots/edit/:botId" component={BotForm} />
           <WrappedRoute exact contentWidth={contentWidth} path="/users" component={Persons} />
           <WrappedRoute exact contentWidth={contentWidth} path="/users-new" component={PersonNewForm} />
           <WrappedRoute

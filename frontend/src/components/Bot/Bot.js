@@ -17,6 +17,10 @@ import CustomBotHelpSnippet from '../Bots/CustomBotHelpSnippet';
 
 import './Bot.scss';
 
+/*
+  This component is used for both account bots and for systemwide bots.
+*/
+
 class Bot extends React.Component {
   state = {
     bot: null,
