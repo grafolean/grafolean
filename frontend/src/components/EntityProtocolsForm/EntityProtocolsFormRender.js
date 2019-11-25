@@ -5,7 +5,7 @@ import isFormikForm from '../isFormikForm';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
-import SensorsMultiSelect from './SensorsMultiSelect';
+import EntityProtocolSubForm from './EntityProtocolSubForm';
 
 class EntityProtocolsFormRender extends React.Component {
   state = {
@@ -17,69 +17,13 @@ class EntityProtocolsFormRender extends React.Component {
     return {};
   };
 
-  renderProtocolCredentialAndSensors(protocol) {
-    const {
-      values: { protocols = {} },
-      onChange,
-      onBlur,
-      setFieldValue,
-    } = this.props;
-    const { accountCredentials, accountSensors } = this.state;
-
-    const credentialId =
-      protocols[protocol.slug] && protocols[protocol.slug]['credential']
-        ? protocols[protocol.slug]['credential']
-        : null;
-    const sensors = accountSensors.filter(s => s.protocol === protocol.slug);
-    const selectedSensors =
-      protocols[protocol.slug] && protocols[protocol.slug]['sensors']
-        ? protocols[protocol.slug]['sensors']
-        : [];
-    const credentials = accountCredentials.filter(c => c.protocol === protocol.slug);
-    return (
-      <div key={protocol.slug} className="field">
-        <label>{protocol.label}:</label>
-
-        <div className="nested-field">
-          {credentials.length === 0 ? (
-            <p>
-              No credentials available for protocol <i>{protocol.label}</i>.
-            </p>
-          ) : (
-            <select
-              value={credentialId || ''}
-              name={`protocols[${protocol.slug}][credential]`}
-              onChange={onChange}
-              onBlur={onBlur}
-            >
-              <option value="">-- disabled --</option>
-              {credentials.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {credentialId && (
-            <SensorsMultiSelect
-              sensors={sensors}
-              selectedSensors={selectedSensors}
-              onChange={newSelectedSensors =>
-                setFieldValue(`protocols[${protocol.slug}][sensors]`, newSelectedSensors)
-              }
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
-
   render() {
     const {
+      values,
       values: { name = '' },
       onChange,
       onBlur,
+      setFieldValue,
     } = this.props;
     const { accountCredentials, accountSensors } = this.state;
     const { accountId } = this.props.match.params;
@@ -106,7 +50,18 @@ class EntityProtocolsFormRender extends React.Component {
             <div className="field">
               <label>Protocols:</label>
               <div className="nested-field">
-                {SUPPORTED_PROTOCOLS.map(protocol => this.renderProtocolCredentialAndSensors(protocol))}
+                {SUPPORTED_PROTOCOLS.map(protocol => (
+                  <EntityProtocolSubForm
+                    key={protocol.slug}
+                    values={values}
+                    onChange={onChange}
+                    onBlur={onBlur}
+                    setFieldValue={setFieldValue}
+                    protocol={protocol}
+                    credentials={accountCredentials.filter(c => c.protocol === protocol.slug)}
+                    sensors={accountSensors.filter(s => s.protocol === protocol.slug)}
+                  />
+                ))}
               </div>
             </div>
           </div>
