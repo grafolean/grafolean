@@ -13,6 +13,26 @@ profile_api = flask.Blueprint('profile_api', __name__)
 # --------------
 
 
+@profile_api.route('/', methods=['GET'])
+@auth_no_permissions
+def profile():
+    user_id = flask.g.grafolean_data['user_id']
+    user_is_bot = flask.g.grafolean_data['user_is_bot']
+    if user_is_bot:
+        tied_to_account = Bot.get_tied_to_account(user_id)
+        return json.dumps({
+            'user_id': user_id,
+            'user_type': 'bot',
+            'record': Bot.get(user_id, tied_to_account=tied_to_account),
+        }), 200
+    else:
+        return json.dumps({
+            'user_id': user_id,
+            'user_type': 'person',
+            'record': Person.get(user_id),
+        }), 200
+
+
 @profile_api.route('/permissions', methods=['GET'])
 @auth_no_permissions
 def profile_permissions():

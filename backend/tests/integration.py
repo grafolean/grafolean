@@ -130,12 +130,22 @@ def account_id(account_id_factory):
     return account_id
 
 @pytest.fixture
-def bot_data(app_client, admin_authorization_header):
-    data = { 'name': 'Bot 1' }
-    r = app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-    j = json.loads(r.data.decode('utf-8'))
-    return j
+def bot_factory(app_client, admin_authorization_header):
+    """
+        Generate a bot with the specified name and protocol, return its id (user_id) and token.
+    """
+    def gen(name, protocol):
+        data = { 'name': name, 'protocol': protocol }
+        r = app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201, r.data
+        j = json.loads(r.data.decode('utf-8'))
+        return j['id'], j['token']
+    return gen
+
+@pytest.fixture
+def bot_data(bot_factory):
+    user_id, bot_token = bot_factory('Bot 1', None)
+    return {'id': user_id, 'token': bot_token}
 
 @pytest.fixture
 def bot_id(bot_data):
@@ -812,6 +822,7 @@ def test_bots_crud(app_client, admin_authorization_header):
         'list': [
             {
                 'id': bot_id,
+                'tied_to_account': None,
                 'name': data['name'],
                 'protocol': None,
                 'token': token,
@@ -1000,7 +1011,7 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
 
         # try again:
-        expected = {'id': str(account_id), 'name': FIRST_ACCOUNT_NAME}
+        expected = {'id': account_id, 'name': FIRST_ACCOUNT_NAME}
         r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
         assert json.loads(r.data.decode('utf-8')) == expected
@@ -1355,6 +1366,7 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
         'protocol': None,
         'id': account_bot_id,
         'token': actual['list'][0]['token'],
+        'tied_to_account': account_id,
         'insert_time': actual['list'][0]['insert_time'],
         'last_login': None
     }
@@ -1422,7 +1434,7 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
 
 
 
-def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory):
+def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory, bot_factory):
     """
         Fetch a list of entities for account (must be empty), create one, check it, edit, check, delete, check.
     """
@@ -1432,10 +1444,11 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
     }
     credential_id, = account_credentials_factory(('snmp', 'SNMP credentials 1'))
     sensor1_id, sensor2_id = account_sensors_factory(('snmp', 'Sensor 1', 60), ('snmp', 'Sensor 2', 120))
+    bot_id, _ = bot_factory('Test bot 1', 'snmp')
     ENTITY_PROTOCOLS1 = {
         'snmp': {
             'credential': credential_id,
-            'bot': None,
+            'bot': bot_id,
             'sensors': [
                 {'sensor': sensor1_id, 'interval': 300},
                 {'sensor': sensor2_id, 'interval': 600},
@@ -1465,7 +1478,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
         'protocols': ENTITY_PROTOCOLS1,
     }
     r = app_client.post('/api/accounts/{}/entities'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
+    assert r.status_code == 201, r.data
     entity_id = json.loads(r.data.decode('utf-8'))['id']
 
     # check result:

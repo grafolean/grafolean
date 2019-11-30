@@ -809,8 +809,9 @@ class Bot(object):
                 ret.append({
                     'id': user_id,
                     'name': name,
-                    'protocol': protocol,
                     'token': token,
+                    'protocol': protocol,
+                    'tied_to_account': force_account,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
                     'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
                 })
@@ -826,20 +827,12 @@ class Bot(object):
                 c.execute("INSERT INTO users_accounts (user_id, account, config) VALUES (%s, %s, %s);", (user_id, self.force_account, self.config,))
             return user_id, bot_token
 
-    @staticmethod
-    def _is_tied_to_account(user_id, account_id):
-        # make sure that the bot with this user_id really has this account:
-        test_record = Bot.get(user_id, account_id)
-        if not test_record:
-            return False
-        return True
-
     def update(self):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
             if self.force_account is not None:
-                if not Bot._is_tied_to_account(self.force_id, self.force_account):
+                if self.force_account != Bot.get_tied_to_account(self.force_id):
                     return 0
 
             c.execute("UPDATE bots SET name = %s, protocol = %s WHERE user_id = %s;", (self.name, self.protocol, self.force_id,))
@@ -854,7 +847,7 @@ class Bot(object):
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                if not Bot._is_tied_to_account(user_id, force_account):
+                if force_account != Bot.get_tied_to_account(user_id):
                     return 0
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
@@ -879,10 +872,21 @@ class Bot(object):
             'name': name,
             'token': token,
             'protocol': protocol,
+            'tied_to_account': tied_to_account,
             'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
             'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
         }
+
+    @staticmethod
+    def get_tied_to_account(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT account FROM users_accounts WHERE user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            account_id, = res
+        return account_id
 
     @staticmethod
     def authenticate_token(bot_token_unclean):
