@@ -239,6 +239,16 @@ def users_bot_crud(user_id):
         return "", 204
 
 
+@users_api.route('/bots/<int:user_id>/token', methods=['GET'])
+def users_bot_token_get(user_id):
+    if not Permission.has_all_permissions(int(flask.g.grafolean_data['user_id']), user_id):
+        return "Not enough permissions to see this bot's token", 401
+    token = Bot.get_token(user_id, None)
+    if not token:
+        return "No such bot", 404
+    return {'token': token}, 200
+
+
 @users_api.route('/persons', methods=['GET', 'POST'])
 def users_persons():
     """

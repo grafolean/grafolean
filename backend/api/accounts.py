@@ -204,6 +204,16 @@ def account_bot_crud(account_id, user_id):
         return "", 204
 
 
+@accounts_api.route('/<int:account_id>/bots/<int:user_id>/token', methods=['GET'])
+def account_bot_token_get(account_id, user_id):
+    if not Permission.has_all_permissions(int(flask.g.grafolean_data['user_id']), user_id):
+        return "Not enough permissions to see this bot's token", 401
+    token = Bot.get_token(user_id, account_id)
+    if not token:
+        return "No such bot", 404
+    return {'token': token}, 200
+
+
 @accounts_api.route('/<int:account_id>/entities', methods=['GET', 'POST'])
 def account_entities(account_id):
     if flask.request.method in ['GET', 'HEAD']:

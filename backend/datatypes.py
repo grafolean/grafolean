@@ -700,6 +700,15 @@ class Permission(object):
             return account_id
 
     @staticmethod
+    def has_all_permissions(user_id, target_user_id):
+        """ Does the user have all the permissions that some other (target) user has? """
+        user_permissions = Permission.get_list(user_id)
+        for target_permission in Permission.get_list(target_user_id):
+            if not Permission.can_grant_permission(user_permissions, target_permission['resource_prefix'], target_permission['methods']):
+                return False
+        return True
+
+    @staticmethod
     def is_access_allowed(user_id, resource, method):
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
@@ -797,19 +806,18 @@ class Bot(object):
                 # Note: in hindsight, it would probably make sense to have a field "account" in a bots
                 # table, instead of having a separate users_account table. This SELECT finds those
                 # rows that *don't* have a corresponding entry in users_accounts:
-                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.insert_time, b.last_login ' +
                           'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account IS NULL ORDER BY b.insert_time DESC;')
             else:
                 # return bots tied to a specific account:
-                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, protocol, token, insert_time, last_login in c:
+            for user_id, name, protocol, insert_time, last_login in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
-                    'token': token,
                     'protocol': protocol,
                     'tied_to_account': force_account,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
@@ -856,27 +864,46 @@ class Bot(object):
     def get(user_id, tied_to_account=None):
         with db.cursor() as c:
             if tied_to_account:
-                c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time, b.last_login ' +
+                c.execute('SELECT b.name, b.protocol, ua.config, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s AND b.user_id = %s;', (tied_to_account, user_id,))
             else:
-                c.execute('SELECT b.name, b.token, b.protocol, NULL, b.insert_time, b.last_login ' +
+                c.execute('SELECT b.name, b.protocol, NULL, b.insert_time, b.last_login ' +
                           'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account IS NULL AND b.user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            name, token, protocol, config, insert_time, last_login = res
+            name, protocol, config, insert_time, last_login = res
         return {
             'id': int(user_id),
             'name': name,
-            'token': token,
             'protocol': protocol,
             'tied_to_account': tied_to_account,
             'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
             'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
         }
+
+    @staticmethod
+    def get_token(user_id, tied_to_account=None):
+        """ Token is a bit special - we only return it upon special request, because endpoints need
+            to make sure that requesting user has all the permissions necessary.
+        """
+        with db.cursor() as c:
+            if tied_to_account:
+                c.execute('SELECT b.token ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s AND b.user_id = %s;', (tied_to_account, user_id,))
+            else:
+                c.execute('SELECT b.token ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL AND b.user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            token, = res
+        return token
 
     @staticmethod
     def get_tied_to_account(user_id):

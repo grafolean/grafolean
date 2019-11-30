@@ -139,7 +139,12 @@ def bot_factory(app_client, admin_authorization_header):
         r = app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201, r.data
         j = json.loads(r.data.decode('utf-8'))
-        return j['id'], j['token']
+        bot_id = j['id']
+        r = app_client.get('/api/bots/{}/token'.format(bot_id), headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 200, r.data
+        j = json.loads(r.data.decode('utf-8'))
+        bot_token = j['token']
+        return bot_id, bot_token
     return gen
 
 @pytest.fixture
@@ -810,7 +815,6 @@ def test_bots_crud(app_client, admin_authorization_header):
     assert r.status_code == 201
     j = json.loads(r.data.decode('utf-8'))
     bot_id = j['id']
-    token = j['token']
 
     r = app_client.get('/api/bots', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -825,7 +829,6 @@ def test_bots_crud(app_client, admin_authorization_header):
                 'tied_to_account': None,
                 'name': data['name'],
                 'protocol': None,
-                'token': token,
                 'insert_time': actual['list'][0]['insert_time'],
                 'last_login': None,
             },
@@ -1365,7 +1368,6 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
         'name': BOT_NAME1,
         'protocol': None,
         'id': account_bot_id,
-        'token': actual['list'][0]['token'],
         'tied_to_account': account_id,
         'insert_time': actual['list'][0]['insert_time'],
         'last_login': None
