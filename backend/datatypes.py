@@ -700,9 +700,8 @@ class Permission(object):
             return account_id
 
     @staticmethod
-    def has_all_permissions(user_id, target_user_id):
+    def has_all_permissions(user_permissions, target_user_id):
         """ Does the user have all the permissions that some other (target) user has? """
-        user_permissions = Permission.get_list(user_id)
         for target_permission in Permission.get_list(target_user_id):
             if not Permission.can_grant_permission(user_permissions, target_permission['resource_prefix'], target_permission['methods']):
                 return False

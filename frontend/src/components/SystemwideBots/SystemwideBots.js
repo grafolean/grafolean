@@ -71,7 +71,7 @@ export default class SystemwideBots extends React.Component {
                     </td>
                     <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
                     <td data-label="Token">
-                      <BotToken token={bot.token} />
+                      <BotToken botId={bot.id} isSystemwide={true} />
                     </td>
                     <td data-label="Insert time (UTC)">
                       {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}

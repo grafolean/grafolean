@@ -95,7 +95,11 @@ export default class Bots extends React.PureComponent {
                     </td>
                     <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
                     <td data-label="Token">
-                      <BotToken token={bot.token} />
+                      {bot.isSystemwide ? (
+                        <BotToken botId={bot.id} isSystemwide={true} />
+                      ) : (
+                        <BotToken botId={bot.id} isSystemwide={false} accountId={accountId} />
+                      )}
                     </td>
                     <td data-label="Insert time (UTC)">
                       {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}

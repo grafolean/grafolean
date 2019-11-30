@@ -206,8 +206,13 @@ def account_bot_crud(account_id, user_id):
 
 @accounts_api.route('/<int:account_id>/bots/<int:user_id>/token', methods=['GET'])
 def account_bot_token_get(account_id, user_id):
-    if not Permission.has_all_permissions(int(flask.g.grafolean_data['user_id']), user_id):
+    # make sure the user who is requesting to see the bot token has every permission that this token has, and
+    # also that this user can add the bot:
+    request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
+    if not Permission.has_all_permissions(request_user_permissions, user_id):
         return "Not enough permissions to see this bot's token", 401
+    if not Permission.can_grant_permission(request_user_permissions, 'accounts/{}/bots'.format(account_id), 'POST'):
+        return "Not enough permissions to see this bot's token - POST to accounts/:account_id/bots not allowed", 401
     token = Bot.get_token(user_id, account_id)
     if not token:
         return "No such bot", 404
