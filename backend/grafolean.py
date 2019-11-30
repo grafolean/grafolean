@@ -189,6 +189,8 @@ def generate_api_docs(filename, api_version, openapi_version):
         plugins=[FlaskPlugin()],
         info={
             "description":
+                "IMPORTANT: API is in development and is **not finalized yet**! If you use it, be prepared for breaking changes "
+                "to occur. The documentation is not completed yet either.\n\n" \
                 "Grafolean is designed API-first. Meaning, every functionality of the system is accessible through the API " \
                 "described below. This allows integration with external systems so that (given the permissions) they too can " \
                 "enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend " \

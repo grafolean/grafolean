@@ -164,6 +164,7 @@ class EntitySchemaInputs(Inputs):
                     'type': 'object',
                     'properties': {
                         'credential': {'type': ['string', 'number']},
+                        'bot': {'type': ['string', 'number']},
                         'sensors': {
                             'type': 'array',
                             'items': {
@@ -173,9 +174,11 @@ class EntitySchemaInputs(Inputs):
                                     'interval': {'type': ['number', 'null']},
                                 },
                                 'additionalProperties': False,
+                                'required': ['sensor'],
                             },
                         },
                     },
+                    'required': ['credential', 'bot', 'sensors'],
                     'additionalProperties': False,
                 },
             },

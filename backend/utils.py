@@ -336,3 +336,10 @@ def migration_step_15():
     """
     with db.cursor() as c:
         c.execute('ALTER TABLE bots ADD COLUMN last_login TIMESTAMP NULL DEFAULT NULL;')
+
+def migration_step_16():
+    """ Entities can have a specific bot selected for each of the protocols. """
+    ENTITY_ID_FIELD = 'entity INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE'
+    BOT_ID_FIELD = 'bot INTEGER NOT NULL REFERENCES bots(user_id) ON DELETE CASCADE'
+    with db.cursor() as c:
+        c.execute('CREATE TABLE entities_bots ({entity}, {bot});'.format(entity=ENTITY_ID_FIELD, bot=BOT_ID_FIELD))

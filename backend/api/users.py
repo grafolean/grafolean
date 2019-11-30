@@ -131,7 +131,7 @@ def users_bots():
     elif flask.request.method == 'POST':
         bot = Bot.forge_from_input(flask.request)
         user_id, _ = bot.insert()
-        rec = Bot.get(user_id)
+        rec = Bot.get(user_id, None)
         mqtt_publish_changed([
             'bots',
         ])
@@ -209,7 +209,7 @@ def users_bot_crud(user_id):
               description: No such bot
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get(user_id)
+        rec = Bot.get(user_id, None)
         if not rec:
             return "No such bot", 404
         return json.dumps(rec), 200

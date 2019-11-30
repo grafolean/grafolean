@@ -11,10 +11,26 @@ class EntityProtocolsFormRender extends React.Component {
   state = {
     accountCredentials: null,
     accountSensors: null,
+    accountBots: null,
+    systemwideBots: null,
   };
 
   static validate = values => {
-    return {};
+    let errors = {};
+    for (let protocol in values.protocols) {
+      if (!values.protocols[protocol].credential) {
+        continue;
+      }
+      if (!values.protocols[protocol].bot) {
+        const protocolInfo = SUPPORTED_PROTOCOLS.find(p => p.slug === protocol);
+        errors['protocols'] = {
+          [protocol]: {
+            bot: `Please specify a bot for protocol: ${protocolInfo.label}`,
+          },
+        };
+      }
+    }
+    return errors;
   };
 
   render() {
@@ -25,20 +41,29 @@ class EntityProtocolsFormRender extends React.Component {
       onBlur,
       setFieldValue,
     } = this.props;
-    const { accountCredentials, accountSensors } = this.state;
     const { accountId } = this.props.match.params;
+    const { accountCredentials, accountSensors, accountBots, systemwideBots } = this.state;
+    const bots = accountBots === null || systemwideBots === null ? null : accountBots.concat(systemwideBots);
     return (
       <>
         <PersistentFetcher
           resource={`accounts/${accountId}/credentials`}
-          onUpdate={response => this.setState({ accountCredentials: response['list'] })}
+          onUpdate={response => this.setState({ accountCredentials: response.list })}
         />
         <PersistentFetcher
           resource={`accounts/${accountId}/sensors`}
-          onUpdate={response => this.setState({ accountSensors: response['list'] })}
+          onUpdate={response => this.setState({ accountSensors: response.list })}
+        />
+        <PersistentFetcher
+          resource={`accounts/${accountId}/bots`}
+          onUpdate={response => this.setState({ accountBots: response.list })}
+        />
+        <PersistentFetcher
+          resource={`bots`}
+          onUpdate={response => this.setState({ systemwideBots: response.list })}
         />
 
-        {accountCredentials === null || accountSensors === null ? (
+        {accountCredentials === null || accountSensors === null || bots === null ? (
           <Loading />
         ) : (
           <div className="frame">
@@ -60,6 +85,7 @@ class EntityProtocolsFormRender extends React.Component {
                     protocol={protocol}
                     credentials={accountCredentials.filter(c => c.protocol === protocol.slug)}
                     sensors={accountSensors.filter(s => s.protocol === protocol.slug)}
+                    bots={bots.filter(b => b.protocol === protocol.slug)}
                   />
                 ))}
               </div>

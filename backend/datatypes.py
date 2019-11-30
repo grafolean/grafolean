@@ -759,6 +759,14 @@ class Permission(object):
 
 
 class Bot(object):
+    """
+        There are two types of bots, account bots and systemwide bots. Account bots are tied to
+        a (single!) account and can be only used with its context, while systemwide bots can be
+        used by any account.
+        TODO: Note that database representation for this is currently a bit misleading, since
+        it uses users_accounts table instead of a special field in bots table. Additionally,
+        users_accounts table should be named persons_accounts (and only used for persons).
+    """
     def __init__(self, name, protocol, config, force_account=None, force_id=None):
         self.name = name
         self.protocol = protocol
@@ -826,15 +834,6 @@ class Bot(object):
             return False
         return True
 
-    @staticmethod
-    def _is_tied_only_to_account(user_id, account_id):
-        # additional check, just to be safe - bot must not have other accounts:
-        with db.cursor() as c:
-            c.execute('SELECT count(*) FROM users_accounts WHERE user_id = %s;', (user_id,))
-            if c.fetchone()[0] != 1:
-                return False
-        return True
-
     def update(self):
         if self.force_id is None:
             return 0
@@ -857,24 +856,20 @@ class Bot(object):
             if force_account is not None:
                 if not Bot._is_tied_to_account(user_id, force_account):
                     return 0
-                if not Bot._is_tied_only_to_account(user_id, force_account):
-                    # just remove the connection to this account, leave the bot itself alone:
-                    # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
-                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND user_type = 'bot' AND account = %s;", (user_id, force_account,))
-                    return c.rowcount
-
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
 
     @staticmethod
-    def get(user_id, force_account=None):
+    def get(user_id, tied_to_account=None):
         with db.cursor() as c:
-            if force_account is None:
-                c.execute('SELECT name, token, protocol, NULL, insert_time, last_login FROM bots WHERE user_id = %s;', (user_id,))
-            else:
+            if tied_to_account:
                 c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
-                          'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
+                          'WHERE ua.account = %s AND b.user_id = %s;', (tied_to_account, user_id,))
+            else:
+                c.execute('SELECT b.name, b.token, b.protocol, NULL, b.insert_time, b.last_login ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL AND b.user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
@@ -1072,6 +1067,7 @@ class Entity(object):
         #   protocols = {
         #     'snmp': {
         #       'credential': credential_id,
+        #       'bot': bot_id,
         #       'sensors': [sensor1_id, sensor2_id],
         #     },
         #   }
@@ -1083,6 +1079,16 @@ class Entity(object):
                 if not res:
                     raise ValidationError("Invalid credential for this account/protocol combination: {}".format(credential_id))
 
+                # validate that bot is either an account bot or a systemwide bot:
+                user_id = protocols[protocol]['bot']
+                bot = Bot.get(user_id, account_id)  # check if this is an account bot (for this account)
+                if not bot:
+                    bot = Bot.get(user_id, None)  # check if this is a systemwide bot
+                    if not bot:
+                        raise ValidationError("Invalid bot for this account: {}".format(user_id))
+                if bot['protocol'] != protocol:
+                    raise ValidationError("Invalid bot for this protocol: {}".format(user_id))
+
                 for sensor_info in protocols[protocol].get('sensors', []):
                     c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_info['sensor'], account_id, protocol,))
                     res = c.fetchone()
@@ -1091,7 +1097,7 @@ class Entity(object):
 
     @staticmethod
     def get_list(account_id):
-        with db.cursor() as c, db.cursor() as c2:
+        with db.cursor() as c, db.cursor() as c2, db.cursor() as c3:
             ret = []
             c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
             for entity_id, name, entity_type, details in c:
@@ -1104,6 +1110,10 @@ class Entity(object):
                         'credential': credential_id,
                         'sensors': [],
                     }
+                    c3.execute('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = %s AND eb.bot = b.user_id AND b.protocol = %s;', (entity_id, protocol))
+                    bot_res = c3.fetchone()
+                    protocols[protocol]['bot'] = bot_res[0] if bot_res else None
+
                 c2.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
                 for sensor_id, protocol, interval in c2:
                     if protocol not in protocols:
@@ -1135,17 +1145,21 @@ class Entity(object):
         # db_cursor: we would like to perform these changes inside the same DB transaction
         if clear_existing:
             db_cursor.execute("DELETE FROM entities_credentials WHERE entity = %s;", (entity_id,))
+            db_cursor.execute("DELETE FROM entities_bots WHERE entity = %s;", (entity_id,))
             db_cursor.execute("DELETE FROM entities_sensors WHERE entity = %s;", (entity_id,))
 
         for protocol in protocols:
             credential_id = protocols[protocol]['credential']
             db_cursor.execute("INSERT INTO entities_credentials (entity, credential) VALUES (%s, %s);", (entity_id, credential_id,))
+            bot_id = protocols[protocol].get('bot', None)
+            if bot_id:
+                db_cursor.execute("INSERT INTO entities_bots (entity, bot) VALUES (%s, %s);", (entity_id, bot_id,))
             for sensor_info in protocols[protocol].get('sensors', []):
                 db_cursor.execute("INSERT INTO entities_sensors (entity, sensor, interval) VALUES (%s, %s, %s);", (entity_id, sensor_info['sensor'], sensor_info['interval'],))
 
     @staticmethod
     def get(entity_id, account_id):
-        with db.cursor() as c:
+        with db.cursor() as c, db.cursor() as c2:
             c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
             res = c.fetchone()
             if not res:
@@ -1159,6 +1173,9 @@ class Entity(object):
                     'credential': credential_id,
                     'sensors': [],
                 }
+                c2.execute('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = %s AND eb.bot = b.user_id AND b.protocol = %s;', (entity_id, protocol))
+                bot_res = c2.fetchone()
+                protocols[protocol]['bot'] = bot_res[0] if bot_res else None
 
             c.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
             for sensor_id, protocol, interval in c:
@@ -1178,6 +1195,7 @@ class Entity(object):
             #   'protocols': {
             #       'snmp': {
             #           'credential': credential_id,
+            #           'bot': bot_id,  # or None
             #           'sensors': [
             #             { 'id': sensor_id1, 'name': sensor_name1 },
             #           ],
