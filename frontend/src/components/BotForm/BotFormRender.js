@@ -1,45 +1,36 @@
 import React from 'react';
 
-import isForm from '../isForm';
+import isFormikForm from '../isFormikForm';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 
 class BotFormRender extends React.Component {
-  areFormValuesValid() {
-    const {
-      formValues: { name = '' },
-    } = this.props;
-    if (name.length === 0) {
-      return false;
+  static validate = values => {
+    const { name = '' } = values;
+    if (!name) {
+      return { oldPassword: 'Name is required' };
     }
-    return true;
-  }
-
-  handleInputChange = ev => {
-    this.props.onInputChangeEvent(ev);
-    this.props.onValidChange(this.areFormValuesValid());
-  };
-
-  handleProtocolChange = newValue => {
-    this.props.onInputChange('protocol', newValue);
-    this.props.onValidChange(this.areFormValuesValid());
+    return {};
   };
 
   render() {
     const {
-      formValues: { name = '', protocol = '' },
+      values: { name = '', protocol = '' },
+      onChange,
+      onBlur,
+      setFieldValue,
     } = this.props;
     return (
       <>
         <div className="field">
           <label>Name:</label>
-          <input type="text" name="name" value={name} onChange={this.handleInputChange} />
+          <input type="text" name="name" value={name} onChange={onChange} onBlur={onBlur} />
         </div>
         <div className="field">
           <label>Protocol:</label>
           <span
             className={`protocol-choice ${!protocol && 'chosen'}`}
             value=""
-            onClick={() => this.handleProtocolChange('')}
+            onClick={() => setFieldValue('protocol', '')}
           >
             Custom
           </span>
@@ -48,7 +39,7 @@ class BotFormRender extends React.Component {
               key={p.slug}
               className={`protocol-choice ${p.slug === protocol && 'chosen'}`}
               value={p.slug}
-              onClick={() => this.handleProtocolChange(p.slug)}
+              onClick={() => setFieldValue('protocol', p.slug)}
             >
               {p.label}
             </span>
@@ -58,4 +49,4 @@ class BotFormRender extends React.Component {
     );
   }
 }
-export default isForm(BotFormRender);
+export default isFormikForm(BotFormRender);

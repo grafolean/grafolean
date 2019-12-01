@@ -22,16 +22,16 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, persons_api, status_api, admin_apidoc_schemas, accounts_apidoc_schemas
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, accounts_apidoc_schemas
 import validators
 
 
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
 # register the blueprints for different api endpoints:
+app.register_blueprint(users_api, url_prefix='/api')  # /api/users, /api/persons and /api/bots
 app.register_blueprint(admin_api, url_prefix='/api/admin')
 app.register_blueprint(profile_api, url_prefix='/api/profile')
-app.register_blueprint(persons_api, url_prefix='/api/persons')
 app.register_blueprint(accounts_api, url_prefix='/api/accounts')
 app.register_blueprint(status_api, url_prefix='/api/status')
 app.register_blueprint(auth_api, url_prefix='/api/auth')
@@ -189,6 +189,8 @@ def generate_api_docs(filename, api_version, openapi_version):
         plugins=[FlaskPlugin()],
         info={
             "description":
+                "IMPORTANT: API is in development and is **not finalized yet**! If you use it, be prepared for breaking changes "
+                "to occur. The documentation is not completed yet either.\n\n" \
                 "Grafolean is designed API-first. Meaning, every functionality of the system is accessible through the API " \
                 "described below. This allows integration with external systems so that (given the permissions) they too can " \
                 "enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend " \
@@ -197,7 +199,7 @@ def generate_api_docs(filename, api_version, openapi_version):
         }
     )
 
-    for schema_name, schema in admin_apidoc_schemas():
+    for schema_name, schema in users_apidoc_schemas():
         apidoc.components.schema(schema_name, schema)
     for schema_name, schema in accounts_apidoc_schemas():
         apidoc.components.schema(schema_name, schema)

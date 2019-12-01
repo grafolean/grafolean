@@ -11,23 +11,31 @@ class SidebarNotificationBadgeNoBots extends React.Component {
     - none of them have successfully logged-in yet (ever)
   */
   state = {
-    bots: null,
+    accountBots: null,
+    systemwideBots: null,
   };
 
-  onBotsUpdate = json => {
+  onAccountBotsUpdate = json => {
     this.setState({
-      bots: json.list,
+      accountBots: json.list,
+    });
+  };
+  onSystemwideBotsUpdate = json => {
+    this.setState({
+      systemwideBots: json.list,
     });
   };
 
   render() {
     const accountId = this.props.match.params.accountId;
-    const { bots } = this.state;
+    const { accountBots, systemwideBots } = this.state;
+    const bots = accountBots === null || systemwideBots === null ? null : accountBots.concat(systemwideBots);
     const botsAvailable = bots && bots.length > 0;
     const someBotsLoggedIn = bots && bots.filter(b => b.last_login !== null).length > 0;
     return (
       <>
-        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
+        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onAccountBotsUpdate} />
+        <PersistentFetcher resource={`bots`} onUpdate={this.onSystemwideBotsUpdate} />
         {bots !== null && ((!botsAvailable || !someBotsLoggedIn) && <NotificationBadge />)}
       </>
     );

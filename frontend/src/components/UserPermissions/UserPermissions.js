@@ -28,7 +28,7 @@ export default class UserPermissions extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
+    fetchAuth(`${ROOT_URL}/users/${this.props.match.params.userId}/permissions/${permissionId}`, {
       method: 'DELETE',
     })
       .then(handleFetchErrors)
@@ -73,14 +73,18 @@ export default class UserPermissions extends React.PureComponent {
   }
 
   render() {
-    const { userId } = this.props.match.params;
+    const {
+      url,
+      params: { userId },
+    } = this.props.match;
     return (
       <div className="user-permissions frame">
-        <PersistentFetcher resource={`admin/persons/${userId}`} onUpdate={this.onUserUpdate} />
+        <PersistentFetcher resource={`users/${userId}`} onUpdate={this.onUserUpdate} />
 
         {this.renderInner()}
 
-        <Link className="button green" to={`/users/${userId}/permissions/new`}>
+        {/* this component serves both /bots/... and /users/... URLs, make sure you stay within the correct path: */}
+        <Link className="button green" to={`${url}/new`}>
           <i className="fa fa-plus" /> Add permission
         </Link>
       </div>

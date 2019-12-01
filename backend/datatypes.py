@@ -700,6 +700,14 @@ class Permission(object):
             return account_id
 
     @staticmethod
+    def has_all_permissions(user_permissions, target_user_id):
+        """ Does the user have all the permissions that some other (target) user has? """
+        for target_permission in Permission.get_list(target_user_id):
+            if not Permission.can_grant_permission(user_permissions, target_permission['resource_prefix'], target_permission['methods']):
+                return False
+        return True
+
+    @staticmethod
     def is_access_allowed(user_id, resource, method):
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
@@ -758,7 +766,46 @@ class Permission(object):
         return False
 
 
+class User(object):
+    """
+        Users can be either persons or bots. Since the permissions system is the same, we are
+        using the same top-level DB table (users) for both, and reference them by user_id. This
+        class offers common functionality.
+    """
+    @staticmethod
+    def get(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT user_type FROM users WHERE id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            user_type, = res
+            # get the underlying record, either a person or a bot:
+            record = None
+            if user_type == 'bot':
+                bot_tied_to_account = Bot.get_tied_to_account(user_id)
+                if bot_tied_to_account:
+                    record = Bot.get(user_id, bot_tied_to_account)
+                else:
+                    record = Bot.get(user_id, None)
+            elif user_type == 'person':
+                record = Person.get(user_id)
+        return {
+            'user_id': user_id,
+            'user_type': user_type,
+            'name': record['name'],
+        }
+
+
 class Bot(object):
+    """
+        There are two types of bots, account bots and systemwide bots. Account bots are tied to
+        a (single!) account and can be only used with its context, while systemwide bots can be
+        used by any account.
+        TODO: Note that database representation for this is currently a bit misleading, since
+        it uses users_accounts table instead of a special field in bots table. Additionally,
+        users_accounts table should be named persons_accounts (and only used for persons).
+    """
     def __init__(self, name, protocol, config, force_account=None, force_id=None):
         self.name = name
         self.protocol = protocol
@@ -785,17 +832,24 @@ class Bot(object):
         with db.cursor() as c:
             ret = []
             if force_account is None:
-                c.execute('SELECT user_id, name, protocol, token, insert_time, last_login FROM bots ORDER BY insert_time DESC;')
+                # return systemwide bots:
+                # Note: in hindsight, it would probably make sense to have a field "account" in a bots
+                # table, instead of having a separate users_account table. This SELECT finds those
+                # rows that *don't* have a corresponding entry in users_accounts:
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.insert_time, b.last_login ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL ORDER BY b.insert_time DESC;')
             else:
-                c.execute('SELECT b.user_id, b.name, b.protocol, b.token, b.insert_time, b.last_login ' +
+                # return bots tied to a specific account:
+                c.execute('SELECT b.user_id, b.name, b.protocol, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
                           'WHERE ua.account = %s ORDER BY b.insert_time DESC;', (force_account,))
-            for user_id, name, protocol, token, insert_time, last_login in c:
+            for user_id, name, protocol, insert_time, last_login in c:
                 ret.append({
                     'id': user_id,
                     'name': name,
                     'protocol': protocol,
-                    'token': token,
+                    'tied_to_account': force_account,
                     'insert_time': calendar.timegm(insert_time.timetuple()),
                     'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
                 })
@@ -811,29 +865,12 @@ class Bot(object):
                 c.execute("INSERT INTO users_accounts (user_id, account, config) VALUES (%s, %s, %s);", (user_id, self.force_account, self.config,))
             return user_id, bot_token
 
-    @staticmethod
-    def _is_tied_to_account(user_id, account_id):
-        # make sure that the bot with this user_id really has this account:
-        test_record = Bot.get(user_id, account_id)
-        if not test_record:
-            return False
-        return True
-
-    @staticmethod
-    def _is_tied_only_to_account(user_id, account_id):
-        # additional check, just to be safe - bot must not have other accounts:
-        with db.cursor() as c:
-            c.execute('SELECT count(*) FROM users_accounts WHERE user_id = %s;', (user_id,))
-            if c.fetchone()[0] != 1:
-                return False
-        return True
-
     def update(self):
         if self.force_id is None:
             return 0
         with db.cursor() as c:
             if self.force_account is not None:
-                if not Bot._is_tied_to_account(self.force_id, self.force_account):
+                if self.force_account != Bot.get_tied_to_account(self.force_id):
                     return 0
 
             c.execute("UPDATE bots SET name = %s, protocol = %s WHERE user_id = %s;", (self.name, self.protocol, self.force_id,))
@@ -848,39 +885,65 @@ class Bot(object):
     def delete(user_id, force_account=None):
         with db.cursor() as c:
             if force_account is not None:
-                if not Bot._is_tied_to_account(user_id, force_account):
+                if force_account != Bot.get_tied_to_account(user_id):
                     return 0
-                if not Bot._is_tied_only_to_account(user_id, force_account):
-                    # just remove the connection to this account, leave the bot itself alone:
-                    # (this can't actually happen because we can't tie bot to multiple accounts - no API endpoint for that. Still, DB schema allows for that option...)
-                    c.execute("DELETE FROM users_accounts WHERE user_id = %s AND user_type = 'bot' AND account = %s;", (user_id, force_account,))
-                    return c.rowcount
-
             c.execute("DELETE FROM users WHERE id = %s AND user_type = 'bot';", (user_id,))  # record from bots will be removed automatically (cascade)
             return c.rowcount
 
     @staticmethod
-    def get(user_id, force_account=None):
+    def get(user_id, tied_to_account=None):
         with db.cursor() as c:
-            if force_account is None:
-                c.execute('SELECT name, token, protocol, NULL, insert_time, last_login FROM bots WHERE user_id = %s;', (user_id,))
-            else:
-                c.execute('SELECT b.name, b.token, b.protocol, ua.config, b.insert_time, b.last_login ' +
+            if tied_to_account:
+                c.execute('SELECT b.name, b.protocol, ua.config, b.insert_time, b.last_login ' +
                           'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
-                          'WHERE ua.account = %s AND b.user_id = %s;', (force_account, user_id,))
+                          'WHERE ua.account = %s AND b.user_id = %s;', (tied_to_account, user_id,))
+            else:
+                c.execute('SELECT b.name, b.protocol, NULL, b.insert_time, b.last_login ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL AND b.user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            name, token, protocol, config, insert_time, last_login = res
+            name, protocol, config, insert_time, last_login = res
         return {
             'id': int(user_id),
             'name': name,
-            'token': token,
             'protocol': protocol,
+            'tied_to_account': tied_to_account,
             'config': config,
             'insert_time': calendar.timegm(insert_time.timetuple()),
             'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
         }
+
+    @staticmethod
+    def get_token(user_id, tied_to_account=None):
+        """ Token is a bit special - we only return it upon special request, because endpoints need
+            to make sure that requesting user has all the permissions necessary.
+        """
+        with db.cursor() as c:
+            if tied_to_account:
+                c.execute('SELECT b.token ' +
+                          'FROM bots AS b INNER JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account = %s AND b.user_id = %s;', (tied_to_account, user_id,))
+            else:
+                c.execute('SELECT b.token ' +
+                          'FROM bots AS b LEFT JOIN users_accounts AS ua ON b.user_id = ua.user_id ' +
+                          'WHERE ua.account IS NULL AND b.user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            token, = res
+        return token
+
+    @staticmethod
+    def get_tied_to_account(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT account FROM users_accounts WHERE user_id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            account_id, = res
+        return account_id
 
     @staticmethod
     def authenticate_token(bot_token_unclean):
@@ -1065,6 +1128,7 @@ class Entity(object):
         #   protocols = {
         #     'snmp': {
         #       'credential': credential_id,
+        #       'bot': bot_id,
         #       'sensors': [sensor1_id, sensor2_id],
         #     },
         #   }
@@ -1076,6 +1140,16 @@ class Entity(object):
                 if not res:
                     raise ValidationError("Invalid credential for this account/protocol combination: {}".format(credential_id))
 
+                # validate that bot is either an account bot or a systemwide bot:
+                user_id = protocols[protocol]['bot']
+                bot = Bot.get(user_id, account_id)  # check if this is an account bot (for this account)
+                if not bot:
+                    bot = Bot.get(user_id, None)  # check if this is a systemwide bot
+                    if not bot:
+                        raise ValidationError("Invalid bot for this account: {}".format(user_id))
+                if bot['protocol'] != protocol:
+                    raise ValidationError("Invalid bot for this protocol: {}".format(user_id))
+
                 for sensor_info in protocols[protocol].get('sensors', []):
                     c.execute('SELECT id FROM sensors WHERE id = %s AND account = %s AND protocol = %s;', (sensor_info['sensor'], account_id, protocol,))
                     res = c.fetchone()
@@ -1084,7 +1158,7 @@ class Entity(object):
 
     @staticmethod
     def get_list(account_id):
-        with db.cursor() as c, db.cursor() as c2:
+        with db.cursor() as c, db.cursor() as c2, db.cursor() as c3:
             ret = []
             c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
             for entity_id, name, entity_type, details in c:
@@ -1097,6 +1171,10 @@ class Entity(object):
                         'credential': credential_id,
                         'sensors': [],
                     }
+                    c3.execute('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = %s AND eb.bot = b.user_id AND b.protocol = %s;', (entity_id, protocol))
+                    bot_res = c3.fetchone()
+                    protocols[protocol]['bot'] = bot_res[0] if bot_res else None
+
                 c2.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
                 for sensor_id, protocol, interval in c2:
                     if protocol not in protocols:
@@ -1128,17 +1206,21 @@ class Entity(object):
         # db_cursor: we would like to perform these changes inside the same DB transaction
         if clear_existing:
             db_cursor.execute("DELETE FROM entities_credentials WHERE entity = %s;", (entity_id,))
+            db_cursor.execute("DELETE FROM entities_bots WHERE entity = %s;", (entity_id,))
             db_cursor.execute("DELETE FROM entities_sensors WHERE entity = %s;", (entity_id,))
 
         for protocol in protocols:
             credential_id = protocols[protocol]['credential']
             db_cursor.execute("INSERT INTO entities_credentials (entity, credential) VALUES (%s, %s);", (entity_id, credential_id,))
+            bot_id = protocols[protocol].get('bot', None)
+            if bot_id:
+                db_cursor.execute("INSERT INTO entities_bots (entity, bot) VALUES (%s, %s);", (entity_id, bot_id,))
             for sensor_info in protocols[protocol].get('sensors', []):
                 db_cursor.execute("INSERT INTO entities_sensors (entity, sensor, interval) VALUES (%s, %s, %s);", (entity_id, sensor_info['sensor'], sensor_info['interval'],))
 
     @staticmethod
     def get(entity_id, account_id):
-        with db.cursor() as c:
+        with db.cursor() as c, db.cursor() as c2:
             c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
             res = c.fetchone()
             if not res:
@@ -1152,6 +1234,9 @@ class Entity(object):
                     'credential': credential_id,
                     'sensors': [],
                 }
+                c2.execute('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = %s AND eb.bot = b.user_id AND b.protocol = %s;', (entity_id, protocol))
+                bot_res = c2.fetchone()
+                protocols[protocol]['bot'] = bot_res[0] if bot_res else None
 
             c.execute('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = %s AND es.sensor = s.id AND s.account = %s;', (entity_id, account_id))
             for sensor_id, protocol, interval in c:
@@ -1171,6 +1256,7 @@ class Entity(object):
             #   'protocols': {
             #       'snmp': {
             #           'credential': credential_id,
+            #           'bot': bot_id,  # or None
             #           'sensors': [
             #             { 'id': sensor_id1, 'name': sensor_name1 },
             #           ],

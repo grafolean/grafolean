@@ -18,7 +18,7 @@ export default class Persons extends React.PureComponent {
   }
 
   fetchPersons = () => {
-    fetchAuth(`${ROOT_URL}/admin/persons/`)
+    fetchAuth(`${ROOT_URL}/persons/`)
       .then(handleFetchErrors)
       .then(response => response.json())
       .then(json =>
@@ -36,7 +36,7 @@ export default class Persons extends React.PureComponent {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/admin/persons/${personId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/persons/${personId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .then(() =>
         this.setState(
