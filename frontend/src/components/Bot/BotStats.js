@@ -33,7 +33,7 @@ export default class BotStats extends React.Component {
             Entities: {entitiesCount}
             <br />
             Sensors: {sensorsCount}
-            <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+            <Link to={`/accounts/${accountId}/bots/${bot.id}/view`}>
               <NotificationBadge />
             </Link>
           </>

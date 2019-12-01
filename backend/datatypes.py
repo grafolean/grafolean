@@ -766,6 +766,37 @@ class Permission(object):
         return False
 
 
+class User(object):
+    """
+        Users can be either persons or bots. Since the permissions system is the same, we are
+        using the same top-level DB table (users) for both, and reference them by user_id. This
+        class offers common functionality.
+    """
+    @staticmethod
+    def get(user_id):
+        with db.cursor() as c:
+            c.execute('SELECT user_type FROM users WHERE id = %s;', (user_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            user_type, = res
+            # get the underlying record, either a person or a bot:
+            record = None
+            if user_type == 'bot':
+                bot_tied_to_account = Bot.get_tied_to_account(user_id)
+                if bot_tied_to_account:
+                    record = Bot.get(user_id, bot_tied_to_account)
+                else:
+                    record = Bot.get(user_id, None)
+            elif user_type == 'person':
+                record = Person.get(user_id)
+        return {
+            'user_id': user_id,
+            'user_type': user_type,
+            'name': record['name'],
+        }
+
+
 class Bot(object):
     """
         There are two types of bots, account bots and systemwide bots. Account bots are tied to

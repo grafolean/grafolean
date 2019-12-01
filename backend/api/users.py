@@ -5,7 +5,7 @@ import copy
 import psycopg2
 
 from .common import auth_no_permissions, mqtt_publish_changed
-from datatypes import Account, Bot, Permission, Person, AccessDeniedError
+from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
 
 users_api = flask.Blueprint('users_api', __name__)
@@ -80,6 +80,15 @@ def users_apidoc_schemas():
 # --------------
 # /api/users/, /api/persons/ and /api/bots/ - user management
 # --------------
+
+
+@users_api.route('/users/<int:user_id>', methods=['GET'])
+def users_user_get(user_id):
+    rec = User.get(user_id)
+    if not rec:
+        return "No such user", 404
+    rec['permissions'] = Permission.get_list(user_id)
+    return json.dumps(rec), 200
 
 
 @users_api.route('/bots', methods=['GET', 'POST'])
@@ -578,6 +587,7 @@ def users_permission_delete(permission_id, user_id):
         return "No such permission", 404
     mqtt_publish_changed([
         'persons/{user_id}'.format(user_id=user_id),
+        'users/{user_id}'.format(user_id=user_id),
         'bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204

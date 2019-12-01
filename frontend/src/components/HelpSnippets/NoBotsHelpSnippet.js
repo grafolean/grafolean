@@ -11,7 +11,7 @@ class NoBotsHelpSnippet extends React.PureComponent {
         <p>
           <b>Bots</b> are external scripts and applications that send values to Grafolean.
         </p>
-        <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+        <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
           <i className="fa fa-plus" /> Add a bot
         </Link>
       </HelpSnippet>

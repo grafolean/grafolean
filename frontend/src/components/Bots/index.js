@@ -48,12 +48,14 @@ export default class Bots extends React.PureComponent {
 
   handleDelete = (ev, botId) => {
     ev.preventDefault();
-    const bot = this.state.bots.find(bot => bot.id === botId);
+    const { accountBots } = this.state;
+    const accountId = this.props.match.params.accountId;
+    const bot = accountBots.find(bot => bot.id === botId);
     if (!window.confirm(`Are you sure you want to delete bot "${bot.name}" ? This can't be undone!`)) {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/accounts/${this.props.match.params.accountId}/bots/${botId}`, { method: 'DELETE' })
+    fetchAuth(`${ROOT_URL}/accounts/${accountId}/bots/${botId}`, { method: 'DELETE' })
       .then(handleFetchErrors)
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
@@ -88,7 +90,7 @@ export default class Bots extends React.PureComponent {
                       {bot.isSystemwide ? (
                         bot.name
                       ) : (
-                        <Link className="button green" to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                        <Link className="button green" to={`/accounts/${accountId}/bots/${bot.id}/view`}>
                           <i className="fa fa-robot" /> {bot.name}
                         </Link>
                       )}
@@ -109,7 +111,7 @@ export default class Bots extends React.PureComponent {
                         <>
                           Never
                           {!bot.isSystemwide && (
-                            <Link to={`/accounts/${accountId}/bots/view/${bot.id}`}>
+                            <Link to={`/accounts/${accountId}/bots/${bot.id}/view`}>
                               <NotificationBadge />
                             </Link>
                           )}
@@ -134,7 +136,7 @@ export default class Bots extends React.PureComponent {
                 ))}
               </tbody>
             </table>
-            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+            <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
               <i className="fa fa-plus" /> Add bot
             </Link>
           </div>
@@ -143,7 +145,7 @@ export default class Bots extends React.PureComponent {
             <p>
               <b>Bots</b> are external scripts and applications that send values to Grafolean.
             </p>
-            <Link className="button green" to={`/accounts/${accountId}/bots/new`}>
+            <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
               <i className="fa fa-plus" /> Add bot
             </Link>
           </HelpSnippet>

@@ -34,6 +34,26 @@ class Breadcrumbs extends React.Component {
           path="/bots"
           render={props => <BreadcrumbItem label="Systemwide bots" match={props.match} />}
         />
+        <Route
+          path="/bots/:userId"
+          render={props => (
+            <FetchedLabelBreadcrumbItem
+              recordId={props.match.params.userId}
+              resource={`users/${props.match.params.userId}`}
+              match={props.match}
+              link={false}
+            />
+          )}
+        />
+        <Route
+          path="/bots/:userId/permissions"
+          render={props => <BreadcrumbItem label="Permissions" match={props.match} />}
+        />
+        <Route
+          path="/bots/:userId/permissions/new"
+          render={props => <BreadcrumbItem label="New" match={props.match} />}
+        />
+
         <Route path="/users" render={props => <BreadcrumbItem label="Users" match={props.match} />} />
         <Route
           path="/users-new"
@@ -44,8 +64,9 @@ class Breadcrumbs extends React.Component {
           render={props => (
             <FetchedLabelBreadcrumbItem
               recordId={props.match.params.userId}
-              resource={`persons/${props.match.params.userId}`}
+              resource={`users/${props.match.params.userId}`}
               match={props.match}
+              link={false}
             />
           )}
         />
@@ -77,11 +98,11 @@ class Breadcrumbs extends React.Component {
           render={props => <BreadcrumbItem label="Bots" match={props.match} />}
         />
         <Route
-          path="/accounts/:accountId/bots/new"
+          path="/accounts/:accountId/bots-new"
           render={props => <BreadcrumbItem label="Add new bot" match={props.match} />}
         />
         <Route
-          path="/accounts/:accountId/bots/view/:botId"
+          path="/accounts/:accountId/bots/:botId/view"
           render={props => (
             <FetchedLabelBreadcrumbItem
               recordId={props.match.params.botId}

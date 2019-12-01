@@ -59,13 +59,14 @@ export default class SystemwideBots extends React.Component {
                   <th>Insert time (UTC)</th>
                   <th>Last successful login (UTC)</th>
                   <th />
+                  <th />
                 </tr>
               </thead>
               <tbody>
                 {bots.map(bot => (
                   <tr key={bot.id}>
                     <td data-label="Name">
-                      <Link className="button green" to={`/bots/edit/${bot.id}`}>
+                      <Link className="button green" to={`/bots/${bot.id}/edit`}>
                         <i className="fa fa-robot" /> {bot.name}
                       </Link>
                     </td>
@@ -86,6 +87,11 @@ export default class SystemwideBots extends React.Component {
                         </>
                       )}
                     </td>
+                    <td>
+                      <Link className="button green" to={`/bots/${bot.id}/permissions`}>
+                        <i className="fa fa-user-lock" /> Permissions
+                      </Link>
+                    </td>
                     <td data-label="">
                       <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
                         <i className="fa fa-trash" /> Delete
@@ -95,7 +101,7 @@ export default class SystemwideBots extends React.Component {
                 ))}
               </tbody>
             </table>
-            <Link className="button green" to={`/bots/new`}>
+            <Link className="button green" to={`/bots-new`}>
               <i className="fa fa-plus" /> Add bot
             </Link>
           </div>
@@ -105,7 +111,7 @@ export default class SystemwideBots extends React.Component {
               <b>Bots</b> are external scripts and applications that send values to Grafolean. Systemwide bots
               can be used by multiple accounts.
             </p>
-            <Link className="button green" to={`/bots/new`}>
+            <Link className="button green" to={`/bots-new`}>
               <i className="fa fa-plus" /> Add a systemwide bot
             </Link>
           </HelpSnippet>
