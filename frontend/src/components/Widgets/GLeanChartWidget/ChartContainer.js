@@ -223,14 +223,20 @@ export class ChartContainer extends React.Component {
   };
 
   onNotification = (mqttPayload, topic) => {
-    const { drawnChartSeries } = this.props;
+    const { allChartSeries } = this.props;
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs <= mqttPayload.t && fi.toTs > mqttPayload.t);
     if (!interval) {
       return false; // none of our intervals cares about this timestamp, ignore
     }
-    const path = topic.substring('accounts/1/values/'.length);
-    if (!drawnChartSeries.find(cs => cs.path === path)) {
+    const { accountId } = this.props.match.params;
+    const prefix = `accounts/${accountId}/values/`;
+    if (topic.substring(0, prefix.length) !== prefix) {
+      console.error('Oops, this should not happen - we received a notification we did not expect!');
+      return false;
+    }
+    const path = topic.substring(prefix.length);
+    if (!allChartSeries.find(cs => cs.path === path)) {
       return false; // unknown path, ignore
     }
     this.setState({ fetching: true });
@@ -310,6 +316,7 @@ export class ChartContainer extends React.Component {
   render() {
     const { allChartSeries } = this.props;
     const { aggrLevel } = this.state;
+    const { accountId } = this.props.match.params;
     const allPaths = allChartSeries.map(cs => cs.path);
     const fetchIntervals = this.getFetchIntervals();
     return (
@@ -318,8 +325,8 @@ export class ChartContainer extends React.Component {
           fetchIntervals.map(fi => (
             <PersistentFetcher
               key={`${aggrLevel}-${fi.fromTs}`}
-              resource={`accounts/${this.props.match.params.accountId}/getvalues`}
-              mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
+              resource={`accounts/${accountId}/getvalues`}
+              mqttTopic={`accounts/${accountId}/values/+`}
               fetchOptions={{
                 method: 'POST',
                 headers: {
