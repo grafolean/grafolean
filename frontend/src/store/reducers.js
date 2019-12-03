@@ -13,6 +13,7 @@ import {
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
   SET_COLOR_SCHEME,
+  SET_FULLSCREEN_DIBS,
 } from './actions';
 
 function notifications(state = [], action) {
@@ -81,12 +82,22 @@ function preferences(state = { colorScheme: 'dark' }, action) {
   }
 }
 
+function fullscreenDibs(state = false, action) {
+  switch (action.type) {
+    case SET_FULLSCREEN_DIBS:
+      return action.payload;
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
-  user,
-  backendStatus,
-  accounts,
-  preferences,
-  notifications,
+  user: user,
+  backendStatus: backendStatus,
+  accounts: accounts,
+  preferences: preferences,
+  notifications: notifications,
+  fullscreenDibs: fullscreenDibs,
 });
 
 export default grafoleanApp;

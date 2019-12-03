@@ -23,7 +23,7 @@ class Main extends React.Component {
   SCROLLBAR_WIDTH = 20; // contrary to Internet wisdom, it seems that window.innerWidth and document.body.clientWidth returns width of whole window with scrollbars too... this is a (temporary?) workaround.
   SIDEBAR_MAX_WIDTH = 250;
   state = {
-    sidebarDocked: false,
+    widthAllowsDocking: false,
     sidebarOpen: false,
     windowWidth: 0,
     windowHeight: 0,
@@ -52,7 +52,7 @@ class Main extends React.Component {
   };
 
   mqlWidthOver800pxChanged = () => {
-    this.setState({ sidebarDocked: this.mqlWidthOver800px.matches });
+    this.setState({ widthAllowsDocking: this.mqlWidthOver800px.matches });
   };
 
   onBurgerClick = event => {
@@ -109,10 +109,11 @@ class Main extends React.Component {
       return <LoginPage />;
     }
 
-    const { sidebarDocked, sidebarOpen, windowWidth } = this.state;
-    const { isDarkMode } = this.props;
+    const { widthAllowsDocking, sidebarOpen, windowWidth } = this.state;
+    const { isDarkMode, fullscreenDibs } = this.props;
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
+    const sidebarDocked = widthAllowsDocking && !fullscreenDibs;
     const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
 
     return (
@@ -165,5 +166,6 @@ const mapBackendStatusToProps = store => ({
   backendStatus: store.backendStatus,
   loggedIn: Boolean(store.user),
   isDarkMode: store.preferences.colorScheme === 'dark',
+  fullscreenDibs: store.fullscreenDibs,
 });
 export default connect(mapBackendStatusToProps)(Main);
