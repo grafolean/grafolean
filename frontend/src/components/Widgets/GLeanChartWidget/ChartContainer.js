@@ -286,12 +286,12 @@ export class ChartContainer extends React.Component {
 
   getDataInFetchedIntervalsDataFormat = (fetchedPathsValues, aggrLevel) => {
     // this function converts our internal data to the format that ChartView expects
-    const { drawnChartSeries } = this.props;
+    const { allChartSeries } = this.props;
 
     const result = Object.values(get(fetchedPathsValues, aggrLevel, {})).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
       const csData = {};
-      drawnChartSeries.forEach(cs => {
+      allChartSeries.forEach(cs => {
         if (!paths[cs.path]) {
           return;
         }
@@ -308,16 +308,16 @@ export class ChartContainer extends React.Component {
   };
 
   render() {
-    const { drawnChartSeries } = this.props;
+    const { allChartSeries } = this.props;
     const { aggrLevel } = this.state;
-    const allPaths = drawnChartSeries.map(cs => cs.path);
+    const allPaths = allChartSeries.map(cs => cs.path);
     const fetchIntervals = this.getFetchIntervals();
     return (
       <>
         {allPaths.length > 0 &&
           fetchIntervals.map(fi => (
             <PersistentFetcher
-              key={fi.fromTs}
+              key={`${aggrLevel}-${fi.fromTs}`}
               resource={`accounts/${this.props.match.params.accountId}/getvalues`}
               mqttTopic={`accounts/${this.props.match.params.accountId}/values/+`}
               fetchOptions={{
