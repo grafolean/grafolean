@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Route } from 'react-router-dom';
 
 import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure } from '../../store/actions';
+import { ROOT_URL, handleFetchErrors, onSuccess, onFailure, setFullscreenDibs } from '../../store/actions';
 
 import './index.scss';
 
@@ -75,6 +75,7 @@ const isWidget = WrappedComponent => {
     };
 
     toggleFullscreen = shouldBeFullscreen => {
+      store.dispatch(setFullscreenDibs(shouldBeFullscreen));
       this.setState({
         isFullscreen: shouldBeFullscreen,
       });

@@ -86,6 +86,16 @@ export function setColorScheme(colorScheme) {
   };
 }
 
+// When widget goes fullscreen, sidebar must be kind enough to hide itself, which means it
+// must know that someone is trying to be fullscreen:
+export const SET_FULLSCREEN_DIBS = 'SET_FULLSCREEN_DIBS';
+export function setFullscreenDibs(isFullscreenReserved) {
+  return {
+    type: SET_FULLSCREEN_DIBS,
+    payload: isFullscreenReserved,
+  };
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even
