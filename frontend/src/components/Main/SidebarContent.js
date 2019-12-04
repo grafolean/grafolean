@@ -101,7 +101,7 @@ class _AccountSidebarContent extends React.Component {
             to={`/accounts/${accountId}/dashboards`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-fw fa-dashboard" /> Dashboards
+            <i className="fa fa-fw fa-bar-chart" /> Dashboards
           </Link>
         )}
 
@@ -145,7 +145,7 @@ class DefaultSidebarContent extends React.Component {
     const { onSidebarLinkClick } = this.props;
     return (
       <Link className="button green" to="/" onClick={onSidebarLinkClick}>
-        <i className="fa fa-fw fa-dashboard" /> Accounts
+        <i className="fa fa-fw fa-user-circle" /> Accounts
       </Link>
     );
   }

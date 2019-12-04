@@ -77,7 +77,7 @@ export default class Dashboards extends React.Component {
                           className="button green"
                           to={`/accounts/${accountId}/dashboards/view/${dashboard.slug}`}
                         >
-                          <i className="fa fa-dashboard" /> {dashboard.name}
+                          <i className="fa fa-bar-chart" /> {dashboard.name}
                         </Link>
                       </td>
                       <td>
