@@ -25,7 +25,12 @@ export class ChartContainer extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (prevProps.allChartSeries !== this.props.allChartSeries) {
-      this.updateYAxisProperties({});
+      this.updateYAxisProperties();
+    }
+
+    // fullscreen:
+    if (prevProps.height !== this.props.height) {
+      this.updateYAxisProperties();
     }
 
     if (
@@ -103,10 +108,15 @@ export class ChartContainer extends React.Component {
     }
   }
 
-  updateYAxisProperties(pathsValues) {
+  updateYAxisProperties() {
     // update min/max value and similar:
     this.setState(prevState => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
+      const { fetchedPathsValues, aggrLevel } = prevState;
+
+      if (!fetchedPathsValues || !fetchedPathsValues[aggrLevel]) {
+        return {};
+      }
 
       for (let cs of this.props.allChartSeries) {
         if (!newYAxesProperties.hasOwnProperty(cs.unit)) {
@@ -115,18 +125,20 @@ export class ChartContainer extends React.Component {
             maxYValue: Number.NEGATIVE_INFINITY,
           };
         }
-        if (!pathsValues[cs.path]) {
-          continue;
-        }
         const mathExpression = compile(cs.expression);
 
-        const data = pathsValues[cs.path].data;
-        const lowestV = Math.min(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.minv)));
-        const highestV = Math.max(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.maxv)));
-        const minYValue = mathExpression.evaluate({ $1: lowestV });
-        const maxYValue = mathExpression.evaluate({ $1: highestV });
-        newYAxesProperties[cs.unit].minYValue = Math.min(newYAxesProperties[cs.unit].minYValue, minYValue);
-        newYAxesProperties[cs.unit].maxYValue = Math.max(newYAxesProperties[cs.unit].maxYValue, maxYValue);
+        Object.keys(fetchedPathsValues[aggrLevel]).forEach(intervalId => {
+          if (!fetchedPathsValues[aggrLevel][intervalId].paths[cs.path]) {
+            return;
+          }
+          const data = fetchedPathsValues[aggrLevel][intervalId].paths[cs.path].data;
+          const lowestV = Math.min(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.minv)));
+          const highestV = Math.max(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.maxv)));
+          const minYValue = mathExpression.evaluate({ $1: lowestV });
+          const maxYValue = mathExpression.evaluate({ $1: highestV });
+          newYAxesProperties[cs.unit].minYValue = Math.min(newYAxesProperties[cs.unit].minYValue, minYValue);
+          newYAxesProperties[cs.unit].maxYValue = Math.max(newYAxesProperties[cs.unit].maxYValue, maxYValue);
+        });
       }
 
       // clean up any entry that doesn't have any values:
@@ -264,8 +276,8 @@ export class ChartContainer extends React.Component {
     }
     const intervalId = `${interval.fromTs}-${interval.toTs}`;
     this.setState(
-      prevState => {
-        const fetchedPathsValues = {
+      prevState => ({
+        fetchedPathsValues: {
           ...prevState.fetchedPathsValues,
           [prevState.aggrLevel]: {
             ...get(prevState.fetchedPathsValues, prevState.aggrLevel, {}),
@@ -275,20 +287,24 @@ export class ChartContainer extends React.Component {
               paths: json.paths,
             },
           },
-        };
-        return {
-          fetchedPathsValues: fetchedPathsValues,
-          // Optimization: this is derived information (data in format which is understood by ChartView), but
-          // if we calculate it in every render, the charts become very sluggish. The solution is to put it in state:
-          derivedFetchedIntervalsData: this.getDataInFetchedIntervalsDataFormat(
-            fetchedPathsValues,
-            prevState.aggrLevel,
-          ),
-        };
-      },
-      () => this.updateYAxisProperties(json.paths),
+        },
+      }),
+      this.updateDerivedFetchedIntervalsData,
     );
   };
+
+  updateDerivedFetchedIntervalsData() {
+    this.setState(prevState => {
+      return {
+        // Optimization: this is derived information (data in format which is understood by ChartView), but
+        // if we calculate it in every render, the charts become very sluggish. The solution is to put it in state:
+        derivedFetchedIntervalsData: this.getDataInFetchedIntervalsDataFormat(
+          prevState.fetchedPathsValues,
+          prevState.aggrLevel,
+        ),
+      };
+    }, this.updateYAxisProperties);
+  }
 
   getDataInFetchedIntervalsDataFormat = (fetchedPathsValues, aggrLevel) => {
     // this function converts our internal data to the format that ChartView expects
