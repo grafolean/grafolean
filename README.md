@@ -25,15 +25,15 @@ If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issue
 This is the easiest and currently the only officially supported way. [Open an issue](https://gitlab.com/grafolean/grafolean/issues) if you need help
 installing some other way (or to post your experience).
 
-All the services necessary can be run with a few simple steps:
+All the required services can be run with a few simple steps:
 
 1) save [install/docker-compose.yml](https://gitlab.com/grafolean/grafolean/raw/master/install/docker-compose.yml) to a local file
-2) edit `docker-compose.yml` and change:
-    - mandatory: `MQTT_WS_HOSTNAME` (set to the external IP/hostname of the server),
-    - optional but recommended: DB admin credentials, and
-    - optional: the path where the DB data will be saved locally (`/grafolean/db/` by default).
-3) run: `docker-compose up -d`
-4) point your browser to http://<IP or domain>/ and follow any further instructions
+2) save [.env.example](https://gitlab.com/grafolean/grafolean/raw/master/install/.env.example) to a local file and rename it to `.env`
+3) edit `.env` and change:
+    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside),
+    - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
+4) run: `docker-compose up -d`
+5) point your browser to `http://<IP or domain>/` (note that `<IP or domain>` should be the same as `EXTERNAL_HOSTNAME` in step 3)
 
 See [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for details on how to setup HTTPS.
 
@@ -45,7 +45,7 @@ See [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for details on how to setup HTTPS.
 
 # How to use
 
-[Grafolean user guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
+[User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
 
 ## Sending values
 
@@ -55,11 +55,11 @@ To send values to Grafolean with a *custom* bot, you first need to create a bot 
 $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
 ```
 
-Please consult [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
+See [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
 
-Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean user guide](doc/user-guide.md) for more information.
+Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean User Guide](doc/user-guide.md) for more information.
 
 # Development
 
-Please see [doc/HOWTO-dev.md](doc/HOWTO-dev.md) for details.
+See [doc/HOWTO-dev.md](doc/HOWTO-dev.md) for details.
 
