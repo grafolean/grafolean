@@ -20,5 +20,5 @@ jobs:
         chmod -R go+w frontend/
         ls -altr
         echo "export const VERSION_INFO = { ciCommitTag: '$VERSION' };" > ./frontend/src/VERSION.js
-        cat frontend/src/VERSION.json
+        cat frontend/src/VERSION.js
         cat frontend/src/CHANGELOG.json
