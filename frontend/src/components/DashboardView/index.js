@@ -12,6 +12,8 @@ import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import { fetchAuth, havePermission } from '../../utils/fetch';
 
+import './DashboardView.scss';
+
 class _DashboardView extends React.Component {
   state = {
     loading: false,
@@ -138,21 +140,21 @@ class _DashboardView extends React.Component {
     );
     return (
       <div>
-        <div className="frame dashboard-info">
-          <span>
-            Dashboard:{' '}
-            <EditableLabel
-              label={this.state.name}
-              onChange={this.setDashboardName}
-              isEditable={canEditDashboardTitle}
-            />
-          </span>
-          {loading && <Loading overlayParent={true} />}
-        </div>
+        <div className="frame">
+          <div className="dashboard-info">
+            <span>
+              Dashboard:{' '}
+              <EditableLabel
+                label={this.state.name}
+                onChange={this.setDashboardName}
+                isEditable={canEditDashboardTitle}
+              />
+            </span>
+            {loading && <Loading overlayParent={true} />}
+          </div>
 
-        {this.state.widgets.length > 0 && (
-          <div className="frame">
-            {this.state.widgets.map(widget => {
+          {this.state.widgets.length > 0 &&
+            this.state.widgets.map(widget => {
               switch (widget.type) {
                 case 'lastvalue':
                   return (
@@ -184,8 +186,7 @@ class _DashboardView extends React.Component {
                   return <div>Unknown widget type.</div>;
               }
             })}
-          </div>
-        )}
+        </div>
 
         {canAddDashboard && (
           <div className="frame" style={{ marginBottom: 300 }}>

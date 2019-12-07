@@ -13,7 +13,7 @@ class Breadcrumbs extends React.Component {
       as is the fact that there is no Switch component (with Switch, only one of the Routes would match).
     */
     return (
-      <div className="breadcrumbs">
+      <div className="breadcrumbs frame">
         <Route
           path="/"
           render={props => (
