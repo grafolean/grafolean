@@ -14,15 +14,20 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Create CHANGELOG
+    - name: Create VERSION.js
       if: success() && startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_REF_VERSION: ${{ github.ref }}
-        GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
       run: |
         echo "export const VERSION_INFO = { ciCommitTag: '${GITHUB_REF_VERSION:10:50}' };" > ./frontend/src/VERSION.js
         cat frontend/src/VERSION.js
+
+    - name: Create CHANGELOG.json
+      if: success() && startsWith(github.ref, 'refs/tags/')
+      env:
+        GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
+      run: |
+        curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json
+        cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]' > frontend/src/CHANGELOG.json
         cat frontend/src/CHANGELOG.json
 
-# [ -n "$GITLAB_API_ACCESS_TOKEN" ] && (curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json)
-# [ -n "$GITLAB_API_ACCESS_TOKEN" ] && (cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json)
