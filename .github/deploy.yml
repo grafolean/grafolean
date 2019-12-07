@@ -1,0 +1,22 @@
+name: Deploy to Docker Hub
+
+on: [push]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Create CHANGELOG
+      env:
+        VERSION: ${{ github.ref }}
+        GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
+      run: |
+        'echo "export const VERSION_INFO = { ciCommitTag: ''$VERSION'' };" > ./frontend/src/VERSION.js'
+        '[ -n "$GITLAB_API_ACCESS_TOKEN" ] && (curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json)'
+        '[ -n "$GITLAB_API_ACCESS_TOKEN" ] && (cat /tmp/tags.json | jq ''[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]'' > frontend/src/CHANGELOG.json)'
+        cat frontend/src/CHANGELOG.json
