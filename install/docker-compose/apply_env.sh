@@ -49,5 +49,11 @@ else
   exit 1
 fi
 
+# for sharing secret tokens with systemwide bots running in paralled containers, we need to create
+# a dir with enough permissions so that our www user can write and their users can read it:
+mkdir -p /shared-secrets/tokens/
+chown www-data:www-data /shared-secrets/tokens/
+chmod 755 /shared-secrets/tokens/
+
 # we must exit with status code 0 or container won't start:
 exit 0

@@ -66,12 +66,13 @@ services:
       # If you wish to enable HTTPS, you need to both enable port 443 and supply a valid certificate. This
       # installation helps you with this - please see README for installation instructions.
       - "80:80"
-      # - "443:443"
-    # volumes:
-    #   - /etc/letsencrypt/acme-challenge:/var/www/acme-challenge
-    #   - /etc/letsencrypt/live/yourdomain.example.org/fullchain.pem:/etc/certs/cert.crt
-    #   - /etc/letsencrypt/live/yourdomain.example.org/privkey.pem:/etc/certs/cert.key
+      #- "443:443"
     restart: always
+    volumes:
+      - shared-secrets:/shared-secrets
+      #- /etc/letsencrypt/acme-challenge:/var/www/acme-challenge
+      #- /etc/letsencrypt/live/yourdomain.example.org/fullchain.pem:/etc/certs/cert.crt
+      #- /etc/letsencrypt/live/yourdomain.example.org/privkey.pem:/etc/certs/cert.key
     networks:
       - grafolean
 
@@ -82,5 +83,24 @@ services:
     networks:
       - grafolean
 
+  pingbot:
+    # If you wish to load an explicit version, change the next line. For example:
+    #   image: grafolean/grafolean-collector-ping:v1.0.0
+    image: grafolean/grafolean-collector-ping
+    container_name: grafolean-ping-bot
+    environment:
+      - BACKEND_URL=http://grafolean/api
+      - BOT_TOKEN_FROM_SECRET=/shared-secrets/tokens/ping-bot.token
+      - JOBS_REFRESH_INTERVAL=60
+    restart: always
+    volumes:
+      # to automatically authenticate systemwide ping bot, we need to pass it a secret:
+      - shared-secrets:/shared-secrets
+    networks:
+      - grafolean
+
 networks:
   grafolean:
+
+volumes:
+  shared-secrets:

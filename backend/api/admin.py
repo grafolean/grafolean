@@ -2,7 +2,7 @@ import flask
 import json
 import urllib.parse
 
-from datatypes import Account, Permission, Person
+from datatypes import Account, Permission, Person, Bot
 from auth import Auth, JWT, AuthFailedException
 import utils
 from utils import log
@@ -76,6 +76,10 @@ def admin_first_post():
     # make it a superuser:
     permission = Permission(admin_id, None, None)
     permission.insert(None, skip_checks=True)
+
+    # Help users by including a systemwide ping bot in the package by default:
+    Bot.ensure_systemwide_ping_bot_exists()
+
     mqtt_publish_changed(['status/info'])
     return json.dumps({
         'id': admin_id,

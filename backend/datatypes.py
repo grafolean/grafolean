@@ -1,4 +1,5 @@
 import calendar
+import os
 from collections import defaultdict
 import dns
 import json
@@ -963,6 +964,18 @@ class Bot(object):
                 return None
             user_id, = res
             return user_id
+
+    @staticmethod
+    def ensure_systemwide_ping_bot_exists():
+        """ To help users a systemwide ping bot is included by default. The credentials are shared
+            with ping bot container via a shared file (/shared-secrets/ping-bot.token). """
+        BOT_TOKEN_FILENAME = '/shared-secrets/tokens/ping-bot.token'
+        if os.path.exists(BOT_TOKEN_FILENAME):
+            return
+        bot = Bot("Systemwide ICMP Ping bot", 'ping', None, force_account=None)
+        _, bot_token = bot.insert()
+        with open(BOT_TOKEN_FILENAME, 'wt') as f:
+            f.write(bot_token)
 
 
 class Person(object):
