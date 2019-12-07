@@ -23,6 +23,7 @@ services:
       - POSTGRES_DB=grafolean
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin
+    restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
       interval: 10s
@@ -70,12 +71,14 @@ services:
     #   - /etc/letsencrypt/acme-challenge:/var/www/acme-challenge
     #   - /etc/letsencrypt/live/yourdomain.example.org/fullchain.pem:/etc/certs/cert.crt
     #   - /etc/letsencrypt/live/yourdomain.example.org/privkey.pem:/etc/certs/cert.key
+    restart: always
     networks:
       - grafolean
 
   mosquitto:
     image: grafolean/mosquitto
     container_name: mosquitto
+    restart: always
     networks:
       - grafolean
 
