@@ -17,6 +17,7 @@ jobs:
         GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
       run: |
         pwd
+        chmod -R go+w frontend/
         ls -altr
         'echo "export const VERSION_INFO = { ciCommitTag: ''$VERSION'' };" > ./frontend/src/VERSION.js'
         '[ -n "$GITLAB_API_ACCESS_TOKEN" ] && (curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json)'
