@@ -129,16 +129,17 @@ class Main extends React.Component {
         docked={sidebarDocked}
         onSetOpen={this.onSetSidebarOpen}
         shadow={false}
-        rootClassName={isDarkMode ? 'dark-mode' : ''}
+        rootClassName={isDarkMode ? 'dark-mode with-bg-image' : ''}
+        contentClassName={'content-root'}
         styles={{
           sidebar: {
             backgroundColor: isDarkMode ? '#202020' : '#f5f5f5',
             width: sidebarWidth,
             borderRight: `1px solid ${isDarkMode ? '#151515' : '#e3e3e3'}`,
             zIndex: 88008800,
+            opacity: 0.95,
           },
           content: {
-            backgroundColor: isDarkMode ? '#131313' : '#fafafa',
             display: 'flex',
             flexDirection: 'column',
           },
