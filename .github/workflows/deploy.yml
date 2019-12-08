@@ -52,9 +52,9 @@ jobs:
       if: success() && startsWith(github.ref, 'refs/tags/v')
       env:
         GITHUB_REF_TAG: ${{ github.ref }}
+        DOCKER_REGISTRY: docker.io
         DOCKER_USER: ${{ secrets.DOCKER_USER }}
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        DOCKER_REGISTRY: docker.io
       run: |
         export VERSION=${GITHUB_REF_TAG:10:50}
         echo "Version is $VERSION"
@@ -69,33 +69,3 @@ jobs:
         # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker push "docker.io/$CI_REGISTRY_IMAGE:latest" || echo "NOT LATEST!"
         # docker rmi $CI_REGISTRY_IMAGE:$VERSION
         # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker rmi $CI_REGISTRY_IMAGE:latest || echo "NOT LATEST!"
-
-
-# grafolean to docker hub:
-#   stage: deploy
-#   when: manual
-#   only:
-#     # We only want master branch AND when tag looks like 'vX.Y.Z', however GitLab doesn't support conjunctive conditions yet:
-#     #   https://gitlab.com/gitlab-org/gitlab-ce/issues/27818
-#     # refs:
-#     #   - master  # Yeah, that doesn't work... The job for a commit with a tag and on a master branch is not being created.
-#     #
-#     # However we can mark tags 'v*.*.*' as protected, which also allows us to (somewhat) safely use Private-Token as protected
-#     # CI variable.
-#     variables:
-#       - $CI_COMMIT_TAG =~ /^v[0-9]+[.][0-9]+[.][0-9]+([-]rc[.][0-9]+)?$/
-#   variables:
-#     CI_REGISTRY_IMAGE: grafolean/grafolean
-#   script:
-#     - apk add --no-cache git
-#     # we need to know what the latest (non-rc) version is - if it is the same as CI_COMMIT_TAG, we will mark it as 'latest':
-#     - export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | grep -v rc | head -n 1 | tr -d '[:space:]'`
-#     - echo "Deploying..."
-#     - cp ./install/docker-compose/Dockerfile .
-#     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-#     - docker build -t "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" -t "docker.io/$CI_REGISTRY_IMAGE:latest" --build-arg VERSION=$CI_COMMIT_TAG --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
-#     - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] && docker tag "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG" "docker.io/$CI_REGISTRY_IMAGE:latest" || echo "NOT MARKING AS LATEST!"'
-#     - docker push "docker.io/$CI_REGISTRY_IMAGE:$CI_COMMIT_TAG"
-#     - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] && docker push "docker.io/$CI_REGISTRY_IMAGE:latest" || echo "NOT LATEST!"'
-#     - docker rmi $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-#     - '[ "$LAST_KNOWN_VERSION" == "$CI_COMMIT_TAG" ] && docker rmi $CI_REGISTRY_IMAGE:latest || echo "NOT LATEST!"'
