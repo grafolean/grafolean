@@ -36,7 +36,7 @@ jobs:
       env:
         GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
       run: |
-        curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags" > /tmp/tags.json
+        curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags?per_page=100" > /tmp/tags.json
         cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]' > frontend/src/CHANGELOG.json
         cat frontend/src/CHANGELOG.json
 
@@ -54,7 +54,7 @@ jobs:
         GITHUB_REF_TAG: ${{ github.ref }}
         DOCKER_REGISTRY: docker.io
         DOCKER_IMAGE: grafolean/grafolean
-        DOCKER_USER: ${{ secrets.DOCKER_USER }}
+        DOCKER_USER: grafolean
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
       run: |
         export VERSION=${GITHUB_REF_TAG:10:50}
