@@ -1,0 +1,68 @@
+name: Deploy to Docker Hub
+
+on:
+  release:
+    types: [published]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout source code
+      uses: actions/checkout@v1
+
+
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '10'
+
+
+    - name: Create VERSION.js
+      if: success() && startsWith(github.ref, 'refs/tags/v')
+      env:
+        GITHUB_REF_TAG: ${{ github.ref }}
+      run: |
+        export VERSION=${GITHUB_REF_TAG:10:50}
+        echo "export const VERSION_INFO = { ciCommitTag: '$VERSION' };" > ./frontend/src/VERSION.js
+        cat frontend/src/VERSION.js
+
+
+    - name: Create CHANGELOG.json
+      if: success() && startsWith(github.ref, 'refs/tags/v')
+      run: |
+        curl "https://api.github.com/repos/grafolean/grafolean/releases?per_page=100" > /tmp/tags.json
+        cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .body, created_at: .created_at }]' > frontend/src/CHANGELOG.json
+
+
+    - name: Frontend - linter
+      run: |
+        cd frontend
+        npm ci
+        npm run lint
+
+
+    - name: Deploy Grafolean to Docker Hub
+      if: success() && startsWith(github.ref, 'refs/tags/v')
+      env:
+        GITHUB_REF_TAG: ${{ github.ref }}
+        DOCKER_REGISTRY: docker.io
+        DOCKER_IMAGE: grafolean/grafolean
+        DOCKER_USER: grafolean
+        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      run: |
+        export VERSION=${GITHUB_REF_TAG:10:50}
+        echo "Version is $VERSION"
+        export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | grep -v rc | head -n 1 | tr -d '[:space:]'`
+        echo "Last known version is $LAST_KNOWN_VERSION"
+        cp ./install/docker-compose/Dockerfile .
+        docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
+        docker build -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker tag "docker.io/$DOCKER_IMAGE:$VERSION" "docker.io/$DOCKER_IMAGE:latest" || echo "NOT MARKING AS LATEST!"
+        docker images
+        docker push "docker.io/$DOCKER_IMAGE:$VERSION"
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker push "docker.io/$DOCKER_IMAGE:latest" || echo "NOT LATEST!"
+        docker rmi $DOCKER_IMAGE:$VERSION
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker rmi $DOCKER_IMAGE:latest || echo "NOT LATEST!"

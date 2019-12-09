@@ -1,1 +1,1 @@
-Please see [tags](https://gitlab.com/grafolean/grafolean/tags) for a complete and up-to-date changelog.
+Please see [tags](https://github.com/grafolean/grafolean/releases) for a complete and up-to-date changelog.

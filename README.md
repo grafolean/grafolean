@@ -1,10 +1,8 @@
 # About Grafolean
 
-Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry (it can even run on Raspberry Pi [^1]). It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes.
+Grafolean is an easy to use generic monitoring system. It can be used for free, can be self-hosted and is not resource hungry. It uses PostgreSQL database as data storage and Mosquitto MQTT broker to display real-time changes.
 
 ![screenshot](doc/screenshot-dark.png)
-
-[^1]: though running any software that writes to SD card is in general not a good idea due to SD cards' reliability issues (especially on power failure)
 
 # Demo
 
@@ -18,17 +16,17 @@ License is Commons Clause license (on top of Apache 2.0) - source is available a
 share modifications. To sell it however you need a commercial license (not yet available - [contact us](info@grafolean.com) if
 interested). See [LICENSE.md](./LICENSE.md) for details.
 
-If in doubt, please [open an issue](https://gitlab.com/grafolean/grafolean/issues) to get further clarification.
+If in doubt, please [open an issue](https://github.com/grafolean/grafolean/issues) to get further clarification.
 
 # Install (docker / docker-compose)
 
-This is the easiest and currently the only officially supported way. [Open an issue](https://gitlab.com/grafolean/grafolean/issues) if you need help
+This is the easiest and currently the only officially supported way. [Open an issue](https://github.com/grafolean/grafolean/issues) if you need help
 installing some other way (or to post your experience).
 
 All the required services can be run with a few simple steps:
 
-1) save [install/docker-compose.yml](https://gitlab.com/grafolean/grafolean/raw/master/install/docker-compose.yml) to a local file
-2) save [.env.example](https://gitlab.com/grafolean/grafolean/raw/master/install/.env.example) to a local file and rename it to `.env`
+1) save [install/docker-compose.yml](https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.yml) to a local file
+2) save [.env.example](https://raw.githubusercontent.com/grafolean/grafolean/master/install/.env.example) to a local file and rename it to `.env`
 3) edit `.env` and change:
     - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside),
     - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
@@ -55,7 +53,7 @@ To send values to Grafolean with a *custom* bot, you first need to create a bot 
 $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
 ```
 
-See [backend/API.md](https://gitlab.com/grafolean/grafolean/blob/master/backend/API.md) for more info.
+See [backend/API.md](backend/API.md) for more info.
 
 Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean User Guide](doc/user-guide.md) for more information.
 
