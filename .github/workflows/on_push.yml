@@ -1,0 +1,25 @@
+name: Run tests
+
+on: [push]
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout source code
+      uses: actions/checkout@v1
+
+
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '10'
+
+
+    - name: Frontend - linter
+      run: |
+        cd frontend
+        npm ci
+        npm run lint

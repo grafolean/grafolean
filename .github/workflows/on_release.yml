@@ -1,6 +1,5 @@
 name: Deploy to Docker Hub
 
-# on: [push]
 on:
   release:
     types: [published]
