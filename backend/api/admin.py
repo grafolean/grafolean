@@ -49,6 +49,8 @@ def admin_first_post():
           description:
             This endpoint helps with setting up a new installation. It allows us to set up just one initial
             admin access (with name, email and password). Later requests to the same endpoint will fail.
+            At the same time a systemwide (ICMO ping) bot is configured and its token shared via file with
+            a grafolean-pin-collector Docker container (in default setup).
           parameters:
             - name: "body"
               in: body

@@ -973,9 +973,12 @@ class Bot(object):
         if os.path.exists(BOT_TOKEN_FILENAME):
             log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))
         bot = Bot("Systemwide ICMP Ping bot", 'ping', None, force_account=None)
-        _, bot_token = bot.insert()
+        bot_id, bot_token = bot.insert()
         with open(BOT_TOKEN_FILENAME, 'wt') as f:
             f.write(bot_token)
+        # assign this bot permission to work with any account:
+        permission = Permission(bot_id, 'accounts', ['GET', 'POST', 'PUT'])
+        permission.insert(None, skip_checks=True)
 
 
 class Person(object):
