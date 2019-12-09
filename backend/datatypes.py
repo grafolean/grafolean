@@ -599,10 +599,20 @@ class Account(object):
         name = data['name']
         return cls(name, force_id)
 
-    def insert(self):
+    def insert(self, create_first_records=True):
         with db.cursor() as c:
             c.execute("INSERT INTO accounts (name) VALUES (%s) RETURNING id;", (self.name,))
             account_id = c.fetchone()[0]
+
+            # to help users, we create first records like ping credential and sensor:
+            if create_first_records:
+                credential_details = {"n_packets": "3", "sleep_packets": "1.0", "timeout": "1.0", "retry": "0"}
+                c = Credential("Default ICMP ping credential (3 packets)", 'ping', credential_details, account_id)
+                c.insert()
+
+                s = Sensor("Default ICMP ping sensor", 'ping', 60, {}, account_id)
+                s.insert()
+
             return account_id
 
     def update(self):
