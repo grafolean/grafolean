@@ -35,16 +35,15 @@ jobs:
       env:
         GITLAB_API_ACCESS_TOKEN: ${{ secrets.GITLAB_API_ACCESS_TOKEN }}
       run: |
-        curl -H "Private-Token: $GITLAB_API_ACCESS_TOKEN" "https://gitlab.com/api/v4/projects/grafolean%2Fgrafolean/repository/tags?per_page=100" > /tmp/tags.json
-        cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .release.description, created_at: .commit.created_at }]' > frontend/src/CHANGELOG.json
-        cat frontend/src/CHANGELOG.json
+        curl "https://api.github.com/repos/grafolean/grafolean/releases?per_page=100" > /tmp/tags.json
+        cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .body, created_at: .created_at }]' > frontend/src/CHANGELOG.json
 
 
-    # - name: Frontend - linter
-    #   run: |
-    #     cd frontend
-    #     npm ci
-    #     npm run lint
+    - name: Frontend - linter
+      run: |
+        cd frontend
+        npm ci
+        npm run lint
 
 
     - name: Deploy Grafolean to Docker Hub
@@ -65,7 +64,7 @@ jobs:
         docker build -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
         [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker tag "docker.io/$DOCKER_IMAGE:$VERSION" "docker.io/$DOCKER_IMAGE:latest" || echo "NOT MARKING AS LATEST!"
         docker images
-        # docker push "docker.io/$DOCKER_IMAGE:$VERSION"
-        # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker push "docker.io/$DOCKER_IMAGE:latest" || echo "NOT LATEST!"
-        # docker rmi $DOCKER_IMAGE:$VERSION
-        # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker rmi $DOCKER_IMAGE:latest || echo "NOT LATEST!"
+        docker push "docker.io/$DOCKER_IMAGE:$VERSION"
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker push "docker.io/$DOCKER_IMAGE:latest" || echo "NOT LATEST!"
+        docker rmi $DOCKER_IMAGE:$VERSION
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker rmi $DOCKER_IMAGE:latest || echo "NOT LATEST!"
