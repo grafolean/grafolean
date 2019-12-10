@@ -64,5 +64,3 @@ jobs:
         docker images
         docker push "docker.io/$DOCKER_IMAGE:$VERSION"
         [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker push "docker.io/$DOCKER_IMAGE:latest" || echo "NOT LATEST!"
-        docker rmi $DOCKER_IMAGE:$VERSION
-        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker rmi $DOCKER_IMAGE:latest || echo "NOT LATEST!"
