@@ -46,17 +46,23 @@ See [README.md](../README.md) for instalation instructions. Once done, configure
 
 ### Adding a bot
 
+> For ICMP ping, this step has already been carried out for you (though the bot is systemwide, instead of being account specific). You can safely skip it.
+
 You can add either a SNMP, ICMP Ping or a custom bot. Select `Bots` in sidebar menu and click `+ Add bot` button. Select the protocol (SNMP, ICMP Ping or custom) and the label by which the bot will be known to you.
 
 When bot is added, its `Last successful login` field reads `Never`, because it has not accessed Grafolean yet (at least not with a provisioned token). Open a bot page (select `Bots` in menu, click on bot name). There will be a warning about bot not having connected yet, along with the instructions on how to install and configure it. Open and follow the instructions. When bot connects, `Last successful login` field will show the date and imte of last successful connection.
 
 If you have selected a custom bot, the data is being collected and there is nothing we need to do in Grafolean except to display it in dashboards - all of the configuration is done in the script that is sending data. For SNMP and Ping however we need to configure *credentials*, *entities* and *sensors*.
 
-### Configuring data collection
+### Configuring protocol configs (credentials) and adding sensors
+
+> For ICMP ping, this step has already been carried out for you. You can safely skip it.
 
 Select `Credentials` in sidebar menu and click `+ Add credentials` button. Fill the form (the fields depend on the protocol selected) and click `Submit`. Repeat the process for all the protocols and their settings as needed.
 
 Next select `Sensors` in sidebar menu. There should be existing sensors for both ICMP Ping and SNMP protocol. If you wish to add additional sensors, click `+ Add sensor` and fill the form. Note that for ICMP Ping, currently only an empty sensor can be added, so it currently doesn't make sense to add additional ones.
+
+### Configuring data collection
 
 Finally, we need to specify which entities (devices) we would like to monitor. Select `Monitored entities` in sidebar menu and click `+ Add monitored entity` button. Fill the form and click `Submit` button. In the list, click on the name of newly added entity. Number of `Sensors enabled` should read `0`. Click `Settings`, then select appropriate credentials for each of the protocols you wish to use to monitor the entity. Selecting a credential will show a list of sensors, allowing us to select them and to customize their polling interval if needed. Once the sensors are selected, click `Submit`. Number of `Sensors enabled` should now read reflect our choices on previous screen.
 

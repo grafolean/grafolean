@@ -1,18 +1,14 @@
 # Grafolean
 
-> WARNING: this software is still under heavy development. API might change and _core concepts_ might change - but as a regular user your data should be safe*.
->
-> [*] as always - no guarantees
-
 - easy to use
 - self-hosted or hosted service
 - light on resources
-- API-first
+- [API-first](https://grafolean.com/api-doc/)
 - remote agents (bots)
-- UI-controlled agents (bots) for ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible)
+- UI-controlled agents (bots) for ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) - with more coming
 - auto-updating UI
 - uses PostgreSQL as data storage (easy maintenance)
-- granular access control model
+- granular access control model (permissions)
 - ...
 
 Demo: https://grafolean.com/ (`demo` / `demo`)
@@ -51,7 +47,7 @@ $ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroo
 
 See [backend/API.md](backend/API.md) for more info.
 
-Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean User Guide](doc/user-guide.md) for more information.
+Much more convenient however are SNMP and ICMP Ping bots, which are controlled from within the Grafolean UI. See [Grafolean User Guide](doc/user-guide.md).
 
 ## Development
 
