@@ -49,11 +49,11 @@ class PersonSchemaInputsPOST(Inputs):
         'additionalProperties': False,  # do not allow fields which are not specified in schema
         'properties': {
             'username': {'type': 'string'},
+            'password': {'type': 'string'},
             'name': {'type': 'string'},
             'email': {'type': 'string'},
-            'password': {'type': 'string'},
         },
-        'required': ['username', 'name', 'email', 'password'],
+        'required': ['username', 'password', 'name', 'email'],
     })]
 
 class PersonSchemaInputsPUT(Inputs):
