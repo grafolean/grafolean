@@ -9,7 +9,6 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import NoBotsHelpSnippet from '../HelpSnippets/NoBotsHelpSnippet';
 
 class Account extends React.Component {
   state = {
@@ -51,10 +50,6 @@ class Account extends React.Component {
 
     if (botsAvailable === null) {
       return <Loading />;
-    }
-
-    if (!botsAvailable) {
-      return <NoBotsHelpSnippet />;
     }
 
     return (
