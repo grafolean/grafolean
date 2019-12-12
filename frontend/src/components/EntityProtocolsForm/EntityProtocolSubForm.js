@@ -1,7 +1,9 @@
 import React from 'react';
+import { withRouter, Link } from 'react-router-dom';
+
 import SensorsMultiSelect from './SensorsMultiSelect';
 
-export default class EntityProtocolSubForm extends React.Component {
+class EntityProtocolSubForm extends React.Component {
   render() {
     const {
       protocol,
@@ -13,6 +15,7 @@ export default class EntityProtocolSubForm extends React.Component {
       bots,
       sensors,
     } = this.props;
+    const { accountId } = this.props.match.params;
 
     const credentialId =
       protocols[protocol.slug] && protocols[protocol.slug]['credential']
@@ -30,11 +33,19 @@ export default class EntityProtocolSubForm extends React.Component {
 
         <div className="nested-field">
           {credentials.length === 0 ? (
-            <p>No credentials available for protocol {protocol.label}.</p>
+            <p>
+              No <Link to={`/accounts/${accountId}/credentials`}>credentials</Link> available for protocol{' '}
+              {protocol.label}.
+            </p>
           ) : bots.length === 0 ? (
-            <p>No bots available for protocol {protocol.label}.</p>
+            <p>
+              No <Link to={`/accounts/${accountId}/bots`}>bots</Link> available for protocol {protocol.label}.
+            </p>
           ) : sensors.length === 0 ? (
-            <p>No sensors available for protocol {protocol.label}.</p>
+            <p>
+              No <Link to={`/accounts/${accountId}/sensors`}>sensors</Link> available for protocol{' '}
+              {protocol.label}.
+            </p>
           ) : (
             <>
               <div className="nested-field">
@@ -92,3 +103,5 @@ export default class EntityProtocolSubForm extends React.Component {
     );
   }
 }
+
+export default withRouter(EntityProtocolSubForm);
