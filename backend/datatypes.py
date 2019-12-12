@@ -613,6 +613,19 @@ class Account(object):
                 s = Sensor("Default ICMP ping sensor", 'ping', 60, {}, account_id)
                 s.insert()
 
+                # SNMP "public" credential and a few sensors for good measure:
+                credential_details = {"version": "snmpv2c", "snmpv12_community": "public"}
+                c = Credential("Default SNMP credential (SNMPv2c, 'public')", 'snmp', credential_details, account_id)
+                c.insert()
+
+                # https://www.alvestrand.no/objectid/1.3.6.1.2.1.2.2.1.html
+                s_if_in_octets_details = {"oids": [{"oid": "1.3.6.1.2.1.2.2.1.2", "fetch_method": "walk"}, {"oid": "1.3.6.1.2.1.2.2.1.10", "fetch_method": "walk"}], "expression": "$2", "output_path": "if.in-octets.{$index}.{$1}"}
+                s = Sensor("Traffic IN [bps]", 'snmp', 60, s_if_in_octets_details, account_id)
+                s.insert()
+                s_if_out_octets_details = {"oids": [{"oid": "1.3.6.1.2.1.2.2.1.2", "fetch_method": "walk"}, {"oid": "1.3.6.1.2.1.2.2.1.16", "fetch_method": "walk"}], "expression": "$2", "output_path": "if.out-octets.{$index}.{$1}"}
+                s = Sensor("Traffic OUT [bps]", 'snmp', 60, s_if_out_octets_details, account_id)
+                s.insert()
+
             return account_id
 
     def update(self):
