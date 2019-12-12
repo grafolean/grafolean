@@ -105,19 +105,19 @@ class _AccountSidebarContent extends React.Component {
           </Link>
         )}
 
-        {user && havePermission(`accounts/${accountId}/bots`, 'GET', user.permissions) && (
+        {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
           <Link
             className="button green space-before"
-            to={`/accounts/${accountId}/bots`}
+            to={`/accounts/${accountId}/entities`}
             onClick={onSidebarLinkClick}
           >
-            <i className="fa fa-fw fa-robot" /> Bots
-            <SidebarNotificationBadgeNoBots />
+            <i className="fa fa-fw fa-cube" /> Monitored entities
           </Link>
         )}
-        {user && havePermission(`accounts/${accountId}/entities`, 'GET', user.permissions) && (
-          <Link className="button green" to={`/accounts/${accountId}/entities`} onClick={onSidebarLinkClick}>
-            <i className="fa fa-fw fa-cube" /> Monitored entities
+        {user && havePermission(`accounts/${accountId}/bots`, 'GET', user.permissions) && (
+          <Link className="button green" to={`/accounts/${accountId}/bots`} onClick={onSidebarLinkClick}>
+            <i className="fa fa-fw fa-robot" /> Bots
+            <SidebarNotificationBadgeNoBots />
           </Link>
         )}
         {user && havePermission(`accounts/${accountId}/credentials`, 'GET', user.permissions) && (

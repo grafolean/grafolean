@@ -54,8 +54,8 @@ class Account extends React.Component {
 
     return (
       <p>
-        Use <Link to={`/accounts/${accountId}/bots`}>bots</Link> to post data and{' '}
-        <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
+        Use <Link to={`/accounts/${accountId}/entities`}>entities</Link> to setup what you wish to monitor
+        (and how) and <Link to={`/accounts/${accountId}/dashboards/new`}>dashboards</Link> to view it.
       </p>
     );
   }
