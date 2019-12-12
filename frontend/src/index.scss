@@ -203,3 +203,20 @@ table.list {
     }
   }
 }
+
+form .framed-field {
+  border: 1px solid #666;
+  margin-top: 20px;
+  border-radius: 2px;
+  position: relative;
+  padding: 20px 10px 10px;
+
+  & > label:first-of-type {
+    display: inline-block;
+    position: absolute;
+    top: -6px;
+    left: 10px;
+    background-color: #151515;
+    padding: 0 10px 0;
+  }
+}

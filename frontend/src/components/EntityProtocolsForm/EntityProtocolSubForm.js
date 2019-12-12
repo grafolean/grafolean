@@ -25,7 +25,7 @@ export default class EntityProtocolSubForm extends React.Component {
         ? protocols[protocol.slug]['sensors']
         : [];
     return (
-      <div key={protocol.slug} className="field">
+      <div key={protocol.slug} className="field framed-field">
         <label>{protocol.label}</label>
 
         <div className="nested-field">
@@ -45,7 +45,7 @@ export default class EntityProtocolSubForm extends React.Component {
                   onChange={onChange}
                   onBlur={onBlur}
                 >
-                  <option value="">-- disabled --</option>
+                  <option value="">-- please select to enable --</option>
                   {credentials.map(c => (
                     <option key={c.id} value={c.id}>
                       {c.name}
