@@ -24,23 +24,23 @@ export default class SNMPBotHelpSnippet extends React.Component {
           <div className="p warning">
             <i className="fa fa-exclamation-triangle" />
             <b>IMPORTANT:</b> the example URLs below are incorrect. Since browser is accessing backend via
-            {backendUrlHostnameInPre}, we can't know how SNMP Collector will be able to access it. However it
-            will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on the same
-            machine (because SNMP Collector runs inside the container). In other words, please change the URLs
-            appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP address), otherwise
-            the bot will <b>not be able to connect</b>.
+            {backendUrlHostnameInPre}, we can't know how SNMP bot will be able to access it. However it will{' '}
+            <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on the same machine
+            (because SNMP bot runs inside the container). In other words, please change the URLs appropriately
+            (replace {backendUrlHostnameInPre} with appropriate domain or IP address), otherwise the bot will{' '}
+            <b>not be able to connect</b>.
           </div>
         )}
 
         <div className="p">
-          Bot <i>"{bot.name}"</i> is a SNMP bot / collector. It needs to be installed on a server which will
-          have access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean
-          via HTTP(S) port.
+          Bot <i>"{bot.name}"</i> is a SNMP bot. It needs to be installed on a server which will have access
+          to all the devices it needs to monitor, and it needs to be able to connect to Grafolean via HTTP(S)
+          port.
         </div>
         <div className="p">
           The installation instructions are available on{' '}
-          <a href="https://gitlab.com/grafolean/grafolean-collector-snmp">Grafolean SNMP collector</a> Git
-          repository, but in short:
+          <a href="https://github.com/grafolean/grafolean-snmp-bot">Grafolean SNMP bot</a> Git repository, but
+          in short:
           <ol>
             <li>
               make sure that backend is reachable:
@@ -51,11 +51,11 @@ export default class SNMPBotHelpSnippet extends React.Component {
             </li>
 
             <li>
-              install SNMP collector:
+              install SNMP bot:
               <pre>
-                {String.raw`$ mkdir ~/snmpcollector
-$ cd ~/snmpcollector
-$ curl https://gitlab.com/grafolean/grafolean-collector-snmp/raw/master/docker-compose.yml -o docker-compose.yml
+                {String.raw`$ mkdir ~/snmpbot
+$ cd ~/snmpbot
+$ curl https://github.com/grafolean/grafolean-snmp-bot/raw/master/docker-compose.yml -o docker-compose.yml
 $ echo "BACKEND_URL=${ROOT_URL}" > .env
 $ echo "BOT_TOKEN=${bot.token}" >> .env
 $ docker-compose up -d
@@ -71,7 +71,7 @@ $ docker-compose up -d
         </div>
         <div className="p">
           If not, the best place to start is the logs:{' '}
-          <span className="pre">docker logs -f grafolean-collector-snmp</span>.
+          <span className="pre">docker logs -f grafolean-snmp-bot</span>.
         </div>
       </HelpSnippet>
     );

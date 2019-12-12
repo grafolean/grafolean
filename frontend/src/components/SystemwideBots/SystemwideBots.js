@@ -106,7 +106,7 @@ export default class SystemwideBots extends React.Component {
             </Link>
           </div>
         ) : (
-          <HelpSnippet title="There are no systemwide bots (data collectors) yet" className="first-steps">
+          <HelpSnippet title="There are no systemwide bots yet" className="first-steps">
             <p>
               <b>Bots</b> are external scripts and applications that send values to Grafolean. Systemwide bots
               can be used by multiple accounts.

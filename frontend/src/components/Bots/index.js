@@ -141,7 +141,7 @@ export default class Bots extends React.PureComponent {
             </Link>
           </div>
         ) : (
-          <HelpSnippet title="There are no bots (data collectors) yet" className="first-steps">
+          <HelpSnippet title="There are no bots yet" className="first-steps">
             <p>
               <b>Bots</b> are external scripts and applications that send values to Grafolean.
             </p>

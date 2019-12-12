@@ -59,7 +59,7 @@ jobs:
         echo "Last known version is $LAST_KNOWN_VERSION"
         cp ./install/docker-compose/Dockerfile .
         docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
-        docker build -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$CI_COMMIT_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+        docker build -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
         [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker tag "docker.io/$DOCKER_IMAGE:$VERSION" "docker.io/$DOCKER_IMAGE:latest" || echo "NOT MARKING AS LATEST!"
         docker images
         docker push "docker.io/$DOCKER_IMAGE:$VERSION"

@@ -24,23 +24,23 @@ export default class PingBotHelpSnippet extends React.Component {
           <div className="p warning">
             <i className="fa fa-exclamation-triangle" />
             <b>IMPORTANT:</b> the example URLs below are incorrect. Since browser is accessing backend via
-            {backendUrlHostnameInPre}, we can't know how ICMP Ping Collector will be able to access it.
-            However it will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on
-            the same machine (because ICMP Ping Collector runs inside the container). In other words, please
-            change the URLs appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP
-            address), otherwise the bot will <b>not be able to connect</b>.
+            {backendUrlHostnameInPre}, we can't know how ICMP Ping bot will be able to access it. However it
+            will <i>not</i> be able use the address {backendUrlHostnameInPre}, even if started on the same
+            machine (because ICMP Ping bot runs inside the container). In other words, please change the URLs
+            appropriately (replace {backendUrlHostnameInPre} with appropriate domain or IP address), otherwise
+            the bot will <b>not be able to connect</b>.
           </div>
         )}
 
         <div className="p">
-          Bot <i>"{bot.name}"</i> is a ICMP Ping bot / collector. It needs to be installed on a server which
-          will have access to all the devices it needs to monitor, and it needs to be able to connect to
-          Grafolean via HTTP(S) port.
+          Bot <i>"{bot.name}"</i> is a ICMP Ping bot. It needs to be installed on a server which will have
+          access to all the devices it needs to monitor, and it needs to be able to connect to Grafolean via
+          HTTP(S) port.
         </div>
         <div className="p">
           The installation instructions are available on{' '}
-          <a href="https://gitlab.com/grafolean/grafolean-collector-ping">Grafolean ICMP Ping collector</a>{' '}
-          Git repository, but in short:
+          <a href="https://github.com/grafolean/grafolean-ping-bot">Grafolean ICMP Ping bot</a> Git
+          repository, but in short:
           <ol>
             <li>
               make sure that backend is reachable:
@@ -51,11 +51,11 @@ export default class PingBotHelpSnippet extends React.Component {
             </li>
 
             <li>
-              install ICMP Ping collector:
+              install ICMP Ping bot:
               <pre>
-                {String.raw`$ mkdir ~/pingcollector
-$ cd ~/pingcollector
-$ curl https://gitlab.com/grafolean/grafolean-collector-ping/raw/master/docker-compose.yml -o docker-compose.yml
+                {String.raw`$ mkdir ~/pingbot
+$ cd ~/pingbot
+$ curl https://github.com/grafolean/grafolean-ping-bot/raw/master/docker-compose.yml -o docker-compose.yml
 $ echo "BACKEND_URL=${ROOT_URL}" > .env
 $ echo "BOT_TOKEN=${bot.token}" >> .env
 $ docker-compose up -d
@@ -71,7 +71,7 @@ $ docker-compose up -d
         </div>
         <div className="p">
           If not, the best place to start is the logs:{' '}
-          <span className="pre">docker logs -f grafolean-collector-ping</span>.
+          <span className="pre">docker logs -f grafolean-ping-bot</span>.
         </div>
       </HelpSnippet>
     );

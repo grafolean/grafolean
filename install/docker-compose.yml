@@ -85,8 +85,8 @@ services:
 
   pingbot:
     # If you wish to load an explicit version, change the next line. For example:
-    #   image: grafolean/grafolean-collector-ping:v1.0.0
-    image: grafolean/grafolean-collector-ping
+    #   image: grafolean/grafolean-ping-bot:v1.0.0
+    image: grafolean/grafolean-ping-bot
     container_name: grafolean-ping-bot
     environment:
       - BACKEND_URL=http://grafolean/api

@@ -6,7 +6,7 @@
 
 **Bots** are external scripts and applications that send values to Grafolean.
 
-There are 2 types of bots, *custom* and others (like SNMP, ICMP Ping,...). Grafolean doesn't know any details about *custom* bots, except that they will send data to backend via REST (i.e., HTTP) using their own authentication token - they are the most generic kind, but it takes an additional effort to set them up and to reconfigure them when needed. They are usually less convenient, but they provide a nice escape hatch in case we just want to send values via cron, from inside of an app, or when we are using a protocol not supported by dedicated Grafolean data collectors.
+There are 2 types of bots, *custom* and others (like SNMP, ICMP Ping,...). Grafolean doesn't know any details about *custom* bots, except that they will send data to backend via REST (i.e., HTTP) using their own authentication token - they are the most generic kind, but it takes an additional effort to set them up and to reconfigure them when needed. They are usually less convenient, but they provide a nice escape hatch in case we just want to send values via cron, from inside of an app, or when we are using a protocol not supported by dedicated Grafolean bots.
 
 Other kinds of bots (SNMP, Ping) are configured via Grafolean user interface. The bots themselves need to be installed somewhere where they can collect data (possibly in remote networks), but once that is done, they periodically ask Grafolean for instructions (which *entities* to monitor, which *sensors* are enabled on them, and which *credentials* to use when fetching data). The data is then sent to Grafolean the same way the custom bots would send it.
 
