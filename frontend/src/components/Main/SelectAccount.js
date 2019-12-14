@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Link, withRouter } from 'react-router-dom';
+import { Link, withRouter, Redirect } from 'react-router-dom';
 
 import store from '../../store';
 import { onReceiveAccountsListSuccess } from '../../store/actions';
@@ -20,6 +20,14 @@ class SelectAccount extends React.Component {
 
   render() {
     const { accounts, user } = this.props;
+    const { canCreateAccount } = havePermission('admin/accounts', 'POST', user.permissions);
+
+    // if user can't add new accounts and only has access to a single account, there is no
+    // need for them to select an account - just redirect them to that account:
+    if (!!accounts.list && accounts.list.length === 1 && !canCreateAccount) {
+      return <Redirect to={`accounts/${accounts.list[0].id}`} />;
+    }
+
     return (
       <div className="frame">
         <PersistentFetcher
@@ -38,7 +46,7 @@ class SelectAccount extends React.Component {
               </Link>
             ))}
 
-            {havePermission('admin/accounts', 'POST', user.permissions) && (
+            {canCreateAccount && (
               <Link className="button add-account green" to={`/accounts-new`}>
                 <i className="fa fa-plus" /> Add account
               </Link>
