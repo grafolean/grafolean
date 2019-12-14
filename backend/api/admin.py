@@ -80,7 +80,7 @@ def admin_first_post():
     permission.insert(None, skip_checks=True)
 
     # Help users by including a systemwide ping bot in the package by default:
-    Bot.ensure_systemwide_ping_bot_exists()
+    Bot.ensure_default_systemwide_bots_exist()
 
     mqtt_publish_changed(['status/info'])
     return json.dumps({

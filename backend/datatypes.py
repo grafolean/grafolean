@@ -989,19 +989,22 @@ class Bot(object):
             return user_id
 
     @staticmethod
-    def ensure_systemwide_ping_bot_exists():
-        """ To help users a systemwide ping bot is included by default. The credentials are shared
-            with ping bot container via a shared file (/shared-secrets/ping-bot.token). """
-        BOT_TOKEN_FILENAME = '/shared-secrets/tokens/ping-bot.token'
-        if os.path.exists(BOT_TOKEN_FILENAME):
-            log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))
-        bot = Bot("Systemwide ICMP Ping bot", 'ping', None, force_account=None)
-        bot_id, bot_token = bot.insert()
-        with open(BOT_TOKEN_FILENAME, 'wt') as f:
-            f.write(bot_token)
-        # assign this bot permission to work with any account:
-        permission = Permission(bot_id, 'accounts', ['GET', 'POST', 'PUT'])
-        permission.insert(None, skip_checks=True)
+    def ensure_default_systemwide_bots_exist():
+        """ To help users, a few default systemwide bots are included by default. The credentials are shared
+            with their Docker containers via a shared file (/shared-secrets/<protocol>-bot.token).
+        """
+        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
+
+            BOT_TOKEN_FILENAME = f'/shared-secrets/tokens/{protocol_slug}-bot.token'
+            if os.path.exists(BOT_TOKEN_FILENAME):
+                log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))
+            bot = Bot(f"Systemwide {protocol_label} bot", protocol_slug, None, force_account=None)
+            bot_id, bot_token = bot.insert()
+            with open(BOT_TOKEN_FILENAME, 'wt') as f:
+                f.write(bot_token)
+            # assign permissions for this bot to work with any account:
+            permission = Permission(bot_id, 'accounts', ['GET', 'POST', 'PUT'])
+            permission.insert(None, skip_checks=True)
 
 
 class Person(object):
