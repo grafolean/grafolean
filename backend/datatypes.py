@@ -626,6 +626,10 @@ class Account(object):
                 s = Sensor("Traffic OUT [bps]", 'snmp', 60, s_if_out_octets_details, account_id)
                 s.insert()
 
+                s_lmsensors_temp_details = {"oids": [{"oid": "1.3.6.1.4.1.2021.13.16.2.1.2", "fetch_method": "walk"}, {"oid": "1.3.6.1.4.1.2021.13.16.2.1.3", "fetch_method": "walk"}], "expression": "$2 / 1000.0", "output_path": "lmsensors.temp.{$index}.{$1}"}
+                s = Sensor("Linux lmsensors - temperature [°C]", 'snmp', 60, s_lmsensors_temp_details, account_id)
+                s.insert()
+
             return account_id
 
     def update(self):
