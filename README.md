@@ -1,6 +1,7 @@
 # Grafolean
 
-- easy to use
+Easy to use monitoring system:
+
 - self-hosted or hosted service
 - light on resources
 - [API-first](https://grafolean.com/api-doc/)
