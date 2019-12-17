@@ -1576,14 +1576,10 @@ def test_account_credentials_crud(app_client, admin_authorization_header, accoun
         'key3': 'value3',
     }
 
-    # the list of records for account must be empty at first:
+    # table has some initial data, remember it:
     r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
+    initial = json.loads(r.data.decode('utf-8'))
 
     # create a record:
     data = {
@@ -1599,14 +1595,15 @@ def test_account_credentials_crud(app_client, admin_authorization_header, accoun
     r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
-        'list': [
+        'list': sorted([
             {
                 'id': record_id,
                 'name': CREDENTIAL_NAME1,
                 'protocol': CREDENTIAL_PROTOCOL1,
                 'details': CREDENTIAL_DETAILS1,
             },
-        ],
+            *initial['list'],
+        ], key=lambda x: x['id']),
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
@@ -1651,11 +1648,8 @@ def test_account_credentials_crud(app_client, admin_authorization_header, accoun
     # the list is again empty:
     r = app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
+    assert actual == initial
 
 def test_account_sensors_crud(app_client, admin_authorization_header, account_id):
     """
@@ -1674,14 +1668,10 @@ def test_account_sensors_crud(app_client, admin_authorization_header, account_id
         'key3': 'value3',
     }
 
-    # the list of records for account must be empty at first:
+    # the list of sensors contains a few initial records:
     r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
-    actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
+    initial = json.loads(r.data.decode('utf-8'))
 
     # create a record:
     data = {
@@ -1698,7 +1688,7 @@ def test_account_sensors_crud(app_client, admin_authorization_header, account_id
     r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
-        'list': [
+        'list': sorted([
             {
                 'id': record_id,
                 'name': SENSOR_NAME1,
@@ -1706,7 +1696,8 @@ def test_account_sensors_crud(app_client, admin_authorization_header, account_id
                 'default_interval': SENSOR_DEFAULT_INTERVAL1,
                 'details': SENSOR_DETAILS1,
             },
-        ],
+            *initial['list'],
+        ], key=lambda x: x['id']),
     }
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == expected
@@ -1754,8 +1745,5 @@ def test_account_sensors_crud(app_client, admin_authorization_header, account_id
     # the list is again empty:
     r = app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    expected = {
-        'list': [],
-    }
     actual = json.loads(r.data.decode('utf-8'))
-    assert actual == expected
+    assert actual == initial
