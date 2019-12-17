@@ -997,8 +997,11 @@ class Bot(object):
         """ To help users, a few default systemwide bots are included by default. The credentials are shared
             with their Docker containers via a shared file (/shared-secrets/<protocol>-bot.token).
         """
-        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
+        if not os.path.exists('/shared-secrets/tokens/'):
+            log.warning('Shared secrets dir (/shared-secrets/tokens/) does not exist, not creating default systemwide bots.')
+            return
 
+        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
             BOT_TOKEN_FILENAME = f'/shared-secrets/tokens/{protocol_slug}-bot.token'
             if os.path.exists(BOT_TOKEN_FILENAME):
                 log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))
