@@ -2,13 +2,13 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Route } from 'react-router-dom';
 
+import { fetchAuth } from '../../utils/fetch';
 import store from '../../store';
-import { ROOT_URL, handleFetchErrors, onSuccess, onFailure, setFullscreenDibs } from '../../store/actions';
-
-import './index.scss';
+import { ROOT_URL, handleFetchErrors, onFailure, setFullscreenDibs } from '../../store/actions';
 
 import WidgetTitleBar from './WidgetTitleBar';
-import { fetchAuth } from '../../utils/fetch';
+
+import './index.scss';
 
 const mapStoreToProps = store => ({
   accounts: store.accounts,
@@ -67,10 +67,6 @@ const isWidget = WrappedComponent => {
         { method: 'DELETE' },
       )
         .then(handleFetchErrors)
-        .then(() => {
-          store.dispatch(onSuccess('Widget successfully removed.'));
-          this.props.onWidgetDelete();
-        })
         .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
     };
 
@@ -93,6 +89,31 @@ const isWidget = WrappedComponent => {
       }
     };
 
+    positionChange = async change => {
+      try {
+        const widgetUrl = `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${
+          this.props.dashboardSlug
+        }/widgets/${this.props.widgetId}`;
+        const responseGet = await fetchAuth(widgetUrl, { method: 'GET' });
+        const json = await handleFetchErrors(responseGet).json();
+
+        json.position += change;
+        delete json.id;
+
+        const responsePut = await fetchAuth(widgetUrl, {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'PUT',
+          body: JSON.stringify(json),
+        });
+        handleFetchErrors(responsePut);
+      } catch (errorMsg) {
+        store.dispatch(onFailure(errorMsg.toString()));
+      }
+    };
+
     render() {
       const { title, width, height, ...passThroughProps } = this.props;
       const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
@@ -105,7 +126,9 @@ const isWidget = WrappedComponent => {
             title={title}
             buttonRenders={this.state.buttonRenders}
             isFullscreen={this.state.isFullscreen}
-            handleToggleFullscreen={this.toggleFullscreen}
+            onToggleFullscreen={this.toggleFullscreen}
+            position={this.props.position}
+            onPositionChange={this.positionChange}
           />
 
           <div className="widget-content">

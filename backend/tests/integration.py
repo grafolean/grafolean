@@ -570,6 +570,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
             widget_post_data,
         ]
     }
+    expected['list'][0]['position'] = 0
     assert r.status_code == 200
     assert expected == actual
 
@@ -598,6 +599,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
             widget_post_data,
         ]
     }
+    expected['list'][0]['position'] = 0
     assert r.status_code == 200
     assert expected == actual
 

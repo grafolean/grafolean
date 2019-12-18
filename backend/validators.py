@@ -33,11 +33,12 @@ class DashboardSchemaInputs(Inputs):
 class WidgetSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'type': {'type': 'string'},
             'title': {'type': 'string'},
             'content': {'type': 'string'},
+            'position': {'type': 'number'},
         },
         'required': ['type', 'title', 'content'],
     })]
@@ -46,7 +47,7 @@ class WidgetSchemaInputs(Inputs):
 class PersonSchemaInputsPOST(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'password': {'type': 'string'},
@@ -59,7 +60,7 @@ class PersonSchemaInputsPOST(Inputs):
 class PersonSchemaInputsPUT(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'name': {'type': 'string'},
@@ -83,7 +84,7 @@ class PersonChangePasswordSchemaInputsPOST(Inputs):
 class PersonCredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'password': {'type': 'string'},
@@ -95,7 +96,7 @@ class PersonCredentialSchemaInputs(Inputs):
 class AccountSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
         },
@@ -126,7 +127,7 @@ class PermissionSchemaInputs(Inputs):
 class BotSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
             'protocol': {'type': ['string', 'null']},

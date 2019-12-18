@@ -366,12 +366,13 @@ class Measurement(object):
 
 class Widget(object):
 
-    def __init__(self, dashboard_id, widget_type, title, content, widget_id):
+    def __init__(self, dashboard_id, widget_type, title, content, widget_id, position):
         self.dashboard_id = dashboard_id
         self.widget_type = widget_type
         self.title = title
         self.content = content
         self.widget_id = widget_id
+        self.position = position
 
     @classmethod
     def forge_from_input(cls, account_id, dashboard_slug, flask_request, widget_id=None):
@@ -384,6 +385,7 @@ class Widget(object):
         widget_type = data['type']
         title = data['title']
         content = data['content']
+        position = data.get('position', None)
         # users reference the dashboards by its slug, but we need to know its ID:
         dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
@@ -392,7 +394,7 @@ class Widget(object):
         if widget_id is not None and not Widget._check_exists(widget_id):
             raise ValidationError("Unknown widget id")
 
-        return cls(dashboard_id, widget_type, title, content, widget_id)
+        return cls(dashboard_id, widget_type, title, content, widget_id, position)
 
     @staticmethod
     def _check_exists(widget_id):
@@ -405,24 +407,61 @@ class Widget(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO widgets (dashboard, type, title, content) VALUES (%s, %s, %s, %s) RETURNING id;", (self.dashboard_id, self.widget_type, self.title, self.content,))
+            if self.position is None:
+                c.execute("SELECT COUNT(*) FROM widgets WHERE dashboard = %s;", (self.dashboard_id,))
+                n_widgets = c.fetchone()[0]
+                position = n_widgets
+            c.execute("INSERT INTO widgets (dashboard, type, title, content, position) VALUES (%s, %s, %s, %s, %s) RETURNING id;", (self.dashboard_id, self.widget_type, self.title, self.content, position,))
             widget_id = c.fetchone()[0]
             return widget_id
+
+    @staticmethod
+    def set_position(dashboard_id, widget_id, new_position):
+        if new_position is not None and new_position < 0:
+            return
+        with db.cursor() as c:
+            # move all of the widgets after our widget one position back: (as if we took the widget out)
+            c.execute("""
+                UPDATE widgets
+                SET position = widgets.position - 1
+                FROM (
+                    SELECT position
+                    FROM widgets
+                    WHERE id = %s
+                ) as subquery
+                WHERE dashboard = %s AND widgets.position > subquery.position;""",
+                (widget_id, dashboard_id,)
+            )
+            n_following_before = c.rowcount
+            if new_position is not None:
+                # and make place for the new position of our widget:
+                c.execute("UPDATE widgets SET position = position + 1 WHERE dashboard = %s AND position >= %s AND id <> %s;", (dashboard_id, new_position, widget_id,))
+                n_following_after = c.rowcount
+                # if there were no widgets after ours, and there will be no widgets after it when we are
+                # done, then it is last - and we shouldn't change its position. We could do the same by
+                # querying for number of all widgets, but this way we get this information for free.
+                if n_following_before == 0 and n_following_after == 0:
+                    return
+                # finally, set the position of the widget:
+                c.execute("UPDATE widgets SET position = %s WHERE dashboard = %s AND id = %s;", (new_position, dashboard_id, widget_id,))
 
     def update(self):
         with db.cursor() as c:
             c.execute("UPDATE widgets SET type = %s, title = %s, content = %s  WHERE id = %s and dashboard = %s;", (self.widget_type, self.title, self.content, self.widget_id, self.dashboard_id,))
-            rowcount = c.rowcount
-            if not rowcount:
+            if not c.rowcount:
                 return 0
-            return rowcount
+            Widget.set_position(self.dashboard_id, self.widget_id, self.position)
+            return 1
 
     @staticmethod
     def delete(account_id, dashboard_slug, widget_id):
         dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         with db.cursor() as c:
             c.execute("DELETE FROM widgets WHERE id = %s and dashboard = %s;", (widget_id, dashboard_id,))
-            return c.rowcount
+            if not c.rowcount:
+                return 0
+            Widget.set_position(dashboard_id, widget_id, None)
+            return 1
 
     @staticmethod
     def get_list(account_id, dashboard_slug, paths_limit=200):
@@ -430,10 +469,10 @@ class Widget(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c, db.cursor() as c2:
-            c.execute('SELECT id, type, title, content FROM widgets WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
+        with db.cursor() as c:
+            c.execute('SELECT id, type, title, position, content FROM widgets WHERE dashboard = %s ORDER BY position;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, content in c.fetchall():
+            for widget_id, widget_type, title, position, content in c.fetchall():
                 # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
                 # content = []
                 # for path_filter, renaming, unit, metric_prefix in c2:
@@ -450,6 +489,7 @@ class Widget(object):
                     'id': widget_id,
                     'type': widget_type,
                     'title': title,
+                    'position': position,
                     'content': content,
                 })
             return ret
@@ -461,7 +501,7 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:  #, db.cursor() as c2:
-            c.execute('SELECT type, title, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
+            c.execute('SELECT type, title, position, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
@@ -482,7 +522,8 @@ class Widget(object):
                 'id': widget_id,
                 'type': res[0],
                 'title': res[1],
-                'content': res[2],
+                'position': res[2],
+                'content': res[3],
             }
 
 

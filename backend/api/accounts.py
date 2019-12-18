@@ -671,6 +671,9 @@ def widgets_crud(account_id, dashboard_slug):
             widget_id = widget.insert()
         except psycopg2.IntegrityError:
             return "Widget with this slug already exists", 400
+        mqtt_publish_changed([
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        ])
         return json.dumps({'id': widget_id}), 201
 
 
@@ -696,10 +699,16 @@ def widget_crud(account_id, dashboard_slug, widget_id):
         rowcount = widget.update()
         if not rowcount:
             return "No such widget", 404
+        mqtt_publish_changed([
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        ])
         return "", 204
 
     elif flask.request.method == 'DELETE':
         rowcount = Widget.delete(account_id, dashboard_slug, widget_id)
         if not rowcount:
             return "No such widget", 404
+        mqtt_publish_changed([
+            f'accounts/{account_id}/dashboards/{dashboard_slug}',
+        ])
         return "", 200
