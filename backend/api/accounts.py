@@ -712,3 +712,12 @@ def widget_crud(account_id, dashboard_slug, widget_id):
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
         ])
         return "", 200
+
+
+@accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets_positions/", methods=['PUT'])
+def widgets_positions(account_id, dashboard_slug):
+    Widget.set_positions(account_id, dashboard_slug, flask.request)
+    mqtt_publish_changed([
+        f'accounts/{account_id}/dashboards/{dashboard_slug}',
+    ])
+    return "", 204

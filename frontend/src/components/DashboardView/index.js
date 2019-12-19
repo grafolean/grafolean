@@ -1,8 +1,9 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import debounce from 'lodash/debounce';
 
-import { ROOT_URL, handleFetchErrors } from '../../store/actions';
-
+import store from '../../store';
+import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth, havePermission } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
@@ -30,7 +31,6 @@ class _DashboardView extends React.Component {
         id: w.id,
         type: w.type,
         title: w.title,
-        position: w.position,
         content: JSON.parse(w.content),
       })),
       loading: false,
@@ -77,6 +77,48 @@ class _DashboardView extends React.Component {
     });
   };
 
+  onPositionChange = (oldPosition, newPosition) => {
+    this.setState(prevState => {
+      const { widgets } = prevState;
+      if (newPosition < 0 || newPosition >= widgets.length) {
+        return null;
+      }
+      const widgetsWithout = [...widgets];
+      widgetsWithout.splice(oldPosition, 1);
+      const newWidgets = [
+        ...widgetsWithout.slice(0, newPosition),
+        widgets[oldPosition],
+        ...widgetsWithout.slice(newPosition),
+      ];
+      return { widgets: newWidgets };
+    }, this._publishPositionChange);
+  };
+
+  _publishPositionChange = debounce(async () => {
+    try {
+      const { widgets } = this.state;
+      const data = widgets.map((w, i) => ({
+        widget_id: w.id,
+        position: i,
+      }));
+      const dashboardSlug = this.props.match.params.slug;
+      const url = `${ROOT_URL}/accounts/${
+        this.props.match.params.accountId
+      }/dashboards/${dashboardSlug}/widgets_positions`;
+      const response = await fetchAuth(url, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      handleFetchErrors(response);
+    } catch (errorMsg) {
+      store.dispatch(onFailure(errorMsg.toString()));
+    }
+  }, 1000);
+
   render() {
     const { user } = this.props;
     const { loading } = this.state;
@@ -107,7 +149,7 @@ class _DashboardView extends React.Component {
           <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
 
           {this.state.widgets.length > 0 &&
-            this.state.widgets.map(widget => {
+            this.state.widgets.map((widget, position) => {
               switch (widget.type) {
                 case 'lastvalue':
                   return (
@@ -119,7 +161,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      position={widget.position}
+                      onPositionChange={diff => this.onPositionChange(position, position + diff)}
                     />
                   );
                 case 'chart':
@@ -132,7 +174,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      position={widget.position}
+                      onPositionChange={diff => this.onPositionChange(position, position + diff)}
                     />
                   );
                 default:

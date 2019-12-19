@@ -89,33 +89,8 @@ const isWidget = WrappedComponent => {
       }
     };
 
-    positionChange = async change => {
-      try {
-        const widgetUrl = `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${
-          this.props.dashboardSlug
-        }/widgets/${this.props.widgetId}`;
-        const responseGet = await fetchAuth(widgetUrl, { method: 'GET' });
-        const json = await handleFetchErrors(responseGet).json();
-
-        json.position += change;
-        delete json.id;
-
-        const responsePut = await fetchAuth(widgetUrl, {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          method: 'PUT',
-          body: JSON.stringify(json),
-        });
-        handleFetchErrors(responsePut);
-      } catch (errorMsg) {
-        store.dispatch(onFailure(errorMsg.toString()));
-      }
-    };
-
     render() {
-      const { title, width, height, ...passThroughProps } = this.props;
+      const { title, width, height, onPositionChange, ...passThroughProps } = this.props;
       const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
       const outerHeight = this.state.isFullscreen ? window.innerHeight : height;
       const contentWidth = outerWidth - 42; // minus padding & border
@@ -127,8 +102,7 @@ const isWidget = WrappedComponent => {
             buttonRenders={this.state.buttonRenders}
             isFullscreen={this.state.isFullscreen}
             onToggleFullscreen={this.toggleFullscreen}
-            position={this.props.position}
-            onPositionChange={this.positionChange}
+            onPositionChange={onPositionChange}
           />
 
           <div className="widget-content">

@@ -347,7 +347,7 @@ def migration_step_16():
 def migration_step_17():
     """ Widgets need to remember their position (order) on screen. """
     with db.cursor() as c, db.cursor() as c2:
-        c.execute('ALTER TABLE widgets ADD COLUMN position INTEGER NOT NULL DEFAULT 0;')
+        c.execute('ALTER TABLE widgets ADD COLUMN position INTEGER DEFAULT NULL;')
 
         # for every dashboard, update the positions of its widgets so that they are ascending:
         position = 0
