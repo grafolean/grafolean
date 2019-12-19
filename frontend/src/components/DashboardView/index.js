@@ -121,7 +121,7 @@ class _DashboardView extends React.Component {
 
   render() {
     const { user } = this.props;
-    const { loading } = this.state;
+    const { loading, widgets } = this.state;
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
 
@@ -148,8 +148,8 @@ class _DashboardView extends React.Component {
 
           <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
 
-          {this.state.widgets.length > 0 &&
-            this.state.widgets.map((widget, position) => {
+          {widgets.length > 0 &&
+            widgets.map((widget, position) => {
               switch (widget.type) {
                 case 'lastvalue':
                   return (
@@ -161,6 +161,8 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
+                      isOnTop={position === 0}
+                      isOnBottom={position === widgets.length - 1}
                       onPositionChange={diff => this.onPositionChange(position, position + diff)}
                     />
                   );
@@ -174,6 +176,8 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
+                      isOnTop={position === 0}
+                      isOnBottom={position === widgets.length - 1}
                       onPositionChange={diff => this.onPositionChange(position, position + diff)}
                     />
                   );

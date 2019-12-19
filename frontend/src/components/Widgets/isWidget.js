@@ -90,7 +90,7 @@ const isWidget = WrappedComponent => {
     };
 
     render() {
-      const { title, width, height, onPositionChange, ...passThroughProps } = this.props;
+      const { title, width, height, onPositionChange, isOnTop, isOnBottom, ...passThroughProps } = this.props;
       const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
       const outerHeight = this.state.isFullscreen ? window.innerHeight : height;
       const contentWidth = outerWidth - 42; // minus padding & border
@@ -102,6 +102,8 @@ const isWidget = WrappedComponent => {
             buttonRenders={this.state.buttonRenders}
             isFullscreen={this.state.isFullscreen}
             onToggleFullscreen={this.toggleFullscreen}
+            isOnTop={isOnTop}
+            isOnBottom={isOnBottom}
             onPositionChange={onPositionChange}
           />
 
