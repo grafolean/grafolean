@@ -11,10 +11,10 @@ from slugify import slugify
 
 from utils import db, log
 from validators import (
-    DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, PersonSchemaInputsPOST, PersonSchemaInputsPUT,
-    PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs, AccountBotSchemaInputs,
-    BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs, SensorSchemaInputs,
-    PersonChangePasswordSchemaInputsPOST
+    DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
+    PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
+    AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs,
+    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST
 )
 from auth import Auth
 
@@ -395,6 +395,29 @@ class Widget(object):
         return cls(dashboard_id, widget_type, title, content, widget_id)
 
     @staticmethod
+    def set_positions(account_id, dashboard_slug, flask_request):
+        dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
+        if not dashboard_id:
+            raise ValidationError("Unknown dashboard")
+
+        inputs = WidgetsPositionsSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        widgets_positions = flask_request.get_json()
+
+        with db.cursor() as c:
+            # Instead of traversing, we update multiple values at once:
+            #   http://initd.org/psycopg/docs/extras.html#psycopg2.extras.execute_values
+            widgets_positions_tuples = [(dashboard_id, x['widget_id'], x['position'],) for x in widgets_positions]
+            psycopg2.extras.execute_values(c, """
+                UPDATE widgets AS w
+                SET position = v.position
+                FROM (VALUES %s) AS v(dashboard_id, widget_id, position)
+                WHERE v.dashboard_id = w.dashboard AND v.widget_id = w.id;
+            """, widgets_positions_tuples)
+
+
+    @staticmethod
     def _check_exists(widget_id):
         with db.cursor() as c:
             c.execute('SELECT id FROM widgets WHERE id = %s;', (widget_id,))
@@ -412,10 +435,9 @@ class Widget(object):
     def update(self):
         with db.cursor() as c:
             c.execute("UPDATE widgets SET type = %s, title = %s, content = %s  WHERE id = %s and dashboard = %s;", (self.widget_type, self.title, self.content, self.widget_id, self.dashboard_id,))
-            rowcount = c.rowcount
-            if not rowcount:
+            if not c.rowcount:
                 return 0
-            return rowcount
+            return 1
 
     @staticmethod
     def delete(account_id, dashboard_slug, widget_id):
@@ -430,10 +452,10 @@ class Widget(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c, db.cursor() as c2:
-            c.execute('SELECT id, type, title, content FROM widgets WHERE dashboard = %s ORDER BY id;', (dashboard_id,))
+        with db.cursor() as c:
+            c.execute('SELECT id, type, title, position, content FROM widgets WHERE dashboard = %s ORDER BY position;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, content in c.fetchall():
+            for widget_id, widget_type, title, position, content in c.fetchall():
                 # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
                 # content = []
                 # for path_filter, renaming, unit, metric_prefix in c2:
@@ -450,6 +472,7 @@ class Widget(object):
                     'id': widget_id,
                     'type': widget_type,
                     'title': title,
+                    'position': position,
                     'content': content,
                 })
             return ret
@@ -461,7 +484,7 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:  #, db.cursor() as c2:
-            c.execute('SELECT type, title, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
+            c.execute('SELECT type, title, position, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
@@ -482,7 +505,8 @@ class Widget(object):
                 'id': widget_id,
                 'type': res[0],
                 'title': res[1],
-                'content': res[2],
+                'position': res[2],
+                'content': res[3],
             }
 
 
@@ -997,8 +1021,11 @@ class Bot(object):
         """ To help users, a few default systemwide bots are included by default. The credentials are shared
             with their Docker containers via a shared file (/shared-secrets/<protocol>-bot.token).
         """
-        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
+        if not os.path.exists('/shared-secrets/tokens/'):
+            log.warning('Shared secrets dir (/shared-secrets/tokens/) does not exist, not creating default systemwide bots.')
+            return
 
+        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
             BOT_TOKEN_FILENAME = f'/shared-secrets/tokens/{protocol_slug}-bot.token'
             if os.path.exists(BOT_TOKEN_FILENAME):
                 log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))

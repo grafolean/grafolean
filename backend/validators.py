@@ -4,6 +4,7 @@ from flask_inputs.validators import JsonSchema
 import wtforms.validators as val
 
 
+
 class ValuesInputs(Inputs):
     args = {
         'p': [val.InputRequired("Parameter 'p' (path) is required."), val.Length(min=1, max=200)],
@@ -33,20 +34,48 @@ class DashboardSchemaInputs(Inputs):
 class WidgetSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'type': {'type': 'string'},
             'title': {'type': 'string'},
             'content': {'type': 'string'},
+            'position': {'type': 'number'},
         },
         'required': ['type', 'title', 'content'],
+    })]
+
+
+class WidgetsPositionsSchemaInputs(Inputs):
+    # Below is the correct schema, however, for reasons unknown, python-inputs validates
+    # each element of an array against it separately. For now we will just write a schema
+    # for the elements and we'll deal with it later.
+    # json = [JsonSchema(schema={
+    #     'type': 'array',
+    #     'items': {
+    #         'type': 'object',
+    #         'properties': {
+    #             'widget_id': {'type': 'number'},
+    #             'position': {'type': 'number'},
+    #         },
+    #         'additionalProperties': False,
+    #         'required': ['widget_id', 'position'],
+    #     },
+    # })]
+    json = [JsonSchema(schema={
+        'type': 'object',
+        'properties': {
+            'widget_id': {'type': 'number'},
+            'position': {'type': 'number'},
+        },
+        'additionalProperties': False,
+        'required': ['widget_id', 'position'],
     })]
 
 
 class PersonSchemaInputsPOST(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'password': {'type': 'string'},
@@ -59,7 +88,7 @@ class PersonSchemaInputsPOST(Inputs):
 class PersonSchemaInputsPUT(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'name': {'type': 'string'},
@@ -83,7 +112,7 @@ class PersonChangePasswordSchemaInputsPOST(Inputs):
 class PersonCredentialSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'username': {'type': 'string'},
             'password': {'type': 'string'},
@@ -95,7 +124,7 @@ class PersonCredentialSchemaInputs(Inputs):
 class AccountSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
         },
@@ -126,7 +155,7 @@ class PermissionSchemaInputs(Inputs):
 class BotSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,  # do not allow fields which are not specified in schema
+        'additionalProperties': False,
         'properties': {
             'name': {'type': 'string'},
             'protocol': {'type': ['string', 'null']},
@@ -159,7 +188,7 @@ class EntitySchemaInputs(Inputs):
             'protocols': {
                 'type': 'object',
                 'additionalProperties': {
-                    # we don't define any properties (because keys are protocols and are not know in advance), but any
+                    # we don't define any properties (because keys are protocols and are not known in advance), but any
                     # protocol definition must conform to this sub-schema:
                     'type': 'object',
                     'properties': {

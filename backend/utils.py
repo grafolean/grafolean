@@ -343,3 +343,19 @@ def migration_step_16():
     BOT_ID_FIELD = 'bot INTEGER NOT NULL REFERENCES bots(user_id) ON DELETE CASCADE'
     with db.cursor() as c:
         c.execute('CREATE TABLE entities_bots ({entity}, {bot});'.format(entity=ENTITY_ID_FIELD, bot=BOT_ID_FIELD))
+
+def migration_step_17():
+    """ Widgets need to remember their position (order) on screen. """
+    with db.cursor() as c, db.cursor() as c2:
+        c.execute('ALTER TABLE widgets ADD COLUMN position INTEGER DEFAULT NULL;')
+
+        # for every dashboard, update the positions of its widgets so that they are ascending:
+        position = 0
+        last_dashboard_id = None
+        c.execute('SELECT dashboard, id FROM widgets ORDER BY dashboard ASC, id ASC')
+        for dashboard_id, widget_id in c:
+            if dashboard_id != last_dashboard_id:
+                position = 0
+                last_dashboard_id = dashboard_id
+            c2.execute('UPDATE widgets SET position = %s WHERE id = %s', (position, widget_id,))
+            position += 1

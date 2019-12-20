@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
+import { fetchAuth, havePermission } from '../../utils/fetch';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Button from '../Button';
 import EditableLabel from '../EditableLabel';
@@ -10,68 +12,31 @@ import Loading from '../Loading';
 import WidgetForm from '../WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
-import { fetchAuth, havePermission } from '../../utils/fetch';
 
 import './DashboardView.scss';
 
 class _DashboardView extends React.Component {
   state = {
-    loading: false,
-    valid: true,
+    loading: true,
     name: '',
     widgets: [],
     newWidgetFormOpened: false,
+    sortingEnabled: false,
+    savingWidgetPositions: false,
   };
-  abortController = new window.AbortController();
+  widgetsBeforeReordering = null;
 
-  componentDidMount() {
-    this.fetchDashboardDetails();
-  }
-
-  componentWillUnmount() {
-    this.abortController.abort();
-  }
-
-  fetchDashboardDetails = () => {
-    if (this.state.loading) {
-      return; // fetching already in progress, abort
-    }
-
+  onDashboardUpdate = json => {
     this.setState({
-      loading: true,
+      name: json.name,
+      widgets: json.widgets.map(w => ({
+        id: w.id,
+        type: w.type,
+        title: w.title,
+        content: JSON.parse(w.content),
+      })),
+      loading: false,
     });
-    fetchAuth(
-      `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${this.props.match.params.slug}`,
-      {
-        signal: this.abortController.signal,
-      },
-    )
-      .then(handleFetchErrors)
-      .then(response =>
-        response.json().then(json => {
-          this.setState({
-            name: json.name,
-            widgets: json.widgets.map(w => ({
-              id: w.id,
-              type: w.type,
-              title: w.title,
-              content: JSON.parse(w.content),
-            })),
-            valid: true,
-            loading: false,
-          });
-        }),
-      )
-      .catch(errorMsg => {
-        if (errorMsg.name && errorMsg.name === 'AbortError') {
-          return;
-        }
-        store.dispatch(onFailure(errorMsg.toString()));
-        this.setState({
-          valid: false,
-          loading: false,
-        });
-      });
   };
 
   handleShowNewWidgetForm = ev => {
@@ -89,7 +54,6 @@ class _DashboardView extends React.Component {
   };
 
   handleWidgetUpdate = () => {
-    this.fetchDashboardDetails();
     this.setState({
       newWidgetFormOpened: false,
     });
@@ -115,29 +79,80 @@ class _DashboardView extends React.Component {
     });
   };
 
+  startReordering = () => {
+    this.setState(prevState => ({
+      sortingEnabled: true,
+    }));
+    this.widgetsBeforeReordering = [...this.state.widgets];
+  };
+
+  cancelReordering = () => {
+    this.setState(prevState => ({
+      sortingEnabled: false,
+      widgets: this.widgetsBeforeReordering,
+    }));
+  };
+
+  onPositionChange = (oldPosition, newPosition) => {
+    this.setState(prevState => {
+      const { widgets } = prevState;
+      if (newPosition < 0 || newPosition >= widgets.length) {
+        return null;
+      }
+      const widgetsWithout = [...widgets];
+      widgetsWithout.splice(oldPosition, 1);
+      const newWidgets = [
+        ...widgetsWithout.slice(0, newPosition),
+        widgets[oldPosition],
+        ...widgetsWithout.slice(newPosition),
+      ];
+      return { widgets: newWidgets };
+    });
+  };
+
+  saveReorderingResult = async () => {
+    this.setState(prevState => ({
+      savingWidgetPositions: true,
+    }));
+    try {
+      const { widgets } = this.state;
+      const data = widgets.map((w, i) => ({
+        widget_id: w.id,
+        position: i,
+      }));
+      const dashboardSlug = this.props.match.params.slug;
+      const url = `${ROOT_URL}/accounts/${
+        this.props.match.params.accountId
+      }/dashboards/${dashboardSlug}/widgets_positions`;
+      const response = await fetchAuth(url, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      handleFetchErrors(response);
+    } catch (errorMsg) {
+      store.dispatch(onFailure(errorMsg.toString()));
+    }
+    this.setState(prevState => ({
+      savingWidgetPositions: false,
+      sortingEnabled: false,
+    }));
+  };
+
   render() {
     const { user } = this.props;
-    const { valid, loading } = this.state;
+    const { loading, widgets, sortingEnabled, savingWidgetPositions } = this.state;
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
 
     const innerWidth = this.props.width - 2 * 21; // padding
 
-    if (!valid) {
-      if (loading) return <Loading />;
-      else return <div>Could not fetch data - please try again.</div>;
-    }
-
-    const canAddDashboard = havePermission(
-      `accounts/${accountId}/dashboards/${dashboardSlug}`,
-      'POST',
-      user.permissions,
-    );
-    const canEditDashboardTitle = havePermission(
-      `accounts/${accountId}/dashboards/${dashboardSlug}`,
-      'PUT',
-      user.permissions,
-    );
+    const dashboardUrl = `accounts/${accountId}/dashboards/${dashboardSlug}`;
+    const canAddDashboard = havePermission(dashboardUrl, 'POST', user.permissions);
+    const canEditDashboardTitle = havePermission(dashboardUrl, 'PUT', user.permissions);
     return (
       <div>
         <div className="frame">
@@ -150,11 +165,54 @@ class _DashboardView extends React.Component {
                 isEditable={canEditDashboardTitle}
               />
             </span>
+
             {loading && <Loading overlayParent={true} />}
+
+            <div className="widget-sorting">
+              {sortingEnabled ? (
+                <>
+                  {!savingWidgetPositions && (
+                    <Button className="red" onClick={this.cancelReordering}>
+                      <i className="fa fa-close" /> Cancel
+                    </Button>
+                  )}
+                  <Button
+                    isLoading={savingWidgetPositions}
+                    className="green"
+                    onClick={this.saveReorderingResult}
+                  >
+                    <i className="fa fa-save" /> Save widget positions
+                  </Button>
+                </>
+              ) : (
+                <Button className="green" onClick={this.startReordering}>
+                  <i className="fa fa-crosshairs" /> Reorder widgets
+                </Button>
+              )}
+            </div>
           </div>
 
-          {this.state.widgets.length > 0 &&
-            this.state.widgets.map(widget => {
+          <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
+
+          {widgets.length > 0 &&
+            widgets.map((widget, position) => {
+              const additionalButtonsRender = sortingEnabled ? (
+                <>
+                  <span className={`widget-button ${position === 0 ? 'disabled' : ''}`}>
+                    <i
+                      className="fa fa-arrow-up"
+                      onClick={() => this.onPositionChange(position, position - 1)}
+                    />
+                  </span>
+                  <span className={`widget-button ${position === widgets.length - 1 ? 'disabled' : ''}`}>
+                    <i
+                      className="fa fa-arrow-down"
+                      onClick={() => this.onPositionChange(position, position + 1)}
+                    />
+                  </span>
+                </>
+              ) : null;
+
               switch (widget.type) {
                 case 'lastvalue':
                   return (
@@ -166,7 +224,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      onWidgetDelete={this.fetchDashboardDetails}
+                      additionalButtonsRender={additionalButtonsRender}
                     />
                   );
                 case 'chart':
@@ -179,7 +237,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      onWidgetDelete={this.fetchDashboardDetails}
+                      additionalButtonsRender={additionalButtonsRender}
                     />
                   );
                 default:
