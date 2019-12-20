@@ -49,7 +49,16 @@ const isWidget = WrappedComponent => {
     };
 
     render() {
-      const { title, width, height, onPositionChange, isOnTop, isOnBottom, ...passThroughProps } = this.props;
+      const {
+        title,
+        width,
+        height,
+        onPositionChange,
+        isOnTop,
+        isOnBottom,
+        additionalButtonsRender,
+        ...passThroughProps
+      } = this.props;
       const { isFullscreen } = this.state;
       const outerWidth = this.state.isFullscreen ? window.innerWidth : width;
       const outerHeight = this.state.isFullscreen ? window.innerHeight : height;
@@ -89,12 +98,7 @@ const isWidget = WrappedComponent => {
               />
             </span>
 
-            <span className={`widget-button ${isOnTop ? 'disabled' : ''}`}>
-              <i className="fa fa-arrow-up" onClick={() => onPositionChange(-1)} />
-            </span>
-            <span className={`widget-button ${isOnBottom ? 'disabled' : ''}`}>
-              <i className="fa fa-arrow-down" onClick={() => onPositionChange(1)} />
-            </span>
+            {additionalButtonsRender}
 
             <span className="widget-button">
               <i

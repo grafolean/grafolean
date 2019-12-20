@@ -1,6 +1,5 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import debounce from 'lodash/debounce';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
@@ -22,7 +21,10 @@ class _DashboardView extends React.Component {
     name: '',
     widgets: [],
     newWidgetFormOpened: false,
+    sortingEnabled: false,
+    savingWidgetPositions: false,
   };
+  widgetsBeforeReordering = null;
 
   onDashboardUpdate = json => {
     this.setState({
@@ -77,6 +79,20 @@ class _DashboardView extends React.Component {
     });
   };
 
+  startReordering = () => {
+    this.setState(prevState => ({
+      sortingEnabled: true,
+    }));
+    this.widgetsBeforeReordering = [...this.state.widgets];
+  };
+
+  cancelReordering = () => {
+    this.setState(prevState => ({
+      sortingEnabled: false,
+      widgets: this.widgetsBeforeReordering,
+    }));
+  };
+
   onPositionChange = (oldPosition, newPosition) => {
     this.setState(prevState => {
       const { widgets } = prevState;
@@ -91,10 +107,13 @@ class _DashboardView extends React.Component {
         ...widgetsWithout.slice(newPosition),
       ];
       return { widgets: newWidgets };
-    }, this._publishPositionChange);
+    });
   };
 
-  _publishPositionChange = debounce(async () => {
+  saveReorderingResult = async () => {
+    this.setState(prevState => ({
+      savingWidgetPositions: true,
+    }));
     try {
       const { widgets } = this.state;
       const data = widgets.map((w, i) => ({
@@ -117,11 +136,15 @@ class _DashboardView extends React.Component {
     } catch (errorMsg) {
       store.dispatch(onFailure(errorMsg.toString()));
     }
-  }, 1000);
+    this.setState(prevState => ({
+      savingWidgetPositions: false,
+      sortingEnabled: false,
+    }));
+  };
 
   render() {
     const { user } = this.props;
-    const { loading, widgets } = this.state;
+    const { loading, widgets, sortingEnabled, savingWidgetPositions } = this.state;
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
 
@@ -144,12 +167,52 @@ class _DashboardView extends React.Component {
             </span>
 
             {loading && <Loading overlayParent={true} />}
+
+            <div className="widget-sorting">
+              {sortingEnabled ? (
+                <>
+                  {!savingWidgetPositions && (
+                    <Button className="red" onClick={this.cancelReordering}>
+                      <i className="fa fa-close" /> Cancel
+                    </Button>
+                  )}
+                  <Button
+                    isLoading={savingWidgetPositions}
+                    className="green"
+                    onClick={this.saveReorderingResult}
+                  >
+                    <i className="fa fa-save" /> Save widget positions
+                  </Button>
+                </>
+              ) : (
+                <Button className="green" onClick={this.startReordering}>
+                  <i className="fa fa-crosshairs" /> Reorder widgets
+                </Button>
+              )}
+            </div>
           </div>
 
           <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
 
           {widgets.length > 0 &&
             widgets.map((widget, position) => {
+              const additionalButtonsRender = sortingEnabled ? (
+                <>
+                  <span className={`widget-button ${position === 0 ? 'disabled' : ''}`}>
+                    <i
+                      className="fa fa-arrow-up"
+                      onClick={() => this.onPositionChange(position, position - 1)}
+                    />
+                  </span>
+                  <span className={`widget-button ${position === widgets.length - 1 ? 'disabled' : ''}`}>
+                    <i
+                      className="fa fa-arrow-down"
+                      onClick={() => this.onPositionChange(position, position + 1)}
+                    />
+                  </span>
+                </>
+              ) : null;
+
               switch (widget.type) {
                 case 'lastvalue':
                   return (
@@ -161,9 +224,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      isOnTop={position === 0}
-                      isOnBottom={position === widgets.length - 1}
-                      onPositionChange={diff => this.onPositionChange(position, position + diff)}
+                      additionalButtonsRender={additionalButtonsRender}
                     />
                   );
                 case 'chart':
@@ -176,9 +237,7 @@ class _DashboardView extends React.Component {
                       dashboardSlug={dashboardSlug}
                       title={widget.title}
                       content={widget.content}
-                      isOnTop={position === 0}
-                      isOnBottom={position === widgets.length - 1}
-                      onPositionChange={diff => this.onPositionChange(position, position + diff)}
+                      additionalButtonsRender={additionalButtonsRender}
                     />
                   );
                 default:
