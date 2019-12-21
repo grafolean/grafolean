@@ -121,9 +121,7 @@ class _DashboardView extends React.Component {
         position: i,
       }));
       const dashboardSlug = this.props.match.params.slug;
-      const url = `${ROOT_URL}/accounts/${
-        this.props.match.params.accountId
-      }/dashboards/${dashboardSlug}/widgets_positions`;
+      const url = `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${dashboardSlug}/widgets_positions`;
       const response = await fetchAuth(url, {
         headers: {
           Accept: 'application/json',
