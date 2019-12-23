@@ -7,11 +7,11 @@ import Button from '../Button';
 import './AdminFirst.scss';
 
 class AdminFirst extends React.Component {
-  formValues = {};
   state = {
     formValues: {
       username: '',
       password: '',
+      confirmPassword: '',
       name: '',
       email: '',
     },
@@ -27,7 +27,6 @@ class AdminFirst extends React.Component {
         [fieldName]: value,
       },
     }));
-    this.formValues[fieldName] = value;
   }
 
   changeUsername = e => {
@@ -35,6 +34,9 @@ class AdminFirst extends React.Component {
   };
   changePassword = e => {
     this.changeFormValue('password', e.target.value);
+  };
+  changeConfirmPassword = e => {
+    this.changeFormValue('confirmPassword', e.target.value);
   };
   changeName = e => {
     this.changeFormValue('name', e.target.value);
@@ -45,6 +47,23 @@ class AdminFirst extends React.Component {
 
   handleSubmit = async ev => {
     ev.preventDefault();
+
+    const {
+      formValues: { username, password, confirmPassword, email, name },
+    } = this.state;
+
+    if (password !== confirmPassword) {
+      this.setState(prevState => ({
+        errorMsg: 'Passwords do not match!',
+        formValues: {
+          ...prevState.formValues,
+          password: '',
+          confirmPassword: '',
+        },
+      }));
+      return;
+    }
+
     this.setState({
       errorMsg: null,
       posting: true,
@@ -52,10 +71,10 @@ class AdminFirst extends React.Component {
     try {
       // create first admin:
       const paramsFirst = JSON.stringify({
-        username: this.formValues.username,
-        password: this.formValues.password,
-        email: this.formValues.email,
-        name: this.formValues.name,
+        username: username,
+        password: password,
+        email: email,
+        name: name,
       });
       const responseFirst = await fetch(`${ROOT_URL}/admin/first`, {
         headers: {
@@ -70,8 +89,8 @@ class AdminFirst extends React.Component {
 
       // login temporarily, but forget jwt token: (user must login explicitly)
       const paramsLogin = {
-        username: this.formValues.username,
-        password: this.formValues.password,
+        username: username,
+        password: password,
       };
       const responseLogin = await fetch(`${ROOT_URL}/auth/login`, {
         headers: {
@@ -121,7 +140,7 @@ class AdminFirst extends React.Component {
 
   render() {
     const {
-      formValues: { username, password, name, email },
+      formValues: { username, password, confirmPassword, name, email },
       userCreated,
       errorMsg,
       posting,
@@ -144,7 +163,11 @@ class AdminFirst extends React.Component {
           </div>
           <div className="field">
             <label>Password:</label>
-            <input type="text" value={password} onChange={this.changePassword} />
+            <input type="password" value={password} onChange={this.changePassword} />
+          </div>
+          <div className="field">
+            <label>Confirm password:</label>
+            <input type="password" value={confirmPassword} onChange={this.changeConfirmPassword} />
           </div>
           <div className="field">
             <label>E-mail:</label>
