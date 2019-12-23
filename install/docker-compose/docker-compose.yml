@@ -1,10 +1,8 @@
 version: '2.1'
 services:
 
-  # This docker-compose.yml is used for building the docker images (grafolean and mosquitto-auth)
-
-  db:
-    image: postgres:9.6-alpine
+  # This docker-compose.yml is used for building the grafolean/grafolean docker image
+  # during development.
 
   grafolean:
     image: grafolean/grafolean
@@ -13,13 +11,3 @@ services:
       dockerfile: install/docker-compose/Dockerfile
       args:
         - REACT_APP_BACKEND_ROOT_URL=/api
-
-  mosquitto:
-    # regular Mosquitto, but with auth plugin installed.
-    image: grafolean/mosquitto
-    build:
-      context: ../mosquitto-auth/
-      dockerfile: Dockerfile
-
-networks:
-  grafolean:
