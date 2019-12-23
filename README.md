@@ -34,13 +34,14 @@ Requirements: `docker` and `docker-compose` must be installed. Installation guid
     $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/.env.example > .env
     ```
 
-3) edit `.env` and change:
-    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside),
-    - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
-
+3) edit `.env`:
     ```
     $ nano .env
     ```
+     and change:
+
+    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside),
+    - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
 
 4) run:
     ```
