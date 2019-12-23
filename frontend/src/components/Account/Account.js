@@ -9,7 +9,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import DynamicallyLoadedWidget from './DynamicallyLoadedWidget';
+import RemoteComponent from './RemoteComponent';
 
 class Account extends React.Component {
   state = {
@@ -71,10 +71,7 @@ class Account extends React.Component {
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
         <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
 
-        <DynamicallyLoadedWidget
-          url="http://localhost:3000/RemoteWidget.js"
-          name={"asdf"}
-        />
+        <RemoteComponent url="http://localhost:3000/RemoteWidget.js" name={'asdfaaaaaaa123'} />
 
         {account === null ? (
           <Loading />
