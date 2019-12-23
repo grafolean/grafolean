@@ -63,9 +63,9 @@ services:
       # Example setting:
       # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
     ports:
-      # If you wish to enable HTTPS, you need to both enable port 443 and supply a valid certificate. This
-      # installation helps you with this - please see README for installation instructions.
-      - "80:80"
+      - "${HTTP_PORT:-80}:80"
+      # If you wish to enable HTTPS, you need to both enable port 443 and supply a valid certificate. See
+      # doc/HOWTO-HTTPS.md for installation instructions.
       #- "443:443"
     restart: always
     volumes:
