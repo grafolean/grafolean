@@ -8,11 +8,11 @@
 
 There are 2 types of bots, *custom* and others (like SNMP, ICMP Ping,...). Grafolean doesn't know any details about *custom* bots, except that they will send data to backend via REST (i.e., HTTP) using their own authentication token - they are the most generic kind, but it takes an additional effort to set them up and to reconfigure them when needed. They are usually less convenient, but they provide a nice escape hatch in case we just want to send values via cron, from inside of an app, or when we are using a protocol not supported by dedicated Grafolean bots.
 
-Other kinds of bots (SNMP, Ping) are configured via Grafolean user interface. The bots themselves need to be installed somewhere where they can collect data (possibly in remote networks), but once that is done, they periodically ask Grafolean for instructions (which *entities* to monitor, which *sensors* are enabled on them, and which *credentials* to use when fetching data). The data is then sent to Grafolean the same way the custom bots would send it.
+Other kinds of bots (SNMP, Ping) are configured via Grafolean user interface. By default both a SNMP and ICMP Ping bot are already installed and setup as part of (self-hosted) Grafolean system, but they can also be installed separately (possibly in remote networks). The bots periodically ask Grafolean for instructions (which *entities* to monitor, which *sensors* are enabled on them, and which *credentials* to use when fetching data). The data is then sent to Grafolean the same way the custom bots would send it (HTTP POST).
 
 ### Entities
 
-**Entities** are the things we would like to monitor (like devices, web pages, systems,...).
+**Entities** are the things we would like to monitor (currently only devices are supported, but it could also be web pages, systems,...).
 
 Note that they are only needed when we use non-custom bots. Grafolean doesn't use entities directly, it just passes their information to bots which then gather data from them.
 
@@ -22,9 +22,9 @@ Note that they are only needed when we use non-custom bots. Grafolean doesn't us
 
 ### Sensors
 
-**Sensors** describe which data is being gathered. When the sensors are selected on an entity the period of data collection is also set (every minute, 10 seconds,...), with intervals being multiples of a second.
+**Sensors** describe which data is being gathered. When the sensors are selected on an entity, the period of data collection is also set (every minute, 10 seconds,...), with intervals being multiples of a second.
 
-For Ping the sensors are currently "boring", as they only need to be enabled on the device for the data to be gathered. For SNMP however we can specify OIDs that are being fetched, and then specify the formula for calculating values and expression for composing the paths.
+For Ping the sensors are currently "boring", as they only need to be enabled on the device for the data to be gathered. For SNMP however we can specify OIDs that are being fetched, which are then used for calculating values (formula can be specified) and for composing the *paths*.
 
 ### Paths
 
@@ -34,7 +34,7 @@ SNMP and Ping bots *do* enforce the leading part of the paths, but in general, i
 
 ### Dashboards and widgets
 
-**Dashboards** allow us to preview data. Currently only *charts* and *latest values* **widgets** are supported. Widgets are ordered in alphabetical order (manual reordering is not implemented yet).
+**Dashboards** allow us to preview data. Currently only *charts* and *latest value* **widgets** are supported, with support for plugins coming soon.
 
 ## First steps
 
@@ -44,9 +44,9 @@ See [README.md](../README.md) for instalation instructions. Once done, configure
 
 **IMPORTANT:** please make sure you can access Grafolean via an URL which is not on local IP or domain `localhost`. Bots would not be able to connect to such an address because they are running inside their Docker containers, where local addresses resolve to the container itself. Grafolean UI tries to be nice and guide you through the installation steps for bots, but when you use local IPs or domain `localhost`, the instructions will be incorrect (you will be warned though).
 
-### Adding a bot
+### Adding a bot (optional)
 
-> For ICMP ping, this step has already been carried out for you (though the bot is systemwide, instead of being account specific). You can safely skip it.
+> For ICMP ping and SNMP, this step has already been carried out for you (the bot is systemwide and can be used with any of the accounts). You can safely skip it.
 
 You can add either a SNMP, ICMP Ping or a custom bot. Select `Bots` in sidebar menu and click `+ Add bot` button. Select the protocol (SNMP, ICMP Ping or custom) and the label by which the bot will be known to you.
 
@@ -54,9 +54,9 @@ When bot is added, its `Last successful login` field reads `Never`, because it h
 
 If you have selected a custom bot, the data is being collected and there is nothing we need to do in Grafolean except to display it in dashboards - all of the configuration is done in the script that is sending data. For SNMP and Ping however we need to configure *credentials*, *entities* and *sensors*.
 
-### Configuring protocol configs (credentials) and adding sensors
+### Configuring protocol configs (credentials) and adding sensors (optional)
 
-> For ICMP ping, this step has already been carried out for you. You can safely skip it.
+> This step is performed for you automatically whenever you add an account, for both ICMP ping and SNMP (assuming SNMPv2 and community `public`). You can either skip it or add other SNMP credentials if needed.
 
 Select `Credentials` in sidebar menu and click `+ Add credentials` button. Fill the form (the fields depend on the protocol selected) and click `Submit`. Repeat the process for all the protocols and their settings as needed.
 
@@ -64,11 +64,11 @@ Next select `Sensors` in sidebar menu. There should be existing sensors for both
 
 ### Configuring data collection
 
-Finally, we need to specify which entities (devices) we would like to monitor. Select `Monitored entities` in sidebar menu and click `+ Add monitored entity` button. Fill the form and click `Submit` button. In the list, click on the name of newly added entity. Number of `Sensors enabled` should read `0`. Click `Settings`, then select appropriate credentials for each of the protocols you wish to use to monitor the entity. Selecting a credential will show a list of sensors, allowing us to select them and to customize their polling interval if needed. Once the sensors are selected, click `Submit`. Number of `Sensors enabled` should now read reflect our choices on previous screen.
+Finally, we need to specify which entities (devices) we would like to monitor. Select `Monitored entities` in sidebar menu and click `+ Add monitored entity` button. Fill the form and click `Submit` button. In the list, click on the name of newly added entity. Number of `Sensors enabled` reads `0` at the start, and we need to change this. Click `Settings`, then select appropriate credentials for each of the protocols you wish to use to monitor the entity. Selecting a credential will show a list of sensors, allowing us to select them and to customize their polling interval if needed. Once the sensors are selected, click `Submit`. Number of `Sensors enabled` should now read reflect our choices on previous screen.
 
 ### Displaying data
 
-Data is displayed within *dashboards*. To see the data, a new dashboard needs to be created (`Dashboards` -> `+ Add dashboard`). Dashboards are empty on creation, but we can add *widgets* to them. Currently only *chart* and *latest value* widgets are available.
+Data is displayed within *dashboards*. To see the data, a new dashboard needs to be created (`Dashboards` -> `+ Add dashboard`). Dashboards are empty when created, but we can add *widgets* to them. Currently only *chart* and *latest value* widgets are available.
 
 Chart widget features a `Path filter` field which shows the paths that match the entered filter. Currently this is the only way to investigate which paths are available. Copying one of the paths to `Path filter` will select only this path, but you can replace segments of the path (between dots) with either `*` or `?` wildcards which match multiple segments or a single segment respectively.
 
