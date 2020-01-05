@@ -8,15 +8,16 @@ import { fetchBackendStatus, ROOT_URL } from '../../store/actions';
 import AdminFirst from '../AdminFirst';
 import AdminMigrateDB from '../AdminMigrateDB';
 import Button from '../Button';
-import CORSWarningPage from '../CORSWarningPage';
+import CORSWarningPage from '../WarningPages/CORSWarningPage';
+import HostnameWarningPage from '../WarningPages/HostnameWarningPage';
 import Loading from '../Loading';
 import LoginPage from '../LoginPage';
 import Notifications from '../Notifications';
 import SidebarContent from './SidebarContent';
 import Content from './Content';
+import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
 
 import './Main.scss';
-import Breadcrumbs from '../Breadcrumbs/Breadcrumbs';
 
 class Main extends React.Component {
   CONTENT_PADDING_LR = 20;
@@ -92,12 +93,17 @@ class Main extends React.Component {
     // to CORS). For this reason /api/status/info backend endpoint is accessible from anywhere, and we can check
     // if our domain is in the list of CORS allowed domains, before we even request any CORS-protected resource.
     // This of course applies only if backend really is on a different domain (which it is not, for example, if
-    // backend and frontend are behind the same nginx reverse proxy).
+    // backend and frontend are behind the same nginx reverse proxy) - so this can't happen in default install.
     if (
       this.backendIsCrossOrigin() &&
       !backendStatus.cors_domains.includes(window.location.origin.toLowerCase())
     ) {
       return <CORSWarningPage />;
+    }
+    // If user has misconfigured "EXTERNAL_HOSTNAME" setting, we can detect this by comparing it to the domain in
+    // URL. Otherwise MQTT connection would fail and user would be immediately logged out.
+    if (backendStatus.mqtt_ws_hostname !== window.location.hostname) {
+      return <HostnameWarningPage />;
     }
     if (backendStatus.db_migration_needed === true) {
       return <AdminMigrateDB />;

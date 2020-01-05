@@ -1,13 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
 
-import './corsWarning.scss';
+import './index.scss';
 
 class CORSWarningPage extends React.Component {
   render() {
     const { corsDomains } = this.props;
     return (
-      <div className="cors_warning">
+      <div className="warning_page">
         <div>
           <i className="fa fa-exclamation-triangle" />
           <b>WARNING:</b> backend is not configured to be accessed from this web page. Our origin is{' '}
@@ -17,7 +17,7 @@ class CORSWarningPage extends React.Component {
           ) : (
             <ul>
               {corsDomains.map(domain => (
-                <li>{domain}</li>
+                <li key={domain}>{domain}</li>
               ))}
             </ul>
           )}
