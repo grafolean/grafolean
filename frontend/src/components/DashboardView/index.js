@@ -15,6 +15,11 @@ import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 
 import './DashboardView.scss';
 
+const KNOWN_WIDGETS = {
+  lastvalue: LastValueWidget,
+  chart: GLeanChartWidget,
+};
+
 class _DashboardView extends React.Component {
   state = {
     loading: true,
@@ -211,36 +216,22 @@ class _DashboardView extends React.Component {
                 </>
               ) : null;
 
-              switch (widget.type) {
-                case 'lastvalue':
-                  return (
-                    <LastValueWidget
-                      key={widget.id}
-                      width={innerWidth}
-                      height={500}
-                      widgetId={widget.id}
-                      dashboardSlug={dashboardSlug}
-                      title={widget.title}
-                      content={widget.content}
-                      additionalButtonsRender={additionalButtonsRender}
-                    />
-                  );
-                case 'chart':
-                  return (
-                    <GLeanChartWidget
-                      key={widget.id}
-                      width={innerWidth}
-                      height={500}
-                      widgetId={widget.id}
-                      dashboardSlug={dashboardSlug}
-                      title={widget.title}
-                      content={widget.content}
-                      additionalButtonsRender={additionalButtonsRender}
-                    />
-                  );
-                default:
-                  return <div>Unknown widget type.</div>;
+              if (!KNOWN_WIDGETS[widget.type]) {
+                return <div>Unknown widget type.</div>;
               }
+              const WidgetComponent = KNOWN_WIDGETS[widget.type];
+              return (
+                <WidgetComponent
+                  key={widget.id}
+                  width={innerWidth}
+                  height={500}
+                  widgetId={widget.id}
+                  dashboardSlug={dashboardSlug}
+                  title={widget.title}
+                  content={widget.content}
+                  additionalButtonsRender={additionalButtonsRender}
+                />
+              );
             })}
         </div>
 
