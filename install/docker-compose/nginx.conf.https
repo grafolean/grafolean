@@ -25,6 +25,20 @@ server {
     }
 }
 
+# When we use HTTPS, there are still systemwide bots which are started within the same (Docker) network and
+# which user server name 'grafolean' and port 80 (HTTP), so we must cater for them.
+server {
+    listen       80;
+    server_name  grafolean;
+
+    root         /var/www/html;
+
+    location /api/ {
+        include uwsgi_params;
+        uwsgi_pass unix:///tmp/uwsgi.socket;
+    }
+}
+
 server {
     listen       443 ssl default_server;
     listen       [::]:443 ssl default_server;
