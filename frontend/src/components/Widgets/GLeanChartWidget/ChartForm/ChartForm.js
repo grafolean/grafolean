@@ -1,5 +1,5 @@
 import React from 'react';
-// import { compile } from 'mathjs';
+import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
@@ -31,28 +31,32 @@ const KNOWN_UNITS = {
 };
 
 export default class ChartForm extends React.Component {
-  static DEFAULT_FORM_CONTENT = [];
-
-  DEFAULT_SERIE_GROUP_CONTENT = {
+  static DEFAULT_SERIE_GROUP_CONTENT = {
     path_filter: '',
     renaming: '',
     expression: '$1',
     unit: '',
   };
+  static DEFAULT_FORM_CONTENT = [ChartForm.DEFAULT_SERIE_GROUP_CONTENT];
 
-  // static isValid = content => {
-  //   if (content.length === 0) {
-  //     return false;
-  //   }
-  //   for (let sg of content) {
-  //     try {
-  //       compile(sg.expression);
-  //     } catch (err) {
-  //       return false;
-  //     }
-  //   }
-  //   return true;
-  // };
+  static validate = content => {
+    if (content.length === 0) {
+      return 'At least one chart series group must be defined';
+    }
+    for (let i = 0; i < content.length; i++) {
+      try {
+        compile(content[i].expression);
+      } catch (err) {
+        return {
+          [i]: {
+            expression: 'Error compiling an expression',
+          },
+        };
+      }
+    }
+    // all is ok:
+    return {};
+  };
 
   userUnitCreator = option => {
     return {
@@ -62,7 +66,7 @@ export default class ChartForm extends React.Component {
   };
 
   handleAddEmptySerie = ev => {
-    this.props.setFieldValue('content', [...this.props.content, this.DEFAULT_SERIE_GROUP_CONTENT]);
+    this.props.setFieldValue('content', [...this.props.content, ChartForm.DEFAULT_SERIE_GROUP_CONTENT]);
     ev.preventDefault();
   };
 

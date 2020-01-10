@@ -16,6 +16,28 @@ const WIDGET_TYPES = [
 
 class WidgetForm extends React.Component {
   static validate = values => {
+    if (!values.type) {
+      return {
+        type: 'widget type not selected',
+      };
+    }
+    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === values.type);
+    if (selectedWidgetType['form'].validate) {
+      const validationResult = selectedWidgetType['form'].validate(values.content);
+      // We are not sure what we will receive, but if it is empty, we want to receive an empty object (which is
+      // what formik expects). So we are a bit careful when checking:
+      if (Array.isArray(validationResult) && validationResult.length === 0) {
+        return {};
+      } else if (typeof validationResult === 'object' && Object.keys(validationResult).length === 0) {
+        return {};
+      } else if (!validationResult) {
+        return {};
+      }
+      // there was an error, return non-empty object:
+      return {
+        content: validationResult,
+      };
+    }
     return {};
   };
 
