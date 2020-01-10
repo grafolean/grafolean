@@ -1,45 +1,15 @@
 import React from 'react';
 
 export default class LastValueForm extends React.Component {
-  DEFAULT_FORM_CONTENT = {
+  static DEFAULT_FORM_CONTENT = {
     path: '',
     decimals: 1,
     unit: '',
     expression: '$1',
   };
-  static defaultProps = {
-    initialFormContent: {},
-    onChange: () => {},
-  };
-  state = {
-    content: {
-      ...this.DEFAULT_FORM_CONTENT,
-      ...this.props.initialFormContent,
-    },
-  };
-
-  notifyParentOfChange = () => {
-    const valid = true;
-    this.props.onChange('lastvalue', this.state.content, valid);
-  };
-
-  handleInputChange = event => {
-    event.preventDefault();
-    const targetVar = event.target.name;
-    const value = event.target.value;
-    this.setState(
-      prevState => ({
-        content: {
-          ...prevState.content,
-          [targetVar]: value,
-        },
-      }),
-      this.notifyParentOfChange,
-    );
-  };
 
   render() {
-    const { content } = this.state;
+    const { content, onChange, onBlur } = this.props;
     if (!content || Object.keys(content).length === 0) {
       return null;
     }
@@ -48,27 +18,34 @@ export default class LastValueForm extends React.Component {
       <div className="last-value-form">
         <div className="field">
           <label>Path:</label>
-          <input type="text" name="path" value={path} onChange={this.handleInputChange} />
+          <input type="text" name="content.path" value={path} onChange={onChange} onBlur={onBlur} />
         </div>
         <div className="field">
           <label>Number of decimals:</label>
           <input
             type="number"
-            name="decimals"
+            name="content.decimals"
             min={0}
             max={20}
             value={decimals}
-            onChange={this.handleInputChange}
+            onChange={onChange}
+            onBlur={onBlur}
           />
         </div>
         <div className="field">
           <label>Expression for modifying values:</label>
-          <input type="text" name="expression" value={expression} onChange={this.handleInputChange} />
+          <input
+            type="text"
+            name="content.expression"
+            value={expression}
+            onChange={onChange}
+            onBlur={onBlur}
+          />
           <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
         </div>
         <div className="field">
           <label>Unit:</label>
-          <input type="text" name="unit" value={unit} onChange={this.handleInputChange} />
+          <input type="text" name="content.unit" value={unit} onChange={onChange} onBlur={onBlur} />
         </div>
       </div>
     );

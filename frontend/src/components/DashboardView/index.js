@@ -9,7 +9,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Button from '../Button';
 import EditableLabel from '../EditableLabel';
 import Loading from '../Loading';
-import WidgetForm from '../WidgetForm';
+import WidgetForm from '../WidgetForm/WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 
@@ -248,7 +248,12 @@ class _DashboardView extends React.Component {
                 <Button className="red" onClick={this.handleHideNewWidgetForm}>
                   <i className="fa fa-minus" /> cancel
                 </Button>
-                <WidgetForm dashboardSlug={dashboardSlug} onUpdate={this.handleWidgetUpdate} />
+                <WidgetForm
+                  resource={`accounts/${accountId}/dashboards/${dashboardSlug}/widgets`}
+                  editing={false}
+                  lockWidgetType={false}
+                  afterSubmit={this.handleWidgetUpdate}
+                />
               </div>
             )}
           </div>

@@ -3,6 +3,20 @@
     border: 1px solid #aaaaaa;
     padding: 20px 30px;
     margin: 10px 20px;
+
+    .form-item {
+      .top-part {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+
+        .left-column {
+          display: flex;
+          flex-direction: column;
+          margin-right: 10px;
+        }
+      }
+    }
   }
   .Select div {
     width: 250px;

@@ -52,11 +52,17 @@ const isFormikForm = WrappedComponent => {
         return;
       }
 
-      delete fetchedFormValues['id']; // server might return an id too, which we don't need
-      delete fetchedFormValues['insert_time'];
-      delete fetchedFormValues['token'];
+      let convertedFetchedFormValues;
+      if (WrappedComponent.convertFetchedFormValues) {
+        convertedFetchedFormValues = WrappedComponent.convertFetchedFormValues(fetchedFormValues);
+      } else {
+        convertedFetchedFormValues = fetchedFormValues;
+        delete convertedFetchedFormValues['id']; // server might return an id too, which we don't need
+        delete convertedFetchedFormValues['insert_time'];
+        delete convertedFetchedFormValues['token'];
+      }
       this.setState({
-        fetchedFormValues: fetchedFormValues,
+        fetchedFormValues: convertedFetchedFormValues,
         loading: false,
       });
     };
@@ -68,6 +74,8 @@ const isFormikForm = WrappedComponent => {
         });
         if (this.props.fixValuesBeforeSubmit) {
           formValues = this.props.fixValuesBeforeSubmit(formValues);
+        } else if (WrappedComponent.fixValuesBeforeSubmit) {
+          formValues = WrappedComponent.fixValuesBeforeSubmit(formValues);
         }
         // create new record:
         const responseCreate = await fetchAuth(`${ROOT_URL}/${this.props.resource}`, {

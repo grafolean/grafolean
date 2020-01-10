@@ -1,0 +1,22 @@
+form .widget-form {
+  margin-top: 20px;
+
+  i.fa.widget-type {
+    padding: 20px 20px 10px;
+    font-size: 30px;
+    margin-bottom: 10px;
+
+    &.selected {
+      border-bottom: 4px solid #777;
+    }
+  }
+
+  .widget-type-form {
+    padding-left: 25px;
+
+    input {
+      height: 20;
+      min-width: 300;
+    }
+  }
+}
