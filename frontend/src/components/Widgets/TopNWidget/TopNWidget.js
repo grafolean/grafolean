@@ -17,18 +17,27 @@ class TopNWidget extends React.Component {
     topListTime: null,
   };
 
-  onNotification = mqttPayload => {
-    this.setState(prevState => {
-      if (prevState.topListTime > mqttPayload.t) {
-        return; // nothing to update, we have a more recent value already
-      }
-      return {
-        topList: mqttPayload.v,
-        topListTime: mqttPayload.t,
-      };
-    });
-    // do not trigger fetch, we got all the information we need:
-    return false;
+  pathFilterMatchesPath(pathFilter, path) {
+    const regex = `^(${pathFilter
+      .replace(/[.]/g, '[.]') // escape '.'
+      .replace(/[*]/g, ')(.+)(') // escape '*'
+      .replace(/[?]/g, ')([^.]+)(')})$` // escape '?'
+      .replace(/[(][)]/g, ''); // get rid of empty parenthesis, if any
+    return Boolean(path.match(new RegExp(regex)));
+  }
+
+  onNotification = (mqttPayload, changedTopic) => {
+    // if we see that the changedTopic is one of those we are listening for, we return true
+    // so that the fetch is triggerred:
+    // changedTopic: "accounts/1405213660/values/entity.845020308.snmp.lmsensors.temp.3.Core-1"
+    const { path_filter } = this.props.content;
+    const { accountId } = this.props.match.params;
+    const topicPrefix = `accounts/${accountId}/values/`;
+    if (!changedTopic.startsWith(topicPrefix)) {
+      return false;
+    }
+    const path = changedTopic.substr(topicPrefix.length);
+    return this.pathFilterMatchesPath(path_filter, path);
   };
 
   onFetchError = errorMsg => {
@@ -49,6 +58,7 @@ class TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime } = this.state;
+    const { accountId } = this.props.match.params;
     const {
       path_filter,
       renaming = '',
@@ -68,11 +78,12 @@ class TopNWidget extends React.Component {
     return (
       <div className="top-n">
         <PersistentFetcher
-          resource={`accounts/${this.props.match.params.accountId}/topvalues`}
+          resource={`accounts/${accountId}/topvalues`}
           queryParams={{
             f: path_filter,
             n: nentries,
           }}
+          mqttTopic={`accounts/${accountId}/values/+`}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
           onError={this.onFetchError}
