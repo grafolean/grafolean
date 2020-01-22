@@ -1,4 +1,5 @@
 import React from 'react';
+import UnitFormField from '../UnitFormField';
 
 export default class LastValueForm extends React.Component {
   static DEFAULT_FORM_CONTENT = {
@@ -9,7 +10,7 @@ export default class LastValueForm extends React.Component {
   };
 
   render() {
-    const { content, onChange, onBlur } = this.props;
+    const { content, onChange, onBlur, setFieldValue } = this.props;
     if (!content || Object.keys(content).length === 0) {
       return null;
     }
@@ -43,10 +44,13 @@ export default class LastValueForm extends React.Component {
             onBlur={onBlur}
           />
         </div>
-        <div className="field">
-          <label>Unit:</label>
-          <input type="text" name="content.unit" value={unit} onChange={onChange} onBlur={onBlur} />
-        </div>
+        <UnitFormField
+          value={unit}
+          name={`content.unit`}
+          onChange={onChange}
+          onBlur={onBlur}
+          setFieldValue={setFieldValue}
+        />
       </div>
     );
   }
