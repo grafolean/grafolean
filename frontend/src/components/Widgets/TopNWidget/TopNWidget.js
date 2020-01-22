@@ -7,6 +7,7 @@ import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import When from '../../When';
 
 import './TopNWidget.scss';
+import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 
 class TopNWidget extends React.Component {
   state = {
@@ -40,7 +41,7 @@ class TopNWidget extends React.Component {
 
   onUpdateData = json => {
     this.setState({
-      topListTime: json.ts,
+      topListTime: json.t,
       topList: json.list,
       loading: false,
     });
@@ -48,12 +49,20 @@ class TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime } = this.state;
-    const { path_filter, nentries = 5, decimals = 1, unit = '', expression = '$1' } = this.props.content;
+    const {
+      path_filter,
+      renaming = '',
+      nentries = 5,
+      decimals = 1,
+      unit = '',
+      expression = '$1',
+    } = this.props.content;
 
     const calculatedTopList = topList
       ? topList.map(x => ({
           ...x,
           c: evaluate(expression, { $1: x.v }),
+          name: MatchingPaths.constructChartSerieName(x.p, path_filter, renaming),
         }))
       : null;
     return (
@@ -72,12 +81,11 @@ class TopNWidget extends React.Component {
           <div>
             {calculatedTopList.map(x => (
               <div key={x.p}>
-                <span>{x.p}</span>
+                <span>{x.name}</span>
                 <span className="value">{x.c.toFixed(decimals)}</span>
                 <span className="unit">{unit} </span>
               </div>
             ))}
-            <hr />
             <When t={topListTime} />
           </div>
         ) : (
