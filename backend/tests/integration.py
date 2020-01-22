@@ -365,6 +365,32 @@ def test_values_put_get_none(app_client, admin_authorization_header, account_id)
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 400
 
+def test_values_put_get_topN(app_client, admin_authorization_header, account_id):
+    """
+        Put 10 values per 3 timestamps, select top 5 latest.
+    """
+    data = []
+    for t in range(3):
+        ts = 1234567890.123 + t * 60.0
+        for i in range(10):
+            data.append({'p': f'aaa.bbb.1min.{i}', 't': ts, 'v': 550.3 * i + t})
+
+    r = app_client.put(f'/api/accounts/{account_id}/values/', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    r = app_client.get(f'/api/accounts/{account_id}/topvalues/?f=aaa.bbb.1min.*&n=3&t={1234567890.123 + 60}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200, r.data
+    expected = {
+        't': 1234567890.123 + 1 * 60.0,
+        'list': [
+            {'p': 'aaa.bbb.1min.9', 'v': 550.3 * 9 + 1},
+            {'p': 'aaa.bbb.1min.8', 'v': 550.3 * 8 + 1},
+            {'p': 'aaa.bbb.1min.7', 'v': 550.3 * 7 + 1},
+        ],
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
 @pytest.mark.parametrize("value_str,value_float", [
     ['0.000701', 0.000701],
     ['7.01e-04', 0.000701],
@@ -570,7 +596,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
             widget_post_data,
         ]
     }
-    expected['list'][0]['position'] = 0
+    expected['list'][0]['position'] = None
     assert r.status_code == 200
     assert expected == actual
 
@@ -599,7 +625,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
             widget_post_data,
         ]
     }
-    expected['list'][0]['position'] = 0
+    expected['list'][0]['position'] = None
     assert r.status_code == 200
     assert expected == actual
 

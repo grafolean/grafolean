@@ -1,5 +1,5 @@
 import React from 'react';
-import WidgetForm from '../WidgetForm';
+import WidgetForm from '../WidgetForm/WidgetForm';
 
 export default class DashboardWidgetEdit extends React.Component {
   render() {
@@ -7,10 +7,10 @@ export default class DashboardWidgetEdit extends React.Component {
     return (
       <div>
         <WidgetForm
-          dashboardSlug={slug}
-          widgetId={widgetId}
+          resource={`accounts/${accountId}/dashboards/${slug}/widgets/${widgetId}`}
+          editing={true}
+          afterSubmitRedirectTo={`/accounts/${accountId}/dashboards/view/${slug}`}
           lockWidgetType={true}
-          afterUpdateRedirectTo={`/accounts/${accountId}/dashboards/view/${slug}`}
         />
       </div>
     );

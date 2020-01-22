@@ -350,6 +350,36 @@ class Measurement(object):
         return paths_data
 
     @classmethod
+    def fetch_topn(cls, account_id, path_filter, ts_to, max_results):
+        pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars=False)
+        with db.cursor() as c:
+            c.execute("""
+                SELECT m.ts, p.path, m.value
+                FROM paths p, measurements m
+                WHERE
+                    p.path ~ %s  AND
+                    p.id = m.path AND
+                    m.ts <= %s
+                ORDER BY m.ts desc, m.value DESC
+                LIMIT %s
+            """, (pf_regex, float(ts_to), max_results))
+
+            found_ts = None
+            topn = []
+            for ts, path, value in c.fetchall():
+                if found_ts is None:
+                    found_ts = ts
+                elif found_ts != ts:
+                    break  # only use those records which have the same timestamp as the first one
+                topn.append({'p': path, 'v': float(value)})
+
+            if not found_ts:
+                return None, []
+
+            return found_ts, topn
+
+
+    @classmethod
     def get_oldest_measurement_time(cls, account_id, paths):
         path_ids = tuple(Path._get_path_id_from_db(account_id, str(p)) for p in paths)
         with db.cursor() as c:

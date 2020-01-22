@@ -3,24 +3,23 @@
     border: 1px solid #aaaaaa;
     padding: 20px 30px;
     margin: 10px 20px;
+
+    .form-item {
+      .top-part {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+
+        .left-column {
+          display: flex;
+          flex-direction: column;
+          margin-right: 10px;
+        }
+      }
+    }
   }
   .Select div {
     width: 250px;
-  }
-  .field {
-    p.hint {
-      font-size: 11px;
-      font-style: italic;
-      margin: 5px 0;
-      max-width: 250px;
-
-      span.set-unit {
-        text-decoration: underline;
-        color: #3b60b3;
-        margin: 0 0 0 8px;
-        cursor: pointer;
-      }
-    }
   }
 }
 

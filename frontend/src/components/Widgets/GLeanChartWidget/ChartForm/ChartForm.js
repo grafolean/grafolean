@@ -3,97 +3,36 @@ import { compile } from 'mathjs';
 
 import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
+import UnitFormField from '../../UnitFormField';
 
 import './ChartForm.scss';
 
-// const METRIC_PREFIXES = [
-//   { prefix: 'P', name: 'peta', power: 15 },
-//   { prefix: 'T', name: 'tera', power: 12 },
-//   { prefix: 'G', name: 'giga', power: 9 },
-//   { prefix: 'M', name: 'mega', power: 6 },
-//   { prefix: 'k', name: 'kilo', power: 3 },
-//   { prefix: 'h', name: 'hecto', power: 2 },
-//   { prefix: 'd', name: 'deci', power: 1 },
-//   { prefix: 'c', name: 'centi', power: -2 },
-//   { prefix: 'm', name: 'milli', power: -3 },
-//   { prefix: 'µ', name: 'micro', power: -6 },
-//   { prefix: 'n', name: 'nano', power: -9 },
-//   { prefix: 'p', name: 'pico', power: -12 },
-// ];
-const KNOWN_UNITS = {
-  '%': { name: 'percent', allowedPrefixes: '' },
-  '°C': { name: 'degrees Celcius', allowedPrefixes: '' },
-  s: { name: 'second', allowedPrefixes: 'mµnp' },
-  m: { name: 'meter', allowedPrefixes: 'pnµmcdk' },
-  bps: { name: 'bits per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
-  B: { name: 'byte', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
-  Bps: { name: 'bytes per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
-};
-
 export default class ChartForm extends React.Component {
-  // Old warning:
-  // We use term "series" for chart content and "serie" as singular here, though the terms are
-  // misleading. "Serie" (as used) is a group of data around a single path filter (path filter +
-  // unit + metric prefix + ...) which determines multiple paths (and thus actually multiple
-  // series). However "content" is too generic term and also lacks a singular form. Looking for
-  // a better term.
-  // Found one: SeriesGroup and SeriesGroups. I have replaced the names in this file, but left
-  // this comment as a warning if there is some other place where the terms are misused. Note
-  // that the correct terms are now "SeriesGroup(s)" and "ChartSerie(s)". Term "Serie(s)" should
-  // be avoided.
-
-  static defaultProps = {
-    initialFormContent: [],
-    onChange: () => {},
+  static DEFAULT_SERIE_GROUP_CONTENT = {
+    path_filter: '',
+    renaming: '',
+    expression: '$1',
+    unit: '',
   };
+  static DEFAULT_FORM_CONTENT = [ChartForm.DEFAULT_SERIE_GROUP_CONTENT];
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      seriesGroups: this.props.initialFormContent
-        ? this.props.initialFormContent.map(c => ({
-            pathFilter: c.path_filter,
-            pathRenamer: c.renaming,
-            expression: c.expression,
-            unit: c.unit,
-          }))
-        : [],
-    };
-  }
-
-  notifyParentOfChange = () => {
-    const content = this.state.seriesGroups.map(sg => ({
-      path_filter: sg.pathFilter,
-      renaming: sg.pathRenamer,
-      expression: sg.expression,
-      unit: sg.unit,
-    }));
-    const valid = this.isValid(content);
-    this.props.onChange('chart', content, valid);
-  };
-
-  isValid = content => {
+  static validate = content => {
     if (content.length === 0) {
-      return false;
+      return 'At least one chart series group must be defined';
     }
-    for (let sg of content) {
+    for (let i = 0; i < content.length; i++) {
       try {
-        compile(sg.expression);
+        compile(content[i].expression);
       } catch (err) {
-        return false;
+        return {
+          [i]: {
+            expression: 'Error compiling an expression',
+          },
+        };
       }
     }
-    return true;
-  };
-
-  setSeriesGroupProperty = (seriesGroupIndex, whichProperty, newValue) => {
-    this.setState(prevState => {
-      let newSeriesGroups = [...prevState.seriesGroups];
-      newSeriesGroups[seriesGroupIndex][whichProperty] = newValue;
-      return {
-        seriesGroups: newSeriesGroups,
-      };
-    }, this.notifyParentOfChange);
+    // all is ok:
+    return {};
   };
 
   userUnitCreator = option => {
@@ -104,63 +43,50 @@ export default class ChartForm extends React.Component {
   };
 
   handleAddEmptySerie = ev => {
-    this.setState(prevState => ({
-      seriesGroups: [
-        ...prevState.seriesGroups,
-        {
-          pathFilter: '',
-          pathRenamer: '',
-          expression: '$1',
-          unit: '',
-        },
-      ],
-    }));
+    this.props.setFieldValue('content', [...this.props.content, ChartForm.DEFAULT_SERIE_GROUP_CONTENT]);
     ev.preventDefault();
   };
 
-  render() {
-    let allUnits = Object.keys(KNOWN_UNITS).map(unit => ({
-      value: unit,
-      label: `${unit} (${KNOWN_UNITS[unit].name})`,
-      allowedPrefixes: KNOWN_UNITS[unit].allowedPrefixes,
-    }));
+  getOtherKnownUnits() {
+    let otherUnits = [];
     // we need to list all possible units, otherwise they won't be visible as selected options:
-    for (let sg of this.state.seriesGroups) {
+    for (let sg of this.props.content) {
       if (sg.unit === '') {
         continue;
       }
-      if (allUnits.find(u => u.value === sg.unit)) {
+      if (otherUnits.find(u => u.value === sg.unit)) {
         // we already know this unit, skip it
         continue;
       }
-      allUnits.push({
+      otherUnits.push({
         value: sg.unit,
         label: sg.unit,
         allowedPrefixes: null,
       });
     }
+    return otherUnits;
+  }
 
+  render() {
+    const { content: seriesGroups, onChange, onBlur, setFieldValue } = this.props;
+    const otherKnownUnits = this.getOtherKnownUnits();
     return (
       <div className="chart-form">
         <div className="field">
           <label>Chart series:</label>
-          {this.state.seriesGroups.map((sg, sgIndex) => (
+          {seriesGroups.map((sg, sgIndex) => (
             <div className="serie" key={sgIndex}>
               <div className="form-item">
-                <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap' }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      marginRight: 10,
-                    }}
-                  >
+                <div className="top-part">
+                  <div className="left-column">
                     <div className="field">
                       <label>Path filter:</label>
                       <input
                         type="text"
-                        value={sg.pathFilter}
-                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathFilter', ev.target.value)}
+                        value={sg.path_filter}
+                        name={`content[${sgIndex}].path_filter`}
+                        onChange={onChange}
+                        onBlur={onBlur}
                       />
                       <p className="hint markdown">
                         `*` (multiple segments) and `?` (single segment) wildcards can be used.
@@ -170,8 +96,10 @@ export default class ChartForm extends React.Component {
                       <label>Series label:</label>
                       <input
                         type="text"
-                        value={sg.pathRenamer}
-                        onChange={ev => this.setSeriesGroupProperty(sgIndex, 'pathRenamer', ev.target.value)}
+                        value={sg.renaming}
+                        name={`content[${sgIndex}].renaming`}
+                        onChange={onChange}
+                        onBlur={onBlur}
                       />
                       <p className="hint markdown">
                         Hint: Use `$1` to reference first replaced part, `$2` for the second,... Leave empty
@@ -180,11 +108,7 @@ export default class ChartForm extends React.Component {
                     </div>
                   </div>
 
-                  <MatchingPaths
-                    pathFilter={sg.pathFilter}
-                    pathRenamer={sg.pathRenamer}
-                    displayPaths={true}
-                  />
+                  <MatchingPaths pathFilter={sg.path_filter} pathRenamer={sg.renaming} displayPaths={true} />
                 </div>
 
                 <div className="field">
@@ -192,33 +116,22 @@ export default class ChartForm extends React.Component {
                   <input
                     type="text"
                     value={sg.expression}
-                    onChange={ev => this.setSeriesGroupProperty(sgIndex, 'expression', ev.target.value)}
+                    name={`content[${sgIndex}].expression`}
+                    onChange={onChange}
+                    onBlur={onBlur}
                   />
                   <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
                 </div>
               </div>
 
-              <div className="form-item field">
-                <label>Unit:</label>
-                <input
-                  type="text"
-                  value={sg.unit || ''}
-                  onChange={ev => this.setSeriesGroupProperty(sgIndex, 'unit', ev.target.value)}
-                />
-                <p className="hint markdown">
-                  Commonly used units:
-                  {allUnits.map(u => (
-                    <span
-                      key={u.label}
-                      className="set-unit"
-                      onClick={ev => this.setSeriesGroupProperty(sgIndex, 'unit', u.value)}
-                      title={u.label}
-                    >
-                      {u.value}
-                    </span>
-                  ))}
-                </p>
-              </div>
+              <UnitFormField
+                value={sg.unit || ''}
+                name={`content[${sgIndex}].unit`}
+                otherKnownUnits={otherKnownUnits}
+                onChange={onChange}
+                onBlur={onBlur}
+                setFieldValue={setFieldValue}
+              />
             </div>
           ))}
           <Button onClick={this.handleAddEmptySerie}>+</Button>

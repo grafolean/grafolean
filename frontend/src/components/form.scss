@@ -20,6 +20,12 @@ form {
         min-width: initial;
       }
     }
+    p.hint {
+      font-size: 11px;
+      font-style: italic;
+      margin: 5px 0;
+      max-width: 250px;
+    }
   }
   button {
     margin-top: 10px;
