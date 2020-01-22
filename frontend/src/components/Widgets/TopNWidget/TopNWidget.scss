@@ -1,0 +1,20 @@
+.top-n {
+  color: #333;
+  .dark-mode & {
+    color: #fafafa;
+  }
+
+  .value {
+    font-size: 35px;
+  }
+  .unit {
+    font-size: 25px;
+    margin-left: 3px;
+  }
+  .when {
+    font-size: 12px;
+    .dark-mode & {
+      color: #ccc;
+    }
+  }
+}

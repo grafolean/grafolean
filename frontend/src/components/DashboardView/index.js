@@ -12,11 +12,13 @@ import Loading from '../Loading';
 import WidgetForm from '../WidgetForm/WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
+import TopNWidget from '../Widgets/TopNWidget/TopNWidget';
 
 import './DashboardView.scss';
 
 const KNOWN_WIDGETS = {
   lastvalue: LastValueWidget,
+  topn: TopNWidget,
   chart: GLeanChartWidget,
 };
 

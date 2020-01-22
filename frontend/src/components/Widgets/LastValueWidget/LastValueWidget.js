@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { evaluate } from 'mathjs';
 
@@ -80,7 +79,4 @@ class LastValueWidget extends React.Component {
   }
 }
 
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
-});
-export default withRouter(isWidget(connect(mapStoreToProps)(LastValueWidget)));
+export default withRouter(isWidget(LastValueWidget));

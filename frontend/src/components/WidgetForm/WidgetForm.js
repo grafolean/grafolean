@@ -6,12 +6,14 @@ import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 
 import ChartForm from '../Widgets/GLeanChartWidget/ChartForm/ChartForm';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
+import TopNWidgetForm from '../Widgets/TopNWidget/TopNWidgetForm';
 
 import './WidgetForm.scss';
 
 const WIDGET_TYPES = [
   { type: 'chart', icon: 'area-chart', label: 'chart', form: ChartForm },
   { type: 'lastvalue', icon: 'thermometer-half', label: 'last value', form: LastValueForm },
+  { type: 'topn', icon: 'trophy', label: 'top N', form: TopNWidgetForm },
 ];
 
 class WidgetForm extends React.Component {

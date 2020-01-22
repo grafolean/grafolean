@@ -1,11 +1,12 @@
 import React from 'react';
 
-export default class LastValueForm extends React.Component {
+export default class TopNWidgetForm extends React.Component {
   static DEFAULT_FORM_CONTENT = {
-    path: '',
+    path_filter: '',
+    nentries: 5,
+    expression: '$1',
     decimals: 1,
     unit: '',
-    expression: '$1',
   };
 
   render() {
@@ -13,12 +14,30 @@ export default class LastValueForm extends React.Component {
     if (!content || Object.keys(content).length === 0) {
       return null;
     }
-    const { path = '', decimals = 1, unit = '', expression = '$1' } = content;
+    const { path_filter = '', nentries = 1, unit = '', expression = '$1', decimals = 1 } = content;
     return (
       <div className="last-value-form">
         <div className="field">
-          <label>Path:</label>
-          <input type="text" name="content.path" value={path} onChange={onChange} onBlur={onBlur} />
+          <label>Paths filter:</label>
+          <input
+            type="text"
+            name="content.path_filter"
+            value={path_filter}
+            onChange={onChange}
+            onBlur={onBlur}
+          />
+        </div>
+        <div className="field">
+          <label>Number of entries: (max 10)</label>
+          <input
+            type="number"
+            name="content.nentries"
+            min={0}
+            max={10}
+            value={nentries}
+            onChange={onChange}
+            onBlur={onBlur}
+          />
         </div>
         <div className="field">
           <label>Expression for modifying values:</label>
