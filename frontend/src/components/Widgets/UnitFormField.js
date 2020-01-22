@@ -1,5 +1,7 @@
 import React from 'react';
 
+import './UnitFormField.scss';
+
 // const METRIC_PREFIXES = [
 //   { prefix: 'P', name: 'peta', power: 15 },
 //   { prefix: 'T', name: 'tera', power: 12 },
@@ -32,11 +34,13 @@ export default class UnitFormField extends React.Component {
       allowedPrefixes: KNOWN_UNITS[unit].allowedPrefixes,
     }));
     const { otherKnownUnits } = this.props;
-    for (let ou of otherKnownUnits) {
-      if (allUnits.find(u => u.value === ou.value)) {
-        continue;
+    if (otherKnownUnits) {
+      for (let ou of otherKnownUnits) {
+        if (allUnits.find(u => u.value === ou.value)) {
+          continue;
+        }
+        allUnits.push(ou);
       }
-      allUnits.push(ou);
     }
     return allUnits;
   }
