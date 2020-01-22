@@ -51,6 +51,33 @@ def accounts_apidoc_schemas():
         },
         'required': ['id', 'name'],
     }
+    yield "TopValuesGET", {
+        'type': 'object',
+        'properties': {
+            't': {
+                'type': ['integer', 'null'],
+                'description': "Measurements time (UNIX timestamp) - null if no results were found",
+                'example': 1234567890.123456,
+            },
+            'list': {
+                'type': 'array',
+                'description': "List of top N candidates",
+                'items': {
+                    'type': 'object',
+                    'properties': {
+                        'p': {
+                            'type': 'string',
+                            'description': "Path",
+                        },
+                        'v': {
+                            'type': 'number',
+                            'description': "Measurement value",
+                        },
+                    }
+                }
+            },
+        },
+    }
 
 
 # --------------
@@ -552,6 +579,76 @@ def values_get(account_id, path_input=None):
     paths_data = Measurement.fetch_data(account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
     return json.dumps({
         'paths': paths_data,
+    }), 200
+
+
+@accounts_api.route("/<int:account_id>/topvalues", methods=['GET'])
+def topvalues_get(account_id):
+    """
+        ---
+        get:
+          summary: Get highest N measurements for the latest timestamp before specified time
+          tags:
+            - Admin
+          description:
+            Finds the latest timestamp of any measurement that was recorded for any path that matches the path filter. Returns a list of highest `n`
+            measurements (for the matching paths) that were taken at that timestamp. Note that timestamp must match exactly.
+
+            It is possible to change the search for timestamp so that it is lower than some provided time (parameter `t`).
+          parameters:
+            - name: account_id
+              in: path
+              description: "Account id"
+              required: true
+              schema:
+                type: integer
+            - name: f
+              in: query
+              description: "Path filter (determines which paths are taken as candidates)"
+              required: true
+              schema:
+                type: string
+            - name: n
+              in: query
+              description: "Number of paths with highest measurements to return (default 5)"
+              required: false
+              schema:
+                type: integer
+                minimum: 1
+            - name: t
+              in: query
+              description: "Search for candidates older than this timestamp (default: current timestamp)"
+              required: false
+              schema:
+                type: number
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    "$ref": '#/definitions/TopValuesGET'
+    """
+    max_results_input = flask.request.args.get('n')
+    max_results = max(0, int(max_results_input)) if max_results_input else 5
+
+    path_filter_input = flask.request.args.get('f')
+    if not path_filter_input:
+        return "Path filter not specified\n\n", 400
+    try:
+        pf = str(PathFilter(path_filter_input))
+    except ValidationError:
+        raise ValidationError("Invalid path filter")
+
+    ts_to_input = flask.request.args.get('t', time.time())
+    try:
+        ts_to = Timestamp(ts_to_input)
+    except ValidationError:
+        raise ValidationError("Invalid parameter t")
+
+    ts, topn = Measurement.fetch_topn(account_id, pf, ts_to, max_results)
+    return json.dumps({
+        't': float(ts),
+        'list': topn,
     }), 200
 
 
