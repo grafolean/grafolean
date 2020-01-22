@@ -81,7 +81,7 @@ class TopNWidget extends React.Component {
           <div>
             {calculatedTopList.map(x => (
               <div key={x.p}>
-                <span>{x.name}</span>
+                <span className="label">{x.name}:</span>
                 <span className="value">{x.c.toFixed(decimals)}</span>
                 <span className="unit">{unit} </span>
               </div>
