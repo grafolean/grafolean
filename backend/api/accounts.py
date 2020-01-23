@@ -55,9 +55,14 @@ def accounts_apidoc_schemas():
         'type': 'object',
         'properties': {
             't': {
-                'type': ['integer', 'null'],
+                'type': ['number', 'null'],
                 'description': "Measurements time (UNIX timestamp) - null if no results were found",
                 'example': 1234567890.123456,
+            },
+            'total': {
+                'type': ['number', 'null'],
+                'description': "Sum of values for all paths that match the path filter (useful for calculating percentages)",
+                'example': 1500.0,
             },
             'list': {
                 'type': 'array',
@@ -68,10 +73,12 @@ def accounts_apidoc_schemas():
                         'p': {
                             'type': 'string',
                             'description': "Path",
+                            'example': 'entity.1.interface.12.my.path',
                         },
                         'v': {
                             'type': 'number',
                             'description': "Measurement value",
+                            'example': 12.33,
                         },
                     }
                 }
@@ -645,9 +652,10 @@ def topvalues_get(account_id):
     except ValidationError:
         raise ValidationError("Invalid parameter t")
 
-    ts, topn = Measurement.fetch_topn(account_id, pf, ts_to, max_results)
+    ts, total, topn = Measurement.fetch_topn(account_id, pf, ts_to, max_results)
     return json.dumps({
         't': float(ts),
+        'total': float(total),
         'list': topn,
     }), 200
 

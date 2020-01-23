@@ -382,6 +382,7 @@ def test_values_put_get_topN(app_client, admin_authorization_header, account_id)
     assert r.status_code == 200, r.data
     expected = {
         't': 1234567890.123 + 1 * 60.0,
+        'total': sum([550.3 * i + 1 for i in range(10)]),
         'list': [
             {'p': 'aaa.bbb.1min.9', 'v': 550.3 * 9 + 1},
             {'p': 'aaa.bbb.1min.8', 'v': 550.3 * 8 + 1},
@@ -389,6 +390,9 @@ def test_values_put_get_topN(app_client, admin_authorization_header, account_id)
         ],
     }
     actual = json.loads(r.data.decode('utf-8'))
+    # check that total is almost, but not completely, the same as expected:
+    assert expected['total'] == pytest.approx(actual['total'])
+    expected['total'] = actual['total']
     assert expected == actual
 
 @pytest.mark.parametrize("value_str,value_float", [

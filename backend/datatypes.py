@@ -376,7 +376,10 @@ class Measurement(object):
             if not found_ts:
                 return None, []
 
-            return found_ts, topn
+            # find the sum of all values at that timestamp so we can display percentages:
+            c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path ~ %s  AND p.id = m.path AND m.ts = %s", (pf_regex, found_ts,))
+            total, = c.fetchone()
+            return found_ts, total, topn
 
 
     @classmethod
