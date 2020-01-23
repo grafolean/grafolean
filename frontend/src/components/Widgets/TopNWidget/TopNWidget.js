@@ -15,7 +15,7 @@ class TopNWidget extends React.Component {
     fetchingError: false,
     topList: null,
     topListTime: null,
-    calcPercent: null,
+    topListTotal: null,
   };
 
   pathFilterMatchesPath(pathFilter, path) {
@@ -76,6 +76,7 @@ class TopNWidget extends React.Component {
           ...x,
           c: evaluate(expression, { $1: x.v }),
           name: MatchingPaths.constructChartSerieName(x.p, path_filter, renaming),
+          percent: ((x.v / topListTotal) * 100).toFixed(2),
         }))
       : null;
     return (
@@ -98,9 +99,7 @@ class TopNWidget extends React.Component {
                 <span className="label">{x.name}:</span>
                 <span className="value">{x.c.toFixed(decimals)}</span>
                 <span className="unit">{unit} </span>
-                {calc_percent && (
-                  <span className="percent">({((x.c / topListTotal) * 100).toFixed(2)} %)</span>
-                )}
+                {calc_percent && <span className="percent">({x.percent} %)</span>}
               </div>
             ))}
             <div className="time">
