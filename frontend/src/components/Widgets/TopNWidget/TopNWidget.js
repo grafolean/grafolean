@@ -15,6 +15,7 @@ class TopNWidget extends React.Component {
     fetchingError: false,
     topList: null,
     topListTime: null,
+    calcPercent: null,
   };
 
   pathFilterMatchesPath(pathFilter, path) {
@@ -51,13 +52,14 @@ class TopNWidget extends React.Component {
   onUpdateData = json => {
     this.setState({
       topListTime: json.t,
+      topListTotal: json.total,
       topList: json.list,
       loading: false,
     });
   };
 
   render() {
-    const { topList, topListTime } = this.state;
+    const { topList, topListTime, topListTotal } = this.state;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -65,6 +67,7 @@ class TopNWidget extends React.Component {
       nentries = 5,
       decimals = 1,
       unit = '',
+      calc_percent = true,
       expression = '$1',
     } = this.props.content;
 
@@ -95,9 +98,14 @@ class TopNWidget extends React.Component {
                 <span className="label">{x.name}:</span>
                 <span className="value">{x.c.toFixed(decimals)}</span>
                 <span className="unit">{unit} </span>
+                {calc_percent && (
+                  <span className="percent">({((x.c / topListTotal) * 100).toFixed(2)} %)</span>
+                )}
               </div>
             ))}
-            <When t={topListTime} />
+            <div className="time">
+              <When t={topListTime} />
+            </div>
           </div>
         ) : (
           <span>/</span>

@@ -1,5 +1,6 @@
 import React from 'react';
 import UnitFormField from '../UnitFormField';
+import Checkbox from '../../MultiSelect/Checkbox';
 
 export default class TopNWidgetForm extends React.Component {
   static DEFAULT_FORM_CONTENT = {
@@ -8,6 +9,7 @@ export default class TopNWidgetForm extends React.Component {
     nentries: 5,
     expression: '$1',
     decimals: 1,
+    calc_percent: true,
     unit: '',
   };
 
@@ -20,9 +22,10 @@ export default class TopNWidgetForm extends React.Component {
       path_filter = '',
       renaming = '',
       nentries = 1,
-      unit = '',
       expression = '$1',
       decimals = 1,
+      calc_percent = true,
+      unit = '',
     } = content;
     return (
       <div className="last-value-form">
@@ -66,6 +69,15 @@ export default class TopNWidgetForm extends React.Component {
             onBlur={onBlur}
           />
           <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
+        </div>
+        <div className="field">
+          <label>Calculate percentages:</label>
+          <Checkbox
+            checked={calc_percent}
+            onChange={() => setFieldValue('content.calc_percent', !calc_percent)}
+            color="#aaa"
+            isDarkMode={true}
+          ></Checkbox>
         </div>
         <div className="field">
           <label>Number of decimals:</label>

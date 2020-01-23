@@ -15,10 +15,18 @@
     font-size: 25px;
     margin-left: 3px;
   }
-  .when {
-    font-size: 12px;
-    .dark-mode & {
-      color: #ccc;
+  .percent {
+    font-size: 15px;
+    margin-left: 3px;
+  }
+  .time {
+    margin-top: 10px;
+
+    .when {
+      font-size: 12px;
+      .dark-mode & {
+        color: #ccc;
+      }
     }
   }
 }
