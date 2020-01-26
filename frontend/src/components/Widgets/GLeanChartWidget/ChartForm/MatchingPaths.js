@@ -78,8 +78,10 @@ class MatchingPaths extends React.Component {
         .then(json => {
           this.setState({
             fetched: {
-              paths: json.paths[newPathFilter] || [],
-              pathsWithTrailing: (json.paths_with_trailing && json.paths_with_trailing[newPathFilter]) || [],
+              paths: json.paths[newPathFilter].map(p => p.path) || [],
+              pathsWithTrailing: json.paths_with_trailing
+                ? json.paths_with_trailing[newPathFilter].map(p => p.path)
+                : [],
               pathFilter: newPathFilter,
             },
           });

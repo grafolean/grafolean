@@ -661,17 +661,21 @@ def test_values_put_paths_get(app_client, admin_authorization_header, account_id
     expected = {
         'paths': {
             'test.values.put.paths.get.*': [
-                PATH,
+                {
+                    'id': None,
+                    'path': PATH,
+                }
             ],
         },
         'limit_reached': False,
     }
     actual = json.loads(r.data.decode('utf-8'))
+    expected['paths']['test.values.put.paths.get.*'][0]['id'] = actual['paths']['test.values.put.paths.get.*'][0]['id']
     assert expected == actual
 
     r = app_client.get('/api/accounts/{}/paths/?filter=test.*&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
-    assert PATH in actual['paths']['test.*']
+    assert PATH in [p["path"] for p in actual['paths']['test.*']]
 
     r = app_client.get('/api/accounts/{}/paths/?filter=test.&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 400
@@ -682,14 +686,15 @@ def test_values_put_paths_get(app_client, admin_authorization_header, account_id
         r = app_client.get('/api/accounts/{}/paths/?filter={}&failover_trailing=true'.format(account_id, prefix), headers={'Authorization': admin_authorization_header})
         actual = json.loads(r.data.decode('utf-8'))
         assert actual['paths'] == {}
-        assert PATH in actual['paths_with_trailing'][prefix]
+        actual_paths = [p["path"] for p in actual['paths_with_trailing'][prefix]]
+        assert PATH in actual_paths
         for path in actual['paths_with_trailing'][prefix]:
-           assert path[:len(prefix)] == prefix
+           assert path["path"][:len(prefix)] == prefix
 
     r = app_client.get('/api/accounts/{}/paths/?filter=test.*,test.values.*'.format(account_id), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
-    assert PATH in actual['paths']['test.*']
-    assert PATH in actual['paths']['test.values.*']
+    assert PATH in [p["path"] for p in actual['paths']['test.*']]
+    assert PATH in [p["path"] for p in actual['paths']['test.values.*']]
 
 def test_accounts(app_client):
     """

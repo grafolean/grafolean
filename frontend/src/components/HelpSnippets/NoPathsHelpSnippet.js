@@ -23,7 +23,7 @@ class NoPathsHelpSnippet extends React.Component {
         <PersistentFetcher
           resource={`accounts/${accountId}/paths`}
           queryParams={{
-            limit: 10,
+            limit: 1,
             filter: '',
             failover_trailing: 'true',
           }}

@@ -57,10 +57,10 @@ class GLeanChartWidget extends React.Component {
         // construct a better representation of the data for display in the chart:
         const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
           return result.concat(
-            json.paths[c.path_filter].map(path => ({
-              chartSerieId: `${seriesGroupIndex}-${path}`,
-              path: path,
-              serieName: MatchingPaths.constructChartSerieName(path, c.path_filter, c.renaming),
+            json.paths[c.path_filter].map(p => ({
+              chartSerieId: `${seriesGroupIndex}-${p.id}`,
+              path: p.path,
+              serieName: MatchingPaths.constructChartSerieName(p.path, c.path_filter, c.renaming),
               expression: c.expression,
               unit: c.unit,
             })),

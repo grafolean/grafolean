@@ -88,8 +88,11 @@ class PathFilter(_RegexValidatedInputValue):
     def find_matching_paths(account_id, path_filter, limit=200, allow_trailing_chars=False):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
-            c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, limit + 1,))
-            found_paths = [r[0] for r in c.fetchall()]
+            c.execute('SELECT id, path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, limit + 1,))
+            found_paths = [{
+                "id": r[0],
+                "path": r[1],
+            } for r in c.fetchall()]
             if len(found_paths) > limit:  # we have found one element over the limit - we don't add it, but we know it exists
                 return found_paths[:limit], True
             else:
