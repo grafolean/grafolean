@@ -65,8 +65,12 @@ header {
       font-size: 10px;
       color: #666;
     }
+    .api-doc {
+      margin: 0 auto;
+      font-size: 10px;
+      color: #666;
+    }
     .color-scheme-switch {
-      margin-left: auto;
       font-size: 10px;
     }
   }
@@ -103,7 +107,7 @@ header {
     height: initial;
     line-height: initial;
     width: 1em;
-    }
+  }
 }
 
 .notifications {

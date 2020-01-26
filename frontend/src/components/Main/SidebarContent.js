@@ -58,6 +58,9 @@ class SidebarContent extends React.Component {
         </Link>
         <div className="bottom">
           <VersionInfo />
+          <a className="api-doc" href="/api-doc/" target="_blank">
+            API
+          </a>
           <ColorSchemeSwitch />
         </div>
       </div>
