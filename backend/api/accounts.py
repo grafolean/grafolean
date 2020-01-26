@@ -676,7 +676,7 @@ def paths_get(account_id):
         any_limit_reached = False
         for path_filter_input in str(path_filters_input).split(','):
             pf = str(PathFilter(path_filter_input))
-            matching_paths[pf], limit_reached = PathFilter.find_matching_paths(account_id, [pf], limit=max_results)
+            matching_paths[pf], limit_reached = PathFilter.find_matching_paths(account_id, pf, limit=max_results)
             any_found = len(matching_paths[pf]) > 0 or any_found
             any_limit_reached = any_limit_reached or limit_reached
     except ValidationError:
@@ -694,7 +694,7 @@ def paths_get(account_id):
         ret['paths_with_trailing'] = {}
         for path_filter_input in str(path_filters_input).split(','):
             upf = str(UnfinishedPathFilter(path_filter_input))
-            ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths(account_id, [upf], limit=max_results, allow_trailing_chars=True)
+            ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths(account_id, upf, limit=max_results, allow_trailing_chars=True)
             ret['limit_reached'] = ret['limit_reached'] or limit_reached
 
     return json.dumps(ret), 200

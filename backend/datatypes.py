@@ -73,14 +73,6 @@ class Path(_RegexValidatedInputValue):
             path_id = res[0]
             return path_id
 
-    # this can probably be removed:
-    # @staticmethod
-    # def get_all_paths():
-    #     with db.cursor() as c:
-    #         c.execute('SELECT path FROM paths ORDER BY path;')
-    #         for path, in c.fetchall():
-    #             yield(path)
-
     @classmethod
     def delete(cls, account_id, path):
         with db.cursor() as c:
@@ -93,30 +85,15 @@ class PathFilter(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-zA-Z0-9_-]+|[*?])([.]([a-zA-Z0-9_-]+|[*?]))*$')
 
     @staticmethod
-    def find_matching_paths(account_id, path_filters, limit=200, allow_trailing_chars=False):
-        all_found_paths = set()
-        was_limit_reached = False
-        for pf in path_filters:
-            found_paths, was_limit_reached = PathFilter._find_matching_paths_for_filter(account_id, pf, limit, allow_trailing_chars)  # we could ask for `limit - len(found)` - but then lru_cache wouldn't make sense
-            all_found_paths |= found_paths
-            if was_limit_reached or len(all_found_paths) > limit:
-                # always return only up to a limit elements:
-                return list(all_found_paths)[:limit], True
-
-        return list(all_found_paths), False
-
-    @staticmethod
-    # @lru_cache(maxsize=1024)
-    def _find_matching_paths_for_filter(account_id, path_filter, total_limit, allow_trailing_chars=False):
-        found_paths = set()
+    def find_matching_paths(account_id, path_filter, limit=200, allow_trailing_chars=False):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars)
         with db.cursor() as c:
-            c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, total_limit + 1,))
-            for res in c.fetchall():
-                if len(found_paths) >= total_limit:  # we have found one element over the limit - we don't add it, but we know it exists
-                    return found_paths, True
-                found_paths.add(res[0])
-        return found_paths, False
+            c.execute('SELECT path FROM paths WHERE account = %s AND path ~ %s ORDER BY path LIMIT %s;', (account_id, pf_regex, limit + 1,))
+            found_paths = [r[0] for r in c.fetchall()]
+            if len(found_paths) > limit:  # we have found one element over the limit - we don't add it, but we know it exists
+                return found_paths[:limit], True
+            else:
+                return found_paths, False
 
     @staticmethod
     def _regex_from_filter(path_filter_str, allow_trailing_chars=False):
@@ -489,18 +466,6 @@ class Widget(object):
             c.execute('SELECT id, type, title, position, content FROM widgets WHERE dashboard = %s ORDER BY position;', (dashboard_id,))
             ret = []
             for widget_id, widget_type, title, position, content in c.fetchall():
-                # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
-                # content = []
-                # for path_filter, renaming, unit, metric_prefix in c2:
-                #     paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
-                #     content.append({
-                #         'path_filter': path_filter,
-                #         'renaming': renaming,
-                #         'unit': unit,
-                #         'metric_prefix': metric_prefix,
-                #         'paths': paths,
-                #         'paths_limit_reached': paths_limit_reached,
-                #     })
                 ret.append({
                     'id': widget_id,
                     'type': widget_type,
@@ -516,24 +481,12 @@ class Widget(object):
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        with db.cursor() as c:  #, db.cursor() as c2:
+        with db.cursor() as c:
             c.execute('SELECT type, title, position, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
 
-            # c2.execute('SELECT path_filter, renaming, unit, metric_prefix FROM charts_content WHERE chart = %s ORDER BY id;', (widget_id,))
-            # content = []
-            # for path_filter, renaming, unit, metric_prefix in c2:
-            #     paths, paths_limit_reached = PathFilter.find_matching_paths([path_filter], limit=paths_limit)
-            #     content.append({
-            #         'path_filter': path_filter,
-            #         'renaming': renaming,
-            #         'unit': unit,
-            #         'metric_prefix': metric_prefix,
-            #         'paths': paths,
-            #         'paths_limit_reached': paths_limit_reached,
-            #     })
             return {
                 'id': widget_id,
                 'type': res[0],
