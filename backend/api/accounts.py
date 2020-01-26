@@ -5,7 +5,9 @@ import re
 import psycopg2
 import validators
 
-from datatypes import AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement, Path, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
+from datatypes import (AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
+    Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
+)
 from .common import auth_no_permissions, mqtt_publish_changed
 
 
@@ -519,7 +521,7 @@ def values_get(account_id, path_input=None):
     if paths_input is None:
         return "Path(s) not specified\n\n", 400
     try:
-        paths = [Path(account_id, p) for p in paths_input.split(',')]
+        paths = [Path(p, account_id).path for p in paths_input.split(',')]
     except:
         return "Path(s) not specified correctly\n\n", 400
 
@@ -699,21 +701,28 @@ def paths_get(account_id):
 
     return json.dumps(ret), 200
 
-@accounts_api.route("/<int:account_id>/paths", methods=['DELETE'])
-def path_delete(account_id):
-    path_input = flask.request.args.get('p')
-    if path_input is None:
-        return "Missing parameter: p\n\n", 400
 
-    try:
-        path = Path(account_id, path_input)
-    except:
-        return "Invalid parameter: p\n\n", 400
+@accounts_api.route('/<int:account_id>/paths/<int:path_id>', methods=['GET', 'PUT', 'DELETE'])
+def account_path_crud(account_id, path_id):
+    if flask.request.method in ['GET', 'HEAD']:
+        rec = Path.get(path_id, account_id)
+        if not rec:
+            return "No such path", 404
+        return json.dumps(rec), 200
 
-    rowcount = Path.delete(account_id, str(path))
-    if not rowcount:
-        return "No such path", 404
-    return "", 200
+    elif flask.request.method == 'PUT':
+        record = Path.forge_from_input(flask.request, account_id, force_id=path_id)
+        rowcount = record.update()
+        if not rowcount:
+            return "No such path", 404
+        return "", 204
+
+    elif flask.request.method == 'DELETE':
+        rowcount = Path.delete(path_id, account_id)
+        if not rowcount:
+            return "No such path", 404
+        return "", 204
+
 
 @accounts_api.route("/<int:account_id>/dashboards", methods=['GET', 'POST'])
 def dashboards_crud(account_id):

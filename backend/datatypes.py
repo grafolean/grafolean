@@ -14,7 +14,7 @@ from validators import (
     DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs,
-    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST
+    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs
 )
 from auth import Auth
 
@@ -52,13 +52,31 @@ class _RegexValidatedInputValue(object):
     def __str__(self):
         return str(self.v)
 
-class Path(_RegexValidatedInputValue):
+class PathInputValue(_RegexValidatedInputValue):
     _regex = re.compile(r'^([a-zA-Z0-9_-]+)([.][a-zA-Z0-9_-]+)*$')
 
-    def __init__(self, account_id, v, ensure_in_db=False):
-        super().__init__(v)
+class Path(object):
+
+    def __init__(self, path, account_id, force_id=None):
+        self.path = str(PathInputValue(path))
+        self.account_id = account_id
+        self.force_id = force_id
+
+    @classmethod
+    def forge_from_path(cls, path, account_id, ensure_in_db=True):
+        path_id = None
         if ensure_in_db:
-            self.path_id = Path._get_path_id_from_db(account_id, path=self.v)
+            path_id = Path._get_path_id_from_db(account_id, path=path)
+        return cls(path, account_id, path_id)
+
+    @classmethod
+    def forge_from_input(cls, flask_request, account_id, force_id=None):
+        inputs = PathSchemaInputs(flask_request)
+        if not inputs.validate():
+            raise ValidationError(inputs.errors[0])
+        data = flask_request.get_json()
+        path = data['path']
+        return cls(path, account_id, force_id=force_id)
 
     @staticmethod
     # @lru_cache(maxsize=256)
@@ -73,11 +91,31 @@ class Path(_RegexValidatedInputValue):
             path_id = res[0]
             return path_id
 
-    @classmethod
-    def delete(cls, account_id, path):
+    @staticmethod
+    def get(path_id, account_id):
+        with db.cursor() as c:
+            c.execute('SELECT path FROM paths WHERE account = %s AND id = %s;', (account_id, path_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            path = res[0]
+
+        return {
+            'path': path,
+        }
+
+    def update(self):
+        if self.force_id is None:
+            return 0
+        with db.cursor() as c:
+            c.execute("UPDATE paths SET path = %s WHERE id = %s AND account = %s;", (self.path, self.force_id, self.account_id,))
+            return c.rowcount
+
+    @staticmethod
+    def delete(path_id, account_id):
         with db.cursor() as c:
             # delete just the path, "ON DELETE CASCADE" takes care of removing values and aggregations:
-            c.execute('DELETE FROM paths WHERE account = %s AND path = %s;', (account_id, str(path),))
+            c.execute("DELETE FROM paths WHERE id = %s AND account = %s;", (path_id, account_id,))
             return c.rowcount
 
 
@@ -250,11 +288,6 @@ class Measurement(object):
 
     MAX_DATAPOINTS_RETURNED = 100000
 
-    def __init__(self, account_id, path, ts, value):
-        self.path = Path(account_id, path)
-        self.ts = Timestamp(ts)
-        self.value = MeasuredValue(value)
-
     @classmethod
     def save_values_data_to_db(cls, account_id, put_data, update_on_conflict=True):
 
@@ -264,10 +297,10 @@ class Measurement(object):
             def _get_data(put_data, aggr):
                 for x in put_data:
                     ts_str = str(Timestamp(x['t']))
-                    path = Path(account_id, x['p'], ensure_in_db=True)
+                    path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
                     # while we are traversing our data, we might as well mark the dirty aggregation blocks:
-                    aggr.mark_timestamp_as_dirty(path.path_id, ts_str)
-                    yield (path.path_id, ts_str, str(MeasuredValue(x['v'])),)
+                    aggr.mark_timestamp_as_dirty(path.force_id, ts_str)
+                    yield (path.force_id, ts_str, str(MeasuredValue(x['v'])),)
             data_iterator = _get_data(put_data, aggr)
 
             with db.cursor() as c:
@@ -371,10 +404,6 @@ class Measurement(object):
             if not res:
                 return None
             return res[0]
-
-    def save(self):
-        with db.cursor() as c:
-            c.execute('INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s);', (str(self.path), str(self.ts), str(self.value)))
 
 
 class Widget(object):

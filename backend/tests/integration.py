@@ -515,39 +515,43 @@ def test_values_put_many_get_aggr(app_client, admin_authorization_header, accoun
     """
         Put many values, get aggregated value. Delete path and values.
     """
-    try:
-        TEST_PATH = 'test.values.put.many.get.aggr'
-        t_from = 1330000000 - 1330000000 % (27*3600)  # aggr level 3 - every 3 hours
-        t_to = t_from + 27 * 3600
-        data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
+    TEST_PATH = 'test.values.put.many.get.aggr'
+    t_from = 1330000000 - 1330000000 % (27*3600)  # aggr level 3 - every 3 hours
+    t_to = t_from + 27 * 3600
+    data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
 
-        r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 204
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
 
-        url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
-        r = app_client.get(url, headers={'Authorization': admin_authorization_header})
-        expected = {
-            'paths': {
-                TEST_PATH: {
-                    'next_data_point': None,
-                    'data': [
-                        {'t': t_from + 27 * 3600. / 2., 'v': 111. + (99. / 2.), 'minv': 111., 'maxv': 111. + 99. }
-                    ]
-                }
+    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
+    r = app_client.get(url, headers={'Authorization': admin_authorization_header})
+    expected = {
+        'paths': {
+            TEST_PATH: {
+                'next_data_point': None,
+                'data': [
+                    {'t': t_from + 27 * 3600. / 2., 'v': 111. + (99. / 2.), 'minv': 111., 'maxv': 111. + 99. }
+                ]
             }
         }
-        assert r.status_code == 200
-        actual = json.loads(r.data.decode('utf-8'))
-        assert expected == actual
-    finally:
-        r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 200
+    }
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    # delete path:
+    r = app_client.get('/api/accounts/{}/paths/?filter={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    path_id = actual['paths'][TEST_PATH][0]['id']
+    r = app_client.delete('/api/accounts/{}/paths/{}'.format(account_id, path_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
 
 def test_paths_delete_need_auth(app_client, admin_authorization_header, account_id):
-    TEST_PATH = 'test.values.put.many.get.aggr'
-    r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH))
+    path_id = 1234  # does not exist
+    r = app_client.delete('/api/accounts/{}/paths/{}'.format(account_id, path_id))
     assert r.status_code == 401
-    r = app_client.delete('/api/accounts/{}/paths/?p={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
+    r = app_client.delete('/api/accounts/{}/paths/{}'.format(account_id, path_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404  # because path is not found, of course
 
 def test_dashboards_widgets_post_get(app_client, admin_authorization_header, account_id, mqtt_messages):
@@ -695,6 +699,65 @@ def test_values_put_paths_get(app_client, admin_authorization_header, account_id
     actual = json.loads(r.data.decode('utf-8'))
     assert PATH in [p["path"] for p in actual['paths']['test.*']]
     assert PATH in [p["path"] for p in actual['paths']['test.values.*']]
+
+def test_value_put_path_get_put(app_client, admin_authorization_header, account_id):
+    """
+        Post a value, get the created path, rename it to something else, get the value from new path.
+    """
+    PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
+    data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204
+
+    r = app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        'paths': {
+            'test.values.put.paths.get.*': [
+                {
+                    'id': None,
+                    'path': PATH,
+                }
+            ],
+        },
+        'limit_reached': False,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    path_id = actual['paths']['test.values.put.paths.get.*'][0]['id']
+    expected['paths']['test.values.put.paths.get.*'][0]['id'] = path_id
+    assert expected == actual
+
+    r = app_client.get(f'/api/accounts/{account_id}/paths/{path_id}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        "path": PATH,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    # change the path:
+    NEW_PATH = f'{PATH}.asdf'
+    data = {
+        "path": NEW_PATH,
+    }
+    r = app_client.put(f'/api/accounts/{account_id}/paths/{path_id}', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204, r.data
+
+    # make sure it has changed:
+    r = app_client.get(f'/api/accounts/{account_id}/paths/{path_id}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+    expected = {
+        "path": NEW_PATH,
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    # delete it:
+    r = app_client.delete(f'/api/accounts/{account_id}/paths/{path_id}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204, r.data
+
+    r = app_client.get(f'/api/accounts/{account_id}/paths/{path_id}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 404
 
 def test_accounts(app_client):
     """
@@ -1019,7 +1082,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
     r = app_client.get('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
     # but DELETE is denied:
-    r = app_client.delete('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
+    r = app_client.delete('/api/accounts/{}/paths/1234'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 401  # it would have been 4xx anyway, but it must be denied before that
 
 
