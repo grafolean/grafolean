@@ -7,7 +7,7 @@ import Bots from '../Bots';
 import Changelog from '../About/Changelog';
 import DashboardNewForm from '../DashboardNewForm';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
-import DashboardView from '../DashboardView';
+import DashboardView from '../DashboardView/DashboardView';
 import PageNotFound from '../PageNotFound';
 import PersonNewForm from '../PersonNewForm/PersonNewForm';
 import Persons from '../Persons/Persons';
