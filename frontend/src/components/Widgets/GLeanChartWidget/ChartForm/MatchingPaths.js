@@ -78,7 +78,8 @@ class MatchingPaths extends React.Component {
         .then(json => {
           this.setState({
             fetched: {
-              paths: json.paths[newPathFilter].map(p => p.path) || [],
+              paths:
+                json.paths && json.paths[newPathFilter] ? json.paths[newPathFilter].map(p => p.path) : [],
               pathsWithTrailing: json.paths_with_trailing
                 ? json.paths_with_trailing[newPathFilter].map(p => p.path)
                 : [],
@@ -87,6 +88,7 @@ class MatchingPaths extends React.Component {
           });
         })
         .catch(errorMsg => {
+          console.error(errorMsg);
           this.setState({
             fetchingError: true,
           });

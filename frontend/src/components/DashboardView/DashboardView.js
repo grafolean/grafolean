@@ -9,12 +9,21 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth, havePermission } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
-import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import EditableLabel from '../EditableLabel';
 import Button from '../Button';
 import Loading from '../Loading';
+import WidgetForm from '../WidgetForm/WidgetForm';
+import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
+import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
+import TopNWidget from '../Widgets/TopNWidget/TopNWidget';
 
 import './DashboardView.scss';
+
+const KNOWN_WIDGETS = {
+  lastvalue: LastValueWidget,
+  topn: TopNWidget,
+  chart: GLeanChartWidget,
+};
 
 class DashboardView extends React.Component {
   state = {
@@ -23,6 +32,8 @@ class DashboardView extends React.Component {
       { i: 'a', x: 0, y: 0, w: 6, h: 8 },
       { i: 'b', x: 6, y: 0, w: 6, h: 8 },
       { i: 'c', x: 0, y: 8, w: 6, h: 8 },
+      { i: 'd', x: 0, y: 16, w: 6, h: 8 },
+      { i: 'e', x: 0, y: 24, w: 6, h: 8 },
     ],
     name: null,
     loading: true,
@@ -134,6 +145,51 @@ class DashboardView extends React.Component {
     }));
   };
 
+  handleShowNewWidgetForm = ev => {
+    ev.preventDefault();
+    this.setState({
+      newWidgetFormOpened: true,
+    });
+  };
+
+  handleHideNewWidgetForm = ev => {
+    ev.preventDefault();
+    this.setState({
+      newWidgetFormOpened: false,
+    });
+  };
+
+  handleWidgetUpdate = () => {
+    this.setState({
+      newWidgetFormOpened: false,
+    });
+  };
+
+  renderWidget(widget, index) {
+    const { layout, sortingEnabled } = this.state;
+    const dashboardSlug = this.props.match.params.slug;
+
+    if (!KNOWN_WIDGETS[widget.type]) {
+      return <div key={widget.id}>Unknown widget type.</div>;
+    }
+
+    const WidgetComponent = KNOWN_WIDGETS[widget.type];
+    return (
+      <div key={layout[index].i}>
+        <WidgetComponent
+          key={widget.id}
+          width={layout[index].w * this.UNIT_X - 10}
+          height={layout[index].h * this.UNIT_Y - 10}
+          widgetId={widget.id}
+          dashboardSlug={dashboardSlug}
+          title={widget.title}
+          content={widget.content}
+          additionalButtonsRender={null}
+        />
+      </div>
+    );
+  }
+
   render() {
     const { user } = this.props;
     const { loading, widgets, sortingEnabled, savingWidgetPositions, layout } = this.state;
@@ -185,6 +241,7 @@ class DashboardView extends React.Component {
         </div>
 
         <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
+
         {widgets.length > 0 && (
           <GridLayout
             className="layout"
@@ -201,22 +258,32 @@ class DashboardView extends React.Component {
             isResizable={sortingEnabled}
           >
             {/* CAREFUL! Adding a ternary operator here might make GridLayout ignore its layout prop. */}
-            {widgets.map((widget, index) => (
-              <div key={layout[index].i}>
-                <LastValueWidget
-                  className={sortingEnabled ? 'sorting-enabled' : ''}
-                  width={layout[index].w * this.UNIT_X - 10}
-                  height={layout[index].h * this.UNIT_Y - 10}
-                  widgetId={widget.id}
-                  dashboardSlug={dashboardSlug}
-                  title={widget.title}
-                  content={widget.content}
-                  additionalButtonsRender={null}
-                />
-                {/* <TestWidget width={layout[index].w * this.UNIT_X} height={layout[index].h * this.UNIT_Y} padding={10}/> */}
-              </div>
-            ))}
+            {widgets.map((widget, index) => this.renderWidget(widget, index))}
           </GridLayout>
+        )}
+
+        {canAddDashboard && (
+          <div className="frame" style={{ marginBottom: 300 }}>
+            {!this.state.newWidgetFormOpened ? (
+              <div>
+                <Button onClick={this.handleShowNewWidgetForm}>
+                  <i className="fa fa-plus" /> add widget
+                </Button>
+              </div>
+            ) : (
+              <div>
+                <Button className="red" onClick={this.handleHideNewWidgetForm}>
+                  <i className="fa fa-minus" /> cancel
+                </Button>
+                <WidgetForm
+                  resource={`accounts/${accountId}/dashboards/${dashboardSlug}/widgets`}
+                  editing={false}
+                  lockWidgetType={false}
+                  afterSubmit={this.handleWidgetUpdate}
+                />
+              </div>
+            )}
+          </div>
         )}
       </div>
     );
