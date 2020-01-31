@@ -1,6 +1,8 @@
 .widget {
 
   &.fullscreen {
+    width: auto !important;
+    height: auto !important;
     position: fixed;
     left: 0;
     top: 0;

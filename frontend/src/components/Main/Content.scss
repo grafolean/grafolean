@@ -1,5 +1,14 @@
 .content {
-  opacity: 0.95;
+
+  // if there is a background image present, we want content to be a bit
+  // transparent - but not if someone (like widget) is fullscreen:
+  .with-bg-image & {
+    opacity: 0.95;
+  }
+  .with-bg-image.fullscreen-dibs & {
+    opacity: 1;
+  }
+
   .page.select-account .frame {
     display: flex;
     flex-direction: column;

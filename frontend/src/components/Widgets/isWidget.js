@@ -55,6 +55,7 @@ const isWidget = WrappedComponent => {
         isOnTop,
         isOnBottom,
         additionalButtonsRender,
+        className,
         ...passThroughProps
       } = this.props;
       const { isFullscreen } = this.state;
@@ -63,7 +64,10 @@ const isWidget = WrappedComponent => {
       const contentWidth = outerWidth - 42; // minus padding & border
       const contentHeight = outerHeight - 37 - 31; // minus padding, border & title bar height
       return (
-        <div className={`widget ${this.state.isFullscreen ? 'fullscreen' : ''}`}>
+        <div
+          className={`widget ${this.state.isFullscreen ? 'fullscreen' : ''} ${className ? className : ''}`}
+          style={{ width: width, height: height }}
+        >
           <div className="widget-title">
             <h1>{title}</h1>
 

@@ -135,7 +135,9 @@ class Main extends React.Component {
         docked={sidebarDocked}
         onSetOpen={this.onSetSidebarOpen}
         shadow={false}
-        rootClassName={isDarkMode ? 'dark-mode with-bg-image' : ''}
+        rootClassName={`${isDarkMode ? 'dark-mode with-bg-image' : ''} ${
+          fullscreenDibs ? 'fullscreen-dibs' : ''
+        }`}
         contentClassName={'content-root'}
         styles={{
           sidebar: {
