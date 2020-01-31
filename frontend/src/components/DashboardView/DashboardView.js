@@ -40,7 +40,6 @@ class DashboardView extends React.Component {
     widgets: [],
   };
 
-  UNIT_X = 100;
   UNIT_Y = 50;
   N_COLS = 12;
 
@@ -165,7 +164,7 @@ class DashboardView extends React.Component {
     });
   };
 
-  renderWidget(widget, index) {
+  renderWidget(widget, index, unitX) {
     const { layout, sortingEnabled } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
@@ -174,7 +173,7 @@ class DashboardView extends React.Component {
     }
 
     const WidgetComponent = KNOWN_WIDGETS[widget.type];
-    const width = layout[index].w * this.UNIT_X - 10;
+    const width = layout[index].w * unitX - 10;
     const height = layout[index].h * this.UNIT_Y - 10;
     return (
       <div key={layout[index].i} style={{ position: 'relative' }}>
@@ -207,7 +206,9 @@ class DashboardView extends React.Component {
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
 
-    const containerWidth = this.N_COLS * this.UNIT_X;
+    const innerWidth = this.props.width - 2 * 21; // padding
+    const unitX = Math.floor(innerWidth / this.N_COLS);
+    const containerWidth = this.N_COLS * unitX;
 
     const dashboardUrl = `accounts/${accountId}/dashboards/${dashboardSlug}`;
     const canAddDashboard = havePermission(dashboardUrl, 'POST', user.permissions);
@@ -269,7 +270,7 @@ class DashboardView extends React.Component {
             isResizable={sortingEnabled}
           >
             {/* CAREFUL! Adding a ternary operator here might make GridLayout ignore its layout prop. */}
-            {widgets.map((widget, index) => this.renderWidget(widget, index))}
+            {widgets.map((widget, index) => this.renderWidget(widget, index, unitX))}
           </GridLayout>
         )}
 
