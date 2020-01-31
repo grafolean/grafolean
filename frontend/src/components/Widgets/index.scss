@@ -1,5 +1,9 @@
 .widget {
 
+  &.sorting-enabled {
+    background-color: #182c1f;
+  }
+
   &.fullscreen {
     width: auto !important;
     height: auto !important;
