@@ -1,8 +1,5 @@
-.widget {
 
-  &.sorting-enabled {
-    background-color: #182c1f;
-  }
+.widget {
 
   &.fullscreen {
     width: auto !important;
@@ -82,4 +79,17 @@
 
 .page {
   width: 100%;
+}
+
+.sorting-overlay {
+  background-color: #182c1f;
+  opacity: 0.9;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.react-grid-layout .react-grid-item > .react-resizable-handle::after {
+  right: 13px;
+  bottom: 13px;
 }

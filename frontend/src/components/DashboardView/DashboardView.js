@@ -174,18 +174,29 @@ class DashboardView extends React.Component {
     }
 
     const WidgetComponent = KNOWN_WIDGETS[widget.type];
+    const width = layout[index].w * this.UNIT_X - 10;
+    const height = layout[index].h * this.UNIT_Y - 10;
     return (
-      <div key={layout[index].i}>
+      <div key={layout[index].i} style={{ position: 'relative' }}>
         <WidgetComponent
           key={widget.id}
-          width={layout[index].w * this.UNIT_X - 10}
-          height={layout[index].h * this.UNIT_Y - 10}
+          width={width}
+          height={height}
           widgetId={widget.id}
           dashboardSlug={dashboardSlug}
           title={widget.title}
           content={widget.content}
           additionalButtonsRender={null}
         />
+        {sortingEnabled && (
+          <div
+            className="sorting-overlay"
+            style={{
+              width: width,
+              height: height,
+            }}
+          ></div>
+        )}
       </div>
     );
   }
