@@ -604,7 +604,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['x'] = 0
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
-    widget_post_data['h'] = 8
+    widget_post_data['h'] = 10
     expected = {
         'list': [
             widget_post_data,
@@ -636,7 +636,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['x'] = 0
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
-    widget_post_data['h'] = 8
+    widget_post_data['h'] = 10
     expected = {
         'list': [
             widget_post_data,
@@ -694,9 +694,9 @@ def test_dashboard_widgets_set_positions(app_client, admin_authorization_header,
     assert r.status_code == 200
     for i in range(6):
         assert actual['list'][i]['x'] == 0
-        assert actual['list'][i]['y'] == i * 8
+        assert actual['list'][i]['y'] == i * 10
         assert actual['list'][i]['w'] == 12
-        assert actual['list'][i]['h'] == 8
+        assert actual['list'][i]['h'] == 10
 
     # rearrange:
     positions = [
