@@ -79,6 +79,8 @@ class TopNWidget extends React.Component {
           percent: ((x.v / topListTotal) * 100).toFixed(2),
         }))
       : null;
+    const totalThroughExpression =
+      calc_percent && topList ? evaluate(expression, { $1: topListTotal }) : null;
     return (
       <div className="top-n">
         <PersistentFetcher
@@ -94,7 +96,11 @@ class TopNWidget extends React.Component {
         />
         {calculatedTopList ? (
           <div>
-            {calc_percent && <div className="total">Total: {topListTotal}</div>}
+            {calc_percent && (
+              <div className="total">
+                Total: {totalThroughExpression.toFixed(decimals)} {unit}
+              </div>
+            )}
             {calculatedTopList.map(x => (
               <div key={x.p}>
                 <span className="label">{x.name}:</span>
