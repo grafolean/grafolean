@@ -28,13 +28,7 @@ const KNOWN_WIDGETS = {
 class DashboardView extends React.Component {
   state = {
     sortingEnabled: false,
-    layout: [
-      { i: 'a', x: 0, y: 0, w: 6, h: 8 },
-      { i: 'b', x: 6, y: 0, w: 6, h: 8 },
-      { i: 'c', x: 0, y: 8, w: 6, h: 8 },
-      { i: 'd', x: 0, y: 16, w: 6, h: 8 },
-      { i: 'e', x: 0, y: 24, w: 6, h: 8 },
-    ],
+    layout: [],
     name: null,
     loading: true,
     widgets: [],
@@ -44,13 +38,19 @@ class DashboardView extends React.Component {
   N_COLS = 12;
 
   handleLayoutChange = l => {
-    console.log('New layout:', l);
     this.setState({
       layout: l,
     });
   };
 
   onDashboardUpdate = json => {
+    const layout = json.widgets.map(w => ({
+      i: '' + w.id,
+      x: w.x,
+      y: w.y,
+      w: w.w,
+      h: w.h,
+    }));
     this.setState({
       name: json.name,
       widgets: json.widgets.map(w => ({
@@ -59,6 +59,7 @@ class DashboardView extends React.Component {
         title: w.title,
         content: JSON.parse(w.content),
       })),
+      layout: layout,
       loading: false,
     });
   };
@@ -119,10 +120,13 @@ class DashboardView extends React.Component {
       savingWidgetPositions: true,
     }));
     try {
-      const { widgets } = this.state;
-      const data = widgets.map((w, i) => ({
-        widget_id: w.id,
-        position: i,
+      const { layout } = this.state;
+      const data = layout.map(l => ({
+        widget_id: parseInt(l.i),
+        x: l.x,
+        y: l.y,
+        w: l.w,
+        h: l.h,
       }));
       const dashboardSlug = this.props.match.params.slug;
       const url = `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${dashboardSlug}/widgets_positions`;
@@ -164,7 +168,7 @@ class DashboardView extends React.Component {
     });
   };
 
-  renderWidget(widget, index, unitX) {
+  renderWidget(widget, unitX) {
     const { layout, sortingEnabled } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
@@ -173,10 +177,11 @@ class DashboardView extends React.Component {
     }
 
     const WidgetComponent = KNOWN_WIDGETS[widget.type];
-    const width = layout[index].w * unitX - 10;
-    const height = layout[index].h * this.UNIT_Y - 10;
+    const widget_layout = layout.find(l => l.i === '' + widget.id);
+    const width = widget_layout.w * unitX - 10;
+    const height = widget_layout.h * this.UNIT_Y - 10;
     return (
-      <div key={layout[index].i} style={{ position: 'relative' }}>
+      <div key={widget.id} style={{ position: 'relative' }}>
         <WidgetComponent
           key={widget.id}
           width={width}
@@ -270,7 +275,7 @@ class DashboardView extends React.Component {
             isResizable={sortingEnabled}
           >
             {/* CAREFUL! Adding a ternary operator here might make GridLayout ignore its layout prop. */}
-            {widgets.map((widget, index) => this.renderWidget(widget, index, unitX))}
+            {widgets.map(widget => this.renderWidget(widget, unitX))}
           </GridLayout>
         )}
 
