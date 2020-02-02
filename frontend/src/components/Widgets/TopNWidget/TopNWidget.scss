@@ -19,6 +19,30 @@
     font-size: 15px;
     margin-left: 3px;
   }
+
+  .entry {
+    display: flex;
+    align-items: flex-end;
+
+    .chart {
+      margin-left: auto;
+      padding-bottom: 6px;
+
+      .all {
+        width: 70px;
+        border: 1px solid #109618;
+        height: 15px;
+
+        .percent {
+          background-color: #36c;
+          height: 100%;
+          margin-left: auto;
+        }
+      }
+    }
+
+  }
+
   .time {
     margin-top: 10px;
 

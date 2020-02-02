@@ -101,14 +101,25 @@ class TopNWidget extends React.Component {
                 Total: {totalThroughExpression.toFixed(decimals)} {unit}
               </div>
             )}
-            {calculatedTopList.map(x => (
-              <div key={x.p}>
-                <span className="label">{x.name}:</span>
-                <span className="value">{x.c.toFixed(decimals)}</span>
-                <span className="unit">{unit} </span>
-                {calc_percent && <span className="percent">({x.percent} %)</span>}
-              </div>
-            ))}
+            <div className="list">
+              {calculatedTopList.map(x => (
+                <div className="entry" key={x.p}>
+                  <div>
+                    <span className="label">{x.name}:</span>
+                    <span className="value">{x.c.toFixed(decimals)}</span>
+                    <span className="unit">{unit} </span>
+                    {calc_percent && <span className="percent">({x.percent} %)</span>}
+                  </div>
+                  {calc_percent && (
+                    <div className="chart">
+                      <div className="all">
+                        <div className="percent" style={{ width: `${x.percent}%` }}></div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
             <div className="time">
               <When t={topListTime} />
             </div>
