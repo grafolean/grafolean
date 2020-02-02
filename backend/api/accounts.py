@@ -783,8 +783,8 @@ def widgets_crud(account_id, dashboard_slug):
         widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request)
         try:
             widget_id = widget.insert()
-        except psycopg2.IntegrityError:
-            return "Widget with this slug already exists", 400
+        except psycopg2.IntegrityError as ex:
+            return "Error inserting widget" + str(ex), 400
         mqtt_publish_changed([
             f'accounts/{account_id}/dashboards/{dashboard_slug}',
         ])

@@ -359,3 +359,26 @@ def migration_step_17():
                 last_dashboard_id = dashboard_id
             c2.execute('UPDATE widgets SET position = %s WHERE id = %s', (position, widget_id,))
             position += 1
+
+def migration_step_18():
+    """ Widgets' position on screen is more than just sort order - widgets have width/height and x/y position. """
+    with db.cursor() as c, db.cursor() as c2, db.cursor() as c3:
+        DEFAULT_HEIGHT = 8
+        N_COLUMNS = 12
+
+        c.execute('ALTER TABLE widgets ADD COLUMN position_x SMALLINT NOT NULL DEFAULT 0;')
+        c.execute('ALTER TABLE widgets ADD COLUMN position_y SMALLINT DEFAULT NULL;')  # we will set it to NOT NULL once we update the values
+        c.execute(f'CREATE DOMAIN WIDGETS_WIDTH AS SMALLINT CHECK (VALUE >= 0 AND VALUE <= {N_COLUMNS});')
+        c.execute(f'ALTER TABLE widgets ADD COLUMN position_w WIDGETS_WIDTH DEFAULT {N_COLUMNS};')
+        c.execute(f'ALTER TABLE widgets ADD COLUMN position_h SMALLINT DEFAULT {DEFAULT_HEIGHT};')
+
+        c.execute('SELECT DISTINCT(dashboard) FROM widgets;')
+        for dashboard_id, in c:
+            position_y = 0
+            c2.execute('SELECT id FROM widgets WHERE dashboard = %s ORDER BY position;', (dashboard_id,))
+            for widget_id, in c2:
+                c3.execute('UPDATE widgets SET position_y = %s WHERE id = %s', (position_y, widget_id,))
+                position_y += DEFAULT_HEIGHT
+
+        c.execute('ALTER TABLE widgets ALTER COLUMN position_y SET NOT NULL;')
+        c.execute('ALTER TABLE widgets DROP COLUMN position;')

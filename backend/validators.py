@@ -55,7 +55,10 @@ class WidgetsPositionsSchemaInputs(Inputs):
     #         'type': 'object',
     #         'properties': {
     #             'widget_id': {'type': 'number'},
-    #             'position': {'type': 'number'},
+    #             'x': {'type': 'number'},
+    #             'y': {'type': 'number'},
+    #             'w': {'type': 'number'},
+    #             'h': {'type': 'number'},
     #         },
     #         'additionalProperties': False,
     #         'required': ['widget_id', 'position'],
@@ -65,10 +68,13 @@ class WidgetsPositionsSchemaInputs(Inputs):
         'type': 'object',
         'properties': {
             'widget_id': {'type': 'number'},
-            'position': {'type': 'number'},
+            'x': {'type': 'number'},
+            'y': {'type': 'number'},
+            'w': {'type': 'number'},
+            'h': {'type': 'number'},
         },
         'additionalProperties': False,
-        'required': ['widget_id', 'position'],
+        'required': ['widget_id', 'x', 'y', 'w', 'h'],
     })]
 
 

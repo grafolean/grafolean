@@ -450,11 +450,15 @@ class Widget(object):
         with db.cursor() as c:
             # Instead of traversing, we update multiple values at once:
             #   http://initd.org/psycopg/docs/extras.html#psycopg2.extras.execute_values
-            widgets_positions_tuples = [(dashboard_id, x['widget_id'], x['position'],) for x in widgets_positions]
+            widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'],) for pos in widgets_positions]
             psycopg2.extras.execute_values(c, """
                 UPDATE widgets AS w
-                SET position = v.position
-                FROM (VALUES %s) AS v(dashboard_id, widget_id, position)
+                SET
+                    position_x = v.position_x,
+                    position_y = v.position_y,
+                    position_w = v.position_w,
+                    position_h = v.position_h
+                FROM (VALUES %s) AS v(dashboard_id, widget_id, position_x, position_y, position_w, position_h)
                 WHERE v.dashboard_id = w.dashboard AND v.widget_id = w.id;
             """, widgets_positions_tuples)
 
@@ -470,7 +474,14 @@ class Widget(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO widgets (dashboard, type, title, content) VALUES (%s, %s, %s, %s) RETURNING id;", (self.dashboard_id, self.widget_type, self.title, self.content,))
+            # we will position the new widget below each of the known widgets, which means that we set
+            # its position to: x=0, y=max(y + h), w=12, h=8
+            c.execute('SELECT MAX(position_y + position_h) FROM widgets WHERE dashboard = %s;', (self.dashboard_id,))
+            res = c.fetchone()
+            position_y = res[0] if res and res[0] else 0
+
+            c.execute("INSERT INTO widgets (dashboard, type, title, position_x, position_y, position_w, position_h, content) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+                      (self.dashboard_id, self.widget_type, self.title, 0, position_y, 12, 8, self.content,))
             widget_id = c.fetchone()[0]
             return widget_id
 
@@ -495,14 +506,17 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
-            c.execute('SELECT id, type, title, position, content FROM widgets WHERE dashboard = %s ORDER BY position;', (dashboard_id,))
+            c.execute('SELECT id, type, title, position_x, position_y, position_w, position_h, content FROM widgets WHERE dashboard = %s ORDER BY position_y, position_x;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, position, content in c.fetchall():
+            for widget_id, widget_type, title, position_x, position_y, position_w, position_h, content in c.fetchall():
                 ret.append({
                     'id': widget_id,
                     'type': widget_type,
                     'title': title,
-                    'position': position,
+                    'x': position_x,
+                    'y': position_y,
+                    'w': position_w,
+                    'h': position_h,
                     'content': content,
                 })
             return ret
@@ -514,17 +528,21 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
-            c.execute('SELECT type, title, position, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
+            c.execute('SELECT type, title, position_x, position_y, position_w, position_h, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
 
+            widget_type, title, position_x, position_y, position_w, position_h, content = res
             return {
                 'id': widget_id,
-                'type': res[0],
-                'title': res[1],
-                'position': res[2],
-                'content': res[3],
+                'type': widget_type,
+                'title': title,
+                'x': position_x,
+                'y': position_y,
+                'w': position_w,
+                'h': position_h,
+                'content': content,
             }
 
 

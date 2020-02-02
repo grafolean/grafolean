@@ -60,6 +60,7 @@ def _delete_all_from_db():
             "DROP DOMAIN IF EXISTS AGGR_LEVEL;",
             "DROP TYPE IF EXISTS HTTP_METHOD;",
             "DROP TYPE IF EXISTS USER_TYPE;",
+            "DROP TYPE IF EXISTS WIDGETS_WIDTH;",
         ]:
             log.info(sql)
             c.execute(sql)
@@ -571,6 +572,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     assert mqtt_messages.empty()
 
     r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
     expected = {
         'name': DASHBOARD + ' name',
         'slug': DASHBOARD,
@@ -593,18 +595,21 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
         ])
     }
     r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
+    assert r.status_code == 201, r.data
     widget_id = json.loads(r.data.decode('utf-8'))['id']
 
     r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
     widget_post_data['id'] = widget_id
+    widget_post_data['x'] = 0
+    widget_post_data['y'] = 0
+    widget_post_data['w'] = 12
+    widget_post_data['h'] = 8
     expected = {
         'list': [
             widget_post_data,
         ]
     }
-    expected['list'][0]['position'] = None
     assert r.status_code == 200
     assert expected == actual
 
@@ -628,12 +633,15 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
     actual = json.loads(r.data.decode('utf-8'))
     widget_post_data['id'] = widget_id
+    widget_post_data['x'] = 0
+    widget_post_data['y'] = 0
+    widget_post_data['w'] = 12
+    widget_post_data['h'] = 8
     expected = {
         'list': [
             widget_post_data,
         ]
     }
-    expected['list'][0]['position'] = None
     assert r.status_code == 200
     assert expected == actual
 
@@ -650,6 +658,70 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404
 
+
+def test_dashboard_widgets_set_positions(app_client, admin_authorization_header, account_id):
+    """
+        Create dashboard and N widgets, check their initial positions, rearrange them, check updated positions.
+    """
+    DASHBOARD_SLUG = 'dashboard1'
+    data = {'name': DASHBOARD_SLUG + ' name', 'slug': DASHBOARD_SLUG}
+    r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201
+
+    # create N widgets:
+    widget_post_data = {
+        'type': 'chart',
+        'title': 'Widget name',
+        'content': json.dumps([
+            {
+                'path_filter': 'do.not.match.*',
+                'renaming': 'to.rename',
+                'unit': 'µ',
+                'metric_prefix': 'm',
+            }
+        ])
+    }
+    widget_ids = []
+    for _ in range(6):
+        r = app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD_SLUG), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201, r.data
+        widget_id = json.loads(r.data.decode('utf-8'))['id']
+        widget_ids.append(widget_id)
+
+    # check that widgets' initial positions are correct:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD_SLUG), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    assert r.status_code == 200
+    for i in range(6):
+        assert actual['list'][i]['x'] == 0
+        assert actual['list'][i]['y'] == i * 8
+        assert actual['list'][i]['w'] == 12
+        assert actual['list'][i]['h'] == 8
+
+    # rearrange:
+    positions = [
+        {'widget_id': widget_ids[0], 'x': 0, 'y': 0, 'w': 3, 'h': 3},
+        {'widget_id': widget_ids[1], 'x': 3, 'y': 0, 'w': 6, 'h': 5},
+        {'widget_id': widget_ids[2], 'x': 9, 'y': 0, 'w': 3, 'h': 4},
+        {'widget_id': widget_ids[3], 'x': 1, 'y': 5, 'w': 11, 'h': 3},
+        {'widget_id': widget_ids[4], 'x': 0, 'y': 8, 'w': 6, 'h': 3},
+        {'widget_id': widget_ids[5], 'x': 6, 'y': 8, 'w': 6, 'h': 3},
+    ]
+    r = app_client.put('/api/accounts/{}/dashboards/{}/widgets_positions'.format(account_id, DASHBOARD_SLUG), data=json.dumps(positions), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    print(r.data)
+    assert r.status_code == 204
+
+    # check new positions and sort order:
+    r = app_client.get('/api/accounts/{}/dashboards/{}/widgets'.format(account_id, DASHBOARD_SLUG), headers={'Authorization': admin_authorization_header})
+    actual = json.loads(r.data.decode('utf-8'))
+    print(actual)
+    assert r.status_code == 200
+    for i in range(6):
+        assert actual['list'][i]['id'] == positions[i]['widget_id']
+        assert actual['list'][i]['x'] == positions[i]['x']
+        assert actual['list'][i]['y'] == positions[i]['y']
+        assert actual['list'][i]['w'] == positions[i]['w']
+        assert actual['list'][i]['h'] == positions[i]['h']
 
 def test_values_put_paths_get(app_client, admin_authorization_header, account_id):
     """
