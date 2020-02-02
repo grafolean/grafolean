@@ -156,6 +156,7 @@ class GLeanChartWidget extends React.Component {
       .unix();
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = -fromTs * initialScale;
+    const timeIntervalSelectorHeight = 30;
     return (
       <div
         className="widget-dialog-container"
@@ -172,7 +173,7 @@ class GLeanChartWidget extends React.Component {
             x: yAxesWidth,
             y: 0,
             w: chartWidth - yAxesWidth,
-            h: this.props.height,
+            h: this.props.height - timeIntervalSelectorHeight,
           }}
           kidnapScroll={this.props.isFullscreen}
           initialState={{
@@ -189,7 +190,7 @@ class GLeanChartWidget extends React.Component {
                 allChartSeries={this.state.allChartSeries}
                 drawnChartSeries={this.state.drawnChartSeries}
                 width={chartWidth}
-                height={this.props.height}
+                height={this.props.height - timeIntervalSelectorHeight}
                 fromTs={Math.round(-(x - yAxesWidth) / scale)}
                 toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
                 scale={scale}
@@ -203,13 +204,12 @@ class GLeanChartWidget extends React.Component {
                 <Legend
                   dockingEnabled={legendIsDockable}
                   width={legendWidth}
-                  height={this.props.height}
+                  height={this.props.height - timeIntervalSelectorHeight}
                   chartSeries={this.state.allChartSeries}
                   onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                 />
               </div>
               <TimeIntervalSelector
-                style={{ right: legendWidth }}
                 onChange={intervalDuration => {
                   const toTs = moment().unix();
                   const fromTs = moment()

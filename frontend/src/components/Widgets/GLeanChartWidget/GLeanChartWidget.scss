@@ -90,11 +90,8 @@
 }
 
 .time-interval-selector {
-  // position: absolute;
-  top: 0;
-  z-index: 2; // just above repinchy
-
   button {
+    margin-top: 10px;
     margin-left: 10px;
     border: 1px solid #ccc;
     background-color: #fff;
