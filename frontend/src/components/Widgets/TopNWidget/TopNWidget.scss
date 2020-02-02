@@ -20,6 +20,12 @@
     margin-left: 3px;
   }
 
+  .total {
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
   .entry {
     display: flex;
     align-items: flex-end;
@@ -30,7 +36,7 @@
 
       .all {
         width: 70px;
-        border: 1px solid #109618;
+        border: 1px solid #444;
         height: 15px;
 
         .percent {
