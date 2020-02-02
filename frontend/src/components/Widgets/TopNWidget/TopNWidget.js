@@ -94,6 +94,7 @@ class TopNWidget extends React.Component {
         />
         {calculatedTopList ? (
           <div>
+            {calc_percent && <div className="total">Total: {topListTotal}</div>}
             {calculatedTopList.map(x => (
               <div key={x.p}>
                 <span className="label">{x.name}:</span>
