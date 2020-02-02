@@ -481,7 +481,7 @@ class Widget(object):
             position_y = res[0] if res and res[0] else 0
 
             c.execute("INSERT INTO widgets (dashboard, type, title, position_x, position_y, position_w, position_h, content) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;",
-                      (self.dashboard_id, self.widget_type, self.title, 0, position_y, 12, 8, self.content,))
+                      (self.dashboard_id, self.widget_type, self.title, 0, position_y, 12, 10, self.content,))
             widget_id = c.fetchone()[0]
             return widget_id
 

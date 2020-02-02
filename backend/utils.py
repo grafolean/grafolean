@@ -363,7 +363,7 @@ def migration_step_17():
 def migration_step_18():
     """ Widgets' position on screen is more than just sort order - widgets have width/height and x/y position. """
     with db.cursor() as c, db.cursor() as c2, db.cursor() as c3:
-        DEFAULT_HEIGHT = 8
+        DEFAULT_HEIGHT = 10
         N_COLUMNS = 12
 
         c.execute('ALTER TABLE widgets ADD COLUMN position_x SMALLINT NOT NULL DEFAULT 0;')
