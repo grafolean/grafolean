@@ -48,7 +48,10 @@ class WidgetForm extends React.Component {
       ...fetchedFormValues,
       content: JSON.parse(fetchedFormValues.content),
       id: undefined,
-      position: undefined,
+      x: undefined,
+      y: undefined,
+      w: undefined,
+      h: undefined,
     };
   };
 
