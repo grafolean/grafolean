@@ -29,20 +29,37 @@
   .entry {
     display: flex;
     align-items: flex-end;
+    flex-wrap: wrap;
 
-    .chart {
+    .percent-bar {
       margin-left: auto;
       padding-bottom: 6px;
+      position: relative;
 
-      .all {
+      .wrapper {
         width: 70px;
         border: 1px solid #444;
-        height: 15px;
+        height: 17px;
+        position: relative;
 
-        .percent {
+        .bar {
           background-color: #36c;
           height: 100%;
           margin-left: auto;
+        }
+        .text-wrapper {
+          position: absolute;
+          left: 0;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          .text {
+            color: #ccd;
+          }
         }
       }
     }

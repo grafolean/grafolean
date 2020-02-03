@@ -108,15 +108,8 @@ class TopNWidget extends React.Component {
                     <span className="label">{x.name}:</span>
                     <span className="value">{x.c.toFixed(decimals)}</span>
                     <span className="unit">{unit} </span>
-                    {calc_percent && <span className="percent">({x.percent} %)</span>}
                   </div>
-                  {calc_percent && (
-                    <div className="chart">
-                      <div className="all">
-                        <div className="percent" style={{ width: `${x.percent}%` }}></div>
-                      </div>
-                    </div>
-                  )}
+                  {calc_percent && <PercentBar percent={x.percent} />}
                 </div>
               ))}
             </div>
@@ -133,3 +126,19 @@ class TopNWidget extends React.Component {
 }
 
 export default withRouter(isWidget(TopNWidget));
+
+class PercentBar extends React.Component {
+  render() {
+    const { percent } = this.props;
+    return (
+      <div className="percent-bar">
+        <div className="wrapper">
+          <div className="bar" style={{ width: `${percent}%` }}></div>
+          <div className="text-wrapper">
+            <span className="text">{Number(percent).toFixed(1)} %</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
