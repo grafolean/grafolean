@@ -22,7 +22,8 @@ from datatypes import ValidationError, Permission, Bot
 import utils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, accounts_apidoc_schemas
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
+    accounts_apidoc_schemas, admin_apidoc_schemas
 import validators
 
 
@@ -198,10 +199,9 @@ def generate_api_docs(filename, api_version, openapi_version):
         }
     )
 
-    for schema_name, schema in users_apidoc_schemas():
-        apidoc.components.schema(schema_name, schema)
-    for schema_name, schema in accounts_apidoc_schemas():
-        apidoc.components.schema(schema_name, schema)
+    for apidoc_schemas_func in [users_apidoc_schemas, accounts_apidoc_schemas, admin_apidoc_schemas]:
+        for schema_name, schema in apidoc_schemas_func():
+            apidoc.components.schema(schema_name, schema)
 
     with app.test_request_context():
         for rule in app.url_map.iter_rules():
@@ -223,20 +223,22 @@ def print_usage():
             Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
             for development purposes.
 
-        grafolean.py generate-api-doc-yaml /path/to/output/file.yaml 1.0.0 2.0
+        grafolean.py generate-api-doc-yaml /tmp/api_docs/openapi.yaml 1.0.0 2.0
             Auto-generates API documentation in Swagger/OpenAPI format and
             writes it to the specified output file. Arguments:
             - output file
             - API version
             - OpenAPI version (2.0 or 3.0.2)
+
+            When docs are generated, they can be served via Swagger-UI:
+            $ docker run -d --rm -p 9000:8080 --name swagger-ui \
+              -e SWAGGER_JSON=/api_docs/openapi.yaml \
+              -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
+            To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
     """)
 
 
 if __name__ == "__main__":
-
-    # When docs are generated, they can be served via Swagger-UI:
-    #  $ docker run -d --rm -p 9000:8080 --name swagger-ui -e SWAGGER_JSON=/api_docs/openapi.yaml -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
-    # To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
 
     if len(sys.argv) > 1:
         if len(sys.argv) == 5 and sys.argv[1] == 'generate-api-doc-yaml':

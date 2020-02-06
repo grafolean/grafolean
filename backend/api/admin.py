@@ -2,14 +2,19 @@ import flask
 import json
 import urllib.parse
 
+from .common import noauth, mqtt_publish_changed
 from datatypes import Account, Permission, Person, Bot
 from auth import Auth, JWT, AuthFailedException
 import utils
 from utils import log
-from .common import noauth, mqtt_publish_changed
+import validators
 
 
 admin_api = flask.Blueprint('admin_api', __name__)
+
+
+def admin_apidoc_schemas():
+    yield "AccountSchemaInputs", validators.AccountSchemaInputs.json[0].schema
 
 
 # --------------
@@ -195,6 +200,59 @@ def admin_mqttauth_plug(check_type):
 
 @admin_api.route('/accounts', methods=['GET', 'POST'])
 def accounts_crud():
+    """
+        ---
+        get:
+          summary: Get accounts
+          tags:
+            - Admin
+          description:
+            Returns a list of accounts that this user has the permission to access. The list is returned in a single array (no pagination).
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      list:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                              description: "Account id"
+                            name:
+                              type: string
+                              description: "Account name"
+        post:
+          summary: Create an account
+          tags:
+            - Admin
+          description:
+            Creates an account.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Account data"
+              required: true
+              schema:
+                "$ref": '#/definitions/AccountSchemaInputs'
+          responses:
+            201:
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: "Account id"
+                      name:
+                        type: string
+                        description: "Account name"
+    """
     if flask.request.method in ['GET', 'HEAD']:
         rec = Account.get_list()
         return json.dumps({'list': rec}), 200

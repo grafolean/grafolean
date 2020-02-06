@@ -1,10 +1,10 @@
 import flask
 import json
-import validators
 import copy
 import psycopg2
 
 from .common import auth_no_permissions, mqtt_publish_changed
+import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
 
@@ -98,7 +98,7 @@ def users_bots():
         get:
           summary: Get systemwide bots
           tags:
-            - Admin
+            - Users
           description:
             Returns a list of all systemwide bots (bots which are not tied to a specific account). The list is returned in a single array (no pagination).
           responses:
@@ -115,7 +115,7 @@ def users_bots():
         post:
           summary: Create a systemwide bot
           tags:
-            - Admin
+            - Users
           description:
             Creates a systemwide bot. By default, a created bot is without permissions, so they must be granted to it before it can do anything useful.
 
@@ -154,7 +154,7 @@ def users_bot_crud(user_id):
         get:
           summary: Get bot data
           tags:
-            - Admin
+            - Users
           description:
             Returns bot data.
           parameters:
@@ -175,7 +175,7 @@ def users_bot_crud(user_id):
         put:
           summary: Update the bot
           tags:
-            - Admin
+            - Users
           description:
             Updates bot name. Note that all other fields are handled automatically (they can't be changed).
           parameters:
@@ -199,7 +199,7 @@ def users_bot_crud(user_id):
         delete:
           summary: Remove the bot
           tags:
-            - Admin
+            - Users
           description:
             Removes the bot. Also removes its permissions, if any.
           parameters:
@@ -270,7 +270,7 @@ def users_persons():
         get:
           summary: Get all persons
           tags:
-            - Admin
+            - Users
           description:
             Returns a list of all persons. The list is returned in a single array (no pagination).
           responses:
@@ -287,7 +287,7 @@ def users_persons():
         post:
           summary: Create a person account
           tags:
-            - Admin
+            - Users
           description:
             Creates a person account. By default (as any user) a person is without permissions, so they must be granted to it before it can do anything useful.
           parameters:
@@ -329,7 +329,7 @@ def users_person_crud(user_id):
         get:
           summary: Get person data
           tags:
-            - Admin
+            - Users
           description:
             Returns person data.
           parameters:
@@ -350,7 +350,7 @@ def users_person_crud(user_id):
         put:
           summary: Update the bot
           tags:
-            - Admin
+            - Users
           description:
             Updates person data.
           parameters:
@@ -374,7 +374,7 @@ def users_person_crud(user_id):
         delete:
           summary: Remove the person data
           tags:
-            - Admin
+            - Users
           description:
             Removes the person data. Also removes user's permissions, if any.
           parameters:
@@ -442,7 +442,7 @@ def users_permissions_get_post(user_id):
         get:
           summary: Get a list of all permissions granted to a specified user
           tags:
-            - Admin
+            - Users
           description:
             Returns a list of all permissions granted to the user. The list is returned in a single array (no pagination).
 
@@ -490,7 +490,7 @@ def users_permissions_get_post(user_id):
         post:
           summary: Grant permission to the user
           tags:
-            - Admin
+            - Users
           description:
             Grants a specified permission to the user. Permissions are defined with a combination of resource prefix and a list of methods.
             Since both persons and bots are users, this endpoint can be used for granting permissions to either of them.
@@ -560,7 +560,7 @@ def users_permission_delete(permission_id, user_id):
         delete:
           summary: Revoke permission
           tags:
-            - Admin
+            - Users
           description:
             Revokes a specific permission, as specified by permission id.
           parameters:
