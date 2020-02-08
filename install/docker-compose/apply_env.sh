@@ -55,9 +55,5 @@ mkdir -p /shared-secrets/tokens/
 chown www-data:www-data /shared-secrets/tokens/
 chmod 755 /shared-secrets/tokens/
 
-# let's be able to access the host (gateway IP) through a hostname:
-DEFAULT_GATEWAY_IP=$(/sbin/ip route | awk '/default/ { print $3 }')
-echo -e "\n$DEFAULT_GATEWAY_IP\tgrafolean.host" >> /etc/hosts
-
 # we must exit with status code 0 or container won't start:
 exit 0
