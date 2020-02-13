@@ -3,6 +3,7 @@ import React from 'react';
 import isFormikForm from '../isFormikForm';
 import SensorDetailsFormSnmp from './SensorDetailsFormSnmp';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
+import SensorDetailsFormNetFlow from './SensorDetailsFormNetFlow';
 
 class SensorFormRender extends React.Component {
   static DEFAULT_VALUES = {
@@ -31,6 +32,9 @@ class SensorFormRender extends React.Component {
         case 'snmp':
           detailsErrors = SensorDetailsFormSnmp.validate(details);
           break;
+        case 'netflow':
+          detailsErrors = SensorDetailsFormNetFlow.validate(details);
+          break;
         default:
           break;
       }
@@ -53,9 +57,23 @@ class SensorFormRender extends React.Component {
       case 'snmp':
         this.props.setFieldValue('details', SensorDetailsFormSnmp.DEFAULT_VALUES, true);
         break;
+      case 'netflow':
+        this.props.setFieldValue('details', SensorDetailsFormNetFlow.DEFAULT_VALUES, true);
+        break;
       default:
         break;
     }
+  };
+
+  static fixValuesBeforeSubmit = formValues => {
+    // Since we made a mistake of putting 'default_interval' outside of 'details', we must
+    // fix the data here. Note that this should be cleaned up sooner or later - not all
+    // sensors are periodic.
+    const protocol = SUPPORTED_PROTOCOLS.find(p => p.slug === formValues.protocol);
+    if (!protocol.isPeriodic) {
+      formValues.default_interval = null;
+    }
+    return formValues;
   };
 
   render() {
@@ -65,6 +83,7 @@ class SensorFormRender extends React.Component {
       onChange,
       onBlur,
     } = this.props;
+    const selectedProtocol = SUPPORTED_PROTOCOLS.find(p => p.slug === protocol);
 
     return (
       <div className="frame">
@@ -83,18 +102,29 @@ class SensorFormRender extends React.Component {
             ))}
           </select>
         </div>
-        <div className="field">
-          <label>Default fetching interval: [s]</label>
-          <input
-            type="number"
-            value={default_interval}
-            name="default_interval"
-            onChange={onChange}
-            onBlur={onBlur}
-          />
-        </div>
+
+        {selectedProtocol && selectedProtocol.isPeriodic && (
+          <div className="field">
+            <label>Default fetching interval: [s]</label>
+            <input
+              type="number"
+              value={default_interval}
+              name="default_interval"
+              onChange={onChange}
+              onBlur={onBlur}
+            />
+          </div>
+        )}
+
         {protocol === 'snmp' ? (
           <SensorDetailsFormSnmp
+            values={details}
+            namePrefix="details"
+            onChange={onChange}
+            errors={errors['details']}
+          />
+        ) : protocol === 'netflow' ? (
+          <SensorDetailsFormNetFlow
             values={details}
             namePrefix="details"
             onChange={onChange}

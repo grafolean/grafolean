@@ -4,6 +4,7 @@ import isForm from '../isForm';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 import CredentialsDetailsFormSnmp from './CredentialsDetailsFormSnmp';
 import CredentialsDetailsFormPing from './CredentialsDetailsFormPing';
+import CredentialsDetailsFormNetFlow from './CredentialsDetailsFormNetFlow';
 
 class CredentialsFormRender extends React.Component {
   areFormValuesValid() {
@@ -74,6 +75,8 @@ class CredentialsFormRender extends React.Component {
           <CredentialsDetailsFormSnmp value={details} onChange={this.handleDetailsChange} />
         ) : protocol === 'ping' ? (
           <CredentialsDetailsFormPing value={details} onChange={this.handleDetailsChange} />
+        ) : protocol === 'netflow' ? (
+          <CredentialsDetailsFormNetFlow value={details} onChange={this.handleDetailsChange} />
         ) : null}
       </div>
     );

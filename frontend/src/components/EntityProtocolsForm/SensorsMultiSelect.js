@@ -38,7 +38,7 @@ export default class SensorsMultiSelect extends React.Component {
         >
           {sensor.name}
         </Checkbox>
-        {isSensorSelected && (
+        {isSensorSelected && sensor.default_interval && (
           <div className="interval">
             Interval:{' '}
             {selectedSensor.interval !== null ? (
