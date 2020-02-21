@@ -322,6 +322,36 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     # r = app_client.delete('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891'.format(account_id), headers={'Authorization': admin_authorization_header})
     # assert r.status_code == 200
 
+def test_values_put_get_encoded_dot(app_client, admin_authorization_header, account_id, mqtt_messages):
+    """
+        Put a value, get a value - but with a dot ('.') encoded as '%2e' in path.
+    """
+    assert mqtt_messages.empty()
+
+    data = [{'p': '%2eqqqq.ww%2eww.asdf', 't': 1234567890.123456, 'v': 111.22}]
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204, r.data
+
+    r = app_client.get('/api/accounts/{}/values/?p=%252eqqqq.ww%252eww.asdf&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200, r.data
+    expected = {
+        'paths': {
+            '%2eqqqq.ww%2eww.asdf': {
+                'next_data_point': None,
+                'data': [
+                    {'t': 1234567890.123456, 'v': 111.22 }
+                ]
+            }
+        }
+    }
+    actual = json.loads(r.data.decode('utf-8'))
+    assert expected == actual
+
+    mqtt_message = mqtt_messages.get(timeout=10.0)
+    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/%2eqqqq.ww%2eww.asdf'
+    assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
+    assert mqtt_messages.empty()
+
 def test_values_put_get_via_post(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Put a value, get a value - this time get it via POST.
