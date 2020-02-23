@@ -16,10 +16,10 @@ export function onLogout() {
   };
 }
 
-export const ON_REQUEST_BACKEND_STATUS = 'ON_REQUEST_BACKEND_STATUS';
-export function onRequestBackendStatus() {
+export const DO_REQUEST_BACKEND_STATUS = 'DO_REQUEST_BACKEND_STATUS';
+export function doRequestBackendStatus() {
   return {
-    type: ON_REQUEST_BACKEND_STATUS,
+    type: DO_REQUEST_BACKEND_STATUS,
   };
 }
 
@@ -108,21 +108,4 @@ export function handleFetchErrors(response) {
     throw Error(response.statusText);
   }
   return response;
-}
-
-export function fetchBackendStatus() {
-  // react-thunk - return function instead of object:
-  return function(dispatch) {
-    dispatch(onRequestBackendStatus());
-    // return function that will start the request from server:
-    return fetch(`${ROOT_URL}/status/info`)
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json => {
-        dispatch(onReceiveBackendStatusSuccess(json));
-      })
-      .catch(errorMsg => {
-        dispatch(onReceiveBackendStatusFailure(errorMsg.toString()));
-      });
-  };
 }

@@ -1,5 +1,4 @@
-import { createStore, applyMiddleware, compose } from 'redux';
-import thunkMiddleware from 'redux-thunk';
+import { createStore, compose } from 'redux';
 import throttle from 'lodash/throttle';
 
 import grafoleanApp from './reducers';
@@ -27,15 +26,7 @@ const saveStoreState = state => {
 
 const composeWithDevTools = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 const persistedState = loadStoreState();
-const store = createStore(
-  grafoleanApp,
-  persistedState,
-  composeWithDevTools(
-    applyMiddleware(
-      thunkMiddleware, // lets us dispatch() functions
-    ),
-  ),
-);
+const store = createStore(grafoleanApp, persistedState, composeWithDevTools());
 
 store.subscribe(
   throttle(() => {

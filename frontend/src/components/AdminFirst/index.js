@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ROOT_URL, onSuccess, fetchBackendStatus } from '../../store/actions';
+import { ROOT_URL, onSuccess, doRequestBackendStatus } from '../../store/actions';
 import store from '../../store';
 import Button from '../Button';
 
@@ -126,7 +126,7 @@ class AdminFirst extends React.Component {
         userCreated: true,
       });
       // we are done here, trigger fetching of backend status so that Main component learns about our work:
-      store.dispatch(fetchBackendStatus());
+      store.dispatch(doRequestBackendStatus());
     } catch (errorMsg) {
       this.setState({
         errorMsg: errorMsg.toString(),

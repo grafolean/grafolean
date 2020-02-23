@@ -2,7 +2,7 @@ import { combineReducers } from 'redux';
 import uniqueId from 'lodash/uniqueId';
 
 import {
-  ON_REQUEST_BACKEND_STATUS,
+  DO_REQUEST_BACKEND_STATUS,
   ON_RECEIVE_BACKEND_STATUS_SUCCESS,
   ON_RECEIVE_BACKEND_STATUS_FAILURE,
   ON_FAILURE,
@@ -45,13 +45,26 @@ function user(state = null, action) {
   }
 }
 
-function backendStatus(state = null, action) {
+function backendStatus(state = { status: null, numberUpdatesRequested: 0 }, action) {
   switch (action.type) {
     case ON_RECEIVE_BACKEND_STATUS_FAILURE:
-      return null;
+      return {
+        ...state,
+        status: null,
+      };
     case ON_RECEIVE_BACKEND_STATUS_SUCCESS:
-      return action.json;
-    case ON_REQUEST_BACKEND_STATUS:
+      return {
+        ...state,
+        status: action.json,
+      };
+    case DO_REQUEST_BACKEND_STATUS:
+      // This is a hack which allows us to get rid of redux-thunk without changing the existing code too much.
+      // Some parts of the app assume they can trigger re-fetching of backend status... Ugly, but this action
+      // enables that in collaboration with BackendStatusUpdater component:
+      return {
+        ...state,
+        numberUpdatesRequested: state.numberUpdatesRequested + 1,
+      };
     default:
       return state;
   }

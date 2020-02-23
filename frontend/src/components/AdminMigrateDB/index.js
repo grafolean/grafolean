@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import Button from '../Button';
-import { handleFetchErrors, ROOT_URL, onFailure, fetchBackendStatus } from '../../store/actions';
+import { handleFetchErrors, ROOT_URL, onFailure, doRequestBackendStatus } from '../../store/actions';
 import store from '../../store';
 
 class AdminMigrateDB extends React.Component {
@@ -22,7 +22,7 @@ class AdminMigrateDB extends React.Component {
           submitted: true,
         });
         // we are done here, trigger fetching of backend status so that Main component learns about our work:
-        store.dispatch(fetchBackendStatus());
+        store.dispatch(doRequestBackendStatus());
       })
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
@@ -51,6 +51,6 @@ class AdminMigrateDB extends React.Component {
 }
 
 const mapBackendStatusToProps = store => ({
-  backendStatus: store.backendStatus,
+  backendStatus: store.backendStatus.status,
 });
 export default connect(mapBackendStatusToProps)(AdminMigrateDB);

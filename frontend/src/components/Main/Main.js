@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import Sidebar from 'react-sidebar';
 
 import store from '../../store';
-import { fetchBackendStatus, ROOT_URL } from '../../store/actions';
+import { doRequestBackendStatus, ROOT_URL } from '../../store/actions';
 
 import AdminFirst from '../AdminFirst';
 import AdminMigrateDB from '../AdminMigrateDB';
@@ -37,7 +37,7 @@ class Main extends React.Component {
 
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
-    store.dispatch(fetchBackendStatus());
+    store.dispatch(doRequestBackendStatus());
   }
 
   componentWillUnmount() {
@@ -172,7 +172,7 @@ class Main extends React.Component {
   }
 }
 const mapBackendStatusToProps = store => ({
-  backendStatus: store.backendStatus,
+  backendStatus: store.backendStatus.status,
   loggedIn: Boolean(store.user),
   isDarkMode: store.preferences.colorScheme === 'dark',
   fullscreenDibs: store.fullscreenDibs,

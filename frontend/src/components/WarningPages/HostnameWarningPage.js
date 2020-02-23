@@ -30,6 +30,6 @@ class HostnameWarningPage extends React.Component {
 }
 
 const mapStoreToProps = store => ({
-  externalHostname: store.backendStatus.mqtt_ws_hostname,
+  externalHostname: store.backendStatus.status.mqtt_ws_hostname,
 });
 export default connect(mapStoreToProps)(HostnameWarningPage);

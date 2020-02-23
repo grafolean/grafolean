@@ -70,7 +70,7 @@ const withMqttConnected = WrappedComponent => {
   };
 
   const mapStoreToProps = store => ({
-    backendStatus: store.backendStatus,
+    backendStatus: store.backendStatus.status,
     jwtToken: store.user ? store.user.jwtToken : undefined,
   });
   return connect(mapStoreToProps)(wrappedComponent);

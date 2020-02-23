@@ -32,6 +32,6 @@ class CORSWarningPage extends React.Component {
 }
 
 const mapStoreToProps = store => ({
-  corsDomains: store.backendStatus.cors_domains,
+  corsDomains: store.backendStatus.status.cors_domains,
 });
 export default connect(mapStoreToProps)(CORSWarningPage);

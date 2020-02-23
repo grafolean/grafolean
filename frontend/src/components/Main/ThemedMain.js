@@ -3,12 +3,14 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 
 import Main from './Main';
+import BackendStatusUpdater from '../BackendStatusUpdater/BackendStatusUpdater';
 
 class ThemedMain extends React.Component {
   render() {
     const { isDarkMode, ...rest } = this.props;
     return (
       <div id="theme" className={isDarkMode ? 'dark-mode' : ''}>
+        <BackendStatusUpdater />
         <Main {...rest} />
       </div>
     );
