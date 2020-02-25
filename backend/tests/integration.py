@@ -615,6 +615,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data = {
         'type': 'chart',
         'title': WIDGET + ' name',
+        'p': 'page2',
         'content': json.dumps([
             {
                 'path_filter': 'do.not.match.*',
@@ -635,7 +636,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
     widget_post_data['h'] = 10
-    widget_post_data['p'] = 'default'
+    widget_post_data['p'] = 'page2'
     expected = {
         'list': [
             widget_post_data,
@@ -648,6 +649,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data = {
         'type': 'chart',
         'title': WIDGET + ' name2',
+        'p': 'header',
         'content': json.dumps([
             {
                 'path_filter': 'do.not.match2.*',
@@ -668,7 +670,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
     widget_post_data['h'] = 10
-    widget_post_data['p'] = 'default'
+    widget_post_data['p'] = 'header'
     expected = {
         'list': [
             widget_post_data,
