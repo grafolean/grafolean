@@ -635,6 +635,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
     widget_post_data['h'] = 10
+    widget_post_data['p'] = 'default'
     expected = {
         'list': [
             widget_post_data,
@@ -667,6 +668,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     widget_post_data['y'] = 0
     widget_post_data['w'] = 12
     widget_post_data['h'] = 10
+    widget_post_data['p'] = 'default'
     expected = {
         'list': [
             widget_post_data,
@@ -727,31 +729,31 @@ def test_dashboard_widgets_set_positions(app_client, admin_authorization_header,
         assert actual['list'][i]['y'] == i * 10
         assert actual['list'][i]['w'] == 12
         assert actual['list'][i]['h'] == 10
+        assert actual['list'][i]['p'] == 'default'
 
     # rearrange:
     positions = [
-        {'widget_id': widget_ids[0], 'x': 0, 'y': 0, 'w': 3, 'h': 3},
-        {'widget_id': widget_ids[1], 'x': 3, 'y': 0, 'w': 6, 'h': 5},
-        {'widget_id': widget_ids[2], 'x': 9, 'y': 0, 'w': 3, 'h': 4},
-        {'widget_id': widget_ids[3], 'x': 1, 'y': 5, 'w': 11, 'h': 3},
-        {'widget_id': widget_ids[4], 'x': 0, 'y': 8, 'w': 6, 'h': 3},
-        {'widget_id': widget_ids[5], 'x': 6, 'y': 8, 'w': 6, 'h': 3},
+        {'widget_id': widget_ids[0], 'x': 0, 'y': 0, 'w': 3, 'h': 3, 'p': 'default'},
+        {'widget_id': widget_ids[1], 'x': 3, 'y': 0, 'w': 6, 'h': 5, 'p': 'default'},
+        {'widget_id': widget_ids[2], 'x': 9, 'y': 0, 'w': 3, 'h': 4, 'p': 'default'},
+        {'widget_id': widget_ids[3], 'x': 1, 'y': 5, 'w': 11, 'h': 3, 'p': 'page2'},
+        {'widget_id': widget_ids[4], 'x': 0, 'y': 8, 'w': 6, 'h': 3, 'p': 'page2'},
+        {'widget_id': widget_ids[5], 'x': 6, 'y': 8, 'w': 6, 'h': 3, 'p': 'page2'},
     ]
     r = app_client.put('/api/accounts/{}/dashboards/{}/widgets_positions'.format(account_id, DASHBOARD_SLUG), data=json.dumps(positions), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    print(r.data)
-    assert r.status_code == 204
+    assert r.status_code == 204, r.data
 
     # check new positions and sort order:
     r = app_client.get('/api/accounts/{}/dashboards/{}/widgets'.format(account_id, DASHBOARD_SLUG), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200, r.data
     actual = json.loads(r.data.decode('utf-8'))
-    print(actual)
-    assert r.status_code == 200
     for i in range(6):
         assert actual['list'][i]['id'] == positions[i]['widget_id']
         assert actual['list'][i]['x'] == positions[i]['x']
         assert actual['list'][i]['y'] == positions[i]['y']
         assert actual['list'][i]['w'] == positions[i]['w']
         assert actual['list'][i]['h'] == positions[i]['h']
+        assert actual['list'][i]['p'] == positions[i]['p']
 
 def test_values_put_paths_get(app_client, admin_authorization_header, account_id):
     """

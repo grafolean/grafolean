@@ -382,3 +382,8 @@ def migration_step_18():
 
         c.execute('ALTER TABLE widgets ALTER COLUMN position_y SET NOT NULL;')
         c.execute('ALTER TABLE widgets DROP COLUMN position;')
+
+def migration_step_19():
+    """ Widgets need to remember the dashboard page they are on. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE widgets ADD COLUMN position_p VARCHAR(20) NOT NULL DEFAULT 'default';")

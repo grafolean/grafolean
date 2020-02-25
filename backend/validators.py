@@ -34,13 +34,13 @@ class DashboardSchemaInputs(Inputs):
 class WidgetSchemaInputs(Inputs):
     json = [JsonSchema(schema={
         'type': 'object',
-        'additionalProperties': False,
         'properties': {
             'type': {'type': 'string'},
             'title': {'type': 'string'},
+            'p': {'type': 'string', 'minLength': 1, 'maxLength': 20},
             'content': {'type': 'string'},
-            'position': {'type': 'number'},
         },
+        'additionalProperties': False,
         'required': ['type', 'title', 'content'],
     })]
 
@@ -59,6 +59,7 @@ class WidgetsPositionsSchemaInputs(Inputs):
     #             'y': {'type': 'number'},
     #             'w': {'type': 'number'},
     #             'h': {'type': 'number'},
+    #             'p': {'type': 'string'},
     #         },
     #         'additionalProperties': False,
     #         'required': ['widget_id', 'position'],
@@ -72,6 +73,7 @@ class WidgetsPositionsSchemaInputs(Inputs):
             'y': {'type': 'number'},
             'w': {'type': 'number'},
             'h': {'type': 'number'},
+            'p': {'type': 'string', 'minLength': 1, 'maxLength': 20},
         },
         'additionalProperties': False,
         'required': ['widget_id', 'x', 'y', 'w', 'h'],

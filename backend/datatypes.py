@@ -408,12 +408,13 @@ class Measurement(object):
 
 class Widget(object):
 
-    def __init__(self, dashboard_id, widget_type, title, content, widget_id):
+    def __init__(self, dashboard_id, widget_type, title, content, widget_id, position_p):
         self.dashboard_id = dashboard_id
         self.widget_type = widget_type
         self.title = title
         self.content = content
         self.widget_id = widget_id
+        self.position_p = position_p
 
     @classmethod
     def forge_from_input(cls, account_id, dashboard_slug, flask_request, widget_id=None):
@@ -425,6 +426,7 @@ class Widget(object):
 
         widget_type = data['type']
         title = data['title']
+        position_p = data.get('p', 'default')
         content = data['content']
         # users reference the dashboards by its slug, but we need to know its ID:
         dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
@@ -434,7 +436,7 @@ class Widget(object):
         if widget_id is not None and not Widget._check_exists(widget_id):
             raise ValidationError("Unknown widget id")
 
-        return cls(dashboard_id, widget_type, title, content, widget_id)
+        return cls(dashboard_id, widget_type, title, content, widget_id, position_p)
 
     @staticmethod
     def set_positions(account_id, dashboard_slug, flask_request):
@@ -450,15 +452,16 @@ class Widget(object):
         with db.cursor() as c:
             # Instead of traversing, we update multiple values at once:
             #   http://initd.org/psycopg/docs/extras.html#psycopg2.extras.execute_values
-            widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'],) for pos in widgets_positions]
+            widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'], pos['p']) for pos in widgets_positions]
             psycopg2.extras.execute_values(c, """
                 UPDATE widgets AS w
                 SET
                     position_x = v.position_x,
                     position_y = v.position_y,
                     position_w = v.position_w,
-                    position_h = v.position_h
-                FROM (VALUES %s) AS v(dashboard_id, widget_id, position_x, position_y, position_w, position_h)
+                    position_h = v.position_h,
+                    position_p = v.position_p
+                FROM (VALUES %s) AS v(dashboard_id, widget_id, position_x, position_y, position_w, position_h, position_p)
                 WHERE v.dashboard_id = w.dashboard AND v.widget_id = w.id;
             """, widgets_positions_tuples)
 
@@ -476,18 +479,18 @@ class Widget(object):
         with db.cursor() as c:
             # we will position the new widget below each of the known widgets, which means that we set
             # its position to: x=0, y=max(y + h), w=12, h=8
-            c.execute('SELECT MAX(position_y + position_h) FROM widgets WHERE dashboard = %s;', (self.dashboard_id,))
+            c.execute('SELECT MAX(position_y + position_h) FROM widgets WHERE dashboard = %s and position_p = %s;', (self.dashboard_id, self.position_p,))
             res = c.fetchone()
             position_y = res[0] if res and res[0] else 0
 
-            c.execute("INSERT INTO widgets (dashboard, type, title, position_x, position_y, position_w, position_h, content) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;",
-                      (self.dashboard_id, self.widget_type, self.title, 0, position_y, 12, 10, self.content,))
+            c.execute("INSERT INTO widgets (dashboard, type, title, position_x, position_y, position_w, position_h, position_p, content) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+                      (self.dashboard_id, self.widget_type, self.title, 0, position_y, 12, 10, self.position_p, self.content,))
             widget_id = c.fetchone()[0]
             return widget_id
 
     def update(self):
         with db.cursor() as c:
-            c.execute("UPDATE widgets SET type = %s, title = %s, content = %s  WHERE id = %s and dashboard = %s;", (self.widget_type, self.title, self.content, self.widget_id, self.dashboard_id,))
+            c.execute("UPDATE widgets SET type = %s, title = %s, position_p = %s, content = %s  WHERE id = %s and dashboard = %s;", (self.widget_type, self.title, self.position_p, self.content, self.widget_id, self.dashboard_id,))
             if not c.rowcount:
                 return 0
             return 1
@@ -506,9 +509,9 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
-            c.execute('SELECT id, type, title, position_x, position_y, position_w, position_h, content FROM widgets WHERE dashboard = %s ORDER BY position_y, position_x;', (dashboard_id,))
+            c.execute('SELECT id, type, title, position_x, position_y, position_w, position_h, position_p, content FROM widgets WHERE dashboard = %s ORDER BY position_y, position_x;', (dashboard_id,))
             ret = []
-            for widget_id, widget_type, title, position_x, position_y, position_w, position_h, content in c.fetchall():
+            for widget_id, widget_type, title, position_x, position_y, position_w, position_h, position_p, content in c.fetchall():
                 ret.append({
                     'id': widget_id,
                     'type': widget_type,
@@ -517,6 +520,7 @@ class Widget(object):
                     'y': position_y,
                     'w': position_w,
                     'h': position_h,
+                    'p': position_p,
                     'content': content,
                 })
             return ret
@@ -528,12 +532,12 @@ class Widget(object):
             raise ValidationError("Unknown dashboard")
 
         with db.cursor() as c:
-            c.execute('SELECT type, title, position_x, position_y, position_w, position_h, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
+            c.execute('SELECT type, title, position_x, position_y, position_w, position_h, position_p, content FROM widgets WHERE id = %s and dashboard = %s;', (widget_id, dashboard_id,))
             res = c.fetchone()
             if not res:
                 return None
 
-            widget_type, title, position_x, position_y, position_w, position_h, content = res
+            widget_type, title, position_x, position_y, position_w, position_h, position_p, content = res
             return {
                 'id': widget_id,
                 'type': widget_type,
@@ -542,6 +546,7 @@ class Widget(object):
                 'y': position_y,
                 'w': position_w,
                 'h': position_h,
+                'p': position_p,
                 'content': content,
             }
 
