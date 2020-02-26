@@ -7,13 +7,28 @@ import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 import ChartForm from '../Widgets/GLeanChartWidget/ChartForm/ChartForm';
 import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
 import TopNWidgetForm from '../Widgets/TopNWidget/TopNWidgetForm';
+import NetFlowNavigationWidgetForm from '../Widgets/NetFlowNavigationWidget/NetFlowNavigationWidgetForm';
 
 import './WidgetForm.scss';
 
 const WIDGET_TYPES = [
-  { type: 'chart', icon: 'area-chart', label: 'chart', form: ChartForm },
-  { type: 'lastvalue', icon: 'thermometer-half', label: 'last value', form: LastValueForm },
-  { type: 'topn', icon: 'trophy', label: 'top N', form: TopNWidgetForm },
+  { type: 'chart', icon: 'area-chart', label: 'chart', form: ChartForm, isHeaderWidget: false },
+  {
+    type: 'lastvalue',
+    icon: 'thermometer-half',
+    label: 'last value',
+    form: LastValueForm,
+    isHeaderWidget: false,
+  },
+  { type: 'topn', icon: 'trophy', label: 'top N', form: TopNWidgetForm, isHeaderWidget: false },
+  // widgets that are meant to be on the top, above others:
+  {
+    type: 'netflownavigation',
+    icon: 'wind',
+    label: 'NetFlow navigation',
+    form: NetFlowNavigationWidgetForm,
+    isHeaderWidget: true,
+  },
 ];
 
 class WidgetForm extends React.Component {
@@ -52,14 +67,18 @@ class WidgetForm extends React.Component {
       y: undefined,
       w: undefined,
       h: undefined,
+      p: undefined,
     };
   };
 
   static fixValuesBeforeSubmit = formValues => {
-    return {
+    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === formValues.type);
+    const x = {
       ...formValues,
       content: JSON.stringify(formValues.content),
+      p: selectedWidgetType.isHeaderWidget ? 'header' : formValues.p,
     };
+    return x;
   };
 
   changeWidgetType = widgetType => {
@@ -67,6 +86,7 @@ class WidgetForm extends React.Component {
     // initialize to default values:
     const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === widgetType);
     this.props.setFieldValue('content', selectedWidgetType['form'].DEFAULT_FORM_CONTENT);
+    this.props.setFieldValue('p', this.props.page);
   };
 
   render() {

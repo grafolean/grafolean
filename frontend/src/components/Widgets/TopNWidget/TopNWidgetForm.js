@@ -28,7 +28,7 @@ export default class TopNWidgetForm extends React.Component {
       unit = '',
     } = content;
     return (
-      <div className="last-value-form">
+      <div className="topn-widget-form">
         <div className="field">
           <label>Paths filter:</label>
           <input

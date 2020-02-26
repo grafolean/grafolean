@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import groupBy from 'lodash/groupBy';
 
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
@@ -16,6 +17,7 @@ import WidgetForm from '../WidgetForm/WidgetForm';
 import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
 import TopNWidget from '../Widgets/TopNWidget/TopNWidget';
+import NetFlowNavigationWidget from '../Widgets/NetFlowNavigationWidget/NetFlowNavigationWidget';
 
 import './DashboardView.scss';
 
@@ -23,34 +25,44 @@ const KNOWN_WIDGETS = {
   lastvalue: LastValueWidget,
   topn: TopNWidget,
   chart: GLeanChartWidget,
+  netflownavigation: NetFlowNavigationWidget,
 };
 
 class DashboardView extends React.Component {
   state = {
     sortingEnabled: false,
-    layout: [],
+    layoutPerPage: { default: [] },
     name: null,
     loading: true,
     widgets: [],
+    headerWidgets: [],
+    page: 'default', // dashboard can have multiple pages on which widgets are put
   };
 
   UNIT_Y = 50;
   N_COLS = 12;
 
   handleLayoutChange = l => {
-    this.setState({
-      layout: l,
-    });
+    this.setState(prevState => ({
+      layoutPerPage: {
+        ...prevState.layoutPerPage,
+        [prevState.page]: l,
+      },
+    }));
   };
 
   onDashboardUpdate = json => {
-    const layout = json.widgets.map(w => ({
-      i: '' + w.id,
-      x: w.x,
-      y: w.y,
-      w: w.w,
-      h: w.h,
-    }));
+    const allLayouts = json.widgets
+      .filter(w => w.p !== 'header')
+      .map(w => ({
+        i: '' + w.id,
+        x: w.x,
+        y: w.y,
+        w: w.w,
+        h: w.h,
+        p: w.p,
+      }));
+    const layoutPerPage = groupBy(allLayouts, 'p');
     this.setState({
       name: json.name,
       widgets: json.widgets.map(w => ({
@@ -59,8 +71,24 @@ class DashboardView extends React.Component {
         title: w.title,
         content: JSON.parse(w.content),
       })),
-      layout: layout,
+      headerWidgets: json.widgets.filter(w => w.p === 'header'),
+      layoutPerPage: layoutPerPage,
       loading: false,
+    });
+  };
+
+  setPage = newPage => {
+    this.setState(prevState => {
+      const result = {
+        page: newPage,
+      };
+      if (prevState.layoutPerPage[newPage] === undefined) {
+        result.layoutPerPage = {
+          ...prevState.layoutPerPage,
+          [newPage]: [],
+        };
+      }
+      return result;
     });
   };
 
@@ -98,36 +126,24 @@ class DashboardView extends React.Component {
     }));
   };
 
-  onPositionChange = (oldPosition, newPosition) => {
-    this.setState(prevState => {
-      const { widgets } = prevState;
-      if (newPosition < 0 || newPosition >= widgets.length) {
-        return null;
-      }
-      const widgetsWithout = [...widgets];
-      widgetsWithout.splice(oldPosition, 1);
-      const newWidgets = [
-        ...widgetsWithout.slice(0, newPosition),
-        widgets[oldPosition],
-        ...widgetsWithout.slice(newPosition),
-      ];
-      return { widgets: newWidgets };
-    });
-  };
-
   saveReorderingResult = async () => {
     this.setState(prevState => ({
       savingWidgetPositions: true,
     }));
     try {
-      const { layout } = this.state;
-      const data = layout.map(l => ({
-        widget_id: parseInt(l.i),
-        x: l.x,
-        y: l.y,
-        w: l.w,
-        h: l.h,
-      }));
+      const { layoutPerPage } = this.state;
+      let data = [];
+      for (let page in layoutPerPage) {
+        const dataForPage = layoutPerPage[page].map(l => ({
+          widget_id: parseInt(l.i),
+          x: l.x,
+          y: l.y,
+          w: l.w,
+          h: l.h,
+          p: page,
+        }));
+        data = data.concat(dataForPage);
+      }
       const dashboardSlug = this.props.match.params.slug;
       const url = `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards/${dashboardSlug}/widgets_positions`;
       const response = await fetchAuth(url, {
@@ -169,7 +185,7 @@ class DashboardView extends React.Component {
   };
 
   renderWidget(widget, unitX) {
-    const { layout, sortingEnabled } = this.state;
+    const { layoutPerPage, page, sortingEnabled } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
     if (!KNOWN_WIDGETS[widget.type]) {
@@ -177,7 +193,7 @@ class DashboardView extends React.Component {
     }
 
     const WidgetComponent = KNOWN_WIDGETS[widget.type];
-    const widget_layout = layout.find(l => l.i === '' + widget.id);
+    const widget_layout = layoutPerPage[page].find(l => l.i === '' + widget.id);
     const width = widget_layout.w * unitX - 10;
     const height = widget_layout.h * this.UNIT_Y - 10;
     return (
@@ -191,6 +207,7 @@ class DashboardView extends React.Component {
           title={widget.title}
           content={widget.content}
           additionalButtonsRender={null}
+          setPage={this.setPage}
         />
         {sortingEnabled && (
           <div
@@ -205,9 +222,35 @@ class DashboardView extends React.Component {
     );
   }
 
+  renderHeaderWidget(widget, containerWidth) {
+    const dashboardSlug = this.props.match.params.slug;
+    const WidgetComponent = KNOWN_WIDGETS[widget.type];
+    return (
+      <WidgetComponent
+        key={widget.id}
+        width={containerWidth}
+        height={null}
+        widgetId={widget.id}
+        dashboardSlug={dashboardSlug}
+        title={widget.title}
+        content={widget.content}
+        additionalButtonsRender={null}
+        setPage={this.setPage}
+      />
+    );
+  }
+
   render() {
     const { user } = this.props;
-    const { loading, widgets, sortingEnabled, savingWidgetPositions, layout } = this.state;
+    const {
+      loading,
+      widgets,
+      sortingEnabled,
+      savingWidgetPositions,
+      layoutPerPage,
+      page,
+      headerWidgets,
+    } = this.state;
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
 
@@ -219,8 +262,11 @@ class DashboardView extends React.Component {
     const canAddDashboard = havePermission(dashboardUrl, 'POST', user.permissions);
     const canEditDashboardTitle = havePermission(dashboardUrl, 'PUT', user.permissions);
 
+    const widgetIdsOnThisPage = layoutPerPage[page].map(l => parseInt(l.i));
+    const shownWidgets = widgets.filter(w => widgetIdsOnThisPage.includes(w.id));
+
     return (
-      <div className="frame">
+      <div className="frame dashboard-view">
         <div className="dashboard-info">
           <span>
             Dashboard:{' '}
@@ -259,10 +305,14 @@ class DashboardView extends React.Component {
 
         <PersistentFetcher resource={dashboardUrl} onUpdate={this.onDashboardUpdate} />
 
-        {widgets.length > 0 && (
+        {headerWidgets.length > 0 && (
+          <div className="header-widgets">{headerWidgets.map(widget => this.renderHeaderWidget(widget))}</div>
+        )}
+
+        {shownWidgets.length > 0 && (
           <GridLayout
             className="layout"
-            layout={layout}
+            layout={layoutPerPage[page]}
             cols={this.N_COLS}
             rowHeight={this.UNIT_Y}
             width={containerWidth}
@@ -275,7 +325,7 @@ class DashboardView extends React.Component {
             isResizable={sortingEnabled}
           >
             {/* CAREFUL! Adding a ternary operator here might make GridLayout ignore its layout prop. */}
-            {widgets.map(widget => this.renderWidget(widget, unitX))}
+            {shownWidgets.map(widget => this.renderWidget(widget, unitX))}
           </GridLayout>
         )}
 
@@ -297,6 +347,7 @@ class DashboardView extends React.Component {
                   editing={false}
                   lockWidgetType={false}
                   afterSubmit={this.handleWidgetUpdate}
+                  page={page}
                 />
               </div>
             )}
