@@ -4,7 +4,6 @@ import './loading.scss';
 
 class Loading extends Component {
   static defaultProps = {
-    wh: 64,
     overlayParent: false,
   };
   render() {
