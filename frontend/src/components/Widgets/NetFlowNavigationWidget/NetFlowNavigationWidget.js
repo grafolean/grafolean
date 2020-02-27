@@ -5,8 +5,12 @@ import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 import Loading from '../../Loading';
 
+import './NetFlowNavigationWidget.scss';
+
 class NetFlowNavigationWidget extends React.Component {
   state = {
+    selectedInterval: '15min',
+    selectedDirection: 'ingress',
     entitiesIds: null,
     entities: null,
     selectedEntityId: null,
@@ -14,7 +18,8 @@ class NetFlowNavigationWidget extends React.Component {
     selectedInterface: '',
   };
 
-  PATH_FILTER_ENTITIES = 'netflow.15min.ingress.entity.?';
+  DIRECTIONS = ['ingress', 'egress'];
+  INTERVALS = ['1min', '15min', '1h', '6h', '24h'];
   PATH_FILTER_ENTITIES = 'netflow.15min.ingress.entity.?';
 
   onEntitiesPathsUpdate = json => {
@@ -38,9 +43,19 @@ class NetFlowNavigationWidget extends React.Component {
     const { selectedEntityId } = this.state;
     const filter = `netflow.15min.ingress.entity.${selectedEntityId}.if.?`;
     this.setState({
-      interfaces: json.paths[filter].map(p =>
-        parseInt(MatchingPaths.constructChartSerieName(p.path, filter, '$1')),
-      ),
+      interfaces: json.paths[filter].map(p => MatchingPaths.constructChartSerieName(p.path, filter, '$1')),
+    });
+  };
+
+  onChangeDirection = ev => {
+    this.setState({
+      selectedDirection: ev.target.value,
+    });
+  };
+
+  onChangeSelectedInterval = ev => {
+    this.setState({
+      selectedInterval: ev.target.value,
     });
   };
 
@@ -104,7 +119,7 @@ class NetFlowNavigationWidget extends React.Component {
 
   render() {
     const { widgetId } = this.props;
-    const { entitiesIds, selectedEntityId } = this.state;
+    const { selectedDirection, selectedInterval, entitiesIds, selectedEntityId } = this.state;
     const accountId = this.props.match.params.accountId;
     return (
       <div className="netflow-navigation-widget">
@@ -134,18 +149,33 @@ class NetFlowNavigationWidget extends React.Component {
           </>
         )}
 
-        <div>
-          <input type="radio" name={`${widgetId}-direction`} defaultChecked={true} />
-          INGRESS
-          <input type="radio" name={`${widgetId}-direction`} />
-          EGRESS
+        <div className="radios directions">
+          {this.DIRECTIONS.map(direction => (
+            <div key={direction}>
+              <input
+                type="radio"
+                name={`${widgetId}-direction`}
+                value={direction}
+                checked={direction === selectedDirection}
+                onChange={this.onChangeDirection}
+              />
+              {direction}
+            </div>
+          ))}
         </div>
-        <div>
-          <input type="radio" name={`${widgetId}-interval`} value="1min" defaultChecked={true} /> 1min
-          <input type="radio" name={`${widgetId}-interval`} value="15min" /> 15min
-          <input type="radio" name={`${widgetId}-interval`} value="1h" /> 1h
-          <input type="radio" name={`${widgetId}-interval`} value="6h" /> 6h
-          <input type="radio" name={`${widgetId}-interval`} value="24h" /> 24h
+        <div className="radios intervals">
+          {this.INTERVALS.map(interval => (
+            <div key={interval}>
+              <input
+                type="radio"
+                name={`${widgetId}-interval`}
+                value={interval}
+                checked={interval === selectedInterval}
+                onChange={this.onChangeSelectedInterval}
+              />{' '}
+              {interval}
+            </div>
+          ))}
         </div>
 
         {this.renderEntitiesDropdown()}
