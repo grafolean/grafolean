@@ -11,9 +11,7 @@ class NetFlowNavigationWidget extends React.Component {
   state = {
     entitiesIds: null,
     entities: null,
-    selectedEntityId: null,
     interfaces: null,
-    selectedInterface: '',
   };
 
   DIRECTIONS = ['ingress', 'egress'];
@@ -49,12 +47,14 @@ class NetFlowNavigationWidget extends React.Component {
     const entities = json.list.filter(e => entitiesIds.includes(e.id));
     this.setState({
       entities: entities,
-      selectedEntityId: entities.length > 0 ? entities[0].id : null,
     });
+    this.props.setSharedValue('selectedEntityId', entities.length > 0 ? entities[0].id : null);
   };
 
   onEntitiesInterfacesUpdate = json => {
-    const { selectedEntityId } = this.state;
+    const {
+      sharedValues: { selectedEntityId },
+    } = this.props;
     const filter = `netflow.15min.ingress.entity.${selectedEntityId}.if.?`;
     this.setState({
       interfaces: json.paths[filter].map(p => MatchingPaths.constructChartSerieName(p.path, filter, '$1')),
@@ -70,10 +70,8 @@ class NetFlowNavigationWidget extends React.Component {
   };
 
   onChangeEntity = ev => {
-    this.setState({
-      selectedEntityId: parseInt(ev.target.value),
-      selectedInterface: '',
-    });
+    this.props.setSharedValue('selectedEntityId', parseInt(ev.target.value));
+    this.props.setSharedValue('selectedInterface', null);
   };
 
   onChangeInterface = ev => {
@@ -83,13 +81,14 @@ class NetFlowNavigationWidget extends React.Component {
     } else {
       this.props.setPage('netflow_interface');
     }
-    this.setState({
-      selectedInterface: newInterface,
-    });
+    this.props.setSharedValue('selectedInterface', newInterface);
   };
 
   renderEntitiesDropdown() {
-    const { entities, selectedEntityId } = this.state;
+    const {
+      sharedValues: { selectedEntityId = null },
+    } = this.props;
+    const { entities } = this.state;
     if (entities === null) {
       return <Loading overlayParent={true} />;
     }
@@ -97,7 +96,7 @@ class NetFlowNavigationWidget extends React.Component {
       return <select></select>;
     }
     return (
-      <select value={selectedEntityId} onChange={this.onChangeEntity}>
+      <select value={selectedEntityId === null ? '' : selectedEntityId} onChange={this.onChangeEntity}>
         {entities.map(e => (
           <option key={e.id} value={e.id}>
             {e.name}
@@ -108,7 +107,10 @@ class NetFlowNavigationWidget extends React.Component {
   }
 
   renderInterfacesDropdown() {
-    const { interfaces, selectedInterface } = this.state;
+    const {
+      sharedValues: { selectedInterface = null },
+    } = this.props;
+    const { interfaces } = this.state;
     if (interfaces === null) {
       return <Loading overlayParent={true} />;
     }
@@ -116,7 +118,7 @@ class NetFlowNavigationWidget extends React.Component {
       return <select></select>;
     }
     return (
-      <select value={selectedInterface} onChange={this.onChangeInterface}>
+      <select value={selectedInterface === null ? '' : selectedInterface} onChange={this.onChangeInterface}>
         <option value="">-- all interfaces --</option>
         {interfaces.map(iface => (
           <option key={iface} value={iface}>
@@ -133,9 +135,10 @@ class NetFlowNavigationWidget extends React.Component {
       sharedValues: {
         netflowSelectedDirection = this.DEFAULT_DIRECTION,
         netflowSelectedInterval = this.DEFAULT_INTERVAL,
+        selectedEntityId = null,
       },
     } = this.props;
-    const { entitiesIds, selectedEntityId } = this.state;
+    const { entitiesIds } = this.state;
     const accountId = this.props.match.params.accountId;
     return (
       <div className="netflow-navigation-widget">
