@@ -9,8 +9,6 @@ import './NetFlowNavigationWidget.scss';
 
 class NetFlowNavigationWidget extends React.Component {
   state = {
-    selectedInterval: '15min',
-    selectedDirection: 'ingress',
     entitiesIds: null,
     entities: null,
     selectedEntityId: null,
@@ -21,6 +19,22 @@ class NetFlowNavigationWidget extends React.Component {
   DIRECTIONS = ['ingress', 'egress'];
   INTERVALS = ['1min', '15min', '1h', '6h', '24h'];
   PATH_FILTER_ENTITIES = 'netflow.15min.ingress.entity.?';
+  DEFAULT_DIRECTION = 'ingress';
+  DEFAULT_INTERVAL = '15min';
+
+  componentDidMount() {
+    this.initDefaultSharedValues();
+  }
+
+  initDefaultSharedValues() {
+    const { netflowSelectedDirection, netflowSelectedInterval } = this.props.sharedValues;
+    if (!netflowSelectedDirection) {
+      this.props.setSharedValue('netflowSelectedDirection', this.DEFAULT_DIRECTION);
+    }
+    if (!netflowSelectedInterval) {
+      this.props.setSharedValue('netflowSelectedInterval', this.DEFAULT_INTERVAL);
+    }
+  }
 
   onEntitiesPathsUpdate = json => {
     this.setState({
@@ -48,15 +62,11 @@ class NetFlowNavigationWidget extends React.Component {
   };
 
   onChangeDirection = ev => {
-    this.setState({
-      selectedDirection: ev.target.value,
-    });
+    this.props.setSharedValue('netflowSelectedDirection', ev.target.value);
   };
 
   onChangeSelectedInterval = ev => {
-    this.setState({
-      selectedInterval: ev.target.value,
-    });
+    this.props.setSharedValue('netflowSelectedInterval', ev.target.value);
   };
 
   onChangeEntity = ev => {
@@ -118,8 +128,14 @@ class NetFlowNavigationWidget extends React.Component {
   }
 
   render() {
-    const { widgetId } = this.props;
-    const { selectedDirection, selectedInterval, entitiesIds, selectedEntityId } = this.state;
+    const {
+      widgetId,
+      sharedValues: {
+        netflowSelectedDirection = this.DEFAULT_DIRECTION,
+        netflowSelectedInterval = this.DEFAULT_INTERVAL,
+      },
+    } = this.props;
+    const { entitiesIds, selectedEntityId } = this.state;
     const accountId = this.props.match.params.accountId;
     return (
       <div className="netflow-navigation-widget">
@@ -156,7 +172,7 @@ class NetFlowNavigationWidget extends React.Component {
                 type="radio"
                 name={`${widgetId}-direction`}
                 value={direction}
-                checked={direction === selectedDirection}
+                checked={direction === netflowSelectedDirection}
                 onChange={this.onChangeDirection}
               />
               {direction}
@@ -170,7 +186,7 @@ class NetFlowNavigationWidget extends React.Component {
                 type="radio"
                 name={`${widgetId}-interval`}
                 value={interval}
-                checked={interval === selectedInterval}
+                checked={interval === netflowSelectedInterval}
                 onChange={this.onChangeSelectedInterval}
               />{' '}
               {interval}

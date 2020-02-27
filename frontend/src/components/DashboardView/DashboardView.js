@@ -37,6 +37,7 @@ class DashboardView extends React.Component {
     widgets: [],
     headerWidgets: [],
     page: 'default', // dashboard can have multiple pages on which widgets are put
+    sharedValues: {}, // also, values can be shared among them
   };
 
   UNIT_Y = 50;
@@ -90,6 +91,15 @@ class DashboardView extends React.Component {
       }
       return result;
     });
+  };
+
+  setSharedValue = (key, newValue) => {
+    this.setState(prevState => ({
+      sharedValues: {
+        ...prevState.sharedValues,
+        [key]: newValue,
+      },
+    }));
   };
 
   setDashboardName = async name => {
@@ -185,7 +195,7 @@ class DashboardView extends React.Component {
   };
 
   renderWidget(widget, unitX) {
-    const { layoutPerPage, page, sortingEnabled } = this.state;
+    const { layoutPerPage, page, sortingEnabled, sharedValues } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
     if (!KNOWN_WIDGETS[widget.type]) {
@@ -208,6 +218,8 @@ class DashboardView extends React.Component {
           content={widget.content}
           additionalButtonsRender={null}
           setPage={this.setPage}
+          setSharedValue={this.setSharedValue}
+          sharedValues={sharedValues}
         />
         {sortingEnabled && (
           <div
@@ -224,6 +236,7 @@ class DashboardView extends React.Component {
 
   renderHeaderWidget(widget, containerWidth) {
     const dashboardSlug = this.props.match.params.slug;
+    const { sharedValues } = this.state;
     const WidgetComponent = KNOWN_WIDGETS[widget.type];
     return (
       <WidgetComponent
@@ -236,6 +249,8 @@ class DashboardView extends React.Component {
         content={widget.content}
         additionalButtonsRender={null}
         setPage={this.setPage}
+        setSharedValue={this.setSharedValue}
+        sharedValues={sharedValues}
       />
     );
   }
