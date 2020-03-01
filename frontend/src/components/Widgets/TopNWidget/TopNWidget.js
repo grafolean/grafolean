@@ -4,10 +4,10 @@ import { evaluate } from 'mathjs';
 
 import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
+import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 import When from '../../When';
 
 import './TopNWidget.scss';
-import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 
 class TopNWidget extends React.Component {
   state = {
@@ -60,6 +60,7 @@ class TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal } = this.state;
+    const { sharedValues } = this.props;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -71,11 +72,17 @@ class TopNWidget extends React.Component {
       expression = '$1',
     } = this.props.content;
 
+    const pathFilterSubstituted = MatchingPaths.substituteSharedValues(path_filter, sharedValues);
+    if (pathFilterSubstituted.includes('$')) {
+      // not ready yet
+      return null;
+    }
+
     const calculatedTopList = topList
       ? topList.map(x => ({
           ...x,
           c: evaluate(expression, { $1: x.v }),
-          name: MatchingPaths.constructChartSerieName(x.p, path_filter, renaming),
+          name: MatchingPaths.constructChartSerieName(x.p, pathFilterSubstituted, renaming),
           percent: ((x.v / topListTotal) * 100).toFixed(2),
         }))
       : null;
@@ -86,7 +93,7 @@ class TopNWidget extends React.Component {
         <PersistentFetcher
           resource={`accounts/${accountId}/topvalues`}
           queryParams={{
-            f: path_filter,
+            f: pathFilterSubstituted,
             n: nentries,
           }}
           mqttTopic={`accounts/${accountId}/values/+`}

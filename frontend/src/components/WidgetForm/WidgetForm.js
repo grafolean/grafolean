@@ -96,6 +96,7 @@ class WidgetForm extends React.Component {
       onBlur,
       setFieldValue,
       lockWidgetType,
+      sharedValues,
     } = this.props;
 
     const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === type);
@@ -129,6 +130,7 @@ class WidgetForm extends React.Component {
               onBlur={onBlur}
               setFieldValue={setFieldValue}
               content={content ? content : {}}
+              sharedValues={sharedValues}
             />
           </div>
         )}

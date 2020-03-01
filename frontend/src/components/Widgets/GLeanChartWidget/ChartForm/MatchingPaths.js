@@ -131,6 +131,14 @@ class MatchingPaths extends React.Component {
     return ret;
   }
 
+  static substituteSharedValues(path, sharedValues) {
+    let result = path;
+    for (let k in sharedValues) {
+      result = result.replace(new RegExp(`[$]${k}`, 'g'), String(sharedValues[k]));
+    }
+    return result;
+  }
+
   render() {
     const pathsToDisplay =
       this.state.fetched.paths.length > 0 ? this.state.fetched.paths : this.state.fetched.pathsWithTrailing;

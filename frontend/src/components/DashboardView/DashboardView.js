@@ -94,6 +94,11 @@ class DashboardView extends React.Component {
   };
 
   setSharedValue = (key, newValue) => {
+    // since this method will be used by external widgets, let's be careful about names:
+    if (!/^[a-zA-Z0-9]+$/.test(key)) {
+      console.error('Invalid key for a shared value - only digits and ASCII letters are allowed', key);
+      return;
+    }
     this.setState(prevState => ({
       sharedValues: {
         ...prevState.sharedValues,
@@ -260,11 +265,12 @@ class DashboardView extends React.Component {
     const {
       loading,
       widgets,
+      headerWidgets,
       sortingEnabled,
       savingWidgetPositions,
       layoutPerPage,
       page,
-      headerWidgets,
+      sharedValues,
     } = this.state;
     const dashboardSlug = this.props.match.params.slug;
     const accountId = this.props.match.params.accountId;
@@ -277,7 +283,7 @@ class DashboardView extends React.Component {
     const canAddDashboard = havePermission(dashboardUrl, 'POST', user.permissions);
     const canEditDashboardTitle = havePermission(dashboardUrl, 'PUT', user.permissions);
 
-    const widgetIdsOnThisPage = layoutPerPage[page].map(l => parseInt(l.i));
+    const widgetIdsOnThisPage = layoutPerPage[page] ? layoutPerPage[page].map(l => parseInt(l.i)) : [];
     const shownWidgets = widgets.filter(w => widgetIdsOnThisPage.includes(w.id));
 
     return (
@@ -363,6 +369,7 @@ class DashboardView extends React.Component {
                   lockWidgetType={false}
                   afterSubmit={this.handleWidgetUpdate}
                   page={page}
+                  sharedValues={sharedValues}
                 />
               </div>
             )}

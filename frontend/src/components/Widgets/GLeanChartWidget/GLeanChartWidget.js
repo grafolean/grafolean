@@ -16,7 +16,7 @@ import TimeIntervalSelector from './TimeIntervalSelector';
 
 import './GLeanChartWidget.scss';
 
-class GLeanChartWidget extends React.Component {
+class _GLeanChartWidget extends React.Component {
   state = {
     loading: true,
     drawnChartSeries: [],
@@ -231,4 +231,27 @@ class GLeanChartWidget extends React.Component {
 const mapStoreToProps = store => ({
   accounts: store.accounts,
 });
-export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
+// export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
+const GLeanChartWidget = withRouter(connect(mapStoreToProps)(isWidget(_GLeanChartWidget)));
+
+// there is no need for GLeanChartWidget to concern itself with sharedValues, we take care of substituting them here:
+export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {
+  render() {
+    const { sharedValues, content, ...rest } = this.props;
+    const contentSubstituted = content.map(sg => ({
+      ...sg,
+      path_filter: MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues),
+    }));
+
+    // We want to rerender GLeanChartWidget whenever one of the (applicable) sharedValues changes. The
+    // safest way to achieve this is to construct a key from the path_filter-s:
+    const pathFiltersForKey = contentSubstituted.map(sg => sg.path_filter).join('#');
+
+    const areSharedValuesSubstituted = !pathFiltersForKey.includes('$');
+    if (!areSharedValuesSubstituted) {
+      return <div>...waiting for navigation...</div>;
+    }
+
+    return <GLeanChartWidget key={pathFiltersForKey} {...rest} content={contentSubstituted} />;
+  }
+}

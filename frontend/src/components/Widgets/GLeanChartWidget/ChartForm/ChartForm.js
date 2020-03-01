@@ -68,7 +68,7 @@ export default class ChartForm extends React.Component {
   }
 
   render() {
-    const { content: seriesGroups, onChange, onBlur, setFieldValue } = this.props;
+    const { content: seriesGroups, onChange, onBlur, setFieldValue, sharedValues } = this.props;
     const otherKnownUnits = this.getOtherKnownUnits();
     return (
       <div className="chart-form">
@@ -108,7 +108,11 @@ export default class ChartForm extends React.Component {
                     </div>
                   </div>
 
-                  <MatchingPaths pathFilter={sg.path_filter} pathRenamer={sg.renaming} displayPaths={true} />
+                  <MatchingPaths
+                    pathFilter={MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues)}
+                    pathRenamer={sg.renaming}
+                    displayPaths={true}
+                  />
                 </div>
 
                 <div className="field">

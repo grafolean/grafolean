@@ -7,6 +7,7 @@ import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import When from '../../When';
 
 import './LastValueWidget.scss';
+import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 
 class LastValueWidget extends React.Component {
   state = {
@@ -39,33 +40,51 @@ class LastValueWidget extends React.Component {
   };
 
   onUpdateData = json => {
+    const { sharedValues } = this.props;
     const { path } = this.props.content;
-    this.setState({
-      lastValue: json.paths[path].data[0].v,
-      lastValueTime: json.paths[path].data[0].t,
-      loading: false,
-    });
+    const pathSubstituted = MatchingPaths.substituteSharedValues(path, sharedValues);
+    if (!json.paths[pathSubstituted] || json.paths[pathSubstituted].data.length === 0) {
+      this.setState({
+        lastValue: null,
+        lastValueTime: null,
+        loading: false,
+      });
+    } else {
+      this.setState({
+        lastValue: json.paths[pathSubstituted].data[0].v,
+        lastValueTime: json.paths[pathSubstituted].data[0].t,
+        loading: false,
+      });
+    }
   };
 
   render() {
     const { lastValue, lastValueTime } = this.state;
+    const { sharedValues } = this.props;
     const { path, decimals = 3, unit = '', expression = '$1' } = this.props.content;
+
+    const pathSubstituted = MatchingPaths.substituteSharedValues(path, sharedValues);
+    if (pathSubstituted.includes('$')) {
+      // not ready yet
+      return null;
+    }
+
     const queryParams = {
       a: 'no',
       sort: 'desc',
       limit: 1,
     };
-    const calculatedValue = lastValue ? evaluate(expression, { $1: lastValue }) : null;
+    const calculatedValue = lastValue !== null ? evaluate(expression, { $1: lastValue }) : null;
     return (
-      <div className="last-value">
+      <div className="last-value" key={pathSubstituted}>
         <PersistentFetcher
-          resource={`accounts/${this.props.match.params.accountId}/values/${path}`}
+          resource={`accounts/${this.props.match.params.accountId}/values/${pathSubstituted}`}
           queryParams={queryParams}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
           onError={this.onFetchError}
         />
-        {calculatedValue ? (
+        {calculatedValue !== null ? (
           <>
             <span className="value">{calculatedValue.toFixed(decimals)}</span>
             <span className="unit">{unit} </span>
