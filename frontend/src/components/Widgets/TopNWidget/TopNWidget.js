@@ -9,7 +9,7 @@ import When from '../../When';
 
 import './TopNWidget.scss';
 
-class TopNWidget extends React.Component {
+class _TopNWidget extends React.Component {
   state = {
     loading: true,
     fetchingError: false,
@@ -60,7 +60,6 @@ class TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal } = this.state;
-    const { sharedValues } = this.props;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -72,17 +71,11 @@ class TopNWidget extends React.Component {
       expression = '$1',
     } = this.props.content;
 
-    const pathFilterSubstituted = MatchingPaths.substituteSharedValues(path_filter, sharedValues);
-    if (pathFilterSubstituted.includes('$')) {
-      // not ready yet
-      return null;
-    }
-
     const calculatedTopList = topList
       ? topList.map(x => ({
           ...x,
           c: evaluate(expression, { $1: x.v }),
-          name: MatchingPaths.constructChartSerieName(x.p, pathFilterSubstituted, renaming),
+          name: MatchingPaths.constructChartSerieName(x.p, path_filter, renaming),
           percent: ((x.v / topListTotal) * 100).toFixed(2),
         }))
       : null;
@@ -93,7 +86,7 @@ class TopNWidget extends React.Component {
         <PersistentFetcher
           resource={`accounts/${accountId}/topvalues`}
           queryParams={{
-            f: pathFilterSubstituted,
+            f: path_filter,
             n: nentries,
           }}
           mqttTopic={`accounts/${accountId}/values/+`}
@@ -132,7 +125,28 @@ class TopNWidget extends React.Component {
   }
 }
 
-export default withRouter(isWidget(TopNWidget));
+const TopNWidget = withRouter(isWidget(_TopNWidget));
+
+// We want to rerender the widget whenever one of the (applicable) sharedValues changes. The
+// safest way to achieve this is to construct a key from the path_filter-s:
+export default class TopNWidgetWithSubstitutedSharedValues extends React.Component {
+  render() {
+    const { content, sharedValues, ...rest } = this.props;
+    const contentSubstituted = {
+      ...content,
+      path_filter: MatchingPaths.substituteSharedValues(content.path_filter, sharedValues),
+    };
+
+    const pathFiltersForKey = contentSubstituted.path_filter;
+
+    const areSharedValuesSubstituted = !pathFiltersForKey.includes('$');
+    if (!areSharedValuesSubstituted) {
+      return <div>...waiting for navigation...</div>;
+    }
+
+    return <TopNWidget key={pathFiltersForKey} {...rest} content={contentSubstituted} />;
+  }
+}
 
 class PercentBar extends React.Component {
   render() {
