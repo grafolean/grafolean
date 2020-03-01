@@ -8,6 +8,7 @@ import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 import When from '../../When';
 
 import './TopNWidget.scss';
+import Loading from '../../Loading';
 
 class _TopNWidget extends React.Component {
   state = {
@@ -59,7 +60,7 @@ class _TopNWidget extends React.Component {
   };
 
   render() {
-    const { topList, topListTime, topListTotal } = this.state;
+    const { topList, topListTime, topListTotal, loading } = this.state;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -118,7 +119,7 @@ class _TopNWidget extends React.Component {
             </div>
           </div>
         ) : (
-          <span>/</span>
+          <span>{loading ? <Loading /> : '/'}</span>
         )}
       </div>
     );
