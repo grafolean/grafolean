@@ -5,7 +5,7 @@ import re
 import psycopg2
 import validators
 
-from datatypes import (AccessDeniedError, Account, Aggregation, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
+from datatypes import (AccessDeniedError, Account, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
     Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
 )
 from .common import auth_no_permissions, mqtt_publish_changed

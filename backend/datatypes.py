@@ -114,7 +114,7 @@ class Path(object):
     @staticmethod
     def delete(path_id, account_id):
         with db.cursor() as c:
-            # delete just the path, "ON DELETE CASCADE" takes care of removing values and aggregations:
+            # delete just the path, "ON DELETE CASCADE" takes care of removing values:
             c.execute("DELETE FROM paths WHERE id = %s AND account = %s;", (path_id, account_id,))
             return c.rowcount
 
@@ -238,79 +238,27 @@ class EmailAddress(object):
         return self.v
 
 
-class Aggregation(object):
-    FACTOR = 3
-    MAX_AGGR_LEVEL = 6  # 6 == one point per month
-
-    def __init__(self, level=0):
-        self.level = level
-        self._interval_size = 3600 * (self.FACTOR ** self.level)
-        self._dirty_intervals = defaultdict(set)
-        if Aggregation.MAX_AGGR_LEVEL > level:
-            self._parent_aggr = Aggregation(level + 1)
-        else:
-            self._parent_aggr = None
-
-    def mark_timestamp_as_dirty(self, path_id, ts):
-        self._dirty_intervals[path_id].add(math.floor(float(ts)) // self._interval_size)
-
-    def fix_aggregations(self):
-        try:
-            with db.cursor() as c:
-                for p_id in self._dirty_intervals:
-                    for h in self._dirty_intervals[p_id]:
-                        tsh = h * self._interval_size
-                        tsh_med = tsh + self._interval_size / 2
-                        if self.level == 0:
-                            c.execute("""
-                                INSERT INTO
-                                    aggregations (path, level, tsmed, vmin, vmax, vavg)
-                                    SELECT %s, %s, %s, MIN(value), MAX(value), AVG(value) FROM measurements WHERE path = %s AND ts >= %s AND ts < %s
-                                ON CONFLICT (path, level, tsmed) DO UPDATE SET
-                                    vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                                (p_id, self.level, tsh + 1800, p_id, tsh, tsh + 3600,))
-                        else:
-                            c.execute("""
-                                INSERT INTO
-                                    aggregations (path, level, tsmed, vmin, vmax, vavg)
-                                    SELECT %s, %s, %s, MIN(vmin), MAX(vmax), AVG(vavg) FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s
-                                ON CONFLICT (path, level, tsmed) DO UPDATE SET
-                                    vmin=excluded.vmin, vmax=excluded.vmax, vavg=excluded.vavg""",
-                                (p_id, self.level, tsh_med, p_id, self.level - 1, tsh, tsh + self._interval_size,))
-                        if self._parent_aggr:
-                            self._parent_aggr.mark_timestamp_as_dirty(p_id, tsh_med)
-        finally:
-            if self._parent_aggr:
-                self._parent_aggr.fix_aggregations()
-
-
 class Measurement(object):
-
+    AGGR_FACTOR = 3
+    MAX_AGGR_LEVEL = 6  # 0 == one point per 1h; 1 == 1 point per 3h; ...; 6 == one point per ~month
     MAX_DATAPOINTS_RETURNED = 100000
 
     @classmethod
     def save_values_data_to_db(cls, account_id, put_data, update_on_conflict=True):
 
-        aggr = Aggregation()
-        try:
-            # to use execute_values, we need an iterator which will feed our data:
-            def _get_data(put_data, aggr):
-                for x in put_data:
-                    ts_str = str(Timestamp(x['t']))
-                    path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
-                    # while we are traversing our data, we might as well mark the dirty aggregation blocks:
-                    aggr.mark_timestamp_as_dirty(path.force_id, ts_str)
-                    yield (path.force_id, ts_str, str(MeasuredValue(x['v'])),)
-            data_iterator = _get_data(put_data, aggr)
+        # to use execute_values, we need an iterator which will feed our data:
+        def _get_data(put_data):
+            for x in put_data:
+                path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
+                yield (path.force_id, str(Timestamp(x['t'])), str(MeasuredValue(x['v'])),)
+        data_iterator = _get_data(put_data)
 
-            with db.cursor() as c:
-                # https://stackoverflow.com/a/34529505/593487
-                if update_on_conflict:
-                    psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
-                else:
-                    psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s", data_iterator, "(%s, %s, %s)", page_size=100)
-        finally:
-            aggr.fix_aggregations()
+        with db.cursor() as c:
+            # https://stackoverflow.com/a/34529505/593487
+            if update_on_conflict:
+                psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
+            else:
+                psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s", data_iterator, "(%s, %s, %s)", page_size=100)
 
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
@@ -322,10 +270,10 @@ class Measurement(object):
 
     @classmethod
     def _get_aggr_level(cls, max_points, n_hours):
-        for l in range(-1, Aggregation.MAX_AGGR_LEVEL):
-            if max_points >= n_hours / (3**l):
+        for l in range(-1, cls.MAX_AGGR_LEVEL):
+            if max_points >= n_hours / (cls.AGGR_FACTOR**l):
                 return l
-        return Aggregation.MAX_AGGR_LEVEL
+        return cls.MAX_AGGR_LEVEL
 
     @classmethod
     def fetch_data(cls, account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records):
@@ -344,9 +292,27 @@ class Measurement(object):
                     for ts, value in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
-                    c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
+                    aggr_interval_s = 3600 * (cls.AGGR_FACTOR ** aggr_level)
+                    c.execute(f"""
+                        SELECT
+                            FLOOR(ts / {aggr_interval_s}),
+                            PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY value),
+                            MIN(value),
+                            MAX(value)
+                        FROM
+                            measurements
+                        WHERE
+                            path = %s AND
+                            FLOOR(ts / {aggr_interval_s}) >= %s AND
+                            FLOOR(ts / {aggr_interval_s}) < %s
+                        GROUP BY
+                            FLOOR(ts / {aggr_interval_s})
+                        ORDER BY
+                            FLOOR(ts / {aggr_interval_s}) {sort_order}
+                    """, (path_id, math.floor(float(t_from) / aggr_interval_s), math.floor(float(t_to) / aggr_interval_s)),)
+                    # c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
                     for ts, vavg, vmin, vmax in c.fetchall():
-                        path_data.append({'t': float(ts), 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
+                        path_data.append({'t': float(ts) * aggr_interval_s + aggr_interval_s / 2, 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
                 if len(path_data) > max_records:

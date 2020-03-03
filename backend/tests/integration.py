@@ -296,7 +296,7 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 204
+    assert r.status_code == 204, r.data
 
     r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -528,7 +528,7 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
     t_to = t_from + 1*3600
     url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&a=0'.format(account_id, TEST_PATH, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 200
+    assert r.status_code == 200, r.data
     expected = {
         'paths': {
             TEST_PATH: {
