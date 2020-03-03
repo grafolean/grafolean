@@ -391,11 +391,21 @@ def migration_step_19():
 def migration_step_20():
     """ No need to aggregate values, we use indexes on values instead. """
     with db.cursor() as c:
-        c.execute("DROP TABLE aggregations;")
-        c.execute(f"CREATE INDEX aggregations_path_aggr0_value ON measurements (path, FLOOR(ts / {3600 * (3**0)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr1_value ON measurements (path, FLOOR(ts / {3600 * (3**1)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr2_value ON measurements (path, FLOOR(ts / {3600 * (3**2)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr3_value ON measurements (path, FLOOR(ts / {3600 * (3**3)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr4_value ON measurements (path, FLOOR(ts / {3600 * (3**4)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr5_value ON measurements (path, FLOOR(ts / {3600 * (3**5)}), value);")
-        c.execute(f"CREATE INDEX aggregations_path_aggr6_value ON measurements (path, FLOOR(ts / {3600 * (3**6)}), value);")
+
+        # We try to create indexes, but if we fail, user can create them manually and we need to be able to skip this step entirely:
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr0_value ON measurements (path, FLOOR(ts / 3600), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr1_value ON measurements (path, FLOOR(ts / 10800), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr2_value ON measurements (path, FLOOR(ts / 32400), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr3_value ON measurements (path, FLOOR(ts / 97200), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr4_value ON measurements (path, FLOOR(ts / 291600), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr5_value ON measurements (path, FLOOR(ts / 874800), value);
+        #   CREATE INDEX CONCURRENTLY aggregations_path_aggr6_value ON measurements (path, FLOOR(ts / 2624400), value);
+
+        c.execute("DROP TABLE IF EXISTS aggregations;")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr0_value ON measurements (path, FLOOR(ts / {3600 * (3**0)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr1_value ON measurements (path, FLOOR(ts / {3600 * (3**1)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr2_value ON measurements (path, FLOOR(ts / {3600 * (3**2)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr3_value ON measurements (path, FLOOR(ts / {3600 * (3**3)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr4_value ON measurements (path, FLOOR(ts / {3600 * (3**4)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr5_value ON measurements (path, FLOOR(ts / {3600 * (3**5)}), value);")
+        c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr6_value ON measurements (path, FLOOR(ts / {3600 * (3**6)}), value);")
