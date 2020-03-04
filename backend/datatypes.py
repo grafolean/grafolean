@@ -288,7 +288,7 @@ class Measurement(object):
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
-                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts < %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
+                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
                     for ts, value in c.fetchall():
                         path_data.append({'t': float(ts), 'v': float(value)})
                 else:  # fetch aggregated data
@@ -304,7 +304,7 @@ class Measurement(object):
                         WHERE
                             path = %s AND
                             FLOOR(ts / {aggr_interval_s}) >= %s AND
-                            FLOOR(ts / {aggr_interval_s}) < %s
+                            FLOOR(ts / {aggr_interval_s}) <= %s
                         GROUP BY
                             FLOOR(ts / {aggr_interval_s})
                         ORDER BY

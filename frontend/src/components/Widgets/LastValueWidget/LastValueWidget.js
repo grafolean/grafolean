@@ -61,6 +61,7 @@ class LastValueWidget extends React.Component {
   render() {
     const { lastValue, lastValueTime } = this.state;
     const { sharedValues } = this.props;
+    const { selectedTime = null } = sharedValues;
     const { path, decimals = 3, unit = '', expression = '$1' } = this.props.content;
 
     const pathSubstituted = MatchingPaths.substituteSharedValues(path, sharedValues);
@@ -74,10 +75,14 @@ class LastValueWidget extends React.Component {
       sort: 'desc',
       limit: 1,
     };
+    if (selectedTime !== null) {
+      queryParams['t1'] = selectedTime;
+    }
     const calculatedValue = lastValue !== null ? evaluate(expression, { $1: lastValue }) : null;
     return (
       <div className="last-value" key={pathSubstituted}>
         <PersistentFetcher
+          key={selectedTime === null ? 'now' : `${selectedTime}`}
           resource={`accounts/${this.props.match.params.accountId}/values/${pathSubstituted}`}
           queryParams={queryParams}
           onNotification={this.onNotification}
