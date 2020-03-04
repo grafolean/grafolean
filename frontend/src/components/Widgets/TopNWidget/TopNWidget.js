@@ -61,6 +61,7 @@ class _TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal, loading } = this.state;
+    const { selectedTime = null } = this.props.sharedValues;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -82,14 +83,19 @@ class _TopNWidget extends React.Component {
       : null;
     const totalThroughExpression =
       calc_percent && topList ? evaluate(expression, { $1: topListTotal }) : null;
+    const topValuesQueryParams = {
+      f: path_filter,
+      n: nentries,
+    };
+    if (selectedTime !== null) {
+      topValuesQueryParams['t'] = selectedTime;
+    }
     return (
       <div className="top-n">
         <PersistentFetcher
+          key={selectedTime === null ? 'now' : `${selectedTime}`}
           resource={`accounts/${accountId}/topvalues`}
-          queryParams={{
-            f: path_filter,
-            n: nentries,
-          }}
+          queryParams={topValuesQueryParams}
           mqttTopic={`accounts/${accountId}/values/+`}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
@@ -145,7 +151,14 @@ export default class TopNWidgetWithSubstitutedSharedValues extends React.Compone
       return <div>...waiting for navigation...</div>;
     }
 
-    return <TopNWidget key={pathFiltersForKey} {...rest} content={contentSubstituted} />;
+    return (
+      <TopNWidget
+        key={pathFiltersForKey}
+        {...rest}
+        sharedValues={sharedValues}
+        content={contentSubstituted}
+      />
+    );
   }
 }
 

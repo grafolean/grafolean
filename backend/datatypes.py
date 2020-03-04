@@ -353,7 +353,7 @@ class Measurement(object):
                 topn.append({'p': path, 'v': float(value)})
 
             if not found_ts:
-                return None, []
+                return ts_to, 0, []
 
             # find the sum of all values at that timestamp so we can display percentages:
             c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path ~ %s  AND p.id = m.path AND m.ts = %s", (pf_regex, found_ts,))

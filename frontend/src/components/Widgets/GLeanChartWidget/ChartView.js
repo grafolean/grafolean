@@ -84,6 +84,7 @@ export default class ChartView extends React.Component {
       closestPoint: newClosest,
       overrideClosestPoint: newClosest,
     });
+    this.props.setSharedValue('selectedTime', newClosest === null ? null : newClosest.point.t);
   };
 
   handleMouseMove = ev => {

@@ -199,6 +199,7 @@ class _GLeanChartWidget extends React.Component {
                 yAxisWidth={yAxisWidth}
                 registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
                 registerClickHandler={this.registerRePinchyClickHandler}
+                setSharedValue={this.props.setSharedValue}
               />
               <div style={legendPositionStyle}>
                 <Legend
