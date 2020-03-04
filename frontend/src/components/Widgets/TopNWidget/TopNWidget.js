@@ -1,6 +1,7 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { evaluate } from 'mathjs';
+import moment from 'moment';
 
 import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
@@ -103,6 +104,9 @@ class _TopNWidget extends React.Component {
         />
         {calculatedTopList ? (
           <div>
+            <div className="time">
+              {moment.utc(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (<When t={topListTime} />)
+            </div>
             {calc_percent && (
               <div className="total">
                 Total: {totalThroughExpression.toFixed(decimals)} {unit}
@@ -119,9 +123,6 @@ class _TopNWidget extends React.Component {
                   {calc_percent && <PercentBar percent={x.percent} />}
                 </div>
               ))}
-            </div>
-            <div className="time">
-              <When t={topListTime} />
             </div>
           </div>
         ) : (
