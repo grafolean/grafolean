@@ -110,6 +110,9 @@ export default class ChartView extends React.Component {
 
     // interval:
     const diffValue = maxYValue - minYValue;
+    if (diffValue === 0) {
+      return [0, 1];
+    }
     const power10 = Math.floor(Math.log10(diffValue)) - 1;
     const normalizedDiff = Math.floor(diffValue / Math.pow(10, power10));
     let normalizedInterval;
