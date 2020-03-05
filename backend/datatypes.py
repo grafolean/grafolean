@@ -336,10 +336,12 @@ class Measurement(object):
                 SELECT m.ts, p.path, m.value
                 FROM paths p, measurements m
                 WHERE
-                    p.path ~ %s  AND
+                    p.path ~ %s AND
                     p.id = m.path AND
-                    m.ts <= %s
-                ORDER BY m.ts desc, m.value DESC
+                    m.ts = (
+                        SELECT max(m2.ts) FROM measurements m2 WHERE m2.path = p.id AND m2.ts <= %s
+                    )
+                ORDER BY m.value DESC
                 LIMIT %s
             """, (pf_regex, float(ts_to), max_results))
 
@@ -348,8 +350,6 @@ class Measurement(object):
             for ts, path, value in c.fetchall():
                 if found_ts is None:
                     found_ts = ts
-                elif found_ts != ts:
-                    break  # only use those records which have the same timestamp as the first one
                 topn.append({'p': path, 'v': float(value)})
 
             if not found_ts:

@@ -409,3 +409,9 @@ def migration_step_20():
         c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr4_value ON measurements (path, FLOOR(ts / {3600 * (3**4)}), value);")
         c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr5_value ON measurements (path, FLOOR(ts / {3600 * (3**5)}), value);")
         c.execute(f"CREATE INDEX CONCURRENTLY IF NOT EXISTS aggregations_path_aggr6_value ON measurements (path, FLOOR(ts / {3600 * (3**6)}), value);")
+
+def migration_step_21():
+    """ Index for regex searching on paths. """
+    with db.cursor() as c:
+        c.execute("CREATE EXTENSION IF NOT EXISTS PG_TRGM;")
+        c.execute("CREATE INDEX IF NOT EXISTS paths_path_idx ON paths USING GIN (path GIN_TRGM_OPS);")
