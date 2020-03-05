@@ -3,14 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "enzyme": "^3.3.0",
-    "enzyme-adapter-react-16": "^1.1.1",
     "formik": "^1.5.8",
     "lodash": "^4.17.15",
     "mathjs": "^6.0.0",
     "moment": "^2.19.3",
-    "node-sass": "^4.9.3",
-    "prettier": "^1.19.1",
     "qs": "^6.5.1",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
@@ -50,12 +46,16 @@
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.7.2",
     "@storybook/react": "^5.0.0",
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.2",
     "eslint-config-prettier": "^3.3.0",
     "eslint-config-react-app": "^3.0.6",
     "eslint-plugin-flowtype": "^3.2.0",
     "eslint-plugin-import": "^2.14.0",
     "eslint-plugin-jsx-a11y": "^6.1.2",
     "eslint-plugin-prettier": "^3.0.1",
-    "eslint-plugin-react": "^7.12.0"
+    "eslint-plugin-react": "^7.12.0",
+    "node-sass": "^4.13.1",
+    "prettier": "^1.19.1"
   }
 }
