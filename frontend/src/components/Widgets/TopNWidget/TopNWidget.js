@@ -43,6 +43,12 @@ class _TopNWidget extends React.Component {
     return this.pathFilterMatchesPath(path_filter, path);
   };
 
+  onFetchStart = () => {
+    this.setState({
+      loading: true,
+    });
+  };
+
   onFetchError = errorMsg => {
     console.error(errorMsg);
     this.setState({
@@ -98,11 +104,12 @@ class _TopNWidget extends React.Component {
           resource={`accounts/${accountId}/topvalues`}
           queryParams={topValuesQueryParams}
           mqttTopic={`accounts/${accountId}/values/+`}
+          onFetchStart={this.onFetchStart}
           onNotification={this.onNotification}
           onUpdate={this.onUpdateData}
           onError={this.onFetchError}
         />
-        {calculatedTopList ? (
+        {calculatedTopList && (
           <div>
             <div className="time">
               {moment.utc(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (<When t={topListTime} />)
@@ -125,8 +132,11 @@ class _TopNWidget extends React.Component {
               ))}
             </div>
           </div>
-        ) : (
-          <span>{loading ? <Loading /> : '/'}</span>
+        )}
+        {loading && (
+          <div className="loading">
+            <Loading />
+          </div>
         )}
       </div>
     );

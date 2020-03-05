@@ -43,6 +43,7 @@ class MQTTFetcher {
     onFetchCallback,
     onErrorCallback,
     onNotification,
+    onFetchStart,
     mqttTopicOverride = null,
     fetchOptions = {},
   ) => {
@@ -55,6 +56,7 @@ class MQTTFetcher {
       onFetchCallback: onFetchCallback,
       onErrorCallback: onErrorCallback, // (errMsg, isTerminalError) => {}
       onNotification: onNotification,
+      onFetchStart: onFetchStart,
       mqttTopicOverride: mqttTopicOverride,
       abortController: null,
       // When we want do debounce HTTP calls (for example if we receive many MQTT messages because many values
@@ -157,6 +159,14 @@ class MQTTFetcher {
       : '';
     const url = `${ROOT_URL}/${this.listeners[listenerId].topic}${paramsString}`;
     this.listeners[listenerId].abortController = new window.AbortController();
+    if (this.listeners[listenerId].onFetchStart) {
+      this.listeners[listenerId].onFetchStart();
+    }
+
+    // Uncomment to simulate slow fetching:
+    // setTimeout(() => {
+    //   if (!this.listeners[listenerId]) return;
+
     fetchAuth(url, {
       ...this.listeners[listenerId].fetchOptions,
       signal: this.listeners[listenerId].abortController.signal,
@@ -183,6 +193,8 @@ class MQTTFetcher {
           }
         }
       });
+
+    // }, 2000);
   };
 
   _mqttSubscribeToTopic = listenerId => {

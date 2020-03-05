@@ -4,6 +4,17 @@
     color: #fafafa;
   }
 
+  .loading {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    margin-left: -50px;
+    opacity: 0.4;
+    .loading-component .fa {
+      font-size: 48px;
+    }
+  }
+
   .label {
     font-size: 15px;
   }
