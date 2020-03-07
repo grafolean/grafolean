@@ -67,7 +67,6 @@ class WidgetForm extends React.Component {
       y: undefined,
       w: undefined,
       h: undefined,
-      p: undefined,
     };
   };
 
