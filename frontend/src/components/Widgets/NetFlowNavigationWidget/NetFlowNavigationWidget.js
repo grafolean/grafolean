@@ -16,7 +16,7 @@ class NetFlowNavigationWidget extends React.Component {
 
   DIRECTIONS = ['ingress', 'egress'];
   INTERVALS = ['1min', '15min', '1h', '4h', '24h'];
-  PATH_FILTER_ENTITIES = 'netflow.15min.ingress.entity.?';
+  PATH_FILTER_ENTITIES = 'netflow.1min.ingress.entity.?';
   DEFAULT_DIRECTION = 'ingress';
   DEFAULT_INTERVAL = '1min';
 
