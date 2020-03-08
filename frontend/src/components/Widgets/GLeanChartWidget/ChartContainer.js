@@ -15,6 +15,7 @@ export class ChartContainer extends React.Component {
     errorMsg: null,
     yAxesProperties: {},
     derivedFetchedIntervalsData: [], // optimization for faster rendering - derived from fetchedPathsValues
+    fetchingPerFetcher: {},
   };
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
@@ -251,20 +252,37 @@ export class ChartContainer extends React.Component {
     if (!allChartSeries.find(cs => cs.path === path)) {
       return false; // unknown path, ignore
     }
-    this.setState({ fetching: true });
     return true;
   };
 
-  onFetchError = errorMsg => {
-    this.setState({
-      fetching: false,
+  onFetchStart = fetcherKey => {
+    this.setState(prevState => ({
+      // since we use multiple PersistentFetchers, we need to follow multiple states to display a loading indicator:
+      fetchingPerFetcher: {
+        ...prevState.fetchingPerFetcher,
+        [fetcherKey]: true,
+      },
+    }));
+  };
+
+  onFetchError = (errorMsg, fetcherKey) => {
+    this.setState(prevState => ({
+      fetchingPerFetcher: {
+        ...prevState.fetchingPerFetcher,
+        [fetcherKey]: false,
+      },
       errorMsg: errorMsg,
-    });
+    }));
     console.error(errorMsg);
   };
 
-  onUpdateData = (json, listenerInfo) => {
-    this.setState({ fetching: false });
+  onUpdateData = (json, listenerInfo, fetcherKey) => {
+    this.setState(prevState => ({
+      fetchingPerFetcher: {
+        ...prevState.fetchingPerFetcher,
+        [fetcherKey]: false,
+      },
+    }));
     const queryParams = JSON.parse(listenerInfo.fetchOptions.body);
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs === queryParams.t0 && fi.toTs === queryParams.t1);
@@ -331,10 +349,11 @@ export class ChartContainer extends React.Component {
 
   render() {
     const { allChartSeries } = this.props;
-    const { aggrLevel } = this.state;
+    const { aggrLevel, fetchingPerFetcher } = this.state;
     const { accountId } = this.props.match.params;
     const allPaths = allChartSeries.map(cs => cs.path);
     const fetchIntervals = this.getFetchIntervals();
+    const fetching = Object.values(fetchingPerFetcher).some(x => x);
     return (
       <>
         {allPaths.length > 0 &&
@@ -355,14 +374,17 @@ export class ChartContainer extends React.Component {
                   a: aggrLevel < 0 ? 'no' : aggrLevel,
                 }),
               }}
+              onFetchStart={() => this.onFetchStart(`${aggrLevel}-${fi.fromTs}`)}
               onNotification={this.onNotification}
-              onUpdate={this.onUpdateData}
-              onError={this.onFetchError}
+              onUpdate={(json, listenerInfo) =>
+                this.onUpdateData(json, listenerInfo, `${aggrLevel}-${fi.fromTs}`)
+              }
+              onError={errMsg => this.onFetchError(errMsg, `${aggrLevel}-${fi.fromTs}`)}
             />
           ))}
         <ChartView
           {...this.props}
-          fetching={this.state.fetching}
+          fetching={fetching}
           fetchedIntervalsData={this.state.derivedFetchedIntervalsData}
           errorMsg={this.state.errorMsg}
           isAggr={this.state.aggrLevel >= 0}
