@@ -192,6 +192,7 @@ class EntitySchemaInputs(Inputs):
         'properties': {
             'name': {'type': 'string'},
             'entity_type': {'type': 'string'},
+            'parent': {'type': ['number', 'null']},
             'details': {'type': 'object'},
             'protocols': {
                 'type': 'object',

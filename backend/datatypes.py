@@ -1193,9 +1193,10 @@ class PersonCredentials(object):
 
 
 class Entity(object):
-    def __init__(self, name, entity_type, details, account_id, protocols, force_id=None):
+    def __init__(self, name, entity_type, parent, details, account_id, protocols, force_id=None):
         self.name = name
         self.entity_type = entity_type
+        self.parent = parent
         self.details = json.dumps(details)
         self.account_id = account_id
         self.protocols = protocols
@@ -1209,10 +1210,11 @@ class Entity(object):
         data = flask_request.get_json()
         name = data['name']
         entity_type = data['entity_type']
+        parent = data.get('parent', None)
         details = data['details']
         protocols = data.get('protocols', {})
         Entity.validate_protocols(protocols, account_id)
-        return cls(name, entity_type, details, account_id, protocols, force_id=force_id)
+        return cls(name, entity_type, parent, details, account_id, protocols, force_id=force_id)
 
     @staticmethod
     def validate_protocols(protocols, account_id):
@@ -1254,8 +1256,8 @@ class Entity(object):
     def get_list(account_id):
         with db.cursor() as c, db.cursor() as c2, db.cursor() as c3:
             ret = []
-            c.execute('SELECT id, name, entity_type, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
-            for entity_id, name, entity_type, details in c:
+            c.execute('SELECT id, name, entity_type, parent, details FROM entities WHERE account = %s ORDER BY id ASC;', (account_id,))
+            for entity_id, name, entity_type, parent, details in c:
 
                 # get protocols and sensors too: (when we are accessing /entities/, we will follow up with separate entity details requests anyway)
                 protocols = {}
@@ -1282,6 +1284,7 @@ class Entity(object):
                     'id': entity_id,
                     'name': name,
                     'entity_type': entity_type,
+                    'parent': parent,
                     'details': details,
                     'protocols': protocols,
                 })
@@ -1289,7 +1292,7 @@ class Entity(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO entities (account, name, entity_type, details) VALUES (%s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.details,))
+            c.execute("INSERT INTO entities (account, name, entity_type, parent, details) VALUES (%s, %s, %s, %s, %s) RETURNING id;", (self.account_id, self.name, self.entity_type, self.parent, self.details,))
             entity_id, = c.fetchone()
 
             Entity.set_protocols(c, entity_id, self.protocols, clear_existing=False)
@@ -1315,11 +1318,11 @@ class Entity(object):
     @staticmethod
     def get(entity_id, account_id):
         with db.cursor() as c, db.cursor() as c2:
-            c.execute('SELECT name, entity_type, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
+            c.execute('SELECT name, entity_type, parent, details FROM entities WHERE id = %s AND account = %s;', (entity_id, account_id))
             res = c.fetchone()
             if not res:
                 return None
-            name, entity_type, details = res
+            name, entity_type, parent, details = res
 
             protocols = {}
             c.execute('SELECT c.id, c.protocol FROM entities_credentials ec, credentials c WHERE ec.entity = %s AND ec.credential = c.id AND c.account = %s;', (entity_id, account_id))
@@ -1345,6 +1348,7 @@ class Entity(object):
             'id': int(entity_id),
             'name': name,
             'entity_type': entity_type,
+            'parent': parent,
             'details': details,
             'protocols': protocols,
             #   'protocols': {

@@ -1541,6 +1541,7 @@ def test_accounts_name_not_unique(account_id_factory):
         Make sure you can create two accounts with the same name
     """
     acc1, acc2 = account_id_factory('My account', 'My account')
+    assert acc1 != acc2
 
 def test_account_bots(app_client, bot_id, admin_authorization_header, person_authorization_header, person_id, account_id):
     """
@@ -1682,6 +1683,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
     data = {
         'name': ENTITY_NAME1,
         'entity_type': 'device',
+        'parent': None,
         'details': ENTITY_DETAILS1,
         'protocols': ENTITY_PROTOCOLS1,
     }
@@ -1698,6 +1700,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
                 'id': entity_id,
                 'name': ENTITY_NAME1,
                 'entity_type': 'device',
+                'parent': None,
                 'details': ENTITY_DETAILS1,
                 'protocols': ENTITY_PROTOCOLS1,
             },
@@ -1713,6 +1716,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
         'id': entity_id,
         'name': ENTITY_NAME1,
         'entity_type': 'device',
+        'parent': None,
         'details': ENTITY_DETAILS1,
         'protocols': ENTITY_PROTOCOLS1,
     }
@@ -1723,6 +1727,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
     data = {
         'name': ENTITY_NAME2,
         'entity_type': 'teapot',
+        'parent': None,
         'details': ENTITY_DETAILS2,
         'protocols': {},
     }
@@ -1736,6 +1741,7 @@ def test_account_entities(app_client, admin_authorization_header, account_id, ac
         'id': entity_id,
         'name': ENTITY_NAME2,  # the name has changed
         'entity_type': 'teapot',
+        'parent': None,
         'details': ENTITY_DETAILS2,
         'protocols': {},
     }

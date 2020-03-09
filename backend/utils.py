@@ -415,3 +415,8 @@ def migration_step_21():
     with db.cursor() as c:
         c.execute("CREATE EXTENSION IF NOT EXISTS PG_TRGM;")
         c.execute("CREATE INDEX IF NOT EXISTS paths_path_idx ON paths USING GIN (path GIN_TRGM_OPS);")
+
+def migration_step_22():
+    """ Allow entities to have parent-child relations (device -> interfaces). """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE entities ADD COLUMN parent INTEGER DEFAULT NULL REFERENCES entities(id) ON DELETE CASCADE")
