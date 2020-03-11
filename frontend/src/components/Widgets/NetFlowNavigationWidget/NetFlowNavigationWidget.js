@@ -160,7 +160,7 @@ class NetFlowNavigationWidget extends React.Component {
               <PersistentFetcher
                 resource={`accounts/${accountId}/paths`}
                 queryParams={{
-                  filter: `netflow.15min.ingress.entity.${selectedEntityId}.if.?`,
+                  filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
                   limit: 101,
                   failover_trailing: false,
                 }}
