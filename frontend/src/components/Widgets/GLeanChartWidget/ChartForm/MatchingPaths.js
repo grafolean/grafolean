@@ -211,6 +211,7 @@ class MatchingPaths extends React.Component {
                       path,
                       this.state.fetched.pathFilter,
                       this.props.pathRenamer,
+                      this.props.accountEntities,
                     )}
                   </div>
                 )}
@@ -225,5 +226,6 @@ class MatchingPaths extends React.Component {
 
 const mapStoreToProps = store => ({
   accounts: store.accounts,
+  accountEntities: store.accountEntities,
 });
 export default withRouter(connect(mapStoreToProps)(MatchingPaths));

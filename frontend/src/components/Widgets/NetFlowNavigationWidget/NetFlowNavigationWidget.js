@@ -37,7 +37,7 @@ class NetFlowNavigationWidget extends React.Component {
   onEntitiesPathsUpdate = json => {
     this.setState({
       entitiesIds: json.paths[this.PATH_FILTER_ENTITIES].map(p =>
-        parseInt(MatchingPaths.constructChartSerieName(p.path, this.PATH_FILTER_ENTITIES, '$1')),
+        parseInt(MatchingPaths.constructChartSerieName(p.path, this.PATH_FILTER_ENTITIES, '$1', [])),
       ),
     });
   };
@@ -57,7 +57,9 @@ class NetFlowNavigationWidget extends React.Component {
     } = this.props;
     const filter = `netflow.1min.ingress.entity.${selectedEntityId}.if.?`;
     this.setState({
-      interfaces: json.paths[filter].map(p => MatchingPaths.constructChartSerieName(p.path, filter, '$1')),
+      interfaces: json.paths[filter].map(p =>
+        MatchingPaths.constructChartSerieName(p.path, filter, '$1', []),
+      ),
     });
   };
 

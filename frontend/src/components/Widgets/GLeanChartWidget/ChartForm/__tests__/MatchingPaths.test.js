@@ -97,7 +97,7 @@ test('MatchingPaths constructChartSerieName', () => {
 
   for (let param of params) {
     const { path, partialPathFilter, pathRenamer, expectedResult } = param;
-    expect(MatchingPaths.constructChartSerieName(path, partialPathFilter, pathRenamer)).toEqual(
+    expect(MatchingPaths.constructChartSerieName(path, partialPathFilter, pathRenamer, [])).toEqual(
       expectedResult,
     );
   }
