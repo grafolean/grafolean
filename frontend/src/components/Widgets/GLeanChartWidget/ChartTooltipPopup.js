@@ -2,6 +2,7 @@ import React from 'react';
 import moment from 'moment';
 
 import TooltipPopup from '../../TooltipPopup';
+import LabelFromPath from '../../LabelFromPath/LabelFromPath';
 
 export default class ChartTooltipPopup extends React.PureComponent {
   render() {
@@ -16,7 +17,9 @@ export default class ChartTooltipPopup extends React.PureComponent {
       >
         <TooltipPopup zIndex={onTop ? 999999 : 1111}>
           <div>
-            <p>{closest.cs.serieName}</p>
+            <p>
+              <LabelFromPath {...closest.cs.serieNameParts} />
+            </p>
             <p>{closest.cs.path}</p>
             {closest.point.minv ? (
               <p>

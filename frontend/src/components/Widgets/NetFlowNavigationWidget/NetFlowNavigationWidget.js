@@ -55,7 +55,7 @@ class NetFlowNavigationWidget extends React.Component {
     const {
       sharedValues: { selectedEntityId },
     } = this.props;
-    const filter = `netflow.15min.ingress.entity.${selectedEntityId}.if.?`;
+    const filter = `netflow.1min.ingress.entity.${selectedEntityId}.if.?`;
     this.setState({
       interfaces: json.paths[filter].map(p => MatchingPaths.constructChartSerieName(p.path, filter, '$1')),
     });

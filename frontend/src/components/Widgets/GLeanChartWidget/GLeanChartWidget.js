@@ -60,7 +60,11 @@ class _GLeanChartWidget extends React.Component {
             json.paths[c.path_filter].map(p => ({
               chartSerieId: `${seriesGroupIndex}-${p.id}`,
               path: p.path,
-              serieName: MatchingPaths.constructChartSerieName(p.path, c.path_filter, c.renaming),
+              serieNameParts: {
+                path: p.path,
+                filter: c.path_filter,
+                renaming: c.renaming,
+              },
               expression: c.expression,
               unit: c.unit,
             })),

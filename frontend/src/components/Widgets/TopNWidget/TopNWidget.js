@@ -10,6 +10,7 @@ import When from '../../When';
 
 import './TopNWidget.scss';
 import Loading from '../../Loading';
+import LabelFromPath from '../../LabelFromPath/LabelFromPath';
 
 class _TopNWidget extends React.Component {
   state = {
@@ -84,7 +85,6 @@ class _TopNWidget extends React.Component {
       ? topList.map(x => ({
           ...x,
           c: evaluate(expression, { $1: x.v }),
-          name: MatchingPaths.constructChartSerieName(x.p, path_filter, renaming),
           percent: ((x.v / topListTotal) * 100).toFixed(2),
         }))
       : null;
@@ -123,7 +123,9 @@ class _TopNWidget extends React.Component {
               {calculatedTopList.map(x => (
                 <div className="entry" key={x.p}>
                   <div>
-                    <span className="label">{x.name}:</span>
+                    <span className="label">
+                      <LabelFromPath path={x.p} filter={path_filter} renaming={renaming} />:
+                    </span>
                     <span className="value">{x.c.toFixed(decimals)}</span>
                     <span className="unit">{unit} </span>
                   </div>

@@ -56,6 +56,7 @@ class EntityFormRender extends React.Component {
           >
             <option value="">-- please select entity type --</option>
             <option value="device">Device</option>
+            <option value="interface">Interface</option>
           </select>
         </div>
         {entity_type && (

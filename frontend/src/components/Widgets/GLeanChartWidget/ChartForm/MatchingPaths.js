@@ -118,7 +118,7 @@ class MatchingPaths extends React.Component {
   }
 
   // given a path, path filter and path renamer, construct a name:
-  static constructChartSerieName(path, partialPathFilter, pathRenamer) {
+  static constructChartSerieName(path, partialPathFilter, pathRenamer, accountEntities) {
     if (!pathRenamer) {
       return path;
     }
@@ -127,6 +127,54 @@ class MatchingPaths extends React.Component {
     let ret = pathRenamer;
     for (let i = 0; i < wildcardParts.length; i++) {
       ret = ret.replace(new RegExp(`[$]${i + 1}`, 'g'), wildcardParts[i].part.replace(/[%]2e/g, '.'));
+    }
+    if (!ret.includes('$')) {
+      return ret;
+    }
+
+    // Sometimes, we wish to replace parts of the result with some other information. Example of this is replacing the SNMP indexes
+    // of network interfaces with their names, as gathered from entities (interfaces are entities with entity_type == 'interface' and
+    // parent == device entity id).
+    // This is not the cleanest solution, we might need to re-implement it later a bit more nicely when we know more about other
+    // possible use-cases.
+    const PATH_RENAMING_MODIFIERS = [
+      {
+        regex: /[$][{]interfaceName[(]([0-9]+)[,][ ]*([^)])[)][}]/g,
+        replacementFunc: (match, parentEntityId, interfaceSNMPIndex) => {
+          const parentEntityIdInt = parseInt(parentEntityId);
+          if (!accountEntities) {
+            return `interface ${interfaceSNMPIndex}`;
+          }
+          const ifEntity = accountEntities.find(
+            e =>
+              e.parent === parentEntityIdInt &&
+              e.entity_type === 'interface' &&
+              e.details.snmp_index === interfaceSNMPIndex,
+          );
+          if (!ifEntity) {
+            return `interface ${interfaceSNMPIndex}`;
+          }
+          return ifEntity.name;
+        },
+      },
+      {
+        regex: /[$][{]deviceName[(]([0-9]+)[)][}]/g,
+        replacementFunc: (match, deviceEntityId) => {
+          const deviceEntityIdInt = parseInt(deviceEntityId);
+          if (!accountEntities) {
+            return `device ${deviceEntityId}`;
+          }
+          const entity = accountEntities.find(e => e.id === deviceEntityIdInt && e.entity_type === 'device');
+          if (!entity) {
+            return `device ${deviceEntityId}`;
+          }
+          return entity.name;
+        },
+      },
+    ];
+
+    for (let i = 0; i < PATH_RENAMING_MODIFIERS.length; i++) {
+      ret = ret.replace(PATH_RENAMING_MODIFIERS[i].regex, PATH_RENAMING_MODIFIERS[i].replacementFunc);
     }
     return ret;
   }
