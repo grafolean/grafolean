@@ -30,6 +30,7 @@ import Dashboards from '../Dashboards/Dashboards';
 import Bot from '../Bot/Bot';
 import ChangePassword from '../ChangePassword/ChangePassword';
 import SystemwideBots from '../SystemwideBots/SystemwideBots';
+import AccountEntitiesUpdater from '../AccountEntitiesUpdater/AccountEntitiesUpdater';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -50,6 +51,8 @@ class WrappedRoute extends React.Component {
                 .trim()
                 .replace(/[ ]/g, '-')}`}
           >
+            {/* we need information about all of the entities available live, all the time, so that we can show nice entity names dynamically: */}
+            <AccountEntitiesUpdater />
             <Component {...props} width={contentWidth} />
           </div>
         )}

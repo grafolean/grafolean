@@ -96,6 +96,14 @@ export function setFullscreenDibs(isFullscreenReserved) {
   };
 }
 
+export const SET_ACCOUNT_ENTITIES = 'SET_ACCOUNT_ENTITIES';
+export function setAccountEntities(entitiesList) {
+  return {
+    type: SET_ACCOUNT_ENTITIES,
+    entitiesList: entitiesList,
+  };
+}
+
 // Only network errors and similar are failures for fetch(), so we must
 // use this function to check for response status codes too:
 //   " The Promise returned from fetch() won’t reject on HTTP error status even

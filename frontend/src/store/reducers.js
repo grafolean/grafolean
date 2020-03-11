@@ -14,6 +14,7 @@ import {
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
   SET_COLOR_SCHEME,
   SET_FULLSCREEN_DIBS,
+  SET_ACCOUNT_ENTITIES,
 } from './actions';
 
 function notifications(state = [], action) {
@@ -104,6 +105,15 @@ function fullscreenDibs(state = false, action) {
   }
 }
 
+function accountEntities(state = [], action) {
+  switch (action.type) {
+    case SET_ACCOUNT_ENTITIES:
+      return action.entitiesList;
+    default:
+      return state;
+  }
+}
+
 const grafoleanApp = combineReducers({
   user: user,
   backendStatus: backendStatus,
@@ -111,6 +121,7 @@ const grafoleanApp = combineReducers({
   preferences: preferences,
   notifications: notifications,
   fullscreenDibs: fullscreenDibs,
+  accountEntities: accountEntities,
 });
 
 export default grafoleanApp;
