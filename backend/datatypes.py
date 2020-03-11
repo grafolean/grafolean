@@ -1054,8 +1054,8 @@ class Bot(object):
             bot_id, bot_token = bot.insert()
             with open(BOT_TOKEN_FILENAME, 'wt') as f:
                 f.write(bot_token)
-            # assign permissions for this bot to work with any account:
-            permission = Permission(bot_id, 'accounts', ['GET', 'POST', 'PUT'])
+            # assign permissions for this bot to work with any account, any method:
+            permission = Permission(bot_id, 'accounts', None)
             permission.insert(None, skip_checks=True)
 
 
