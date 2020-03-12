@@ -139,7 +139,7 @@ class MatchingPaths extends React.Component {
     // possible use-cases.
     const PATH_RENAMING_MODIFIERS = [
       {
-        regex: /[$][{]interfaceName[(]([0-9]+)[,][ ]*([^)])[)][}]/g,
+        regex: /[$][{]interfaceName[(]([0-9]+)[,][ ]*([^)]+)[)][}]/g,
         replacementFunc: (match, parentEntityId, interfaceSNMPIndex) => {
           const parentEntityIdInt = parseInt(parentEntityId);
           if (!accountEntities) {
