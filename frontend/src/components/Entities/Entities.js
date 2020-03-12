@@ -18,7 +18,15 @@ export default class Entities extends React.Component {
 
   onEntitiesUpdate = entities => {
     this.setState({
-      entities: entities.list,
+      entities: entities.list.sort((a, b) => {
+        if (a.entity_type < b.entity_type) {
+          return -1;
+        }
+        if (a.entity_type > b.entity_type) {
+          return 1;
+        }
+        return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+      }),
       fetchError: false,
     });
   };
