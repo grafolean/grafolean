@@ -1,5 +1,7 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
+
 import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
@@ -110,9 +112,14 @@ class NetFlowNavigationWidget extends React.Component {
 
   renderInterfacesDropdown() {
     const {
-      sharedValues: { selectedInterface = null },
+      sharedValues,
+      sharedValues: { selectedEntityId = null, selectedInterface = null },
+      accountEntities,
     } = this.props;
     const { interfaces } = this.state;
+    if (selectedEntityId === null) {
+      return null;
+    }
     if (interfaces === null) {
       return <Loading overlayParent={true} />;
     }
@@ -124,7 +131,16 @@ class NetFlowNavigationWidget extends React.Component {
         <option value="">-- all interfaces --</option>
         {interfaces.map(iface => (
           <option key={iface} value={iface}>
-            Interface index: {iface}
+            Interface:{' '}
+            {MatchingPaths.constructChartSerieName(
+              '',
+              '',
+              MatchingPaths.substituteSharedValues(
+                `\${interfaceName(${selectedEntityId}, ${iface})}`,
+                sharedValues,
+              ),
+              accountEntities,
+            )}
           </option>
         ))}
       </select>
@@ -206,4 +222,8 @@ class NetFlowNavigationWidget extends React.Component {
   }
 }
 
-export default withRouter(isWidget(NetFlowNavigationWidget));
+const mapStoreToProps = store => ({
+  accountEntities: store.accountEntities,
+});
+const _NetFlowNavigationWidget = connect(mapStoreToProps)(NetFlowNavigationWidget);
+export default withRouter(isWidget(_NetFlowNavigationWidget));
