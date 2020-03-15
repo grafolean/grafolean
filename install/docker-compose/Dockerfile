@@ -91,8 +91,8 @@ COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
-COPY ./install/docker-compose/nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
-COPY ./install/docker-compose/nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
+COPY ./install/docker-compose/grafolean.nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
+COPY ./install/docker-compose/grafolean.nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
 COPY --from=build-backend /api-doc-2.yml /grafolean/api-doc/swagger2.yml
 COPY --from=build-backend /api-doc-3.yml /grafolean/api-doc/swagger3.yml
