@@ -9,6 +9,7 @@ import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
 import Button from '../Button';
 import EntityDetails from './EntityDetails';
+import ParentEntityId from './ParentEntityId';
 
 export default class Entities extends React.Component {
   state = {
@@ -94,6 +95,7 @@ export default class Entities extends React.Component {
                       </td>
                       <td>
                         <EntityDetails details={entity.details} />
+                        <ParentEntityId parent={entity.parent} />
                       </td>
                       <td>
                         <LinkButton title="Edit" to={`/accounts/${accountId}/entities/edit/${entity.id}`}>
