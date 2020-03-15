@@ -15,6 +15,7 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
+fastapi = "*"
 
 [dev-packages]
 pytest = "*"

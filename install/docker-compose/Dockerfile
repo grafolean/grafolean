@@ -77,9 +77,8 @@ ENV MQTT_HOSTNAME=${MQTT_HOSTNAME}
 ENV MQTT_PORT=${MQTT_PORT}
 RUN \
     apt-get update && \
-    apt-get install --no-install-recommends -q -y nginx git && \
-    apt-get install --no-install-recommends -q -y build-essential && \
-    pip install uwsgi && \
+    apt-get install --no-install-recommends -q -y nginx git build-essential supervisor && \
+    pip install uwsgi uvicorn && \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
@@ -93,11 +92,12 @@ COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/grafolean.nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/grafolean.nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
+COPY ./install/docker-compose/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
 COPY --from=build-backend /api-doc-2.yml /grafolean/api-doc/swagger2.yml
 COPY --from=build-backend /api-doc-3.yml /grafolean/api-doc/swagger3.yml
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
-CMD ["/bin/bash", "-c", "/grafolean/apply_env.sh && service nginx start && uwsgi --ini /etc/uwsgi.ini"]
+CMD ["supervisord"]
 
