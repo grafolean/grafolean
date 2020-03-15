@@ -420,3 +420,8 @@ def migration_step_22():
     """ Allow entities to have parent-child relations (device -> interfaces). """
     with db.cursor() as c:
         c.execute("ALTER TABLE entities ADD COLUMN parent INTEGER DEFAULT NULL REFERENCES entities(id) ON DELETE CASCADE")
+
+def migration_step_23():
+    """ Entities might no longer have a unique name. """
+    with db.cursor() as c:
+        c.execute('DROP INDEX IF EXISTS entities_name;')
