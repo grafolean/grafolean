@@ -246,6 +246,7 @@ export default class ChartWidgetWithSubstitutedSharedValues extends React.Compon
     const contentSubstituted = content.map(sg => ({
       ...sg,
       path_filter: MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues),
+      renaming: MatchingPaths.substituteSharedValues(sg.renaming, sharedValues),
     }));
 
     // We want to rerender GLeanChartWidget whenever one of the (applicable) sharedValues changes. The

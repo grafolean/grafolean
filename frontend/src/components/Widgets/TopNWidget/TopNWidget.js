@@ -69,7 +69,8 @@ class _TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal, loading } = this.state;
-    const { selectedTime = null } = this.props.sharedValues;
+    const { sharedValues } = this.props;
+    const { selectedTime = null } = sharedValues;
     const { accountId } = this.props.match.params;
     const {
       path_filter,
@@ -124,7 +125,13 @@ class _TopNWidget extends React.Component {
                 <div className="entry" key={x.p}>
                   <div>
                     <span className="label">
-                      <LabelFromPath path={x.p} filter={path_filter} renaming={renaming} />:
+                      <LabelFromPath
+                        path={x.p}
+                        filter={path_filter}
+                        renaming={renaming}
+                        sharedValues={sharedValues}
+                      />
+                      :
                     </span>
                     <span className="value">{x.c.toFixed(decimals)}</span>
                     <span className="unit">{unit} </span>
