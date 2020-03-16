@@ -1046,7 +1046,7 @@ class Bot(object):
             log.warning('Shared secrets dir (/shared-secrets/tokens/) does not exist, not creating default systemwide bots.')
             return
 
-        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP')]:
+        for protocol_slug, protocol_label in [('ping', 'ICMP Ping'), ('snmp', 'SNMP'), ('netflow', 'NetFlow')]:
             BOT_TOKEN_FILENAME = f'/shared-secrets/tokens/{protocol_slug}-bot.token'
             if os.path.exists(BOT_TOKEN_FILENAME):
                 log.warning('Overwriting existing {}'.format(BOT_TOKEN_FILENAME))
