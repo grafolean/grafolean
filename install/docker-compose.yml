@@ -4,8 +4,9 @@ services:
   #
   # Welcome to Grafolean!
   #
-  # This file should be modified to suit your running environment. Please check the comments and change
-  # the settings appropriately.
+  # Ideally, this file should not be changed - please use .env file to change configuration (see .env.example).
+  #
+  # When using HTTPS, please read the comments to change settings below appropriately.
   #
 
   db:

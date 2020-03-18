@@ -44,6 +44,12 @@ Demo: https://grafolean.com/ (`demo` / `demo`)
     $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.yml > docker-compose.yml
     ```
 
+    Alternative: if you wish to install NetFlow bot as part of this installation, use [install/docker-compose.netflow.yml](https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml) instead, but you must still save it to `docker-compose.yml`:
+
+    ```
+    $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml > docker-compose.yml
+    ```
+
 2) save [.env.example](https://raw.githubusercontent.com/grafolean/grafolean/master/install/.env.example) to a local file and rename it to `.env`:
 
     ```
