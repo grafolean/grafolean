@@ -903,7 +903,6 @@ def test_jwt_expiry_refresh(app_client, first_admin_id):
     """
         Login, get X-JWT-Token which expired before 1s, make sure you get 401 on resource request,
         hit /auth/refrest, make sure the new token works
-        WARNING: depends on test_accounts() being run first
     """
     # fake the expiry:
     original_jwt_token_valid_for = JWT.TOKEN_VALID_FOR
@@ -936,7 +935,6 @@ def test_jwt_expiry_refresh(app_client, first_admin_id):
 def test_jwt_total_expiry(app_client, first_admin_id):
     """
         Login, get X-JWT-Token which expired before 1s, read the new token from header, check it
-        WARNING: depends on test_accounts() being run first
     """
 
     # fake the expiry:

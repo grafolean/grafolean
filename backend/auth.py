@@ -96,7 +96,7 @@ class JWT(object):
     @classmethod
     def _remove_old_jwt_keys(cls):
         with db.cursor() as c:
-            c.execute('DELETE FROM private_jwt_keys WHERE use_until < EXTRACT(EPOCH FROM NOW()) + {};'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,))
+            c.execute('DELETE FROM private_jwt_keys WHERE use_until + {} < EXTRACT(EPOCH FROM NOW());'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,))
 
 
 class Auth(object):
