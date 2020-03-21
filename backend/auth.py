@@ -12,10 +12,11 @@ class AuthFailedException(Exception):
 
 class JWT(object):
     """
-    Our JWT implementation is a bit specific:
+    Note:
      - private keys are auto-generated every hour (so install process doesn't need to care about that, and it is arguably safer)
-     - instead of "refresh key" we have a short-term key that can be refreshed even 10 minutes after expiry; howerer if multiple
-       parties try to use the same key, this will invalidate the session (no refresh for that session will be possible anymore)
+     - instead of "refresh key" we have a short-term key that can be refreshed even 10 minutes after expiry
+    Potential future improvement:
+     - if multiple parties try to use the same key, this will invalidate the session (no refresh for that session will be possible anymore)
     JWT token schema:
      - session_id
      - exp
