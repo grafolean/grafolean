@@ -1,9 +1,3 @@
-import re
-from flask_inputs import Inputs
-from flask_inputs.validators import JsonSchema
-import wtforms.validators as val
-
-
 DashboardInputs = {
     'type': 'object',
     'properties': {
@@ -123,30 +117,29 @@ PermissionSchemaInputs = {
 
 BotSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
         'protocol': {'type': ['string', 'null']},
     },
+    'additionalProperties': False,
     'required': ['name'],
 }
 
 
 AccountBotSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
         'protocol': {'type': ['string', 'null']},
         'config': {'type': ['string', 'null']},
     },
+    'additionalProperties': False,
     'required': ['name'],
 }
 
 
 EntitySchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
         'entity_type': {'type': 'string'},
@@ -174,44 +167,45 @@ EntitySchemaInputs = {
                         },
                     },
                 },
-                'required': ['credential', 'bot', 'sensors'],
                 'additionalProperties': False,
+                'required': ['credential', 'bot', 'sensors'],
             },
         },
     },
+    'additionalProperties': False,
     'required': ['name', 'entity_type', 'details'],  # note that 'protocols' is not required
 }
 
 
 CredentialSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
         'protocol': {'type': 'string'},
         'details': {'type': 'object'},
     },
+    'additionalProperties': False,
     'required': ['name', 'protocol', 'details'],
 }
 
 
 SensorSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
         'protocol': {'type': 'string'},
         'default_interval': {'type': ['number', 'null']},
         'details': {'type': 'object'},
     },
+    'additionalProperties': False,
     'required': ['name', 'protocol', 'default_interval', 'details'],
 }
 
 PathSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'path': {'type': 'string'},
     },
+    'additionalProperties': False,
     'required': ['path'],
 }
