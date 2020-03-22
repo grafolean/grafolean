@@ -711,7 +711,7 @@ def account_path_crud(account_id, path_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        record = Path.forge_from_input(flask.request, account_id, force_id=path_id)
+        record = Path.forge_from_input(flask.request.get_json(), account_id, force_id=path_id)
         rowcount = record.update()
         if not rowcount:
             return "No such path", 404

@@ -207,12 +207,11 @@ SensorSchemaInputs = {
     'required': ['name', 'protocol', 'default_interval', 'details'],
 }
 
-class PathSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'path': {'type': 'string'},
-        },
-        'required': ['path'],
-    })]
+PathSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'path': {'type': 'string'},
+    },
+    'required': ['path'],
+}

@@ -71,12 +71,10 @@ class Path(object):
         return cls(path, account_id, path_id)
 
     @classmethod
-    def forge_from_input(cls, flask_request, account_id, force_id=None):
-        inputs = PathSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
-        path = data['path']
+    def forge_from_input(cls, json_data, account_id, force_id=None):
+        jsonschema.validate(json_data, PathSchemaInputs)
+
+        path = json_data['path']
         return cls(path, account_id, force_id=force_id)
 
     @staticmethod
