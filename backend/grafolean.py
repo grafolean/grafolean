@@ -3,6 +3,7 @@ import os
 import sys
 from dotenv import load_dotenv
 import flask
+import jsonschema
 from werkzeug.exceptions import HTTPException
 
 
@@ -157,9 +158,10 @@ def after_request(response):
 
 
 @app.errorhandler(ValidationError)
+@app.errorhandler(jsonschema.exceptions.ValidationError)
 def handle_invalid_usage(error):
     content_type_header = flask.request.headers.get('Content-Type', None)
-    str_error = str(error)
+    str_error = error.message if hasattr(error, 'message') else str(error)
     if not content_type_header or content_type_header != 'application/json':
         str_error = "{} - maybe Content-Type header was not set to application/json?".format(str_error)
     return 'Input validation failed: {}'.format(str_error), 400

@@ -1181,16 +1181,14 @@ class Entity(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, account_id, force_id=None):
-        inputs = EntitySchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
-        name = data['name']
-        entity_type = data['entity_type']
-        parent = data.get('parent', None)
-        details = data['details']
-        protocols = data.get('protocols', {})
+    def forge_from_input(cls, json_data, account_id, force_id=None):
+        jsonschema.validate(json_data, EntitySchemaInputs)
+
+        name = json_data['name']
+        entity_type = json_data['entity_type']
+        parent = json_data.get('parent', None)
+        details = json_data['details']
+        protocols = json_data.get('protocols', {})
         Entity.validate_protocols(protocols, account_id)
         return cls(name, entity_type, parent, details, account_id, protocols, force_id=force_id)
 

@@ -262,7 +262,7 @@ def account_entities(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        entity = Entity.forge_from_input(flask.request, account_id)
+        entity = Entity.forge_from_input(flask.request.get_json(), account_id)
         entity_id = entity.insert()
         rec = {'id': entity_id}
         mqtt_publish_changed([
@@ -280,7 +280,7 @@ def account_entity_crud(account_id, entity_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        entity = Entity.forge_from_input(flask.request, account_id, force_id=entity_id)
+        entity = Entity.forge_from_input(flask.request.get_json(), account_id, force_id=entity_id)
         rowcount = entity.update()
         if not rowcount:
             return "No such entity", 404
