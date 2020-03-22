@@ -14,7 +14,7 @@ admin_api = flask.Blueprint('admin_api', __name__)
 
 
 def admin_apidoc_schemas():
-    yield "AccountSchemaInputs", validators.AccountSchemaInputs.json[0].schema
+    yield "AccountSchemaInputs", validators.AccountSchemaInputs
 
 
 # --------------
@@ -258,6 +258,6 @@ def accounts_crud():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        account = Account.forge_from_input(flask.request)
+        account = Account.forge_from_input(flask.request.get_json())
         account_id = account.insert()
         return json.dumps({'name': account.name, 'id': account_id}), 201

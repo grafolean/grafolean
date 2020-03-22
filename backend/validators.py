@@ -92,15 +92,14 @@ PersonCredentialSchemaInputs = {
 }
 
 
-class AccountSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-        },
-        'required': ['name'],
-    })]
+AccountSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'name': {'type': 'string'},
+    },
+    'required': ['name'],
+}
 
 
 class PermissionSchemaInputs(Inputs):

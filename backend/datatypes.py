@@ -626,11 +626,8 @@ class Account(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, force_id=None):
-        inputs = AccountSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
+    def forge_from_input(cls, data, force_id=None):
+        jsonschema.validate(data, AccountSchemaInputs)
 
         name = data['name']
         return cls(name, force_id)

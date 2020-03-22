@@ -36,7 +36,7 @@ def accounts_before_request():
 
 
 def accounts_apidoc_schemas():
-    yield "AccountPOST", validators.AccountSchemaInputs.json[0].schema
+    yield "AccountPOST", validators.AccountSchemaInputs
     yield "AccountGET", {
         'type': 'object',
         'properties': {
@@ -179,7 +179,7 @@ def account_crud(account_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        rec = Account.forge_from_input(flask.request, force_id=account_id)
+        rec = Account.forge_from_input(flask.request.get_json(), force_id=account_id)
         rowcount = rec.update()
         if not rowcount:
             return "No such account", 404
