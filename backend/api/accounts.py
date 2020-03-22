@@ -731,7 +731,7 @@ def dashboards_crud(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request)
+        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json())
         try:
             dashboard.insert()
         except psycopg2.IntegrityError:
@@ -749,7 +749,7 @@ def dashboard_crud(account_id, dashboard_slug):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request, force_slug=dashboard_slug)
+        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json(), force_slug=dashboard_slug)
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404

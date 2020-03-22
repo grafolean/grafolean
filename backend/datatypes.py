@@ -8,12 +8,13 @@ import math
 import psycopg2.extras
 import re
 from slugify import slugify
+import jsonschema
 
 from utils import db, log
 from validators import (
-    DashboardInputs, DashboardSchemaInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
+    DashboardInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
-    AccountBotSchemaInputs, BotSchemaInputs, ValuesInputs, EntitySchemaInputs, CredentialSchemaInputs,
+    AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
     SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs
 )
 from auth import Auth
@@ -539,15 +540,12 @@ class Dashboard(object):
         self.slug = slug
 
     @classmethod
-    def forge_from_input(cls, account_id, flask_request, force_slug=None):
+    def forge_from_input(cls, account_id, json_data, force_slug=None):
         """ This function validates input and returns an object which can be used for inserting or updating. """
-        for inputs in [DashboardSchemaInputs(flask_request), DashboardInputs(flask_request)]:
-            if not inputs.validate():
-                raise ValidationError(inputs.errors[0])
+        jsonschema.validate(json_data, DashboardInputs)
 
-        data = flask_request.get_json()
-        name = data['name']
-        slug = data.get('slug')
+        name = json_data['name']
+        slug = json_data.get('slug')
         if force_slug:  # when updating existing record, we want to supply slug through query parameters, not through JSON
             if slug:
                 raise ValidationError("Field 'slug' shouldn't be specified in JSON body")
