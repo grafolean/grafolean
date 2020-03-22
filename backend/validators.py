@@ -121,29 +121,27 @@ PermissionSchemaInputs = {
 }
 
 
-class BotSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-            'protocol': {'type': ['string', 'null']},
-        },
-        'required': ['name'],
-    })]
+BotSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'name': {'type': 'string'},
+        'protocol': {'type': ['string', 'null']},
+    },
+    'required': ['name'],
+}
 
 
-class AccountBotSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-            'protocol': {'type': ['string', 'null']},
-            'config': {'type': ['string', 'null']},
-        },
-        'required': ['name'],
-    })]
+AccountBotSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'name': {'type': 'string'},
+        'protocol': {'type': ['string', 'null']},
+        'config': {'type': ['string', 'null']},
+    },
+    'required': ['name'],
+}
 
 
 class EntitySchemaInputs(Inputs):

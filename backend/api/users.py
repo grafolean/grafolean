@@ -12,7 +12,7 @@ users_api = flask.Blueprint('users_api', __name__)
 
 
 def users_apidoc_schemas():
-    yield "BotPOST", validators.BotSchemaInputs.json[0].schema
+    yield "BotPOST", validators.BotSchemaInputs
     yield "BotGET", {
         'type': 'object',
         'properties': {
@@ -138,7 +138,7 @@ def users_bots():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request)
+        bot = Bot.forge_from_input(flask.request.get_json())
         user_id, _ = bot.insert()
         rec = Bot.get(user_id, None)
         mqtt_publish_changed([
@@ -224,7 +224,7 @@ def users_bot_crud(user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request, force_id=user_id)
+        bot = Bot.forge_from_input(flask.request.get_json(), force_id=user_id)
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404

@@ -872,17 +872,15 @@ class Bot(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, force_account=None, force_id=None):
+    def forge_from_input(cls, json_data, force_account=None, force_id=None):
         if force_account:
-            inputs = AccountBotSchemaInputs(flask_request)
+            jsonschema.validate(json_data, AccountBotSchemaInputs)
         else:
-            inputs = BotSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
-        name = data['name']
-        protocol = data.get('protocol', None)
-        config = data.get('config', None)
+            jsonschema.validate(json_data, BotSchemaInputs)
+
+        name = json_data['name']
+        protocol = json_data.get('protocol', None)
+        config = json_data.get('config', None)
         return cls(name, protocol, config, force_account=force_account, force_id=force_id)
 
     @staticmethod

@@ -196,7 +196,7 @@ def account_bots(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request, force_account=account_id)
+        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id)
         user_id, _ = bot.insert()
         rec = Bot.get(user_id, account_id)
         mqtt_publish_changed([
@@ -215,7 +215,7 @@ def account_bot_crud(account_id, user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request, force_account=account_id, force_id=user_id)
+        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id, force_id=user_id)
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
