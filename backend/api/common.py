@@ -45,7 +45,8 @@ class SuperuserJWTToken(object):
 
     @classmethod
     def get_valid_token(cls, superuser_identifier):
-        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + cls.TOKEN_VALID_S:
+        if not cls.jwt_tokens.get(superuser_identifier) or time.time() > cls.valid_until.get(superuser_identifier, 0):
+            log.info("Superuser auth token not available or expired, refreshing.")
             cls._refresh_token(superuser_identifier)
         return cls.jwt_tokens[superuser_identifier]
 
@@ -54,7 +55,7 @@ class SuperuserJWTToken(object):
         data = {
             "superuser": superuser_identifier,
         }
-        token_header, valid_until = JWT(data).encode_as_authorization_header()
+        token_header, valid_until = JWT(data).encode_as_authorization_header(cls.TOKEN_VALID_S)
         cls.jwt_tokens[superuser_identifier] = token_header[len('Bearer '):]
         cls.valid_until[superuser_identifier] = valid_until
 

@@ -22,9 +22,10 @@ class JWT(object):
      - exp
      - admin_id
     """
-    TOKEN_VALID_FOR = 600
-    TOKEN_CAN_BE_REFRESHED_FOR = 600
-    PRIVATE_KEY_EXTENDED_VALIDITY = TOKEN_VALID_FOR + TOKEN_CAN_BE_REFRESHED_FOR + 30  # accept expired keys for some extra time
+    DEFAULT_TOKEN_VALID_FOR = 600
+    MAX_TOKEN_VALID_FOR = 24 * 3600
+    TOKEN_CAN_BE_REFRESHED_FOR = 600 # when token expires, how long can it be refreshed for (/refresh/ endpoint)
+    PRIVATE_KEY_EXTENDED_VALIDITY = MAX_TOKEN_VALID_FOR + TOKEN_CAN_BE_REFRESHED_FOR + 30  # accept expired keys for some extra time
 
     data = None
     decoded_with_leeway = False
@@ -62,10 +63,15 @@ class JWT(object):
 
         return cls(jwt_decoded, decoded_with_leeway)
 
-    def encode_as_authorization_header(self):
+    def encode_as_authorization_header(self, token_valid_for_s=None):
         key_id, key = JWT._private_jwt_key_for_encoding()
         enriched_data = self.data.copy()
-        enriched_data['exp'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=JWT.TOKEN_VALID_FOR)
+        if token_valid_for_s is None:
+            token_valid_for_s = JWT.DEFAULT_TOKEN_VALID_FOR
+        elif token_valid_for_s > JWT.MAX_TOKEN_VALID_FOR:
+            raise AuthFailedException(f"Can't issue tokens with validity > {JWT.MAX_TOKEN_VALID_FOR} seconds")
+        enriched_data['exp'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=token_valid_for_s)
+        # careful: jwt.encode() changes 'enriched_data' in-place (converts field 'exp' from datetime to UNIX timestamp)
         jwt_encoded = jwt.encode(enriched_data, key, algorithm='HS256')
         header = 'Bearer {}:{}'.format(key_id, jwt_encoded.decode("utf-8"))
         return header, enriched_data['exp']

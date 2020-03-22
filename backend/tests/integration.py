@@ -905,8 +905,8 @@ def test_jwt_expiry_refresh(app_client, first_admin_id):
         hit /auth/refrest, make sure the new token works
     """
     # fake the expiry:
-    original_jwt_token_valid_for = JWT.TOKEN_VALID_FOR
-    JWT.TOKEN_VALID_FOR = -1
+    original_jwt_token_valid_for = JWT.DEFAULT_TOKEN_VALID_FOR
+    JWT.DEFAULT_TOKEN_VALID_FOR = -1
 
     # valid login, but get the expired token:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
@@ -916,7 +916,7 @@ def test_jwt_expiry_refresh(app_client, first_admin_id):
     assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
 
     # you got the (expired) token, reset the expiry timediff:
-    JWT.TOKEN_VALID_FOR = original_jwt_token_valid_for
+    JWT.DEFAULT_TOKEN_VALID_FOR = original_jwt_token_valid_for
 
     # request resource - access denied because token has expired:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': admin_authorization_header})
@@ -938,8 +938,8 @@ def test_jwt_total_expiry(app_client, first_admin_id):
     """
 
     # fake the expiry:
-    original_jwt_token_valid_for = JWT.TOKEN_VALID_FOR
-    JWT.TOKEN_VALID_FOR = -JWT.TOKEN_CAN_BE_REFRESHED_FOR - 1  # the token will be too old to even refresh it
+    original_jwt_token_valid_for = JWT.DEFAULT_TOKEN_VALID_FOR
+    JWT.DEFAULT_TOKEN_VALID_FOR = -JWT.TOKEN_CAN_BE_REFRESHED_FOR - 1  # the token will be too old to even refresh it
 
     # valid login, but get the expired token:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
@@ -949,7 +949,7 @@ def test_jwt_total_expiry(app_client, first_admin_id):
     assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
 
     # you got the (expired) token, reset the expiry timediff:
-    JWT.TOKEN_VALID_FOR = original_jwt_token_valid_for
+    JWT.DEFAULT_TOKEN_VALID_FOR = original_jwt_token_valid_for
 
     # request resource - it should not work because leeway is past:
     r = app_client.get('/api/admin/accounts', headers={'Authorization': admin_authorization_header})
@@ -1957,3 +1957,6 @@ def test_account_sensors_crud(app_client, admin_authorization_header, account_id
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert actual == initial
+
+if __name__ == "__main__":
+    print(f"{'*' * 30}\nTo run tests, use pytest:\n\n$ pytest integration.py\n")
