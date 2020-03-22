@@ -18,7 +18,7 @@ auth_api = flask.Blueprint('auth_api', __name__)
 @auth_api.route('/login', methods=['POST'])
 @noauth
 def auth_login_post():
-    credentials = PersonCredentials.forge_from_input(flask.request)
+    credentials = PersonCredentials.forge_from_input(flask.request.get_json())
     user_id = credentials.check_user_login()
     if not user_id:
         return "Invalid credentials", 401

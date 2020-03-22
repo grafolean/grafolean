@@ -46,53 +46,50 @@ WidgetsPositionsSchemaInputs = {
 }
 
 
-class PersonSchemaInputsPOST(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'username': {'type': 'string'},
-            'password': {'type': 'string'},
-            'name': {'type': 'string'},
-            'email': {'type': 'string'},
-        },
-        'required': ['username', 'password', 'name', 'email'],
-    })]
-
-class PersonSchemaInputsPUT(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'username': {'type': 'string'},
-            'name': {'type': 'string'},
-            'email': {'type': 'string'},
-        },
-    })]
+PersonSchemaInputsPOST = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'username': {'type': 'string'},
+        'password': {'type': 'string'},
+        'name': {'type': 'string'},
+        'email': {'type': 'string'},
+    },
+    'required': ['username', 'password', 'name', 'email'],
+}
 
 
-class PersonChangePasswordSchemaInputsPOST(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'old_password': {'type': 'string'},
-            'new_password': {'type': 'string'},
-        },
-        'required': ['old_password', 'new_password'],
-    })]
+PersonSchemaInputsPUT = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'username': {'type': 'string'},
+        'name': {'type': 'string'},
+        'email': {'type': 'string'},
+    },
+}
 
 
-class PersonCredentialSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'username': {'type': 'string'},
-            'password': {'type': 'string'},
-        },
-        'required': ['username', 'password'],
-    })]
+PersonChangePasswordSchemaInputsPOST = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'old_password': {'type': 'string'},
+        'new_password': {'type': 'string'},
+    },
+    'required': ['old_password', 'new_password'],
+}
+
+
+PersonCredentialSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'username': {'type': 'string'},
+        'password': {'type': 'string'},
+    },
+    'required': ['username', 'password'],
+}
 
 
 class AccountSchemaInputs(Inputs):

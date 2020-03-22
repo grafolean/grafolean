@@ -78,7 +78,7 @@ def admin_first_post():
     """
     if Auth.first_user_exists():
         return 'System already initialized', 401
-    admin = Person.forge_from_input(flask.request)
+    admin = Person.forge_from_input(flask.request.get_json())
     admin_id = admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)

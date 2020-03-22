@@ -1059,16 +1059,16 @@ class Person(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, force_id=None):
-        inputs = PersonSchemaInputsPOST(flask_request) if force_id is None else PersonSchemaInputsPUT(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
+    def forge_from_input(cls, json_data, force_id=None):
+        if force_id is None:
+            jsonschema.validate(json_data, PersonSchemaInputsPOST)
+        else:
+            jsonschema.validate(json_data, PersonSchemaInputsPUT)
 
-        name = data.get('name', None)
-        email = data.get('email', None)
-        username = data.get('username', None)
-        password = data.get('password', None)
+        name = json_data.get('name', None)
+        email = json_data.get('email', None)
+        username = json_data.get('username', None)
+        password = json_data.get('password', None)
         return cls(name, email, username, password, force_id)
 
     @staticmethod
@@ -1110,11 +1110,9 @@ class Person(object):
             return c.rowcount
 
     @staticmethod
-    def change_password(user_id, flask_request):
-        inputs = PersonChangePasswordSchemaInputsPOST(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
+    def change_password(user_id, data):
+        jsonschema.validate(data, PersonChangePasswordSchemaInputsPOST)
+
         old_password = data['old_password']
         new_password = data['new_password']
 
@@ -1161,14 +1159,11 @@ class PersonCredentials(object):
         self.password = password
 
     @classmethod
-    def forge_from_input(cls, flask_request):
-        inputs = PersonCredentialSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
+    def forge_from_input(cls, json_data):
+        jsonschema.validate(json_data, PersonCredentialSchemaInputs)
 
-        username = data['username']
-        password = data['password']
+        username = json_data['username']
+        password = json_data['password']
         return cls(username, password)
 
     def check_user_login(self):

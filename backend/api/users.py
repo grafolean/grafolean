@@ -73,7 +73,7 @@ def users_apidoc_schemas():
         'items': validators.PermissionSchemaInputs.json[0].schema,
     }
     yield "PersonGETWithPermissions", personGETWithPermissionsSchema
-    yield "PersonPOST", validators.PersonSchemaInputsPOST.json[0].schema
+    yield "PersonPOST", validators.PersonSchemaInputsPOST
     yield "Permission", validators.PermissionSchemaInputs.json[0].schema
 
 
@@ -312,7 +312,7 @@ def users_persons():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        person = Person.forge_from_input(flask.request)
+        person = Person.forge_from_input(flask.request.get_json())
         user_id = person.insert()
         mqtt_publish_changed([
             'persons',
@@ -400,7 +400,7 @@ def users_person_crud(user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        person = Person.forge_from_input(flask.request, force_id=user_id)
+        person = Person.forge_from_input(flask.request.get_json(), force_id=user_id)
         rowcount = person.update()
         if not rowcount:
             return "No such person", 404
@@ -426,7 +426,7 @@ def users_person_crud(user_id):
 
 @users_api.route('/persons/<int:user_id>/password', methods=['POST'])
 def users_person_change_password(user_id):
-    rowcount = Person.change_password(user_id, flask.request)
+    rowcount = Person.change_password(user_id, flask.request.get_json())
     if not rowcount:
         return "Change failed", 400
     # no need to publish to mqtt - nobody cares
