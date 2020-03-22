@@ -1364,14 +1364,12 @@ class Credential(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, flask_request, account_id, force_id=None):
-        inputs = CredentialSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
-        name = data['name']
-        protocol = data.get('protocol', None)
-        details = data.get('details', None)
+    def forge_from_input(cls, json_data, account_id, force_id=None):
+        jsonschema.validate(json_data, CredentialSchemaInputs)
+
+        name = json_data['name']
+        protocol = json_data.get('protocol', None)
+        details = json_data.get('details', None)
         return cls(name, protocol, details, account_id, force_id=force_id)
 
     @staticmethod

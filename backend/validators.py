@@ -183,17 +183,16 @@ EntitySchemaInputs = {
 }
 
 
-class CredentialSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-            'protocol': {'type': 'string'},
-            'details': {'type': 'object'},
-        },
-        'required': ['name', 'protocol', 'details'],
-    })]
+CredentialSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'name': {'type': 'string'},
+        'protocol': {'type': 'string'},
+        'details': {'type': 'object'},
+    },
+    'required': ['name', 'protocol', 'details'],
+}
 
 
 class SensorSchemaInputs(Inputs):
