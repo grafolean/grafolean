@@ -354,7 +354,7 @@ def account_sensors(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        sensor = Sensor.forge_from_input(flask.request, account_id)
+        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id)
         sensor_id = sensor.insert()
         rec = {'id': sensor_id}
         mqtt_publish_changed([
@@ -372,7 +372,7 @@ def account_sensor_crud(account_id, sensor_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        sensor = Sensor.forge_from_input(flask.request, account_id, force_id=sensor_id)
+        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id, force_id=sensor_id)
         rowcount = sensor.update()
         if not rowcount:
             return "No such sensor", 404

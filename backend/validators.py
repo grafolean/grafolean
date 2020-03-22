@@ -195,18 +195,17 @@ CredentialSchemaInputs = {
 }
 
 
-class SensorSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'name': {'type': 'string'},
-            'protocol': {'type': 'string'},
-            'default_interval': {'type': ['number', 'null']},
-            'details': {'type': 'object'},
-        },
-        'required': ['name', 'protocol', 'default_interval', 'details'],
-    })]
+SensorSchemaInputs = {
+    'type': 'object',
+    'additionalProperties': False,
+    'properties': {
+        'name': {'type': 'string'},
+        'protocol': {'type': 'string'},
+        'default_interval': {'type': ['number', 'null']},
+        'details': {'type': 'object'},
+    },
+    'required': ['name', 'protocol', 'default_interval', 'details'],
+}
 
 class PathSchemaInputs(Inputs):
     json = [JsonSchema(schema={
