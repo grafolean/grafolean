@@ -28,27 +28,9 @@ WidgetSchemaInputs = {
 }
 
 
-class WidgetsPositionsSchemaInputs(Inputs):
-    # Below is the correct schema, however, for reasons unknown, python-inputs validates
-    # each element of an array against it separately. For now we will just write a schema
-    # for the elements and we'll deal with it later.
-    # json = [JsonSchema(schema={
-    #     'type': 'array',
-    #     'items': {
-    #         'type': 'object',
-    #         'properties': {
-    #             'widget_id': {'type': 'number'},
-    #             'x': {'type': 'number'},
-    #             'y': {'type': 'number'},
-    #             'w': {'type': 'number'},
-    #             'h': {'type': 'number'},
-    #             'p': {'type': 'string'},
-    #         },
-    #         'additionalProperties': False,
-    #         'required': ['widget_id', 'position'],
-    #     },
-    # })]
-    json = [JsonSchema(schema={
+WidgetsPositionsSchemaInputs = {
+    'type': 'array',
+    'items': {
         'type': 'object',
         'properties': {
             'widget_id': {'type': 'number'},
@@ -60,7 +42,8 @@ class WidgetsPositionsSchemaInputs(Inputs):
         },
         'additionalProperties': False,
         'required': ['widget_id', 'x', 'y', 'w', 'h'],
-    })]
+    },
+}
 
 
 class PersonSchemaInputsPOST(Inputs):

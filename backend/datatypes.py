@@ -416,20 +416,17 @@ class Widget(object):
         return cls(dashboard_id, widget_type, title, content, widget_id, position_p)
 
     @staticmethod
-    def set_positions(account_id, dashboard_slug, flask_request):
+    def set_positions(account_id, dashboard_slug, json_data):
         dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
             raise ValidationError("Unknown dashboard")
 
-        inputs = WidgetsPositionsSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        widgets_positions = flask_request.get_json()
+        jsonschema.validate(json_data, WidgetsPositionsSchemaInputs)
 
         with db.cursor() as c:
             # Instead of traversing, we update multiple values at once:
             #   http://initd.org/psycopg/docs/extras.html#psycopg2.extras.execute_values
-            widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'], pos['p']) for pos in widgets_positions]
+            widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'], pos['p']) for pos in json_data]
             psycopg2.extras.execute_values(c, """
                 UPDATE widgets AS w
                 SET
