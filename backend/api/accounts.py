@@ -409,7 +409,7 @@ def account_bot_permissions(account_id, user_id):
 
     elif flask.request.method == 'POST':
         granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request, user_id)
+        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([

@@ -70,11 +70,11 @@ def users_apidoc_schemas():
     personGETWithPermissionsSchema = copy.deepcopy(personGETSchema)
     personGETWithPermissionsSchema['properties']['permissions'] = {
         'type': 'array',
-        'items': validators.PermissionSchemaInputs.json[0].schema,
+        'items': validators.PermissionSchemaInputs,
     }
     yield "PersonGETWithPermissions", personGETWithPermissionsSchema
     yield "PersonPOST", validators.PersonSchemaInputsPOST
-    yield "Permission", validators.PermissionSchemaInputs.json[0].schema
+    yield "Permission", validators.PermissionSchemaInputs
 
 
 # --------------
@@ -535,7 +535,7 @@ def users_permissions_get_post(user_id):
 
     elif flask.request.method == 'POST':
         granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request, user_id)
+        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([

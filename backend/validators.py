@@ -48,13 +48,13 @@ WidgetsPositionsSchemaInputs = {
 
 PersonSchemaInputsPOST = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'username': {'type': 'string'},
         'password': {'type': 'string'},
         'name': {'type': 'string'},
         'email': {'type': 'string'},
     },
+    'additionalProperties': False,
     'required': ['username', 'password', 'name', 'email'],
 }
 
@@ -72,54 +72,53 @@ PersonSchemaInputsPUT = {
 
 PersonChangePasswordSchemaInputsPOST = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'old_password': {'type': 'string'},
         'new_password': {'type': 'string'},
     },
+    'additionalProperties': False,
     'required': ['old_password', 'new_password'],
 }
 
 
 PersonCredentialSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'username': {'type': 'string'},
         'password': {'type': 'string'},
     },
+    'additionalProperties': False,
     'required': ['username', 'password'],
 }
 
 
 AccountSchemaInputs = {
     'type': 'object',
-    'additionalProperties': False,
     'properties': {
         'name': {'type': 'string'},
     },
+    'additionalProperties': False,
     'required': ['name'],
 }
 
 
-class PermissionSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'additionalProperties': False,
-        'properties': {
-            'resource_prefix': {'type': ['string', 'null']},
-            'methods': {
-                'type': ['array', 'null'],
-                'items': {
-                    'type': 'string',
-                    'enum': ['GET', 'POST', 'PUT', 'DELETE'],
-                },
-                'uniqueItems': True,
-                'minItems': 1,
+PermissionSchemaInputs = {
+    'type': 'object',
+    'properties': {
+        'resource_prefix': {'type': ['string', 'null']},
+        'methods': {
+            'type': ['array', 'null'],
+            'items': {
+                'type': 'string',
+                'enum': ['GET', 'POST', 'PUT', 'DELETE'],
             },
+            'uniqueItems': True,
+            'minItems': 1,
         },
-        'required': ['resource_prefix', 'methods'],
-    })]
+    },
+    'additionalProperties': False,
+    'required': ['resource_prefix', 'methods'],
+}
 
 
 class BotSchemaInputs(Inputs):

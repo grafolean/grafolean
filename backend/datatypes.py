@@ -727,12 +727,9 @@ class Permission(object):
         self.methods = methods
 
     @classmethod
-    def forge_from_input(cls, flask_request, user_id):
-        inputs = PermissionSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
-        data = flask_request.get_json()
-        return cls(user_id, data['resource_prefix'], data['methods'])
+    def forge_from_input(cls, json_data, user_id):
+        jsonschema.validate(json_data, PermissionSchemaInputs)
+        return cls(user_id, json_data['resource_prefix'], json_data['methods'])
 
     @staticmethod
     def get_list(user_id):
