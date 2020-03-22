@@ -15,18 +15,17 @@ DashboardInputs = {
 }
 
 
-class WidgetSchemaInputs(Inputs):
-    json = [JsonSchema(schema={
-        'type': 'object',
-        'properties': {
-            'type': {'type': 'string'},
-            'title': {'type': 'string'},
-            'p': {'type': 'string', 'minLength': 1, 'maxLength': 20},
-            'content': {'type': 'string'},
-        },
-        'additionalProperties': False,
-        'required': ['type', 'title', 'content'],
-    })]
+WidgetSchemaInputs = {
+    'type': 'object',
+    'properties': {
+        'type': {'type': 'string'},
+        'title': {'type': 'string'},
+        'p': {'type': 'string', 'minLength': 1, 'maxLength': 20},
+        'content': {'type': 'string'},
+    },
+    'additionalProperties': False,
+    'required': ['type', 'title', 'content'],
+}
 
 
 class WidgetsPositionsSchemaInputs(Inputs):

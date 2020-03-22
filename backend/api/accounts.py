@@ -780,7 +780,7 @@ def widgets_crud(account_id, dashboard_slug):
         rec = Widget.get_list(account_id, dashboard_slug, paths_limit=paths_limit)
         return json.dumps({'list': rec}), 200
     elif flask.request.method == 'POST':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request)
+        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json())
         try:
             widget_id = widget.insert()
         except psycopg2.IntegrityError as ex:
@@ -809,7 +809,7 @@ def widget_crud(account_id, dashboard_slug, widget_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request, widget_id=widget_id)
+        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json(), widget_id=widget_id)
         rowcount = widget.update()
         if not rowcount:
             return "No such widget", 404

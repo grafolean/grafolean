@@ -398,17 +398,13 @@ class Widget(object):
         self.position_p = position_p
 
     @classmethod
-    def forge_from_input(cls, account_id, dashboard_slug, flask_request, widget_id=None):
-        inputs = WidgetSchemaInputs(flask_request)
-        if not inputs.validate():
-            raise ValidationError(inputs.errors[0])
+    def forge_from_input(cls, account_id, dashboard_slug, json_data, widget_id=None):
+        jsonschema.validate(json_data, WidgetSchemaInputs)
 
-        data = flask_request.get_json()
-
-        widget_type = data['type']
-        title = data['title']
-        position_p = data.get('p', 'default')
-        content = data['content']
+        widget_type = json_data['type']
+        title = json_data['title']
+        position_p = json_data.get('p', 'default')
+        content = json_data['content']
         # users reference the dashboards by its slug, but we need to know its ID:
         dashboard_id = Dashboard.get_id(account_id, dashboard_slug)
         if not dashboard_id:
