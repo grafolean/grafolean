@@ -41,10 +41,11 @@ class SuperuserJWTToken(object):
     """
     jwt_tokens = {}
     valid_until = {}
+    TOKEN_VALID_S = 1800
 
     @classmethod
     def get_valid_token(cls, superuser_identifier):
-        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + 10.0:
+        if not cls.jwt_tokens.get(superuser_identifier) or cls.valid_until.get(superuser_identifier, 0) < time.time() + cls.TOKEN_VALID_S:
             cls._refresh_token(superuser_identifier)
         return cls.jwt_tokens[superuser_identifier]
 
