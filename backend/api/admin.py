@@ -1,4 +1,4 @@
-import flask
+import quart as flask
 import json
 import urllib.parse
 
@@ -23,7 +23,7 @@ def admin_apidoc_schemas():
 
 @admin_api.route('/migratedb', methods=['POST'])
 @noauth
-def admin_migratedb_post():
+async def admin_migratedb_post():
     """
         ---
         post:
@@ -44,7 +44,7 @@ def admin_migratedb_post():
 
 @admin_api.route('/first', methods=['POST'])
 @noauth
-def admin_first_post():
+async def admin_first_post():
     """
         ---
         post:
@@ -95,7 +95,7 @@ def admin_first_post():
 
 @admin_api.route('/mqtt-auth-plug/<string:check_type>', methods=['POST'])
 @noauth
-def admin_mqttauth_plug(check_type):
+async def admin_mqttauth_plug(check_type):
     """
         ---
         post:
@@ -199,7 +199,7 @@ def admin_mqttauth_plug(check_type):
 
 
 @admin_api.route('/accounts', methods=['GET', 'POST'])
-def accounts_crud():
+async def accounts_crud():
     """
         ---
         get:

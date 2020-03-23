@@ -1,4 +1,4 @@
-import flask
+import quart as flask
 import json
 import copy
 import psycopg2
@@ -83,7 +83,7 @@ def users_apidoc_schemas():
 
 
 @users_api.route('/users/<int:user_id>', methods=['GET'])
-def users_user_get(user_id):
+async def users_user_get(user_id):
     rec = User.get(user_id)
     if not rec:
         return "No such user", 404
@@ -92,7 +92,7 @@ def users_user_get(user_id):
 
 
 @users_api.route('/bots', methods=['GET', 'POST'])
-def users_bots():
+async def users_bots():
     """
         ---
         get:
@@ -148,7 +148,7 @@ def users_bots():
 
 
 @users_api.route('/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def users_bot_crud(user_id):
+async def users_bot_crud(user_id):
     """
         ---
         get:
@@ -249,7 +249,7 @@ def users_bot_crud(user_id):
 
 
 @users_api.route('/bots/<int:user_id>/token', methods=['GET'])
-def users_bot_token_get(user_id):
+async def users_bot_token_get(user_id):
     # make sure the user who is requesting to see the bot token has every permission that this token has, and
     # also that this user can add the bot:
     request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
@@ -264,7 +264,7 @@ def users_bot_token_get(user_id):
 
 
 @users_api.route('/persons', methods=['GET', 'POST'])
-def users_persons():
+async def users_persons():
     """
         ---
         get:
@@ -323,7 +323,7 @@ def users_persons():
 
 
 @users_api.route('/persons/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def users_person_crud(user_id):
+async def users_person_crud(user_id):
     """
         ---
         get:
@@ -425,7 +425,7 @@ def users_person_crud(user_id):
 
 
 @users_api.route('/persons/<int:user_id>/password', methods=['POST'])
-def users_person_change_password(user_id):
+async def users_person_change_password(user_id):
     rowcount = Person.change_password(user_id, flask.request)
     if not rowcount:
         return "Change failed", 400
@@ -436,7 +436,7 @@ def users_person_change_password(user_id):
 @users_api.route('/users/<int:user_id>/permissions', methods=['GET', 'POST'])
 @users_api.route('/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
 @users_api.route('/persons/<int:user_id>/permissions', methods=['GET', 'POST'])
-def users_permissions_get_post(user_id):
+async def users_permissions_get_post(user_id):
     """
         ---
         get:
@@ -554,7 +554,7 @@ def users_permissions_get_post(user_id):
 @users_api.route('/users/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
 @users_api.route('/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
 @users_api.route('/persons/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-def users_permission_delete(permission_id, user_id):
+async def users_permission_delete(permission_id, user_id):
     """
         ---
         delete:

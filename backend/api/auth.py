@@ -1,6 +1,6 @@
+import quart as flask
 import json
 import secrets
-import flask
 
 from datatypes import Permission, PersonCredentials
 from auth import JWT
@@ -17,7 +17,7 @@ auth_api = flask.Blueprint('auth_api', __name__)
 
 @auth_api.route('/login', methods=['POST'])
 @noauth
-def auth_login_post():
+async def auth_login_post():
     credentials = PersonCredentials.forge_from_input(flask.request)
     user_id = credentials.check_user_login()
     if not user_id:
@@ -35,7 +35,7 @@ def auth_login_post():
 
 @auth_api.route('/refresh', methods=['POST'])
 @noauth
-def auth_refresh_post():
+async def auth_refresh_post():
     try:
         authorization_header = flask.request.headers.get('Authorization')
         if not authorization_header:

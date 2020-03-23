@@ -5,9 +5,7 @@ name = "pypi"
 
 [packages]
 ansicolors = "*"
-flask = "*"
 python-slugify = "*"
-flask-sockets = "*"
 jsonschema = "*"
 wtforms = "*"
 flask-inputs = {ref = "9d7d32902fe04ceb5a6344edaa35b070cf93a6dc",git = "https://github.com/nathancahill/flask-inputs.git",editable = true}
@@ -18,6 +16,7 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
+quart = "*"
 
 [dev-packages]
 pytest = "*"

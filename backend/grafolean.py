@@ -2,7 +2,7 @@
 import os
 import sys
 from dotenv import load_dotenv
-import flask
+import quart as flask
 from werkzeug.exceptions import HTTPException
 
 
