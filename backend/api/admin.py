@@ -139,7 +139,7 @@ async def admin_mqttauth_plug(check_type):
     #     log.info('--- secret account authenticated ---')
     #     return "", 200
     # log_received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
-    # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, flask.request.form.to_dict()))
+    # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, await flask.request.form.to_dict()))
     try:
         if check_type == 'getuser':
             # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
@@ -160,7 +160,7 @@ async def admin_mqttauth_plug(check_type):
             return "Access denied", 401
 
         elif check_type == 'aclcheck':
-            params = flask.request.form.to_dict()
+            params = await flask.request.form.to_dict()
             # When client connects, username is jwt token. However subscribing to topics doesn't necessarily reconnect so
             # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
             # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
