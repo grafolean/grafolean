@@ -2,12 +2,12 @@
 import os
 import sys
 from dotenv import load_dotenv
-import flask
+import quart as flask
 import jsonschema
 from werkzeug.exceptions import HTTPException
 
 
-app = flask.Flask(__name__, static_folder=None)
+app = flask.Quart(__name__, static_folder=None)
 
 
 try:

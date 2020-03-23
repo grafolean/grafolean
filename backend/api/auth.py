@@ -1,6 +1,6 @@
 import json
 import secrets
-import flask
+import quart as flask
 
 from datatypes import Permission, PersonCredentials
 from auth import JWT

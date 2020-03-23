@@ -1,5 +1,5 @@
 from collections import defaultdict
-import flask
+import quart as flask
 import json
 import psycopg2
 import time

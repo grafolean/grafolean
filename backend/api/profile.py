@@ -1,4 +1,4 @@
-import flask
+import quart as flask
 import json
 
 from .common import auth_no_permissions

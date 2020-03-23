@@ -1,4 +1,4 @@
-import flask
+import quart as flask
 import json
 import time
 import re
