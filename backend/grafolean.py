@@ -151,9 +151,6 @@ def _add_cors_headers(response):
 @app.after_request
 async def after_request(response):
     _add_cors_headers(response)
-    # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
-    response.set_data(response.get_data() + b"\n")
-    #time.sleep(1.0)  # so we can see "loading" signs
     return response
 
 
