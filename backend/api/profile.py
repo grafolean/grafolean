@@ -15,7 +15,7 @@ profile_api = flask.Blueprint('profile_api', __name__)
 
 @profile_api.route('/', methods=['GET'])
 @auth_no_permissions
-def profile():
+async def profile():
     user_id = flask.g.grafolean_data['user_id']
     user_is_bot = flask.g.grafolean_data['user_is_bot']
     if user_is_bot:
@@ -35,7 +35,7 @@ def profile():
 
 @profile_api.route('/permissions', methods=['GET'])
 @auth_no_permissions
-def profile_permissions():
+async def profile_permissions():
     user_id = flask.g.grafolean_data['user_id']
     rec = Permission.get_list(user_id)
     return json.dumps({'list': rec}), 200

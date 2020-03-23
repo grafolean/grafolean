@@ -21,7 +21,7 @@ status_api = flask.Blueprint('status_api', __name__)
 # Useful for determining status of backend (is it available, is the first user initialized,...)
 @status_api.route('/info', methods=['GET'])
 @noauth
-def status_info_get():
+async def status_info_get():
     db_migration_needed = utils.is_migration_needed()
     result = {
         'alive': True,
@@ -37,7 +37,7 @@ def status_info_get():
 
 @status_api.route('/sitemap', methods=['GET'])
 @noauth
-def status_sitemap_get():
+async def status_sitemap_get():
     ignored_methods = set(['HEAD', 'OPTIONS'])
     rules = defaultdict(set)
     for rule in flask.current_app.url_map.iter_rules():
@@ -48,6 +48,6 @@ def status_sitemap_get():
 
 @status_api.route('/cspreport', methods=['POST'])
 @noauth
-def status_cspreport():
+async def status_cspreport():
     log.error("CSP report received: {}".format(flask.request.data))
     return '', 200

@@ -40,7 +40,7 @@ app.register_blueprint(auth_api, url_prefix='/api/auth')
 
 
 @app.before_request
-def before_request():
+async def before_request():
 
     # http://flask.pocoo.org/docs/1.0/api/#application-globals
     flask.g.grafolean_data = {}
@@ -149,7 +149,7 @@ def _add_cors_headers(response):
     response.headers['Access-Control-Max-Age'] = '3600'  # https://damon.ghost.io/killing-cors-preflight-requests-on-a-react-spa/
 
 @app.after_request
-def after_request(response):
+async def after_request(response):
     _add_cors_headers(response)
     # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
     response.set_data(response.get_data() + b"\n")
@@ -159,7 +159,7 @@ def after_request(response):
 
 @app.errorhandler(ValidationError)
 @app.errorhandler(jsonschema.exceptions.ValidationError)
-def handle_invalid_usage(error):
+async def handle_invalid_usage(error):
     content_type_header = flask.request.headers.get('Content-Type', None)
     str_error = error.message if hasattr(error, 'message') else str(error)
     if not content_type_header or content_type_header != 'application/json':
@@ -168,7 +168,7 @@ def handle_invalid_usage(error):
 
 
 @app.errorhandler(Exception)
-def handle_error(e):
+async def handle_error(e):
     log.exception(e)
     code = 500
     if isinstance(e, HTTPException):

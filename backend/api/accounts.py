@@ -15,7 +15,7 @@ accounts_api = flask.Blueprint('accounts_api', __name__)
 
 
 @accounts_api.before_request
-def accounts_before_request():
+async def accounts_before_request():
     # If bot has successfully logged in (and retrieved the list of its accounts), we should
     # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
     # show/hide notification badges based on it:
@@ -95,7 +95,7 @@ def accounts_apidoc_schemas():
 
 @accounts_api.route('/', methods=['GET'])
 @auth_no_permissions
-def accounts_root():
+async def accounts_root():
     """
         ---
         get:
@@ -122,7 +122,7 @@ def accounts_root():
 
 
 @accounts_api.route('/<int:account_id>', methods=['GET', 'PUT'])
-def account_crud(account_id):
+async def account_crud(account_id):
     """
         ---
         get:
@@ -190,7 +190,7 @@ def account_crud(account_id):
 
 
 @accounts_api.route('/<int:account_id>/bots', methods=['GET', 'POST'])
-def account_bots(account_id):
+async def account_bots(account_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get_list(account_id)
         return json.dumps({'list': rec}), 200
@@ -207,7 +207,7 @@ def account_bots(account_id):
 
 
 @accounts_api.route('/<int:account_id>/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_bot_crud(account_id, user_id):
+async def account_bot_crud(account_id, user_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Bot.get(user_id, account_id)
         if not rec:
@@ -241,7 +241,7 @@ def account_bot_crud(account_id, user_id):
 
 
 @accounts_api.route('/<int:account_id>/bots/<int:user_id>/token', methods=['GET'])
-def account_bot_token_get(account_id, user_id):
+async def account_bot_token_get(account_id, user_id):
     # make sure the user who is requesting to see the bot token has every permission that this token has, and
     # also that this user can add the bot:
     request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
@@ -256,7 +256,7 @@ def account_bot_token_get(account_id, user_id):
 
 
 @accounts_api.route('/<int:account_id>/entities', methods=['GET', 'POST'])
-def account_entities(account_id):
+async def account_entities(account_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Entity.get_list(account_id)
         return json.dumps({'list': rec}), 200
@@ -272,7 +272,7 @@ def account_entities(account_id):
 
 
 @accounts_api.route('/<int:account_id>/entities/<string:entity_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_entity_crud(account_id, entity_id):
+async def account_entity_crud(account_id, entity_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Entity.get(entity_id, account_id)
         if not rec:
@@ -302,7 +302,7 @@ def account_entity_crud(account_id, entity_id):
 
 
 @accounts_api.route('/<int:account_id>/credentials', methods=['GET', 'POST'])
-def account_credentials(account_id):
+async def account_credentials(account_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Credential.get_list(account_id)
         return json.dumps({'list': rec}), 200
@@ -318,7 +318,7 @@ def account_credentials(account_id):
 
 
 @accounts_api.route('/<int:account_id>/credentials/<string:credential_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_credential_crud(account_id, credential_id):
+async def account_credential_crud(account_id, credential_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Credential.get(credential_id, account_id)
         if not rec:
@@ -348,7 +348,7 @@ def account_credential_crud(account_id, credential_id):
 
 
 @accounts_api.route('/<int:account_id>/sensors', methods=['GET', 'POST'])
-def account_sensors(account_id):
+async def account_sensors(account_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Sensor.get_list(account_id)
         return json.dumps({'list': rec}), 200
@@ -364,7 +364,7 @@ def account_sensors(account_id):
 
 
 @accounts_api.route('/<int:account_id>/sensors/<string:sensor_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_sensor_crud(account_id, sensor_id):
+async def account_sensor_crud(account_id, sensor_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Sensor.get(sensor_id, account_id)
         if not rec:
@@ -394,7 +394,7 @@ def account_sensor_crud(account_id, sensor_id):
 
 
 @accounts_api.route('/<int:account_id>/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
-def account_bot_permissions(account_id, user_id):
+async def account_bot_permissions(account_id, user_id):
     """
         Allows reading and assigning permissions to account bots (bots which are tied to a specific account).
     """
@@ -429,7 +429,7 @@ def account_bot_permissions(account_id, user_id):
 
 
 @accounts_api.route('/<int:account_id>/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-def account_bot_permission_delete(account_id, user_id, permission_id):
+async def account_bot_permission_delete(account_id, user_id, permission_id):
     """ Revoke permission from account bot """
     # make sure the bot really belongs to the account:
     rec = Bot.get(user_id, account_id)
@@ -451,7 +451,7 @@ def account_bot_permission_delete(account_id, user_id, permission_id):
 
 
 @accounts_api.route("/<int:account_id>/values", methods=['PUT'])
-def values_put(account_id):
+async def values_put(account_id):
     data = flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
@@ -464,7 +464,7 @@ def values_put(account_id):
 
 
 @accounts_api.route("/<int:account_id>/values", methods=['POST'])
-def values_post(account_id):
+async def values_post(account_id):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
     # piece, then we use the same function as for PUT:
     data = []
@@ -501,7 +501,7 @@ def values_post(account_id):
 @accounts_api.route("/<int:account_id>/values", methods=['GET'])
 @accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
 @accounts_api.route("/<int:account_id>/values/<string:path_input>", methods=['GET'])
-def values_get(account_id, path_input=None):
+async def values_get(account_id, path_input=None):
     # when we request data for too many paths at once, we run in trouble with URLs being too long. Using
     # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
     # we use the same arguments:
@@ -592,7 +592,7 @@ def values_get(account_id, path_input=None):
 
 
 @accounts_api.route("/<int:account_id>/topvalues", methods=['GET'])
-def topvalues_get(account_id):
+async def topvalues_get(account_id):
     """
         ---
         get:
@@ -663,7 +663,7 @@ def topvalues_get(account_id):
 
 
 @accounts_api.route("/<int:account_id>/paths", methods=['GET'])
-def paths_get(account_id):
+async def paths_get(account_id):
     max_results_input = flask.request.args.get('limit')
     if not max_results_input:
         max_results = 10
@@ -703,7 +703,7 @@ def paths_get(account_id):
 
 
 @accounts_api.route('/<int:account_id>/paths/<int:path_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_path_crud(account_id, path_id):
+async def account_path_crud(account_id, path_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Path.get(path_id, account_id)
         if not rec:
@@ -725,7 +725,7 @@ def account_path_crud(account_id, path_id):
 
 
 @accounts_api.route("/<int:account_id>/dashboards", methods=['GET', 'POST'])
-def dashboards_crud(account_id):
+async def dashboards_crud(account_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Dashboard.get_list(account_id)
         return json.dumps({'list': rec}), 200
@@ -741,7 +741,7 @@ def dashboards_crud(account_id):
 
 
 @accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
-def dashboard_crud(account_id, dashboard_slug):
+async def dashboard_crud(account_id, dashboard_slug):
     if flask.request.method in ['GET', 'HEAD']:
         rec = Dashboard.get(account_id, slug=dashboard_slug)
         if not rec:
@@ -771,7 +771,7 @@ def dashboard_crud(account_id, dashboard_slug):
 
 
 @accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
-def widgets_crud(account_id, dashboard_slug):
+async def widgets_crud(account_id, dashboard_slug):
     if flask.request.method in ['GET', 'HEAD']:
         try:
             paths_limit = int(flask.request.args.get('paths_limit', 200))
@@ -792,7 +792,7 @@ def widgets_crud(account_id, dashboard_slug):
 
 
 @accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets/<string:widget_id>", methods=['GET', 'PUT', 'DELETE'])
-def widget_crud(account_id, dashboard_slug, widget_id):
+async def widget_crud(account_id, dashboard_slug, widget_id):
     try:
         widget_id = int(widget_id)
     except:
@@ -829,7 +829,7 @@ def widget_crud(account_id, dashboard_slug, widget_id):
 
 
 @accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets_positions/", methods=['PUT'])
-def widgets_positions(account_id, dashboard_slug):
+async def widgets_positions(account_id, dashboard_slug):
     Widget.set_positions(account_id, dashboard_slug, flask.request.get_json())
     mqtt_publish_changed([
         f'accounts/{account_id}/dashboards/{dashboard_slug}',
