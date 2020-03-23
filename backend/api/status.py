@@ -49,5 +49,5 @@ async def status_sitemap_get():
 @status_api.route('/cspreport', methods=['POST'])
 @noauth
 async def status_cspreport():
-    log.error("CSP report received: {}".format(flask.request.data))
+    log.error("CSP report received: {}".format(await flask.request.data))
     return '', 200
