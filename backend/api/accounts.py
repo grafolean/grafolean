@@ -179,7 +179,7 @@ async def account_crud(account_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        rec = Account.forge_from_input(flask.request.get_json(), force_id=account_id)
+        rec = Account.forge_from_input(await flask.request.get_json(), force_id=account_id)
         rowcount = rec.update()
         if not rowcount:
             return "No such account", 404
@@ -196,7 +196,7 @@ async def account_bots(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id)
+        bot = Bot.forge_from_input(await flask.request.get_json(), force_account=account_id)
         user_id, _ = bot.insert()
         rec = Bot.get(user_id, account_id)
         mqtt_publish_changed([
@@ -215,7 +215,7 @@ async def account_bot_crud(account_id, user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id, force_id=user_id)
+        bot = Bot.forge_from_input(await flask.request.get_json(), force_account=account_id, force_id=user_id)
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
@@ -262,7 +262,7 @@ async def account_entities(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        entity = Entity.forge_from_input(flask.request.get_json(), account_id)
+        entity = Entity.forge_from_input(await flask.request.get_json(), account_id)
         entity_id = entity.insert()
         rec = {'id': entity_id}
         mqtt_publish_changed([
@@ -280,7 +280,7 @@ async def account_entity_crud(account_id, entity_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        entity = Entity.forge_from_input(flask.request.get_json(), account_id, force_id=entity_id)
+        entity = Entity.forge_from_input(await flask.request.get_json(), account_id, force_id=entity_id)
         rowcount = entity.update()
         if not rowcount:
             return "No such entity", 404
@@ -308,7 +308,7 @@ async def account_credentials(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        credential = Credential.forge_from_input(flask.request.get_json(), account_id)
+        credential = Credential.forge_from_input(await flask.request.get_json(), account_id)
         credential_id = credential.insert()
         rec = {'id': credential_id}
         mqtt_publish_changed([
@@ -326,7 +326,7 @@ async def account_credential_crud(account_id, credential_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        credential = Credential.forge_from_input(flask.request.get_json(), account_id, force_id=credential_id)
+        credential = Credential.forge_from_input(await flask.request.get_json(), account_id, force_id=credential_id)
         rowcount = credential.update()
         if not rowcount:
             return "No such credential", 404
@@ -354,7 +354,7 @@ async def account_sensors(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id)
+        sensor = Sensor.forge_from_input(await flask.request.get_json(), account_id)
         sensor_id = sensor.insert()
         rec = {'id': sensor_id}
         mqtt_publish_changed([
@@ -372,7 +372,7 @@ async def account_sensor_crud(account_id, sensor_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id, force_id=sensor_id)
+        sensor = Sensor.forge_from_input(await flask.request.get_json(), account_id, force_id=sensor_id)
         rowcount = sensor.update()
         if not rowcount:
             return "No such sensor", 404
@@ -409,7 +409,7 @@ async def account_bot_permissions(account_id, user_id):
 
     elif flask.request.method == 'POST':
         granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
+        permission = Permission.forge_from_input(await flask.request.get_json(), user_id)
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
@@ -452,7 +452,7 @@ async def account_bot_permission_delete(account_id, user_id, permission_id):
 
 @accounts_api.route("/<int:account_id>/values", methods=['PUT'])
 async def values_put(account_id):
-    data = flask.request.get_json()
+    data = await flask.request.get_json()
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         Measurement.save_values_data_to_db(account_id, data)
@@ -469,7 +469,7 @@ async def values_post(account_id):
     # piece, then we use the same function as for PUT:
     data = []
     now = time.time()
-    json_data = flask.request.get_json()
+    json_data = await flask.request.get_json()
     query_params_p = flask.request.args.get('p')
     if json_data:
         for x in json_data:
@@ -506,7 +506,7 @@ async def values_get(account_id, path_input=None):
     # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
     # we use the same arguments:
     if flask.request.method == 'POST':
-        args = flask.request.get_json()
+        args = await flask.request.get_json()
     else:
         args = flask.request.args
 
@@ -711,7 +711,7 @@ async def account_path_crud(account_id, path_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        record = Path.forge_from_input(flask.request.get_json(), account_id, force_id=path_id)
+        record = Path.forge_from_input(await flask.request.get_json(), account_id, force_id=path_id)
         rowcount = record.update()
         if not rowcount:
             return "No such path", 404
@@ -731,7 +731,7 @@ async def dashboards_crud(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json())
+        dashboard = Dashboard.forge_from_input(account_id, await flask.request.get_json())
         try:
             dashboard.insert()
         except psycopg2.IntegrityError:
@@ -749,7 +749,7 @@ async def dashboard_crud(account_id, dashboard_slug):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json(), force_slug=dashboard_slug)
+        dashboard = Dashboard.forge_from_input(account_id, await flask.request.get_json(), force_slug=dashboard_slug)
         rowcount = dashboard.update()
         if not rowcount:
             return "No such dashboard", 404
@@ -780,7 +780,7 @@ async def widgets_crud(account_id, dashboard_slug):
         rec = Widget.get_list(account_id, dashboard_slug, paths_limit=paths_limit)
         return json.dumps({'list': rec}), 200
     elif flask.request.method == 'POST':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json())
+        widget = Widget.forge_from_input(account_id, dashboard_slug, await flask.request.get_json())
         try:
             widget_id = widget.insert()
         except psycopg2.IntegrityError as ex:
@@ -809,7 +809,7 @@ async def widget_crud(account_id, dashboard_slug, widget_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json(), widget_id=widget_id)
+        widget = Widget.forge_from_input(account_id, dashboard_slug, await flask.request.get_json(), widget_id=widget_id)
         rowcount = widget.update()
         if not rowcount:
             return "No such widget", 404
@@ -830,7 +830,7 @@ async def widget_crud(account_id, dashboard_slug, widget_id):
 
 @accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets_positions/", methods=['PUT'])
 async def widgets_positions(account_id, dashboard_slug):
-    Widget.set_positions(account_id, dashboard_slug, flask.request.get_json())
+    Widget.set_positions(account_id, dashboard_slug, await flask.request.get_json())
     mqtt_publish_changed([
         f'accounts/{account_id}/dashboards/{dashboard_slug}',
     ])

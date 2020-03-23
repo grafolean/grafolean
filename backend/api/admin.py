@@ -78,7 +78,7 @@ async def admin_first_post():
     """
     if Auth.first_user_exists():
         return 'System already initialized', 401
-    admin = Person.forge_from_input(flask.request.get_json())
+    admin = Person.forge_from_input(await flask.request.get_json())
     admin_id = admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)
@@ -258,6 +258,6 @@ async def accounts_crud():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        account = Account.forge_from_input(flask.request.get_json())
+        account = Account.forge_from_input(await flask.request.get_json())
         account_id = account.insert()
         return json.dumps({'name': account.name, 'id': account_id}), 201

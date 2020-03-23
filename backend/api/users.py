@@ -138,7 +138,7 @@ async def users_bots():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request.get_json())
+        bot = Bot.forge_from_input(await flask.request.get_json())
         user_id, _ = bot.insert()
         rec = Bot.get(user_id, None)
         mqtt_publish_changed([
@@ -224,7 +224,7 @@ async def users_bot_crud(user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_id=user_id)
+        bot = Bot.forge_from_input(await flask.request.get_json(), force_id=user_id)
         rowcount = bot.update()
         if not rowcount:
             return "No such bot", 404
@@ -312,7 +312,7 @@ async def users_persons():
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        person = Person.forge_from_input(flask.request.get_json())
+        person = Person.forge_from_input(await flask.request.get_json())
         user_id = person.insert()
         mqtt_publish_changed([
             'persons',
@@ -400,7 +400,7 @@ async def users_person_crud(user_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        person = Person.forge_from_input(flask.request.get_json(), force_id=user_id)
+        person = Person.forge_from_input(await flask.request.get_json(), force_id=user_id)
         rowcount = person.update()
         if not rowcount:
             return "No such person", 404
@@ -426,7 +426,7 @@ async def users_person_crud(user_id):
 
 @users_api.route('/persons/<int:user_id>/password', methods=['POST'])
 async def users_person_change_password(user_id):
-    rowcount = Person.change_password(user_id, flask.request.get_json())
+    rowcount = Person.change_password(user_id, await flask.request.get_json())
     if not rowcount:
         return "Change failed", 400
     # no need to publish to mqtt - nobody cares
@@ -535,7 +535,7 @@ async def users_permissions_get_post(user_id):
 
     elif flask.request.method == 'POST':
         granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
+        permission = Permission.forge_from_input(await flask.request.get_json(), user_id)
         try:
             permission_id = permission.insert(granting_user_id)
             mqtt_publish_changed([
