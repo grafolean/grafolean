@@ -4,7 +4,6 @@ import sys
 from dotenv import load_dotenv
 import quart as flask
 import jsonschema
-from werkzeug.exceptions import HTTPException
 
 
 app = flask.Quart(__name__, static_folder=None)
@@ -168,8 +167,6 @@ async def handle_invalid_usage(error):
 async def handle_error(e):
     log.exception(e)
     code = 500
-    if isinstance(e, HTTPException):
-        code = e.code
     response = flask.make_response('Unknown exception: {}'.format(str(e)), code)
     _add_cors_headers(response)  # even if we fail, we should still add CORS headers, or browsers won't display real error status
     return response
