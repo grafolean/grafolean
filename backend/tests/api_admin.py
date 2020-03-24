@@ -103,3 +103,22 @@ async def test_status_info_after_first(app_client, first_admin_id):
         'mqtt_ws_port': actual['mqtt_ws_port'],
     }
     assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_sitemap(app_client):
+    r = await app_client.get('/api/status/sitemap')
+    assert r.status_code == 200
+    actual = json.loads(await r.get_data())
+
+    expected_entry = {
+        "url": "/api/status/sitemap",
+        "methods": ["GET"],
+    }
+    assert expected_entry in actual
+
+    expected_entry = {
+        "url": "/api/bots/<string:user_id>",
+        "methods": ["DELETE", "GET", "PUT"],
+    }
+    assert expected_entry in actual

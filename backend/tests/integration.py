@@ -310,7 +310,7 @@ async def test_values_put_get_simple(app_client, admin_authorization_header, acc
             }
         }
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     mqtt_message = mqtt_messages.get(timeout=10.0)
@@ -344,7 +344,7 @@ async def test_values_put_get_encoded_dot(app_client, admin_authorization_header
             }
         }
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     mqtt_message = mqtt_messages.get(timeout=10.0)
@@ -380,7 +380,7 @@ async def test_values_put_get_via_post(app_client, admin_authorization_header, a
             }
         }
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     mqtt_message = mqtt_messages.get(timeout=10.0)
@@ -420,7 +420,7 @@ async def test_values_put_get_topN(app_client, admin_authorization_header, accou
             {'p': 'aaa.bbb.1min.7', 'v': 550.3 * 7 + 1},
         ],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     # check that total is almost, but not completely, the same as expected:
     assert expected['total'] == pytest.approx(actual['total'])
     expected['total'] = actual['total']
@@ -455,7 +455,7 @@ async def test_values_put_get_all_formats(app_client, admin_authorization_header
             }
         }
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
 @pytest.mark.skip("We no longer demand aligned timestamps when requesting values")
@@ -506,7 +506,7 @@ async def test_values_put_get_sort_limit(app_client, admin_authorization_header,
     }
 
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
 async def test_values_put_few_get_aggr(app_client, admin_authorization_header, account_id):
@@ -539,7 +539,7 @@ async def test_values_put_few_get_aggr(app_client, admin_authorization_header, a
             },
         },
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
 async def test_values_put_many_get_aggr(app_client, admin_authorization_header, account_id):
@@ -567,13 +567,13 @@ async def test_values_put_many_get_aggr(app_client, admin_authorization_header, 
         }
     }
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     # delete path:
     r = await app_client.get('/api/accounts/{}/paths/?filter={}'.format(account_id, TEST_PATH), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     path_id = actual['paths'][TEST_PATH][0]['id']
     r = await app_client.delete('/api/accounts/{}/paths/{}'.format(account_id, path_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
@@ -608,7 +608,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
         'slug': DASHBOARD,
         'widgets': [],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     # create widget:
@@ -630,7 +630,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
     widget_id = json.loads(r.data.decode('utf-8'))['id']
 
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     widget_post_data['id'] = widget_id
     widget_post_data['x'] = 0
     widget_post_data['y'] = 0
@@ -664,7 +664,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
 
     # make sure it was updated:
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     widget_post_data['id'] = widget_id
     widget_post_data['x'] = 0
     widget_post_data['y'] = 0
@@ -681,7 +681,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
 
     # get a single widget:
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets/{}/'.format(account_id, DASHBOARD, widget_id), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = widget_post_data
     assert r.status_code == 200
     assert expected == actual
@@ -724,7 +724,7 @@ async def test_dashboard_widgets_set_positions(app_client, admin_authorization_h
 
     # check that widgets' initial positions are correct:
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD_SLUG), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert r.status_code == 200
     for i in range(6):
         assert actual['list'][i]['x'] == 0
@@ -748,7 +748,7 @@ async def test_dashboard_widgets_set_positions(app_client, admin_authorization_h
     # check new positions and sort order:
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets'.format(account_id, DASHBOARD_SLUG), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200, r.data
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     for i in range(6):
         assert actual['list'][i]['id'] == positions[i]['widget_id']
         assert actual['list'][i]['x'] == positions[i]['x']
@@ -779,12 +779,12 @@ async def test_values_put_paths_get(app_client, admin_authorization_header, acco
         },
         'limit_reached': False,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected['paths']['test.values.put.paths.get.*'][0]['id'] = actual['paths']['test.values.put.paths.get.*'][0]['id']
     assert expected == actual
 
     r = await app_client.get('/api/accounts/{}/paths/?filter=test.*&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert PATH in [p["path"] for p in actual['paths']['test.*']]
 
     r = await app_client.get('/api/accounts/{}/paths/?filter=test.&failover_trailing=false'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -794,7 +794,7 @@ async def test_values_put_paths_get(app_client, admin_authorization_header, acco
 
     for prefix in ['t', 'te', 'tes', 'test', 'test.', 'test.v']:
         r = await app_client.get('/api/accounts/{}/paths/?filter={}&failover_trailing=true'.format(account_id, prefix), headers={'Authorization': admin_authorization_header})
-        actual = json.loads(r.data.decode('utf-8'))
+        actual = json.loads(await r.get_data())
         assert actual['paths'] == {}
         actual_paths = [p["path"] for p in actual['paths_with_trailing'][prefix]]
         assert PATH in actual_paths
@@ -802,7 +802,7 @@ async def test_values_put_paths_get(app_client, admin_authorization_header, acco
            assert path["path"][:len(prefix)] == prefix
 
     r = await app_client.get('/api/accounts/{}/paths/?filter=test.*,test.values.*'.format(account_id), headers={'Authorization': admin_authorization_header})
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert PATH in [p["path"] for p in actual['paths']['test.*']]
     assert PATH in [p["path"] for p in actual['paths']['test.values.*']]
 
@@ -828,7 +828,7 @@ async def test_value_put_path_get_put(app_client, admin_authorization_header, ac
         },
         'limit_reached': False,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     path_id = actual['paths']['test.values.put.paths.get.*'][0]['id']
     expected['paths']['test.values.put.paths.get.*'][0]['id'] = path_id
     assert expected == actual
@@ -838,7 +838,7 @@ async def test_value_put_path_get_put(app_client, admin_authorization_header, ac
     expected = {
         "path": PATH,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     # change the path:
@@ -855,7 +855,7 @@ async def test_value_put_path_get_put(app_client, admin_authorization_header, ac
     expected = {
         "path": NEW_PATH,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert expected == actual
 
     # delete it:
@@ -967,7 +967,7 @@ async def test_permissions_post_get(app_client, first_admin_id, admin_authorizat
 
     r = await app_client.get('/api/persons/{}/permissions'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = {
         'list': [
             {
@@ -1000,7 +1000,7 @@ async def test_permissions_post_get(app_client, first_admin_id, admin_authorizat
 
     r = await app_client.get('/api/persons/{}/permissions'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert len(actual['list']) == 1
     new_record = [x for x in actual['list'] if x['id'] == new_permission_id]
     assert new_record == [{
@@ -1022,7 +1022,7 @@ async def test_bots_crud(app_client, admin_authorization_header):
 
     r = await app_client.get('/api/bots', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     now = time.time()
     assert int(time_before_insert) <= int(actual['list'][0]['insert_time'])
     assert int(actual['list'][0]['insert_time']) <= int(now)
@@ -1043,7 +1043,7 @@ async def test_bots_crud(app_client, admin_authorization_header):
     # individual GET:
     r = await app_client.get('/api/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = expected['list'][0]
     expected['config'] = None
     assert actual == expected
@@ -1054,7 +1054,7 @@ async def test_bots_crud(app_client, admin_authorization_header):
     assert r.status_code == 204
     r = await app_client.get('/api/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['name'] == 'Bot 1 - altered'
 
     # DELETE:
@@ -1064,7 +1064,7 @@ async def test_bots_crud(app_client, admin_authorization_header):
     assert r.status_code == 404
     r = await app_client.get('/api/bots', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = {
         'list': [],
     }
@@ -1103,7 +1103,7 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
 
     r = await app_client.get('/api/persons', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = {
         'list': [
             actual['list'][0],  # admin is already in the list
@@ -1120,14 +1120,14 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
     # individual GET:
     r = await app_client.get('/api/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected_single = expected['list'][1]
     expected_single['permissions'] = []
     assert actual == expected_single
     # individual GET for the first (admin) user:
     r = await app_client.get('/api/persons/{}'.format(first_admin_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected_single = expected['list'][0]
     # make sure the permissions are there:
     expected_single['permissions'] = [
@@ -1145,7 +1145,7 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
     assert r.status_code == 204
     r = await app_client.get('/api/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['name'] == data['name']
     assert actual['username'] == data['username']
     assert actual['email'] == data['email']
@@ -1157,7 +1157,7 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
     assert r.status_code == 404
     r = await app_client.get('/api/persons', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert len(actual['list']) == 1
     assert actual['list'][0]['username'] == USERNAME_ADMIN
 
@@ -1332,7 +1332,7 @@ async def test_cors_get_post_protection(app_client):
 # async def test_status_info_after_first(app_client, first_admin_id):
 #     r = await app_client.get('/api/status/info')
 #     assert r.status_code == 200
-#     actual = json.loads(r.data.decode('utf-8'))
+#     actual = json.loads(await r.get_data())
 #     expected = {
 #         'alive': True,
 #         'db_migration_needed': False,
@@ -1344,22 +1344,22 @@ async def test_cors_get_post_protection(app_client):
 #     }
 #     assert expected == actual
 
-async def test_sitemap(app_client):
-    r = await app_client.get('/api/status/sitemap')
-    assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+# async def test_sitemap(app_client):
+#     r = await app_client.get('/api/status/sitemap')
+#     assert r.status_code == 200
+#     actual = json.loads(await r.get_data())
 
-    expected_entry = {
-        "url": "/api/status/sitemap",
-        "methods": ["GET"],
-    }
-    assert expected_entry in actual
+#     expected_entry = {
+#         "url": "/api/status/sitemap",
+#         "methods": ["GET"],
+#     }
+#     assert expected_entry in actual
 
-    expected_entry = {
-        "url": "/api/bots/<string:user_id>",
-        "methods": ["DELETE", "GET", "PUT"],
-    }
-    assert expected_entry in actual
+#     expected_entry = {
+#         "url": "/api/bots/<string:user_id>",
+#         "methods": ["DELETE", "GET", "PUT"],
+#     }
+#     assert expected_entry in actual
 
 @pytest.mark.asyncio
 async def test_head_method(app_client, admin_authorization_header, account_id):
@@ -1436,7 +1436,7 @@ async def test_profile_permissions_get_as_admin(app_client, first_admin_id, admi
     """ As admin, fetch your own permissions """
     r = await app_client.get('/api/profile/permissions', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = {
         'list': [
             {
@@ -1460,7 +1460,7 @@ async def test_profile_accounts_get(app_client, account_id_factory, first_admin_
     # initially the list of accounts should be empty:
     r = await app_client.get('/api/accounts', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected_empty = {
         'list': [],
     }
@@ -1484,13 +1484,13 @@ async def test_profile_accounts_get(app_client, account_id_factory, first_admin_
         # make sure it becomes available to admin:
         r = await app_client.get('/api/accounts', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 200
-        actual = json.loads(r.data.decode('utf-8'))
+        actual = json.loads(await r.get_data())
         assert expected_admin == actual
 
         # but not to person:
         r = await app_client.get('/api/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
-        actual = json.loads(r.data.decode('utf-8'))
+        actual = json.loads(await r.get_data())
         assert expected_person_empty == actual
 
     # now add a specific permission for each account and make sure it appears in the list:
@@ -1507,7 +1507,7 @@ async def test_profile_accounts_get(app_client, account_id_factory, first_admin_
         # now it should appear in the person's list:
         r = await app_client.get('/api/accounts', headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
-        actual = json.loads(r.data.decode('utf-8'))
+        actual = json.loads(await r.get_data())
         expected['list'].append(account)
         assert expected == actual
 
@@ -1518,7 +1518,7 @@ async def test_account_update(app_client, admin_authorization_header, account_id
     # check initial account name:
     r = await app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['name'] == FIRST_ACCOUNT_NAME
 
     # change account name:
@@ -1528,7 +1528,7 @@ async def test_account_update(app_client, admin_authorization_header, account_id
     # check that it has changed:
     r = await app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['name'] == 'asdf123'
 
 async def test_account_update_404(app_client, admin_authorization_header, account_id):
@@ -1560,7 +1560,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
     # the list of account bots is empty at the start: (even though we have asked for bot_id, so some non-account bot exists)
     r = await app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['list'] == []
 
     # then we create a bot:
@@ -1571,7 +1571,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
 
     r = await app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected = {
         'name': BOT_NAME1,
         'protocol': None,
@@ -1586,7 +1586,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
     # then we fetch just this bot:
     r = await app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     expected['config'] = None
     assert actual == expected
 
@@ -1597,7 +1597,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
 
     r = await app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['name'] == BOT_NAME1 + "123"
     assert actual['protocol'] == 'ping'
     assert actual['config'] == {"a": 123}
@@ -1608,7 +1608,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
 
     r = await app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual['list'] == []
 
 
@@ -1677,7 +1677,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
     expected = {
         'list': [],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # create an entity:
@@ -1707,7 +1707,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
             },
         ],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # get only the entity:
@@ -1721,7 +1721,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
         'details': ENTITY_DETAILS1,
         'protocols': ENTITY_PROTOCOLS1,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # update it:
@@ -1746,7 +1746,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
         'details': ENTITY_DETAILS2,
         'protocols': {},
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # try to update with invalid data, make sure it fails:
@@ -1769,7 +1769,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
     expected = {
         'list': [],
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
 
@@ -1818,7 +1818,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
             *initial['list'],
         ], key=lambda x: x['id']),
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # get only the record:
@@ -1830,7 +1830,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
         'protocol': CREDENTIAL_PROTOCOL1,
         'details': CREDENTIAL_DETAILS1,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # update it:
@@ -1851,7 +1851,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
         'protocol': CREDENTIAL_PROTOCOL2,  # and so has type
         'details': CREDENTIAL_DETAILS2,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # delete the record:
@@ -1861,7 +1861,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
     # the list is again empty:
     r = await app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == initial
 
 async def test_account_sensors_crud(app_client, admin_authorization_header, account_id):
@@ -1912,7 +1912,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
             *initial['list'],
         ], key=lambda x: x['id']),
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # get only the record:
@@ -1925,7 +1925,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
         'default_interval': SENSOR_DEFAULT_INTERVAL1,
         'details': SENSOR_DETAILS1,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # update it:
@@ -1948,7 +1948,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
         'default_interval': None,
         'details': SENSOR_DETAILS2,
     }
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == expected
 
     # delete the record:
@@ -1958,7 +1958,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
     # the list is again empty:
     r = await app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
+    actual = json.loads(await r.get_data())
     assert actual == initial
 
 if __name__ == "__main__":

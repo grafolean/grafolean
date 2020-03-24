@@ -41,7 +41,7 @@ async def status_sitemap_get():
     ignored_methods = set(['HEAD', 'OPTIONS'])
     rules = defaultdict(set)
     for rule in flask.current_app.url_map.iter_rules():
-        rules[str(rule)] |= rule.methods
+        rules[str(rule.rule)] |= rule.methods
     result = [{ 'url': k, 'methods': sorted(list(v - ignored_methods))} for k, v in rules.items()]
     return json.dumps(result), 200
 
