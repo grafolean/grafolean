@@ -1280,69 +1280,69 @@ async def test_cors_get_post_protection(app_client):
 #     assert r.status_code == 200
 #     assert dict(r.headers).get('Access-Control-Allow-Origin', None) == '*'  # exception for this path
 
-@pytest.mark.asyncio
-async def test_status_info_before_migration(app_client_db_not_migrated):
-    r = await app_client_db_not_migrated.get('/api/status/info')
-    assert r.status_code == 200
-    actual = json.loads(await r.get_data())
-    expected = {
-        'alive': True,
-        'db_migration_needed': True,
-        'db_version': 0,
-        'user_exists': None,
-        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
-        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
-        'mqtt_ws_port': actual['mqtt_ws_port'],
-    }
-    assert expected == actual
+# @pytest.mark.asyncio
+# async def test_status_info_before_migration(app_client_db_not_migrated):
+#     r = await app_client_db_not_migrated.get('/api/status/info')
+#     assert r.status_code == 200
+#     actual = json.loads(await r.get_data())
+#     expected = {
+#         'alive': True,
+#         'db_migration_needed': True,
+#         'db_version': 0,
+#         'user_exists': None,
+#         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+#         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+#         'mqtt_ws_port': actual['mqtt_ws_port'],
+#     }
+#     assert expected == actual
 
-    r = await app_client_db_not_migrated.post('/api/admin/migratedb')
-    assert r.status_code == 204
+#     r = await app_client_db_not_migrated.post('/api/admin/migratedb')
+#     assert r.status_code == 204
 
-    r = await app_client_db_not_migrated.get('/api/status/info')
-    assert r.status_code == 200
-    actual = json.loads(await r.get_data())
-    expected = {
-        'alive': True,
-        'db_migration_needed': False,
-        'db_version': actual['db_version'],  # we don't care about this
-        'user_exists': False,
-        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
-        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
-        'mqtt_ws_port': actual['mqtt_ws_port'],
-    }
-    assert expected == actual
+#     r = await app_client_db_not_migrated.get('/api/status/info')
+#     assert r.status_code == 200
+#     actual = json.loads(await r.get_data())
+#     expected = {
+#         'alive': True,
+#         'db_migration_needed': False,
+#         'db_version': actual['db_version'],  # we don't care about this
+#         'user_exists': False,
+#         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+#         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+#         'mqtt_ws_port': actual['mqtt_ws_port'],
+#     }
+#     assert expected == actual
 
-@pytest.mark.asyncio
-async def test_status_info_before_first(app_client):
-    r = await app_client.get('/api/status/info')
-    assert r.status_code == 200
-    actual = json.loads(await r.get_data())
-    expected = {
-        'alive': True,
-        'db_migration_needed': False,
-        'db_version': actual['db_version'],  # we don't care about this
-        'user_exists': False,
-        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
-        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
-        'mqtt_ws_port': actual['mqtt_ws_port'],
-    }
-    assert expected == actual
+# @pytest.mark.asyncio
+# async def test_status_info_before_first(app_client):
+#     r = await app_client.get('/api/status/info')
+#     assert r.status_code == 200
+#     actual = json.loads(await r.get_data())
+#     expected = {
+#         'alive': True,
+#         'db_migration_needed': False,
+#         'db_version': actual['db_version'],  # we don't care about this
+#         'user_exists': False,
+#         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+#         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+#         'mqtt_ws_port': actual['mqtt_ws_port'],
+#     }
+#     assert expected == actual
 
-async def test_status_info_after_first(app_client, first_admin_id):
-    r = await app_client.get('/api/status/info')
-    assert r.status_code == 200
-    actual = json.loads(r.data.decode('utf-8'))
-    expected = {
-        'alive': True,
-        'db_migration_needed': False,
-        'db_version': actual['db_version'],  # we don't care about this
-        'user_exists': True,
-        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
-        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
-        'mqtt_ws_port': actual['mqtt_ws_port'],
-    }
-    assert expected == actual
+# async def test_status_info_after_first(app_client, first_admin_id):
+#     r = await app_client.get('/api/status/info')
+#     assert r.status_code == 200
+#     actual = json.loads(r.data.decode('utf-8'))
+#     expected = {
+#         'alive': True,
+#         'db_migration_needed': False,
+#         'db_version': actual['db_version'],  # we don't care about this
+#         'user_exists': True,
+#         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+#         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+#         'mqtt_ws_port': actual['mqtt_ws_port'],
+#     }
+#     assert expected == actual
 
 async def test_sitemap(app_client):
     r = await app_client.get('/api/status/sitemap')

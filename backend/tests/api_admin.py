@@ -10,8 +10,8 @@ from common import (
   app_client,
   app_client_db_not_migrated,
   superuser_jwt_token,
+  first_admin_id,
 )
-
 
 
 def setup_module():
@@ -19,10 +19,6 @@ def setup_module():
 
 def teardown_module():
     delete_all_from_db()
-
-
-def test_pytest():
-  assert True == True
 
 
 @pytest.mark.asyncio
@@ -37,6 +33,8 @@ async def test_mqtt_auth_plug_getuser(app_client, superuser_jwt_token):
     data = {}
     r = await app_client.post('/api/admin/mqtt-auth-plug/getuser', data=json.dumps(data), headers={'Authorization': f'Bearer {superuser_jwt_token}'})
     assert r.status_code == 200
+    r = await app_client.post('/api/admin/mqtt-auth-plug/getuser', data=json.dumps(data), headers={'Authorization': f'Bearer 12{superuser_jwt_token}'})
+    assert r.status_code == 401
 
 
 @pytest.mark.asyncio
@@ -66,6 +64,40 @@ async def test_status_info_before_migration(app_client_db_not_migrated):
         'db_migration_needed': False,
         'db_version': actual['db_version'],  # we don't care about this
         'user_exists': False,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+    }
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_status_info_before_first(app_client):
+    r = await app_client.get('/api/status/info')
+    assert r.status_code == 200
+    actual = json.loads(await r.get_data())
+    expected = {
+        'alive': True,
+        'db_migration_needed': False,
+        'db_version': actual['db_version'],  # we don't care about this
+        'user_exists': False,
+        'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
+        'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
+        'mqtt_ws_port': actual['mqtt_ws_port'],
+    }
+    assert expected == actual
+
+
+@pytest.mark.asyncio
+async def test_status_info_after_first(app_client, first_admin_id):
+    r = await app_client.get('/api/status/info')
+    assert r.status_code == 200
+    actual = json.loads(await r.get_data())
+    expected = {
+        'alive': True,
+        'db_migration_needed': False,
+        'db_version': actual['db_version'],  # we don't care about this
+        'user_exists': True,
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
         'mqtt_ws_port': actual['mqtt_ws_port'],

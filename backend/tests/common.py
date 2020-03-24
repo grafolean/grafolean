@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 
@@ -28,6 +29,14 @@ from api.common import SuperuserJWTToken
 from utils import db, migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
+
+
+USERNAME_ADMIN = 'admin'
+PASSWORD_ADMIN = 'asdf123'
+USERNAME_USER1 = 'user1'
+PASSWORD_USER1 = '321abc'
+FIRST_ACCOUNT_NAME = 'First account'
+BOT_NAME1 = 'My Bot 1'
 
 
 def delete_all_from_db():
@@ -69,3 +78,11 @@ def app_client_db_not_migrated():
 @pytest.fixture
 def superuser_jwt_token():
     return SuperuserJWTToken.get_valid_token('pytest')
+
+@pytest.fixture
+async def first_admin_id(app_client):
+    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@grafolean.com' }
+    r = await app_client.post('/api/admin/first', json=data)
+    assert r.status_code == 201
+    admin_id = json.loads(await r.get_data())['id']
+    return int(admin_id)
