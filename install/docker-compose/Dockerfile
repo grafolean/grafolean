@@ -41,21 +41,21 @@ RUN \
     python3.6 -m compileall -b ./ && \
     find ./ -name '*.py' -exec rm '{}' ';'
 # - generate API docs from backend source code:
-RUN \
-    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-2.yml $VERSION 2.0 && \
-    pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-3.yml $VERSION 3.0.2
+# RUN \
+#     pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-2.yml $VERSION 2.0 && \
+#     pipenv run python grafolean.pyc generate-api-doc-yaml /api-doc-3.yml $VERSION 3.0.2
 
 
-# Convert API doc from Swagger/OpenAPI to static HTML:
-FROM node:10.15-jessie-slim as convert-swagger-to-html
-RUN \
-    npm install -g redoc-cli
-COPY --from=build-backend /api-doc-2.yml /api-doc-2.yml
-WORKDIR /
-RUN \
-    redoc-cli bundle /api-doc-2.yml && \
-    mkdir /api-doc && \
-    mv redoc-static.html /api-doc/index.html
+# # Convert API doc from Swagger/OpenAPI to static HTML:
+# FROM node:10.15-jessie-slim as convert-swagger-to-html
+# RUN \
+#     npm install -g redoc-cli
+# COPY --from=build-backend /api-doc-2.yml /api-doc-2.yml
+# WORKDIR /
+# RUN \
+#     redoc-cli bundle /api-doc-2.yml && \
+#     mkdir /api-doc && \
+#     mv redoc-static.html /api-doc/index.html
 
 
 FROM python:3.6-slim-stretch
@@ -93,9 +93,9 @@ COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/grafolean.nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/grafolean.nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY ./install/docker-compose/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
-COPY --from=build-backend /api-doc-2.yml /grafolean/api-doc/swagger2.yml
-COPY --from=build-backend /api-doc-3.yml /grafolean/api-doc/swagger3.yml
+# COPY --from=convert-swagger-to-html /api-doc/ /grafolean/api-doc/
+# COPY --from=build-backend /api-doc-2.yml /grafolean/api-doc/swagger2.yml
+# COPY --from=build-backend /api-doc-3.yml /grafolean/api-doc/swagger3.yml
 COPY --from=build-backend /grafolean/backend/ /grafolean/backend/
 RUN chmod +x /grafolean/apply_env.sh
 WORKDIR /grafolean/backend
