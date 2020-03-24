@@ -59,7 +59,7 @@ async def before_request():
         for rule in app.url_map.iter_rules():
             if flask.request.url_rule == rule:
                 methods |= rule.methods
-        response = flask.make_response('', 200)
+        response = await flask.make_response('', 200)
         response.headers['Allow'] = ",".join(sorted(methods))
         return response
 
@@ -167,7 +167,7 @@ async def handle_invalid_usage(error):
 async def handle_error(e):
     log.exception(e)
     code = 500
-    response = flask.make_response('Unknown exception: {}'.format(str(e)), code)
+    response = await flask.make_response('Unknown exception: {}'.format(str(e)), code)
     _add_cors_headers(response)  # even if we fail, we should still add CORS headers, or browsers won't display real error status
     return response
 

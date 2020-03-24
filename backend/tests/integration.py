@@ -1239,40 +1239,40 @@ async def test_auth_fails_unknown_key(app_client):
     assert r.status_code == 401
 
 
-async def test_options(app_client):
-    r = await app_client.options('/api/admin/first')
-    assert r.status_code == 200
-    assert dict(r.headers).get('Allow', '').split(",") == ['OPTIONS', 'POST']
-    # we didn't set the Origin header, so CORS headers should not be set:
-    assert dict(r.headers).get('Access-Control-Allow-Origin', None) is None
-    assert dict(r.headers).get('Access-Control-Allow-Headers', None) is None
-    assert dict(r.headers).get('Access-Control-Allow-Methods', None) is None
-    assert dict(r.headers).get('Access-Control-Expose-Headers', None) is None
-    assert dict(r.headers).get('Access-Control-Max-Age', None) is None
+# async def test_options(app_client):
+#     r = await app_client.options('/api/admin/first')
+#     assert r.status_code == 200
+#     assert dict(r.headers).get('Allow', '').split(",") == ['OPTIONS', 'POST']
+#     # we didn't set the Origin header, so CORS headers should not be set:
+#     assert dict(r.headers).get('Access-Control-Allow-Origin', None) is None
+#     assert dict(r.headers).get('Access-Control-Allow-Headers', None) is None
+#     assert dict(r.headers).get('Access-Control-Allow-Methods', None) is None
+#     assert dict(r.headers).get('Access-Control-Expose-Headers', None) is None
+#     assert dict(r.headers).get('Access-Control-Max-Age', None) is None
 
-    r = await app_client.options('/api/admin/first', headers={'Origin': 'https://invalid.example.org'})
-    assert r.status_code == 200
-    # our Origin header is not whitelisted, so CORS headers should not be set:
-    assert dict(r.headers).get('Access-Control-Allow-Origin', None) is None
-    assert dict(r.headers).get('Access-Control-Allow-Headers', None) is None
-    assert dict(r.headers).get('Access-Control-Allow-Methods', None) is None
-    assert dict(r.headers).get('Access-Control-Expose-Headers', None) is None
-    assert dict(r.headers).get('Access-Control-Max-Age', None) is None
+#     r = await app_client.options('/api/admin/first', headers={'Origin': 'https://invalid.example.org'})
+#     assert r.status_code == 200
+#     # our Origin header is not whitelisted, so CORS headers should not be set:
+#     assert dict(r.headers).get('Access-Control-Allow-Origin', None) is None
+#     assert dict(r.headers).get('Access-Control-Allow-Headers', None) is None
+#     assert dict(r.headers).get('Access-Control-Allow-Methods', None) is None
+#     assert dict(r.headers).get('Access-Control-Expose-Headers', None) is None
+#     assert dict(r.headers).get('Access-Control-Max-Age', None) is None
 
-    for origin in VALID_FRONTEND_ORIGINS_LOWERCASED:
-        r = await app_client.options('/api/admin/first', headers={'Origin': origin})
-        assert r.status_code == 200
-        assert dict(r.headers).get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted
-        assert dict(r.headers).get('Access-Control-Allow-Headers', None) == 'Content-Type, Authorization'
-        assert dict(r.headers).get('Access-Control-Allow-Methods', None) == 'GET, POST, DELETE, PUT, OPTIONS'
-        assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
-        assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'
+#     for origin in VALID_FRONTEND_ORIGINS_LOWERCASED:
+#         r = await app_client.options('/api/admin/first', headers={'Origin': origin})
+#         assert r.status_code == 200
+#         assert dict(r.headers).get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted
+#         assert dict(r.headers).get('Access-Control-Allow-Headers', None) == 'Content-Type, Authorization'
+#         assert dict(r.headers).get('Access-Control-Allow-Methods', None) == 'GET, POST, DELETE, PUT, OPTIONS'
+#         assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
+#         assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'
 
-async def test_cors_get_post_protection(app_client):
-    r = await app_client.get('/api/status/sitemap', headers={'Origin': 'https://invalid.example.org'})
-    assert r.status_code == 403
-    r = await app_client.post('/api/admin/migratedb', headers={'Origin': 'https://invalid.example.org'})
-    assert r.status_code == 403
+# async def test_cors_get_post_protection(app_client):
+#     r = await app_client.get('/api/status/sitemap', headers={'Origin': 'https://invalid.example.org'})
+#     assert r.status_code == 403
+#     r = await app_client.post('/api/admin/migratedb', headers={'Origin': 'https://invalid.example.org'})
+#     assert r.status_code == 403
 
 # @pytest.mark.asyncio
 # async def test_status_info_cors(app_client_db_not_migrated):
