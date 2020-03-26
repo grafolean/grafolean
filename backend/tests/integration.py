@@ -90,15 +90,15 @@ def app_client_db_not_migrated():
 @pytest.fixture
 async def first_admin_id(app_client):
     data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@grafolean.com' }
-    r = await app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/admin/first', json=data)
     assert r.status_code == 201
-    admin_id = json.loads(r.data.decode('utf-8'))['id']
+    admin_id = json.loads(await r.get_data())['id']
     return int(admin_id)
 
 @pytest.fixture
 async def admin_authorization_header(app_client, first_admin_id):
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
     auth_header = dict(r.headers).get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
@@ -116,9 +116,9 @@ async def account_id_factory(app_client, admin_authorization_header):
     async def gen(*account_names):
         for account_name in account_names:
             data = { 'name': account_name }
-            r = await app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = await app_client.post('/api/admin/accounts', json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            account_id = json.loads(r.data.decode('utf-8'))['id']
+            account_id = json.loads(await r.get_data())['id']
             yield account_id
     yield gen
 
@@ -137,13 +137,13 @@ async def bot_factory(app_client, admin_authorization_header):
     """
     async def gen(name, protocol):
         data = { 'name': name, 'protocol': protocol }
-        r = await app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = await app_client.post('/api/bots', json=data, headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201, r.data
-        j = json.loads(r.data.decode('utf-8'))
+        j = json.loads(await r.get_data())
         bot_id = j['id']
         r = await app_client.get('/api/bots/{}/token'.format(bot_id), headers={'Authorization': admin_authorization_header})
         assert r.status_code == 200, r.data
-        j = json.loads(r.data.decode('utf-8'))
+        j = json.loads(await r.get_data())
         bot_token = j['token']
         return bot_id, bot_token
     return gen
@@ -166,9 +166,9 @@ async def account_credentials_factory(app_client, admin_authorization_header, ac
     async def gen(*credential_data):
         for protocol, name in credential_data:
             data = { 'name': name, 'protocol': protocol, 'details': {} }
-            r = await app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = await app_client.post('/api/accounts/{}/credentials'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            credential_id = json.loads(r.data.decode('utf-8'))['id']
+            credential_id = json.loads(await r.get_data())['id']
             yield credential_id
     yield gen
 
@@ -177,24 +177,24 @@ async def account_sensors_factory(app_client, admin_authorization_header, accoun
     async def gen(*sensor_data):
         for protocol, name, interval in sensor_data:
             data = { 'name': name, 'protocol': protocol, 'default_interval': interval, 'details': {} }
-            r = await app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = await app_client.post('/api/accounts/{}/sensors'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            sensor_id = json.loads(r.data.decode('utf-8'))['id']
+            sensor_id = json.loads(await r.get_data())['id']
             yield sensor_id
     yield gen
 
 @pytest.fixture
 async def person_id(app_client, admin_authorization_header):
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
-    r = await app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    user_id = json.loads(r.data.decode('utf-8'))['id']
+    user_id = json.loads(await r.get_data())['id']
     return user_id
 
 @pytest.fixture
 async def person_authorization_header(app_client, admin_authorization_header, person_id):
     data = { 'username': USERNAME_USER1, 'password': PASSWORD_USER1 }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
     auth_header = dict(r.headers).get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
@@ -295,7 +295,7 @@ async def test_values_put_get_simple(app_client, admin_authorization_header, acc
     assert mqtt_messages.empty()
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
 
     r = await app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -329,7 +329,7 @@ async def test_values_put_get_encoded_dot(app_client, admin_authorization_header
     assert mqtt_messages.empty()
 
     data = [{'p': '%2eqqqq.ww%2eww.asdf', 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
 
     r = await app_client.get('/api/accounts/{}/values/?p=%252eqqqq.ww%252eww.asdf&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -359,7 +359,7 @@ async def test_values_put_get_via_post(app_client, admin_authorization_header, a
     assert mqtt_messages.empty()
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     args = {
@@ -393,7 +393,7 @@ async def test_values_put_get_none(app_client, admin_authorization_header, accou
         Put a None instead of a value, make sure it is rejected.
     """
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': None}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 400
 
 async def test_values_put_get_topN(app_client, admin_authorization_header, account_id):
@@ -406,7 +406,7 @@ async def test_values_put_get_topN(app_client, admin_authorization_header, accou
         for i in range(10):
             data.append({'p': f'aaa.bbb.1min.{i}', 't': ts, 'v': 550.3 * i + t})
 
-    r = await app_client.put(f'/api/accounts/{account_id}/values/', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put(f'/api/accounts/{account_id}/values/', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     r = await app_client.get(f'/api/accounts/{account_id}/topvalues/?f=aaa.bbb.1min.*&n=3&t={1234567890.123 + 60}', headers={'Authorization': admin_authorization_header})
@@ -487,7 +487,7 @@ async def test_values_put_get_sort_limit(app_client, admin_authorization_header,
         {'p': TEST_PATH, 't': 1330002000 + 560, 'v': 140},
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     url = '/api/accounts/{}/values/?p={}&a=no&sort=desc&limit=2'.format(account_id, TEST_PATH)
@@ -521,7 +521,7 @@ async def test_values_put_few_get_aggr(app_client, admin_authorization_header, a
         {'p': TEST_PATH, 't': 1330002000 + 760, 'v': 160},
     ]
 
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     t_from = 1330002000  # aggr level 0 - every 1 hour
@@ -551,7 +551,7 @@ async def test_values_put_many_get_aggr(app_client, admin_authorization_header, 
     t_to = t_from + 27 * 3600
     data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
 
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
@@ -594,7 +594,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
 
     WIDGET = 'chart1'
     data = {'name': DASHBOARD + ' name', 'slug': DASHBOARD}
-    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     # check mqtt messages:
     mqtt_message = mqtt_messages.get(timeout=10.0)
@@ -627,7 +627,7 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
     }
     r = await app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201, r.data
-    widget_id = json.loads(r.data.decode('utf-8'))['id']
+    widget_id = json.loads(await r.get_data())['id']
 
     r = await app_client.get('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
     actual = json.loads(await r.get_data())
@@ -699,7 +699,7 @@ async def test_dashboard_widgets_set_positions(app_client, admin_authorization_h
     """
     DASHBOARD_SLUG = 'dashboard1'
     data = {'name': DASHBOARD_SLUG + ' name', 'slug': DASHBOARD_SLUG}
-    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     # create N widgets:
@@ -719,7 +719,7 @@ async def test_dashboard_widgets_set_positions(app_client, admin_authorization_h
     for _ in range(6):
         r = await app_client.post('/api/accounts/{}/dashboards/{}/widgets/'.format(account_id, DASHBOARD_SLUG), data=json.dumps(widget_post_data), content_type='application/json', headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201, r.data
-        widget_id = json.loads(r.data.decode('utf-8'))['id']
+        widget_id = json.loads(await r.get_data())['id']
         widget_ids.append(widget_id)
 
     # check that widgets' initial positions are correct:
@@ -763,7 +763,7 @@ async def test_values_put_paths_get(app_client, admin_authorization_header, acco
     """
     PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
     data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     r = await app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -812,7 +812,7 @@ async def test_value_put_path_get_put(app_client, admin_authorization_header, ac
     """
     PATH = 'test.values.put.paths.get.aaaa.bbbb.cccc'
     data = [{'p': PATH, 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/values/'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     r = await app_client.get('/api/accounts/{}/paths/?filter=test.values.put.paths.get.*'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -846,7 +846,7 @@ async def test_value_put_path_get_put(app_client, admin_authorization_header, ac
     data = {
         "path": NEW_PATH,
     }
-    r = await app_client.put(f'/api/accounts/{account_id}/paths/{path_id}', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put(f'/api/accounts/{account_id}/paths/{path_id}', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
 
     # make sure it has changed:
@@ -870,23 +870,23 @@ async def test_accounts(app_client):
         Create first admin, login, make sure you get X-JWT-Token. Try to create another first admin, fail.
     """
     data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'test@grafolean.com' }
-    r = await app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/admin/first', json=data)
     assert r.status_code == 201
-    admin_id = json.loads(r.data.decode('utf-8'))['id']
+    admin_id = json.loads(await r.get_data())['id']
 
     # next fails:
     data = { 'name': 'Second User', 'username': 'aaa', 'password': 'bbb', 'email': 'test2@grafolean.com' }
-    r = await app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/admin/first', json=data)
     assert r.status_code == 401
 
     # invalid login:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN + 'nooot' }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 401
 
     # valid login:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
@@ -910,7 +910,7 @@ async def test_jwt_expiry_refresh(app_client, first_admin_id):
 
     # valid login, but get the expired token:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
@@ -943,7 +943,7 @@ async def test_jwt_total_expiry(app_client, first_admin_id):
 
     # valid login, but get the expired token:
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
-    r = await app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
     admin_authorization_header = dict(r.headers).get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', admin_authorization_header)
@@ -984,12 +984,12 @@ async def test_permissions_post_get(app_client, first_admin_id, admin_authorizat
         'methods': [ 'GET', 'POST' ],
     }
     # you can't change your own permissions:
-    r = await app_client.post('/api/persons/{}/permissions'.format(first_admin_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons/{}/permissions'.format(first_admin_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 401
 
-    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    response = json.loads(r.data.decode('utf-8'))
+    response = json.loads(await r.get_data())
     new_permission_id = response['id']
     # check mqtt:
     m = mqtt_messages.get(timeout=3.0)
@@ -1015,9 +1015,9 @@ async def test_bots_crud(app_client, admin_authorization_header):
     """
     time_before_insert = time.time()
     data = { 'name': 'Bot 1' }
-    r = await app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/bots', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    j = json.loads(r.data.decode('utf-8'))
+    j = json.loads(await r.get_data())
     bot_id = j['id']
 
     r = await app_client.get('/api/bots', headers={'Authorization': admin_authorization_header})
@@ -1050,7 +1050,7 @@ async def test_bots_crud(app_client, admin_authorization_header):
 
     # PUT:
     data = { 'name': 'Bot 1 - altered' }
-    r = await app_client.put('/api/bots/{}'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/bots/{}'.format(bot_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
     r = await app_client.get('/api/bots/{}'.format(bot_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -1078,14 +1078,14 @@ async def test_bots_token(app_client, admin_authorization_header, bot_id, bot_to
         'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
-    r = await app_client.post('/api/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/bots/{}/permissions'.format(bot_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
-    r = await app_client.put('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
+    r = await app_client.put('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), json=data)
     assert r.status_code == 401
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
-    r = await app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), json=data)
     assert r.status_code == 200
     r = await app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no&b={}'.format(account_id, bot_token))
     assert r.status_code == 401
@@ -1096,9 +1096,9 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
         Create a person, make sure it is in the list... and so on.
     """
     data = { 'name': 'Person 1', 'username': 'person1', 'email': 'test@grafolean.com', 'password': 'hello' }
-    r = await app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    j = json.loads(r.data.decode('utf-8'))
+    j = json.loads(await r.get_data())
     person_id = j['id']
 
     r = await app_client.get('/api/persons', headers={'Authorization': admin_authorization_header})
@@ -1141,7 +1141,7 @@ async def test_persons_crud(app_client, first_admin_id, admin_authorization_head
 
     # PUT:
     data = { 'name': 'Person 1 - altered', 'username': 'person1b', 'email': 'test2@grafolean.com' }
-    r = await app_client.put('/api/persons/{}'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/persons/{}'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
     r = await app_client.get('/api/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -1179,7 +1179,7 @@ async def test_auth_grant_permission(app_client, admin_authorization_header, per
         'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': [ 'GET' ],  # but only GET
     }
-    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     # try again:
@@ -1213,18 +1213,18 @@ async def test_auth_trailing_slash_not_needed(app_client, admin_authorization_he
             'resource_prefix': resource_prefix,
             'methods': None,
         }
-        r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201
-        permission_id = json.loads(r.data.decode('utf-8'))['id']  # remember permission ID for later, so you can remove it
+        permission_id = json.loads(await r.get_data())['id']  # remember permission ID for later, so you can remove it
 
         # try again:
         expected = {'id': account_id, 'name': FIRST_ACCOUNT_NAME}
         r = await app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
-        assert json.loads(r.data.decode('utf-8')) == expected
+        assert json.loads(await r.get_data()) == expected
         r = await app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 200
-        assert json.loads(r.data.decode('utf-8')) == expected
+        assert json.loads(await r.get_data()) == expected
         r = await app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
         assert r.status_code == 401  # stays denied
 
@@ -1232,11 +1232,11 @@ async def test_auth_trailing_slash_not_needed(app_client, admin_authorization_he
         r = await app_client.delete('/api/persons/{}/permissions/{}'.format(person_id, permission_id), headers={'Authorization': admin_authorization_header})
         assert r.status_code == 204
 
-async def test_auth_fails_unknown_key(app_client):
-    jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
-    faulty_authorization_header = 'Bearer 0:' + jwt_token
-    r = await app_client.get('/api/bots', headers={'Authorization': faulty_authorization_header})
-    assert r.status_code == 401
+# async def test_auth_fails_unknown_key(app_client):
+#     jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
+#     faulty_authorization_header = 'Bearer 0:' + jwt_token
+#     r = await app_client.get('/api/bots', headers={'Authorization': faulty_authorization_header})
+#     assert r.status_code == 401
 
 
 # async def test_options(app_client):
@@ -1380,7 +1380,7 @@ async def test_mqtt_subscribe_changed(app_client, admin_authorization_header, ac
         'resource_prefix': 'accounts/{}'.format(account_id_ok),
         'methods': [ 'GET' ],
     }
-    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
@@ -1388,7 +1388,7 @@ async def test_mqtt_subscribe_changed(app_client, admin_authorization_header, ac
 
     # create a dashboard:
     data = {'name': 'Dashboard 1', 'slug': 'dashboard-1'}
-    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id_ok), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id_ok), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     # now check that both mqtt message queues received the message:
     mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
@@ -1400,7 +1400,7 @@ async def test_mqtt_subscribe_changed(app_client, admin_authorization_header, ac
 
     # now create a dashboard in the second account:
     data = {'name': 'Dashboard 2', 'slug': 'dashboard-2'}
-    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id_denied), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/dashboards/'.format(account_id_denied), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     # superuser mqtt message queue still received the message:
     mqtt_message = mqtt_messages_superuser.get(timeout=10.0)
@@ -1424,11 +1424,11 @@ def print_queue(q, name):
 async def test_persons_email_validation(app_client, admin_authorization_header, account_id):
     # this test assumes that we have access to DNS resolver, which is not always true, so we skip it:
     # data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@nonexistentdomain.qwewertdfsgsdfgsdfg.com' }
-    # r = await app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    # r = await app_client.post('/api/persons', json=data, headers={'Authorization': admin_authorization_header})
     # assert r.status_code == 400
 
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
-    r = await app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons', json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
 
@@ -1501,7 +1501,7 @@ async def test_profile_accounts_get(app_client, account_id_factory, first_admin_
             'resource_prefix': 'accounts/{}'.format(account['id']),
             'methods': [ 'GET' ],
         }
-        r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
         assert r.status_code == 201
 
         # now it should appear in the person's list:
@@ -1523,7 +1523,7 @@ async def test_account_update(app_client, admin_authorization_header, account_id
 
     # change account name:
     data = {'name': 'asdf123'}
-    r = await app_client.put('/api/accounts/{}'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
     # check that it has changed:
     r = await app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -1534,7 +1534,7 @@ async def test_account_update(app_client, admin_authorization_header, account_id
 async def test_account_update_404(app_client, admin_authorization_header, account_id):
     # try to update non-existant account:
     data = {'name': 'asdf123'}
-    r = await app_client.put('/api/accounts/{}'.format(account_id + 1), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}'.format(account_id + 1), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 404
 
 async def test_accounts_name_not_unique(account_id_factory):
@@ -1554,7 +1554,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
         'resource_prefix': 'accounts/{}'.format(account_id),
         'methods': None,
     }
-    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     # the list of account bots is empty at the start: (even though we have asked for bot_id, so some non-account bot exists)
@@ -1565,9 +1565,9 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
 
     # then we create a bot:
     data = {'name': BOT_NAME1}
-    r = await app_client.post('/api/accounts/{}/bots'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
+    r = await app_client.post('/api/accounts/{}/bots'.format(account_id), json=data, headers={'Authorization': person_authorization_header})
     assert r.status_code == 201
-    account_bot_id = json.loads(r.data.decode('utf-8'))['id']
+    account_bot_id = json.loads(await r.get_data())['id']
 
     r = await app_client.get('/api/accounts/{}/bots'.format(account_id), headers={'Authorization': person_authorization_header})
     assert r.status_code == 200
@@ -1592,7 +1592,7 @@ async def test_account_bots(app_client, bot_id, admin_authorization_header, pers
 
     # then we update it:
     data = {'name': BOT_NAME1 + "123", 'protocol': 'ping', 'config': '{"a": 123}'}
-    r = await app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': person_authorization_header})
+    r = await app_client.put('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), json=data, headers={'Authorization': person_authorization_header})
     assert r.status_code == 204
 
     r = await app_client.get('/api/accounts/{}/bots/{}'.format(account_id, account_bot_id), headers={'Authorization': person_authorization_header})
@@ -1621,7 +1621,7 @@ async def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, b
         'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
     }
-    r = await app_client.post('/api/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/bots/{}/permissions'.format(bot_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
     mqtt_message = mqtt_messages.get(timeout=3.0)
@@ -1630,7 +1630,7 @@ async def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, b
     assert mqtt_message.topic == f'changed/bots/{bot_id}'
 
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
-    r = await app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
+    r = await app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), json=data)
     assert r.status_code == 200
 
     mqtt_message = mqtt_messages.get(timeout=3.0)
@@ -1688,9 +1688,9 @@ async def test_account_entities(app_client, admin_authorization_header, account_
         'details': ENTITY_DETAILS1,
         'protocols': ENTITY_PROTOCOLS1,
     }
-    r = await app_client.post('/api/accounts/{}/entities'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/entities'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201, r.data
-    entity_id = json.loads(r.data.decode('utf-8'))['id']
+    entity_id = json.loads(await r.get_data())['id']
 
     # check result:
     r = await app_client.get('/api/accounts/{}/entities'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -1732,7 +1732,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
         'details': ENTITY_DETAILS2,
         'protocols': {},
     }
-    r = await app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # get only the entity:
@@ -1756,7 +1756,7 @@ async def test_account_entities(app_client, admin_authorization_header, account_
     ENTITY_PROTOCOLS_INVALID2 = { 'snmp': { 'credential': credential_id, 'sensors': [sensor_ping1_id] } }
     for protocols in [ENTITY_PROTOCOLS_INVALID1, ENTITY_PROTOCOLS_INVALID2]:
         data['protocols'] = protocols
-        r = await app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        r = await app_client.put('/api/accounts/{}/entities/{}'.format(account_id, entity_id), json=data, headers={'Authorization': admin_authorization_header})
         assert r.status_code == 400
 
     # delete the entity:
@@ -1792,7 +1792,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
     # table has some initial data, remember it:
     r = await app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    initial = json.loads(r.data.decode('utf-8'))
+    initial = json.loads(await r.get_data())
 
     # create a record:
     data = {
@@ -1800,9 +1800,9 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
         'protocol': CREDENTIAL_PROTOCOL1,
         'details': CREDENTIAL_DETAILS1,
     }
-    r = await app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/credentials'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    record_id = json.loads(r.data.decode('utf-8'))['id']
+    record_id = json.loads(await r.get_data())['id']
 
     # check result:
     r = await app_client.get('/api/accounts/{}/credentials'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -1839,7 +1839,7 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
         'protocol': CREDENTIAL_PROTOCOL2,
         'details': CREDENTIAL_DETAILS2,
     }
-    r = await app_client.put('/api/accounts/{}/credentials/{}'.format(account_id, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/credentials/{}'.format(account_id, record_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # get only the record:
@@ -1884,7 +1884,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
     # the list of sensors contains a few initial records:
     r = await app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
-    initial = json.loads(r.data.decode('utf-8'))
+    initial = json.loads(await r.get_data())
 
     # create a record:
     data = {
@@ -1893,9 +1893,9 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
         'default_interval': SENSOR_DEFAULT_INTERVAL1,
         'details': SENSOR_DETAILS1,
     }
-    r = await app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.post('/api/accounts/{}/sensors'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
-    record_id = json.loads(r.data.decode('utf-8'))['id']
+    record_id = json.loads(await r.get_data())['id']
 
     # check result:
     r = await app_client.get('/api/accounts/{}/sensors'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -1935,7 +1935,7 @@ async def test_account_sensors_crud(app_client, admin_authorization_header, acco
         'default_interval': None,
         'details': SENSOR_DETAILS2,
     }
-    r = await app_client.put('/api/accounts/{}/sensors/{}'.format(account_id, record_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    r = await app_client.put('/api/accounts/{}/sensors/{}'.format(account_id, record_id), json=data, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
     # get only the record:

@@ -7,10 +7,16 @@ import pytest
 from common import (
   delete_all_from_db,
   VALID_FRONTEND_ORIGINS_LOWERCASED,
+  FIRST_ACCOUNT_NAME,
   app_client,
   app_client_db_not_migrated,
   superuser_jwt_token,
   first_admin_id,
+  admin_authorization_header,
+  person_id,
+  person_authorization_header,
+  account_id,
+  account_id_factory,
 )
 
 
@@ -19,6 +25,59 @@ def setup_module():
 
 def teardown_module():
     delete_all_from_db()
+
+
+@pytest.mark.skip("Test temporarily disabled - problems making strict_slashes work")
+@pytest.mark.asyncio
+async def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
+    """
+        If resource_prefix is set to 'asdf/ghij', it should match:
+          - asdf/ghij
+          - asdf/ghij/whatever
+        But not:
+          - asdf/ghijklm
+        Also, the effect of `asdf/ghij/` should be the same as `asdf/ghij` (it should match URL `asdf/ghij` without trailing slash too).
+    """
+    r = await app_client.get('/api/accounts/{}'.format(account_id))
+    assert r.status_code == 401
+    r = await app_client.get('/api/accounts/{}/'.format(account_id))
+    assert r.status_code == 401
+    r = await app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
+    assert r.status_code == 401
+
+    # we want to test that both versions (with an without trailing slash) of resource_prefix perform the same:
+    for resource_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
+        # grant a permission:
+        data = {
+            'resource_prefix': resource_prefix,
+            'methods': None,
+        }
+        r = await app_client.post('/api/persons/{}/permissions'.format(person_id), json=data, headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201
+        permission_id = json.loads(await r.get_data())['id']  # remember permission ID for later, so you can remove it
+
+        # try again:
+        expected = {'id': account_id, 'name': FIRST_ACCOUNT_NAME}
+        r = await app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        assert json.loads(await r.get_data()) == expected
+        r = await app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 200
+        assert json.loads(await r.get_data()) == expected
+        r = await app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
+        assert r.status_code == 401  # stays denied
+
+        # then clean up:
+        r = await app_client.delete('/api/persons/{}/permissions/{}'.format(person_id, permission_id), headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_auth_fails_unknown_key(app_client):
+    jwt_token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJzZXNzaW9uX2lkIjoiZjkyMjEzYmYxODFlN2VmYmYwODg0MzgwMGU3MjI1ZDc3ZjBkZTY4NjI5ZDdkZjE3ODhkZjViZjQ1NjJlYWY1ZiIsImV4cCI6MTU0MDIyNjA4NX0.rsznt_Ja_RV9vizJbio6dDnaaBVKay1T0qq2uVLjTas'
+    faulty_authorization_header = 'Bearer 0:' + jwt_token
+    r = await app_client.get('/api/bots', headers={'Authorization': faulty_authorization_header})
+    assert r.status_code == 401
 
 
 @pytest.mark.asyncio
