@@ -103,7 +103,7 @@ def account_id_factory(app_client, admin_authorization_header):
     """
         Usage:
             def test_123(account_id_factory):
-                acc1, acc2 = await taccount_id_factory("First account", "Second account")
+                acc1, acc2 = await account_id_factory("First account", "Second account")
                 ...
         Idea comes from: https://github.com/pytest-dev/pytest/issues/2703#issue-251382665
         However, we needed to get rid of generators for async.
@@ -124,7 +124,7 @@ async def account_id(app_client, account_id_factory):
     """
         Generate just a single account_id (because this is what we want in most of the tests).
     """
-    account_id, = await (account_id_factory(FIRST_ACCOUNT_NAME))
+    account_id, = await account_id_factory(FIRST_ACCOUNT_NAME)
     return account_id
 
 @pytest.fixture
