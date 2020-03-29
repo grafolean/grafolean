@@ -9,3 +9,4 @@ backend/src/*
 backend/zappa_settings.json
 
 .env
+loadtest/
