@@ -1218,7 +1218,6 @@ async def test_auth_grant_permission(app_client, admin_authorization_header, per
     assert r.status_code == 401  # it would have been 4xx anyway, but it must be denied before that
 
 
-@pytest.mark.skip("Test temporarily disabled - problems making strict_slashes work")
 @pytest.mark.asyncio
 async def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
     """

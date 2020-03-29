@@ -14,7 +14,7 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
-quart = "*"
+quart = {editable = true,git = "https://github.com/pgjones/quart",ref = "37d539de01532c8771e997e306a5dd3b79d71470"}
 
 [dev-packages]
 pytest = "*"

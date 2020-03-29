@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8ea88e5c1b170a809b261c6320e8746021f5917d9b20278bbaddfd136e5dec96"
+            "sha256": "9c2a135edbcce1ca23367717cc656cbdc95b88b540a7e9be347613b7cdf164d5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -308,12 +308,9 @@
             "version": "==4.0.0"
         },
         "quart": {
-            "hashes": [
-                "sha256:4a569f5994ef66046ecc047165ffa61264cdb16edcdbfb5e8fe6065818855a10",
-                "sha256:eef9c074c7ca856b9abc85e9291c684b955822bf38dbd23378886064415a20f6"
-            ],
-            "index": "pypi",
-            "version": "==0.11.3"
+            "editable": true,
+            "git": "https://github.com/pgjones/quart",
+            "ref": "37d539de01532c8771e997e306a5dd3b79d71470"
         },
         "six": {
             "hashes": [
@@ -402,17 +399,17 @@
         },
         "boto3": {
             "hashes": [
-                "sha256:6f3b532babb42b2c193a288420ad1e2e0bd3af6e9fc10547fdd3589c16d402ad",
-                "sha256:f31e10348909dd4dbe0e75ecd695a78c13dc4b49712cf90048a9e0ae80a4a84d"
+                "sha256:8bf7e3611d46e8214bf225169ac55de762d9d341514f81ebae885dd601138fcf",
+                "sha256:913fc7bbb9df147ed6fa0bd2b391469652ee8cad3e26ca2355e6ff774d9516fb"
             ],
-            "version": "==1.12.29"
+            "version": "==1.12.31"
         },
         "botocore": {
             "hashes": [
-                "sha256:7bcae36b3b9449b2137069701e7a877980d63bc331f6c6d77d2c7db42202ebe5",
-                "sha256:d49caf1dae7dd903c2af443dbafd76dcf3902d87236a83f8b64e77aa556d1c6b"
+                "sha256:3d4684f61ff07aa1b4cd30d13a6b8e6416142be5a2a55aedcc1d7974b9415bb1",
+                "sha256:86e3f25c9a94e9e85915ef3dcb13b496d25873a40b81f4e23a7a0250248d1be9"
             ],
-            "version": "==1.15.29"
+            "version": "==1.15.31"
         },
         "certifi": {
             "hashes": [
@@ -668,10 +665,10 @@
         },
         "tqdm": {
             "hashes": [
-                "sha256:0d8b5afb66e23d80433102e9bd8b5c8b65d34c2a2255b2de58d97bd2ea8170fd",
-                "sha256:f35fb121bafa030bd94e74fcfd44f3c2830039a2ddef7fc87ef1c2d205237b24"
+                "sha256:4f882b23c492e7060f50d83af86f163b67e4cfbe35dfe12077e748c56282f438",
+                "sha256:f0fc945df434e5e612fb7eb93bf29e924940913590450c3760f198dd75a2cd19"
             ],
-            "version": "==4.43.0"
+            "version": "==4.44.0"
         },
         "troposphere": {
             "hashes": [
