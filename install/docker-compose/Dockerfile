@@ -12,7 +12,7 @@ RUN npm run build
 RUN sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
 
 
-FROM python:3.6-slim-stretch as python-requirements
+FROM python:3.8.2-slim-buster as python-requirements
 WORKDIR /grafolean/backend
 COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 
@@ -21,7 +21,7 @@ COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 #  - /requirements.txt
 #  - /api-doc.yml
 #  - /grafolean/backend/
-FROM python:3.6-slim-stretch as build-backend
+FROM python:3.8.2-slim-buster as build-backend
 ARG VERSION="0.0.0"
 WORKDIR /grafolean/backend
 RUN \
@@ -38,7 +38,7 @@ COPY ./backend/ /grafolean/backend/
 RUN \
     find ./ ! -name '*.py' -type f -exec rm '{}' ';' && \
     rm -rf tests/ .vscode/ .pytest_cache/ __pycache__/ && \
-    python3.6 -m compileall -b ./ && \
+    python3.8 -m compileall -b ./ && \
     find ./ -name '*.py' -exec rm '{}' ';'
 # - generate API docs from backend source code:
 # RUN \
@@ -58,7 +58,7 @@ RUN \
 #     mv redoc-static.html /api-doc/index.html
 
 
-FROM python:3.6-slim-stretch
+FROM python:3.8.2-slim-buster
 ARG VERSION
 ARG VCS_REF
 ARG BUILD_DATE
