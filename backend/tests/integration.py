@@ -1395,7 +1395,6 @@ async def test_head_method(app_client, admin_authorization_header, account_id):
     r = await app_client.head('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
 
-@pytest.mark.skip("Test temporarily disabled - problems making mqtt work")
 @pytest.mark.asyncio
 async def test_mqtt_subscribe_changed(app_client, admin_authorization_header, account_id_factory, person_id, person_authorization_header, mqtt_message_queue_factory):
     """
