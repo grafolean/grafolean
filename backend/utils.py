@@ -294,7 +294,7 @@ async def migration_step_14():
                 continue  # nothing to do here
             new_details = copy.deepcopy(details)
             new_details['output_path'] = details['output_path'] + '.{$index}'
-            c2.execute("UPDATE sensors SET details = $1 WHERE id = $2;", json.dumps(new_details), sensor_id)
+            await c2.execute("UPDATE sensors SET details = $1 WHERE id = $2;", json.dumps(new_details), sensor_id)
 
 async def migration_step_15():
     """ Bots should save a time of last successful authentication.
@@ -322,7 +322,7 @@ async def migration_step_17():
             if dashboard_id != last_dashboard_id:
                 position = 0
                 last_dashboard_id = dashboard_id
-            c2.execute('UPDATE widgets SET position = $1 WHERE id = $2', position, widget_id)
+            await c2.execute('UPDATE widgets SET position = $1 WHERE id = $2', position, widget_id)
             position += 1
 
 async def migration_step_18():
@@ -340,9 +340,9 @@ async def migration_step_18():
         res = await c.fetch('SELECT DISTINCT(dashboard) FROM widgets;')
         for dashboard_id, in res:
             position_y = 0
-            res2 = c2.fetch('SELECT id FROM widgets WHERE dashboard = $1 ORDER BY position;', dashboard_id)
+            res2 = await c2.fetch('SELECT id FROM widgets WHERE dashboard = $1 ORDER BY position;', dashboard_id)
             for widget_id, in res2:
-                c3.execute('UPDATE widgets SET position_y = $1 WHERE id = $2', position_y, widget_id)
+                await c3.execute('UPDATE widgets SET position_y = $1 WHERE id = $2', position_y, widget_id)
                 position_y += DEFAULT_HEIGHT
 
         await c.execute('ALTER TABLE widgets ALTER COLUMN position_y SET NOT NULL;')

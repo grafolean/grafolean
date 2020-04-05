@@ -1702,7 +1702,6 @@ async def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, b
     assert mqtt_messages.empty()
 
 
-@pytest.mark.skip("Test newly failing, investigate!")
 @pytest.mark.asyncio
 async def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory, bot_factory):
     """

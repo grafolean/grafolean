@@ -1162,7 +1162,7 @@ class Entity(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, json_data, account_id, force_id=None):
+    async def forge_from_input(cls, json_data, account_id, force_id=None):
         jsonschema.validate(json_data, EntitySchemaInputs)
 
         name = json_data['name']
@@ -1170,7 +1170,7 @@ class Entity(object):
         parent = json_data.get('parent', None)
         details = json_data['details']
         protocols = json_data.get('protocols', {})
-        Entity.validate_protocols(protocols, account_id)
+        await Entity.validate_protocols(protocols, account_id)
         return cls(name, entity_type, parent, details, account_id, protocols, force_id=force_id)
 
     @staticmethod
@@ -1194,9 +1194,9 @@ class Entity(object):
 
                 # validate that bot is either an account bot or a systemwide bot:
                 user_id = protocols[protocol]['bot']
-                bot = Bot.get(user_id, account_id)  # check if this is an account bot (for this account)
+                bot = await Bot.get(user_id, account_id)  # check if this is an account bot (for this account)
                 if not bot:
-                    bot = Bot.get(user_id, None)  # check if this is a systemwide bot
+                    bot = await Bot.get(user_id, None)  # check if this is a systemwide bot
                     if not bot:
                         raise ValidationError("Invalid bot for this account: {}".format(user_id))
                 if bot['protocol'] != protocol:
@@ -1239,7 +1239,7 @@ class Entity(object):
                     'name': name,
                     'entity_type': entity_type,
                     'parent': parent,
-                    'details': details,
+                    'details': json.loads(details),
                     'protocols': protocols,
                 })
             return ret
@@ -1248,7 +1248,7 @@ class Entity(object):
         async with flask.current_app.pool.acquire() as c:
             entity_id, = await c.fetchrow("INSERT INTO entities (account, name, entity_type, parent, details) VALUES ($1, $2, $3, $4, $5) RETURNING id;", self.account_id, self.name, self.entity_type, self.parent, self.details)
 
-            Entity.set_protocols(c, entity_id, self.protocols, clear_existing=False)
+            await Entity.set_protocols(c, entity_id, self.protocols, clear_existing=False)
             return entity_id
 
     @staticmethod
@@ -1283,7 +1283,7 @@ class Entity(object):
                     'credential': credential_id,
                     'sensors': [],
                 }
-                bot_res = c2.fetchrow('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = $1 AND eb.bot = b.user_id AND b.protocol = $2;', entity_id, protocol)
+                bot_res = await c2.fetchrow('SELECT b.user_id FROM entities_bots eb, bots b WHERE eb.entity = $1 AND eb.bot = b.user_id AND b.protocol = $2;', entity_id, protocol)
                 protocols[protocol]['bot'] = bot_res[0] if bot_res else None
 
             res = await c.fetch('SELECT s.id, s.protocol, es.interval FROM entities_sensors es, sensors s WHERE es.entity = $1 AND es.sensor = s.id AND s.account = $2;', entity_id, account_id)
@@ -1300,7 +1300,7 @@ class Entity(object):
             'name': name,
             'entity_type': entity_type,
             'parent': parent,
-            'details': details,
+            'details': json.loads(details),
             'protocols': protocols,
             #   'protocols': {
             #       'snmp': {
@@ -1320,7 +1320,7 @@ class Entity(object):
             res = await c.execute("UPDATE entities SET name = $1, entity_type = $2, details = $3 WHERE id = $4 AND account = $5;", self.name, self.entity_type, self.details, self.force_id, self.account_id)
             was_updated = rowcount(res)
             if was_updated:
-                Entity.set_protocols(c, self.force_id, self.protocols, clear_existing=True)
+                await Entity.set_protocols(c, self.force_id, self.protocols, clear_existing=True)
             return was_updated
 
     @staticmethod

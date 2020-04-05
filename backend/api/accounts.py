@@ -261,7 +261,7 @@ async def account_entities(account_id):
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
-        entity = Entity.forge_from_input(await flask.request.get_json(), account_id)
+        entity = await Entity.forge_from_input(await flask.request.get_json(), account_id)
         entity_id = await entity.insert()
         rec = {'id': entity_id}
         await mqtt_publish_changed([
@@ -270,7 +270,7 @@ async def account_entities(account_id):
         return json.dumps(rec), 201
 
 
-@accounts_api.route('/<int:account_id>/entities/<string:entity_id>', methods=['GET', 'PUT', 'DELETE'])
+@accounts_api.route('/<int:account_id>/entities/<int:entity_id>', methods=['GET', 'PUT', 'DELETE'])
 async def account_entity_crud(account_id, entity_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = await Entity.get(entity_id, account_id)
@@ -279,7 +279,7 @@ async def account_entity_crud(account_id, entity_id):
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
-        entity = Entity.forge_from_input(await flask.request.get_json(), account_id, force_id=entity_id)
+        entity = await Entity.forge_from_input(await flask.request.get_json(), account_id, force_id=entity_id)
         rowcount = await entity.update()
         if not rowcount:
             return "No such entity", 404
