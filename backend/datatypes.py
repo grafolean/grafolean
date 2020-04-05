@@ -954,7 +954,7 @@ class Bot(object):
             'name': name,
             'protocol': protocol,
             'tied_to_account': tied_to_account,
-            'config': config,
+            'config': None if config is None else json.loads(config),
             'insert_time': calendar.timegm(insert_time.timetuple()),
             'last_login': None if last_login is None else calendar.timegm(last_login.timetuple()),
         }

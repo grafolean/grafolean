@@ -1601,7 +1601,6 @@ async def test_accounts_name_not_unique(account_id_factory):
     acc1, acc2 = await account_id_factory('My account', 'My account')
     assert acc1 != acc2
 
-@pytest.mark.skip("Test newly failing, investigate!")
 @pytest.mark.asyncio
 async def test_account_bots(app_client, bot_id, admin_authorization_header, person_authorization_header, person_id, account_id):
     """
