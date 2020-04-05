@@ -1832,7 +1832,6 @@ async def test_account_entities(app_client, admin_authorization_header, account_
     assert actual == expected
 
 
-@pytest.mark.skip("Test newly failing, investigate!")
 @pytest.mark.asyncio
 async def test_account_credentials_crud(app_client, admin_authorization_header, account_id):
     """

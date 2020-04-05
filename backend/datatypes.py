@@ -1357,7 +1357,7 @@ class Credential(object):
                     'id': credential_id,
                     'name': name,
                     'protocol': protocol,
-                    'details': details,
+                    'details': json.loads(details),
                 })
             return ret
 
@@ -1377,7 +1377,7 @@ class Credential(object):
             'id': int(credential_id),
             'name': name,
             'protocol': protocol,
-            'details': details,
+            'details': json.loads(details),
         }
 
     async def update(self):

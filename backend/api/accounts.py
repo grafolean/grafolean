@@ -316,7 +316,7 @@ async def account_credentials(account_id):
         return json.dumps(rec), 201
 
 
-@accounts_api.route('/<int:account_id>/credentials/<string:credential_id>', methods=['GET', 'PUT', 'DELETE'])
+@accounts_api.route('/<int:account_id>/credentials/<int:credential_id>', methods=['GET', 'PUT', 'DELETE'])
 async def account_credential_crud(account_id, credential_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = await Credential.get(credential_id, account_id)
@@ -362,7 +362,7 @@ async def account_sensors(account_id):
         return json.dumps(rec), 201
 
 
-@accounts_api.route('/<int:account_id>/sensors/<string:sensor_id>', methods=['GET', 'PUT', 'DELETE'])
+@accounts_api.route('/<int:account_id>/sensors/<int:sensor_id>', methods=['GET', 'PUT', 'DELETE'])
 async def account_sensor_crud(account_id, sensor_id):
     if flask.request.method in ['GET', 'HEAD']:
         rec = await Sensor.get(sensor_id, account_id)
@@ -392,7 +392,7 @@ async def account_sensor_crud(account_id, sensor_id):
         return "", 204
 
 
-@accounts_api.route('/<int:account_id>/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
+@accounts_api.route('/<int:account_id>/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
 async def account_bot_permissions(account_id, user_id):
     """
         Allows reading and assigning permissions to account bots (bots which are tied to a specific account).
