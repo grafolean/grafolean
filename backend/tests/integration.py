@@ -1924,7 +1924,6 @@ async def test_account_credentials_crud(app_client, admin_authorization_header, 
     actual = json.loads(await r.get_data())
     assert actual == initial
 
-@pytest.mark.skip("Newly failing test, investigate")
 @pytest.mark.asyncio
 async def test_account_sensors_crud(app_client, admin_authorization_header, account_id):
     """

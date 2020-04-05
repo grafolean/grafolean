@@ -1424,7 +1424,7 @@ class Sensor(object):
                     'name': name,
                     'protocol': protocol,
                     'default_interval': default_interval,
-                    'details': details,
+                    'details': json.loads(details),
                 })
             return ret
 
@@ -1446,7 +1446,7 @@ class Sensor(object):
             'name': name,
             'protocol': protocol,
             'default_interval': default_interval,
-            'details': details,
+            'details': json.loads(details),
         }
 
     async def update(self):
