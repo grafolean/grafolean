@@ -44,18 +44,18 @@ class SuperuserJWTToken(object):
     TOKEN_VALID_S = 1800
 
     @classmethod
-    def get_valid_token(cls, superuser_identifier):
+    async def get_valid_token(cls, superuser_identifier):
         if not cls.jwt_tokens.get(superuser_identifier) or time.time() > cls.valid_until.get(superuser_identifier, 0):
             log.info("Superuser auth token not available or expired, refreshing.")
-            cls._refresh_token(superuser_identifier)
+            await cls._refresh_token(superuser_identifier)
         return cls.jwt_tokens[superuser_identifier]
 
     @classmethod
-    def _refresh_token(cls, superuser_identifier):
+    async def _refresh_token(cls, superuser_identifier):
         data = {
             "superuser": superuser_identifier,
         }
-        token_header, valid_until = JWT(data).encode_as_authorization_header(cls.TOKEN_VALID_S)
+        token_header, valid_until = await JWT(data).encode_as_authorization_header(cls.TOKEN_VALID_S)
         cls.jwt_tokens[superuser_identifier] = token_header[len('Bearer '):]
         cls.valid_until[superuser_identifier] = valid_until
 
@@ -68,7 +68,7 @@ class SuperuserJWTToken(object):
 # This function publishes notifications via MQTT when the content of some GET endpoint might have changed. For example,
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
-def mqtt_publish_changed(topics, payload='1'):
+async def mqtt_publish_changed(topics, payload='1'):
     if not MQTT_HOSTNAME:
         log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
@@ -76,7 +76,7 @@ def mqtt_publish_changed(topics, payload='1'):
         log.debug("MQTT publishing change of: [{}]".format(topics,))
         # https://www.eclipse.org/paho/clients/python/docs/#id2
         msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
-        superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
+        superuserJwtToken = await SuperuserJWTToken.get_valid_token('backend_changed_notif')
         mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
     except Exception as ex:
         log.warning("Could not publish change to MQTT, error: {}".format(ex))

@@ -1,7 +1,6 @@
 import quart as flask
 import json
 import copy
-import psycopg2
 
 from .common import auth_no_permissions, mqtt_publish_changed
 import validators
@@ -84,10 +83,10 @@ def users_apidoc_schemas():
 
 @users_api.route('/users/<int:user_id>', methods=['GET'])
 async def users_user_get(user_id):
-    rec = User.get(user_id)
+    rec = await User.get(user_id)
     if not rec:
         return "No such user", 404
-    rec['permissions'] = Permission.get_list(user_id)
+    rec['permissions'] = await Permission.get_list(user_id)
     return json.dumps(rec), 200
 
 
@@ -134,14 +133,14 @@ async def users_bots():
                     "$ref": '#/definitions/BotGET'
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get_list()
+        rec = await Bot.get_list()
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
         bot = Bot.forge_from_input(await flask.request.get_json())
-        user_id, _ = bot.insert()
-        rec = Bot.get(user_id, None)
-        mqtt_publish_changed([
+        user_id, _ = await bot.insert()
+        rec = await Bot.get(user_id, None)
+        await mqtt_publish_changed([
             'bots',
         ])
         return json.dumps(rec), 201
@@ -218,17 +217,17 @@ async def users_bot_crud(user_id):
               description: No such bot
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get(user_id, None)
+        rec = await Bot.get(user_id, None)
         if not rec:
             return "No such bot", 404
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
         bot = Bot.forge_from_input(await flask.request.get_json(), force_id=user_id)
-        rowcount = bot.update()
+        rowcount = await bot.update()
         if not rowcount:
             return "No such bot", 404
-        mqtt_publish_changed([
+        await mqtt_publish_changed([
             'bots/{user_id}'.format(user_id=user_id),
             'bots',
         ])
@@ -238,10 +237,10 @@ async def users_bot_crud(user_id):
         # bot should not be able to delete himself, otherwise they could lock themselves out:
         if int(flask.g.grafolean_data['user_id']) == int(user_id):
             return "Can't delete yourself", 403
-        rowcount = Bot.delete(user_id)
+        rowcount = await Bot.delete(user_id)
         if not rowcount:
             return "No such bot", 404
-        mqtt_publish_changed([
+        await mqtt_publish_changed([
             'bots/{user_id}'.format(user_id=user_id),
             'bots',
         ])
@@ -252,12 +251,12 @@ async def users_bot_crud(user_id):
 async def users_bot_token_get(user_id):
     # make sure the user who is requesting to see the bot token has every permission that this token has, and
     # also that this user can add the bot:
-    request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
-    if not Permission.has_all_permissions(request_user_permissions, user_id):
+    request_user_permissions = await Permission.get_list(int(flask.g.grafolean_data['user_id']))
+    if not await Permission.has_all_permissions(request_user_permissions, user_id):
         return "Not enough permissions to see this bot's token", 401
     if not Permission.can_grant_permission(request_user_permissions, 'bots', 'POST'):
         return "Not enough permissions to see this bot's token - POST to /bots not allowed", 401
-    token = Bot.get_token(user_id, None)
+    token = await Bot.get_token(user_id, None)
     if not token:
         return "No such bot", 404
     return {'token': token}, 200
@@ -308,13 +307,13 @@ async def users_persons():
                         type: integer
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get_list()
+        rec = await Person.get_list()
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
         person = Person.forge_from_input(await flask.request.get_json())
-        user_id = person.insert()
-        mqtt_publish_changed([
+        user_id = await person.insert()
+        await mqtt_publish_changed([
             'persons',
         ])
         return json.dumps({
@@ -393,18 +392,18 @@ async def users_person_crud(user_id):
               description: No such person
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get(user_id)
+        rec = await Person.get(user_id)
         if not rec:
             return "No such person", 404
-        rec['permissions'] = Permission.get_list(user_id)
+        rec['permissions'] = await Permission.get_list(user_id)
         return json.dumps(rec), 200
 
     elif flask.request.method == 'PUT':
         person = Person.forge_from_input(await flask.request.get_json(), force_id=user_id)
-        rowcount = person.update()
+        rowcount = await person.update()
         if not rowcount:
             return "No such person", 404
-        mqtt_publish_changed([
+        await mqtt_publish_changed([
             'persons/{user_id}'.format(user_id=user_id),
             'persons',
         ])
@@ -414,10 +413,10 @@ async def users_person_crud(user_id):
         # user should not be able to delete himself, otherwise they could lock themselves out:
         if int(flask.g.grafolean_data['user_id']) == int(user_id):
             return "Can't delete yourself", 403
-        rowcount = Person.delete(user_id)
+        rowcount = await Person.delete(user_id)
         if not rowcount:
             return "No such person", 404
-        mqtt_publish_changed([
+        await mqtt_publish_changed([
             'persons/{user_id}'.format(user_id=user_id),
             'persons',
         ])
@@ -426,7 +425,7 @@ async def users_person_crud(user_id):
 
 @users_api.route('/persons/<int:user_id>/password', methods=['POST'])
 async def users_person_change_password(user_id):
-    rowcount = Person.change_password(user_id, await flask.request.get_json())
+    rowcount = await Person.change_password(user_id, await flask.request.get_json())
     if not rowcount:
         return "Change failed", 400
     # no need to publish to mqtt - nobody cares
@@ -530,15 +529,15 @@ async def users_permissions_get_post(user_id):
               description: Not allowed to grant permissions
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list(user_id=user_id)
+        rec = await Permission.get_list(user_id=user_id)
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
         granting_user_id = flask.g.grafolean_data['user_id']
         permission = Permission.forge_from_input(await flask.request.get_json(), user_id)
         try:
-            permission_id = permission.insert(granting_user_id)
-            mqtt_publish_changed([
+            permission_id = await permission.insert(granting_user_id)
+            await mqtt_publish_changed([
                 'persons/{user_id}'.format(user_id=user_id),
                 'bots/{user_id}'.format(user_id=user_id),
             ])
@@ -547,7 +546,7 @@ async def users_permissions_get_post(user_id):
             }), 201
         except AccessDeniedError as ex:
             return str(ex), 401
-        except psycopg2.IntegrityError:
+        except:  # psycopg2.IntegrityError:
             return "Invalid parameters", 400
 
 
@@ -580,12 +579,12 @@ async def users_permission_delete(permission_id, user_id):
     """
     granting_user_id = flask.g.grafolean_data['user_id']
     try:
-        rowcount = Permission.delete(permission_id, user_id, granting_user_id)
+        rowcount = await Permission.delete(permission_id, user_id, granting_user_id)
     except AccessDeniedError as ex:
         return str(ex), 401
     if not rowcount:
         return "No such permission", 404
-    mqtt_publish_changed([
+    await mqtt_publish_changed([
         'persons/{user_id}'.format(user_id=user_id),
         'users/{user_id}'.format(user_id=user_id),
         'bots/{user_id}'.format(user_id=user_id),

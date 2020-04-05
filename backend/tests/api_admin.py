@@ -23,8 +23,6 @@ from common import (
 def setup_module():
     pass
 
-def teardown_module():
-    delete_all_from_db()
 
 
 @pytest.mark.skip("Test temporarily disabled - problems making strict_slashes work")

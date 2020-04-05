@@ -19,17 +19,17 @@ auth_api = flask.Blueprint('auth_api', __name__)
 @noauth
 async def auth_login_post():
     credentials = PersonCredentials.forge_from_input(await flask.request.get_json())
-    user_id = credentials.check_user_login()
+    user_id = await credentials.check_user_login()
     if not user_id:
         return "Invalid credentials", 401
 
     session_data = {
         'user_id': user_id,
         'session_id': secrets.token_hex(32),
-        'permissions': Permission.get_list(user_id),
+        'permissions': await Permission.get_list(user_id),
     }
     response = await flask.make_response(json.dumps(session_data), 200)
-    response.headers['X-JWT-Token'], _ = JWT(session_data).encode_as_authorization_header()
+    response.headers['X-JWT-Token'], _ = await JWT(session_data).encode_as_authorization_header()
     return response
 
 
@@ -41,9 +41,9 @@ async def auth_refresh_post():
         if not authorization_header:
             return "Access denied", 401
 
-        old_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+        old_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
         data = old_jwt.data.copy()
-        new_jwt, _ = JWT(data).encode_as_authorization_header()
+        new_jwt, _ = await JWT(data).encode_as_authorization_header()
 
         response = await flask.make_response(json.dumps(data), 200)
         response.headers['X-JWT-Token'] = new_jwt

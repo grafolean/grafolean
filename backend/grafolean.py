@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
 import sys
+
+import asyncpg
 from dotenv import load_dotenv
 import quart as flask
 import jsonschema
@@ -19,7 +21,6 @@ except:
 
 
 from datatypes import ValidationError, Permission, Bot
-import utils
 from utils import log
 from auth import JWT, AuthFailedException
 from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
@@ -36,6 +37,22 @@ app.register_blueprint(profile_api, url_prefix='/api/profile')
 app.register_blueprint(accounts_api, url_prefix='/api/accounts')
 app.register_blueprint(status_api, url_prefix='/api/status')
 app.register_blueprint(auth_api, url_prefix='/api/auth')
+
+
+@app.before_serving
+async def startup():
+    app.pool = await asyncpg.create_pool(
+        host=os.environ.get('DB_HOST', 'localhost'),
+        database=os.environ.get('DB_DATABASE', 'grafolean'),
+        user=os.environ.get('DB_USERNAME', 'admin'),
+        password=os.environ.get('DB_PASSWORD', 'admin'),
+        timeout=int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+    )
+
+
+@app.after_serving
+async def shutdown():
+    await app.pool.close()
 
 
 @app.before_request
@@ -71,15 +88,9 @@ async def before_request():
         if origin_header:  # is it a cross-origin request?
             # still, we sometimes get origin header even if it is not a cross-origin request, so let's double check that we
             # indeed are doing CORS:
-            if flask.request.url_root.rstrip('/') != origin_header:
+            if flask.request.host_url.rstrip('/') != origin_header:
                 if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
                     return 'CORS not allowed for this origin', 403
-
-    if utils.db is None:
-        utils.db_connect()
-        if utils.db is None:
-            # oops, DB error... we should return 5xx:
-            return 'Service unavailable', 503
 
     view_func = app.view_functions[flask.request.endpoint]
     # unless we have explicitly used @noauth decorator, do authorization check here:
@@ -90,11 +101,11 @@ async def before_request():
             authorization_header = flask.request.headers.get('Authorization')
             query_params_bot_token = flask.request.args.get('b')
             if authorization_header is not None:
-                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
+                received_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
                 flask.g.grafolean_data['jwt'] = received_jwt
                 user_id = received_jwt.data['user_id']
             elif query_params_bot_token is not None:
-                user_id = Bot.authenticate_token(query_params_bot_token)
+                user_id = await Bot.authenticate_token(query_params_bot_token)
                 user_is_bot = True
 
             if user_id is None:
@@ -104,7 +115,7 @@ async def before_request():
             # check permissions:
             if not hasattr(view_func, '_auth_no_permissions'):
                 resource = flask.request.path[len('/api/'):]
-                is_allowed = Permission.is_access_allowed(
+                is_allowed = await Permission.is_access_allowed(
                     user_id=user_id,
                     resource=resource,
                     method=flask.request.method,

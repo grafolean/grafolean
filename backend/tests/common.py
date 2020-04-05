@@ -3,8 +3,12 @@ import json
 import os
 import re
 import sys
+import time
 
 import pytest
+import asyncpg
+import paho
+import quart as flask
 
 # since we are running our own environment for testing (use `docker-compose up -d` and
 # `docker-compose down`), we need to setup env vars accordingly:
@@ -28,7 +32,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from grafolean import app
 from api.common import SuperuserJWTToken
-from utils import db, migrate_if_needed, log
+from utils import migrate_if_needed, log
 from auth import JWT
 from datatypes import clear_all_lru_cache
 
@@ -41,16 +45,14 @@ FIRST_ACCOUNT_NAME = 'First account'
 BOT_NAME1 = 'My Bot 1'
 
 
-def delete_all_from_db():
+async def delete_all_from_db():
     # initialize DB:
-    with db.cursor() as c:
-        c.execute("SELECT tablename, schemaname FROM pg_tables WHERE schemaname = 'public';")
-        results = list(c)
-        log.info(results)
+    async with app.pool.acquire() as c:
+        results = await c.fetch("SELECT tablename, schemaname FROM pg_tables WHERE schemaname = 'public';")
         for tablename,_ in results:
             sql = "DROP TABLE IF EXISTS {} CASCADE;".format(tablename)
             log.info(sql)
-            c.execute(sql)
+            await c.execute(sql)
         for sql in [
             "DROP DOMAIN IF EXISTS AGGR_LEVEL;",
             "DROP TYPE IF EXISTS HTTP_METHOD;",
@@ -58,28 +60,45 @@ def delete_all_from_db():
             "DROP TYPE IF EXISTS WIDGETS_WIDTH;",
         ]:
             log.info(sql)
-            c.execute(sql)
+            await c.execute(sql)
     # don't forget to clear memoization cache:
     clear_all_lru_cache()
     SuperuserJWTToken.clear_cache()
 
+@pytest.fixture
+async def app_client():
+    app.testing = True
+    app.pool = await asyncpg.create_pool(
+        host=os.environ.get('DB_HOST', 'localhost'),
+        database=os.environ.get('DB_DATABASE', 'grafolean'),
+        user=os.environ.get('DB_USERNAME', 'admin'),
+        password=os.environ.get('DB_PASSWORD', 'admin'),
+        timeout=int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+    )
+    await delete_all_from_db()
+    ret = app.test_client()
+    r = await ret.post('/api/admin/migratedb')
+    assert r.status_code == 204
+    return ret
 
 @pytest.fixture
-def app_client():
-    delete_all_from_db()
-    migrate_if_needed()
+async def app_client_db_not_migrated():
     app.testing = True
+    app.pool = await asyncpg.create_pool(
+        host=os.environ.get('DB_HOST', 'localhost'),
+        database=os.environ.get('DB_DATABASE', 'grafolean'),
+        user=os.environ.get('DB_USERNAME', 'admin'),
+        password=os.environ.get('DB_PASSWORD', 'admin'),
+        timeout=int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+    )
+    await delete_all_from_db()
     return app.test_client()
 
 @pytest.fixture
-def app_client_db_not_migrated():
-    delete_all_from_db()
-    app.testing = True
-    return app.test_client()
-
-@pytest.fixture
-def superuser_jwt_token():
-    return SuperuserJWTToken.get_valid_token('pytest')
+async def superuser_jwt_token():
+    async with app.app_context():
+        flask.current_app.pool = app.pool
+        return await SuperuserJWTToken.get_valid_token('pytest')
 
 @pytest.fixture
 async def first_admin_id(app_client):

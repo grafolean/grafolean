@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 import sys, os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import asyncpg
 import pytest
 
 # since we are running our own environment for testing (use `docker-compose up -d` and
@@ -12,35 +12,49 @@ os.environ['DB_PASSWORD'] = 'pytest'
 os.environ['MQTT_HOSTNAME'] = 'localhost'
 os.environ['MQTT_PORT'] = '1883'
 
-from utils import db, _construct_plsql_randid_function
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from grafolean import app
+from utils import _construct_plsql_randid_function
 
-def test_randid():
+@pytest.fixture
+async def pool():
+    return await asyncpg.create_pool(
+        host=os.environ.get('DB_HOST', 'localhost'),
+        database=os.environ.get('DB_DATABASE', 'grafolean'),
+        user=os.environ.get('DB_USERNAME', 'admin'),
+        password=os.environ.get('DB_PASSWORD', 'admin'),
+        timeout=int(os.environ.get('DB_CONNECT_TIMEOUT', '10')),
+    )
+
+
+@pytest.mark.asyncio
+async def test_randid(pool):
     """
         Create a test table, but when you create corresponding randid_testtable() function, alter it so it only allows integers 1 to 10, so
         that we can test that all 10 IDs are generated, and that 11th raises an exception.
     """
-    with db.cursor() as c:
+    async with pool.acquire() as c:
         create_func_sql = _construct_plsql_randid_function('testtable')
         create_func_sql = create_func_sql.replace('2147483647', '10')
-        c.execute(create_func_sql)
+        await c.execute(create_func_sql)
         # print(create_func_sql)
 
         sql = "DROP TABLE IF EXISTS testtable CASCADE;"
-        c.execute(sql)
+        await c.execute(sql)
         sql = "CREATE TABLE testtable (id INTEGER NOT NULL DEFAULT randid_testtable() PRIMARY KEY, a INTEGER);"
-        c.execute(sql)
+        await c.execute(sql)
 
         for i in range(10):
-            c.execute("INSERT INTO testtable (a) VALUES (%s);", (i,))
+            await c.execute("INSERT INTO testtable (a) VALUES ($1);", i)
 
         try:
-            c.execute("INSERT INTO testtable (a) VALUES (%s);", (999,))
+            await c.execute("INSERT INTO testtable (a) VALUES ($1);", 999)
             raise AssertionError("This should not succeed")
         except:
             pass
 
-        c.execute("SELECT id FROM testtable ORDER BY id;")
-        actual = [x for x, in c]
+        res = await c.fetch("SELECT id FROM testtable ORDER BY id;")
+        actual = [x for x, in res]
         expected = list(range(1, 11))
         assert actual == expected
 

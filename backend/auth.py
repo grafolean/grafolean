@@ -3,7 +3,9 @@ import jwt
 from passlib.context import CryptContext
 import secrets
 
-from utils import db, log
+import quart as flask
+
+from utils import log, rowcount
 
 
 class AuthFailedException(Exception):
@@ -35,7 +37,7 @@ class JWT(object):
         self.decoded_with_leeway = decoded_with_leeway
 
     @classmethod
-    def forge_from_authorization_header(cls, authorization_header, allow_leeway=0):
+    async def forge_from_authorization_header(cls, authorization_header, allow_leeway=0):
         if authorization_header is None:
             raise AuthFailedException("No Authorization header")
 
@@ -47,7 +49,7 @@ class JWT(object):
             log.info(authorization_header)
             raise AuthFailedException("Invalid Authorization header - missing key id")
         key_id, jwt_token = authorization_header.split(':', 1)
-        key = JWT._private_jwt_key_for_decoding(key_id)
+        key = await JWT._private_jwt_key_for_decoding(key_id)
         if key is None:
             raise AuthFailedException("Unknown or expired key (key id: {})".format(key_id))
         try:
@@ -63,8 +65,8 @@ class JWT(object):
 
         return cls(jwt_decoded, decoded_with_leeway)
 
-    def encode_as_authorization_header(self, token_valid_for_s=None):
-        key_id, key = JWT._private_jwt_key_for_encoding()
+    async def encode_as_authorization_header(self, token_valid_for_s=None):
+        key_id, key = await JWT._private_jwt_key_for_encoding()
         enriched_data = self.data.copy()
         if token_valid_for_s is None:
             token_valid_for_s = JWT.DEFAULT_TOKEN_VALID_FOR
@@ -77,33 +79,30 @@ class JWT(object):
         return header, enriched_data['exp']
 
     @classmethod
-    def _private_jwt_key_for_decoding(cls, key_id):
-        with db.cursor() as c:
-            c.execute('SELECT key FROM private_jwt_keys WHERE id=%s AND EXTRACT(EPOCH FROM NOW()) < use_until + {};'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,), (key_id,))
-            res = c.fetchone()
+    async def _private_jwt_key_for_decoding(cls, key_id):
+        async with flask.current_app.pool.acquire() as c:
+            res = await c.fetchrow('SELECT key FROM private_jwt_keys WHERE id=$1 AND EXTRACT(EPOCH FROM NOW()) < use_until + {};'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,), int(key_id))
             if not res:
                 return None
             key = res[0]
             return key
 
     @classmethod
-    def _private_jwt_key_for_encoding(cls):
-        with db.cursor() as c:
+    async def _private_jwt_key_for_encoding(cls):
+        async with flask.current_app.pool.acquire() as c:
             # fetch the newest private key that is still valid:
-            c.execute('SELECT id, key FROM private_jwt_keys WHERE EXTRACT(EPOCH FROM NOW()) < use_until ORDER BY use_until DESC LIMIT 1;')
-            res = c.fetchone()
+            res = await c.fetchrow('SELECT id, key FROM private_jwt_keys WHERE EXTRACT(EPOCH FROM NOW()) < use_until ORDER BY use_until DESC LIMIT 1;')
             if not res:
-                cls._remove_old_jwt_keys()
+                await cls._remove_old_jwt_keys()
                 new_key = secrets.token_hex(512 // 8)  # 512 bits
-                c.execute('INSERT INTO private_jwt_keys (key) VALUES (%s) RETURNING id, key;', (new_key,))
-                res = c.fetchone()
+                res = await c.fetchrow('INSERT INTO private_jwt_keys (key) VALUES ($1) RETURNING id, key;', new_key)
             key_id, key = res
             return key_id, key
 
     @classmethod
-    def _remove_old_jwt_keys(cls):
-        with db.cursor() as c:
-            c.execute('DELETE FROM private_jwt_keys WHERE use_until + {} < EXTRACT(EPOCH FROM NOW());'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,))
+    async def _remove_old_jwt_keys(cls):
+        async with flask.current_app.pool.acquire() as c:
+            await c.execute('DELETE FROM private_jwt_keys WHERE use_until + {} < EXTRACT(EPOCH FROM NOW());'.format(JWT.PRIVATE_KEY_EXTENDED_VALIDITY,))
 
 
 class Auth(object):
@@ -118,13 +117,12 @@ class Auth(object):
         return bool(cls.pwd_context.verify(password, password_hash))
 
     @classmethod
-    def first_user_exists(cls):
-        with db.cursor() as c:
+    async def first_user_exists(cls):
+        async with flask.current_app.pool.acquire() as c:
             try:
                 # make sure that no account or user exists:
                 for table in ['accounts', 'users']:
-                    c.execute('SELECT COUNT(*) FROM {};'.format(table))
-                    res = c.fetchone()
+                    res = await c.fetchrow('SELECT COUNT(*) FROM {};'.format(table))
                     if not res:
                         raise Exception("Could not check {} table".format(table,))
                     records_count = res[0]

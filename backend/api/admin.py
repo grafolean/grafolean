@@ -36,9 +36,9 @@ async def admin_migratedb_post():
             204:
               description: Success
     """
-    was_needed = utils.migrate_if_needed()
+    was_needed = await utils.migrate_if_needed()
     if was_needed:
-        mqtt_publish_changed(['status/info'])
+        await mqtt_publish_changed(['status/info'])
     return '', 204
 
 
@@ -76,18 +76,18 @@ async def admin_first_post():
             401:
               description: System already initialized
     """
-    if Auth.first_user_exists():
+    if await Auth.first_user_exists():
         return 'System already initialized', 401
     admin = Person.forge_from_input(await flask.request.get_json())
-    admin_id = admin.insert()
+    admin_id = await admin.insert()
     # make it a superuser:
     permission = Permission(admin_id, None, None)
-    permission.insert(None, skip_checks=True)
+    await permission.insert(None, skip_checks=True)
 
     # Help users by including a systemwide ping bot in the package by default:
-    Bot.ensure_default_systemwide_bots_exist()
+    await Bot.ensure_default_systemwide_bots_exist()
 
-    mqtt_publish_changed(['status/info'])
+    await mqtt_publish_changed(['status/info'])
     return json.dumps({
         'id': admin_id,
     }), 201
@@ -138,19 +138,19 @@ async def admin_mqttauth_plug(check_type):
     # if authorization_header == 'Bearer secret':
     #     log.info('--- secret account authenticated ---')
     #     return "", 200
-    # log_received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+    # log_received_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
     # log.info('mqtt-auth {}: {}, {}'.format(check_type.upper(), log_received_jwt.data, (await flask.request.form).to_dict()))
     try:
         if check_type == 'getuser':
             # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            received_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
             # jwt token was successfully decoded, so we can allow for the fact that this is a valid user - we'll still see about
             # access rights though (might be superuser, in which case everything goes, or it might be checked via aclcheck)
             return "", 200
 
         elif check_type == 'superuser':
             # we don't complicate about newly expired tokens here - if they are at all valid, browser will refresh them anyway.
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
+            received_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
             # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
             is_superuser = bool(received_jwt.data.get('superuser', False))
             if is_superuser:
@@ -165,7 +165,7 @@ async def admin_mqttauth_plug(check_type):
             # When client connects, username is jwt token. However subscribing to topics doesn't necessarily reconnect so
             # fresh JWT token is not sent and we are getting the old one. This is OK though - if user kept the connection
             # we can assume that they would just keep refreshing the token. So we allow for some large leeway (10 years)
-            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
+            received_jwt = await JWT.forge_from_authorization_header(authorization_header, allow_leeway=3600*24*365*10)
             # superusers can do whatever they want to:
             is_superuser = bool(received_jwt.data.get('superuser', False))
             if is_superuser:
@@ -178,7 +178,7 @@ async def admin_mqttauth_plug(check_type):
             # check user's access rights:
             user_id = received_jwt.data['user_id']
             resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
-            is_allowed = Permission.is_access_allowed(
+            is_allowed = await Permission.is_access_allowed(
                 user_id=user_id,
                 resource=resource,
                 method='GET',  # users can only request read access (apart from backend, which is superuser anyway)
@@ -255,10 +255,10 @@ async def accounts_crud():
                         description: "Account name"
     """
     if flask.request.method in ['GET', 'HEAD']:
-        rec = Account.get_list()
+        rec = await Account.get_list()
         return json.dumps({'list': rec}), 200
 
     elif flask.request.method == 'POST':
         account = Account.forge_from_input(await flask.request.get_json())
-        account_id = account.insert()
+        account_id = await account.insert()
         return json.dumps({'name': account.name, 'id': account_id}), 201
