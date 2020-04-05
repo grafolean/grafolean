@@ -427,21 +427,17 @@ class Widget(object):
         jsonschema.validate(json_data, WidgetsPositionsSchemaInputs)
 
         async with flask.current_app.pool.acquire() as c:
-            log.warning("Not fixed yet!")
-        #     # Instead of traversing, we update multiple values at once:
-        #     #   http://initd.org/psycopg/docs/extras.html#psycopg2.extras.execute_values
-        #     widgets_positions_tuples = [(dashboard_id, pos['widget_id'], pos['x'], pos['y'], pos['w'], pos['h'], pos['p']) for pos in json_data]
-        #     psycopg2.extras.execute_values(c, """
-        #         UPDATE widgets AS w
-        #         SET
-        #             position_x = v.position_x,
-        #             position_y = v.position_y,
-        #             position_w = v.position_w,
-        #             position_h = v.position_h,
-        #             position_p = v.position_p
-        #         FROM (VALUES %s) AS v(dashboard_id, widget_id, position_x, position_y, position_w, position_h, position_p)
-        #         WHERE v.dashboard_id = w.dashboard AND v.widget_id = w.id;
-        #     """, widgets_positions_tuples)
+            widgets_positions_tuples = [(pos['x'], pos['y'], pos['w'], pos['h'], pos['p'], dashboard_id, pos['widget_id'],) for pos in json_data]
+            await c.executemany("""
+                UPDATE widgets
+                SET
+                    position_x = $1,
+                    position_y = $2,
+                    position_w = $3,
+                    position_h = $4,
+                    position_p = $5
+                WHERE dashboard = $6 AND id = $7;
+            """, widgets_positions_tuples)
 
 
     @staticmethod

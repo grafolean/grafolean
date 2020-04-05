@@ -731,7 +731,6 @@ async def test_dashboards_widgets_post_get(app_client, admin_authorization_heade
     assert r.status_code == 404
 
 
-@pytest.mark.skip("Doesn't work, check!")
 @pytest.mark.asyncio
 async def test_dashboard_widgets_set_positions(app_client, admin_authorization_header, account_id):
     """
