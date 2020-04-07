@@ -70,12 +70,23 @@ class SuperuserJWTToken(object):
 # can re-issue GET to the same endpoint URL.
 def mqtt_publish_changed(topics, payload='1'):
     if not MQTT_HOSTNAME:
-        log.debug("MQTT not connected, not publishing change of: [{}]".format(topics,))
+        log.warn("MQTT not connected, not publishing change of: [{}]".format(topics,))
         return
     try:
-        log.debug("MQTT publishing change of: [{}]".format(topics,))
         # https://www.eclipse.org/paho/clients/python/docs/#id2
         msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
+        superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
+        mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
+    except Exception as ex:
+        log.warning("Could not publish change to MQTT, error: {}".format(ex))
+
+def mqtt_publish_changed_multiple_payloads(topics_with_payloads):
+    if not MQTT_HOSTNAME:
+        log.warn("MQTT not connected, not publishing change")
+        return
+    try:
+        # https://www.eclipse.org/paho/clients/python/docs/#id2
+        msgs = [('changed/{}'.format(t), json.dumps(p), 1, False) for t, p, in topics_with_payloads]
         superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
         mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
     except Exception as ex:

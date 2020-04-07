@@ -8,7 +8,7 @@ import validators
 from datatypes import (AccessDeniedError, Account, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
     Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
 )
-from .common import auth_no_permissions, mqtt_publish_changed
+from .common import auth_no_permissions, mqtt_publish_changed, mqtt_publish_changed_multiple_payloads
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
@@ -493,8 +493,11 @@ def values_post(account_id):
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     Measurement.save_values_data_to_db(account_id, data)
-    for d in data:
-        mqtt_publish_changed(['accounts/{}/values/{}'.format(account_id, d['p'])], { 'v': d['v'], 't': d['t'] })
+    topics_with_payloads = [(
+        f"accounts/{account_id}/values/{d['p']}",
+        { 'v': d['v'], 't': d['t'] },
+    ) for d in data]
+    mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     return ""
 
 
