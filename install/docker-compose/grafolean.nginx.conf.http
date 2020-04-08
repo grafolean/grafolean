@@ -49,6 +49,9 @@ server {
         #   (also note that apply_env.sh changes 'connect-src' to allow ws:// and wss:// connections)
         add_header Content-Security-Policy "report-uri /api/status/cspreport/; default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; font-src 'self'; img-src 'self'; worker-src 'self'; manifest-src 'self';";
 
+        # static files are gzip-ed ahead of time (in Dockerfile), serve them with the correct header:
+        add_header Content-Encoding gzip;
+
         try_files $uri /index.html;
     }
 }

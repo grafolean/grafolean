@@ -87,6 +87,9 @@ RUN \
 COPY --from=build-backend /requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
+# nginx makes life complex when serving gzip content-encoded files, so we
+# gzip them ahead of time and serve them with appropriate header:
+RUN find /var/www/html/ -type f -exec gzip '{}' ';' -exec mv '{}'.gz '{}' ';'
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/gunicorn.conf.py /etc/gunicorn.conf.py
