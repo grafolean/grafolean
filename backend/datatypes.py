@@ -5,6 +5,7 @@ import json
 import math
 import os
 import re
+import time
 
 import dns
 import jsonschema
@@ -998,11 +999,16 @@ class Bot(object):
         async with flask.current_app.pool.acquire() as c:
             # instead of just SELECTing the value, update last_login too: (if bot_token is correct of course)
             # await c.execute("SELECT user_id FROM bots WHERE token = $1;", bot_token)
-            res = await c.fetchrow("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = $1 RETURNING user_id;", bot_token)
+            # this works, but with N requests it becomes performance critical:
+            #res = await c.fetchrow("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = $1 RETURNING user_id;", bot_token)
+            res = await c.fetchrow("SELECT user_id, last_login FROM bots WHERE token = $1;", bot_token)
             if not res:
                 log.info("No such bot token")
                 return None
-            user_id, = res
+            user_id, last_login = res
+            # update token only if it needs to be updated:
+            if calendar.timegm(last_login.timetuple()) < time.time() - 10:
+                await c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = $1;", bot_token)
             return user_id
 
     @staticmethod
