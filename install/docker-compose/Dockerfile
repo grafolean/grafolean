@@ -78,7 +78,7 @@ ENV MQTT_PORT=${MQTT_PORT}
 RUN \
     apt-get update && \
     apt-get install --no-install-recommends -q -y nginx git build-essential supervisor && \
-    pip install uwsgi && \
+    pip install gunicorn && \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
@@ -88,7 +88,6 @@ COPY --from=build-backend /requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
-COPY ./install/docker-compose/uwsgi.ini /etc/uwsgi.ini
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
 COPY ./install/docker-compose/grafolean.nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/grafolean.nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
