@@ -5,8 +5,10 @@ import dns
 import json
 from functools import lru_cache
 import math
-import psycopg2.extras
 import re
+import time
+
+import psycopg2.extras
 from slugify import slugify
 import jsonschema
 
@@ -1010,12 +1012,17 @@ class Bot(object):
         with db.cursor() as c:
             # instead of just SELECTing the value, update last_login too: (if bot_token is correct of course)
             # c.execute("SELECT user_id FROM bots WHERE token = %s;", (bot_token,))
-            c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = %s RETURNING user_id;", (bot_token,))
+            # this works, but with N requests it becomes performance critical:
+            # c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = %s RETURNING user_id;", (bot_token,))
+            c.execute("SELECT user_id, last_login FROM bots WHERE token = %s;", (bot_token,))
             res = c.fetchone()
             if not res:
                 log.info("No such bot token")
                 return None
-            user_id, = res
+            user_id, last_login = res
+            # update token only if it needs to be updated:
+            if calendar.timegm(last_login.timetuple()) < time.time() - 10:
+                c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = %s;", (bot_token,))
             return user_id
 
     @staticmethod
