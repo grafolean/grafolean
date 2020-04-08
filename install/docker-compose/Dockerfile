@@ -89,6 +89,7 @@ RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 COPY ./install/docker-compose/nginx.conf /etc/nginx/nginx.conf
 COPY ./install/docker-compose/apply_env.sh /grafolean/apply_env.sh
+COPY ./install/docker-compose/gunicorn.conf.py /etc/gunicorn.conf.py
 COPY ./install/docker-compose/grafolean.nginx.conf.http /etc/nginx/grafolean.http.conf.disabled
 COPY ./install/docker-compose/grafolean.nginx.conf.https /etc/nginx/grafolean.https.conf.disabled
 COPY ./install/docker-compose/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
