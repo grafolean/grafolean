@@ -37,10 +37,16 @@ class NetFlowNavigationWidget extends React.Component {
   }
 
   onEntitiesPathsUpdate = json => {
-    this.setState({
-      entitiesIds: json.paths[this.PATH_FILTER_ENTITIES].map(p =>
+    let entitiesIds;
+    if (Object.keys(json.paths).length === 0) {
+      entitiesIds = [];
+    } else {
+      entitiesIds = json.paths[this.PATH_FILTER_ENTITIES].map(p =>
         parseInt(MatchingPaths.constructChartSerieName(p.path, this.PATH_FILTER_ENTITIES, '$1', [])),
-      ),
+      );
+    }
+    this.setState({
+      entitiesIds: entitiesIds,
     });
   };
 
@@ -87,6 +93,52 @@ class NetFlowNavigationWidget extends React.Component {
     }
     this.props.setSharedValue('selectedInterface', newInterface);
   };
+
+  renderDirectionsRadios() {
+    const {
+      widgetId,
+      sharedValues: { netflowSelectedDirection = this.DEFAULT_DIRECTION },
+    } = this.props;
+    return (
+      <div className="radios directions">
+        {this.DIRECTIONS.map(direction => (
+          <div key={direction}>
+            <input
+              type="radio"
+              name={`${widgetId}-direction`}
+              value={direction}
+              checked={direction === netflowSelectedDirection}
+              onChange={this.onChangeDirection}
+            />
+            {direction}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  renderIntervalsRadios() {
+    const {
+      widgetId,
+      sharedValues: { netflowSelectedInterval = this.DEFAULT_INTERVAL },
+    } = this.props;
+    return (
+      <div className="radios intervals">
+        {this.INTERVALS.map(interval => (
+          <div key={interval}>
+            <input
+              type="radio"
+              name={`${widgetId}-interval`}
+              value={interval}
+              checked={interval === netflowSelectedInterval}
+              onChange={this.onChangeSelectedInterval}
+            />{' '}
+            {interval}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   renderEntitiesDropdown() {
     const {
@@ -149,12 +201,7 @@ class NetFlowNavigationWidget extends React.Component {
 
   render() {
     const {
-      widgetId,
-      sharedValues: {
-        netflowSelectedDirection = this.DEFAULT_DIRECTION,
-        netflowSelectedInterval = this.DEFAULT_INTERVAL,
-        selectedEntityId = null,
-      },
+      sharedValues: { selectedEntityId = null },
     } = this.props;
     const { entitiesIds } = this.state;
     const accountId = this.props.match.params.accountId;
@@ -169,54 +216,32 @@ class NetFlowNavigationWidget extends React.Component {
           }}
           onUpdate={this.onEntitiesPathsUpdate}
         />
-        {entitiesIds && (
-          <>
-            <PersistentFetcher resource={`accounts/${accountId}/entities`} onUpdate={this.onEntitiesUpdate} />
-            {selectedEntityId && (
+        {entitiesIds !== null &&
+          (entitiesIds.length === 0 ? (
+            <p>Error: there is no NetFlow data available for any entity!</p>
+          ) : (
+            <>
               <PersistentFetcher
-                resource={`accounts/${accountId}/paths`}
-                queryParams={{
-                  filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
-                  limit: 101,
-                  failover_trailing: false,
-                }}
-                onUpdate={this.onEntitiesInterfacesUpdate}
+                resource={`accounts/${accountId}/entities`}
+                onUpdate={this.onEntitiesUpdate}
               />
-            )}
-          </>
-        )}
-
-        <div className="radios directions">
-          {this.DIRECTIONS.map(direction => (
-            <div key={direction}>
-              <input
-                type="radio"
-                name={`${widgetId}-direction`}
-                value={direction}
-                checked={direction === netflowSelectedDirection}
-                onChange={this.onChangeDirection}
-              />
-              {direction}
-            </div>
+              {selectedEntityId && (
+                <PersistentFetcher
+                  resource={`accounts/${accountId}/paths`}
+                  queryParams={{
+                    filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
+                    limit: 101,
+                    failover_trailing: false,
+                  }}
+                  onUpdate={this.onEntitiesInterfacesUpdate}
+                />
+              )}
+              {this.renderDirectionsRadios()}
+              {this.renderIntervalsRadios()}
+              {this.renderEntitiesDropdown()}
+              {this.renderInterfacesDropdown()}
+            </>
           ))}
-        </div>
-        <div className="radios intervals">
-          {this.INTERVALS.map(interval => (
-            <div key={interval}>
-              <input
-                type="radio"
-                name={`${widgetId}-interval`}
-                value={interval}
-                checked={interval === netflowSelectedInterval}
-                onChange={this.onChangeSelectedInterval}
-              />{' '}
-              {interval}
-            </div>
-          ))}
-        </div>
-
-        {this.renderEntitiesDropdown()}
-        {this.renderInterfacesDropdown()}
       </div>
     );
   }
