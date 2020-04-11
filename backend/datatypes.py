@@ -1021,7 +1021,7 @@ class Bot(object):
                 return None
             user_id, last_login = res
             # update token only if it needs to be updated:
-            if calendar.timegm(last_login.timetuple()) < time.time() - 10:
+            if last_login is None or calendar.timegm(last_login.timetuple()) < time.time() - 10:
                 c.execute("UPDATE bots SET last_login = CURRENT_TIMESTAMP WHERE token = %s;", (bot_token,))
             return user_id
 
