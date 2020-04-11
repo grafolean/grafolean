@@ -218,7 +218,7 @@ class NetFlowNavigationWidget extends React.Component {
         />
         {entitiesIds !== null &&
           (entitiesIds.length === 0 ? (
-            <p>Error: there is no NetFlow data available for any entity!</p>
+            <p>There is no NetFlow data available for any entity.</p>
           ) : (
             <>
               <PersistentFetcher
