@@ -104,17 +104,13 @@ services:
       - BACKEND_URL=http://grafolean/api
       - BOT_TOKEN_FROM_FILE=/shared-secrets/tokens/snmp-bot.token
       - JOBS_REFRESH_INTERVAL=60
-      - REDIS_HOST=snmpbotredis
+      - DB_HOST=db
+      - DB_DATABASE=${DB_NAME:-grafolean}
+      - DB_USERNAME=${DB_USER:-admin}
+      - DB_PASSWORD=${DB_PASS:-admin}
     restart: always
     volumes:
       - shared-secrets:/shared-secrets
-    networks:
-      - grafolean
-
-  snmpbotredis:
-    image: redis:5-alpine
-    container_name: grafolean-snmp-bot-redis
-    restart: always
     networks:
       - grafolean
 
