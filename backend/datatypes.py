@@ -663,6 +663,9 @@ class Account(object):
                 s = Sensor("Linux lmsensors - temperature [°C]", 'snmp', 60, s_lmsensors_temp_details, account_id)
                 s.insert()
 
+                credential_details = {}
+                c = Credential("Default NetFlow credential", 'netflow', credential_details, account_id)
+                c.insert()
             return account_id
 
     def update(self):
