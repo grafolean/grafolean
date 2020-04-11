@@ -213,7 +213,7 @@ services:
     #   - $ docker exec -ti grafolean-netflow-writer bash
     #   - # pip install py-spy
     #   - # py-spy record -n -o /tmp/prof/out.svg --pid 1
-    # But first, these 3 lines below must be enabled, to add a volume and capabilities: (careful not to add spaces!)
+    # But first, these 3 lines below must be enabled, to add a volume and capabilities: (be careful with indentation!)
     #  - /tmp/prof/:/tmp/prof/
     #cap_add:
     #  - SYS_PTRACE
