@@ -1,13 +1,19 @@
 form .widget-form {
   margin-top: 20px;
 
-  i.fa.widget-type {
-    padding: 20px 20px 10px;
-    font-size: 30px;
-    margin-bottom: 10px;
+  label.widget-type {
+    display: flex;
+    align-items: center;
+    text-transform: capitalize;
 
-    &.selected {
-      border-bottom: 4px solid #777;
+    input[type=radio] {
+      margin: 0;
+    }
+
+    i.fa.widget-type {
+      padding: 0 5px 0;
+      font-size: 15px;
+      margin-bottom: 0;
     }
   }
 

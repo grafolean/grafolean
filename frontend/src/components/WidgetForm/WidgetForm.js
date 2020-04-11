@@ -16,7 +16,7 @@ const WIDGET_TYPES = [
   {
     type: 'lastvalue',
     icon: 'thermometer-half',
-    label: 'last value',
+    label: 'latest value',
     form: LastValueForm,
     isHeaderWidget: false,
   },
@@ -80,7 +80,8 @@ class WidgetForm extends React.Component {
     return x;
   };
 
-  changeWidgetType = widgetType => {
+  changeWidgetType = ev => {
+    const widgetType = ev.target.value;
     this.props.setFieldValue('type', widgetType);
     // initialize to default values:
     const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === widgetType);
@@ -113,11 +114,17 @@ class WidgetForm extends React.Component {
           <div className="field">
             <label>Type:</label>
             {WIDGET_TYPES.map(wt => (
-              <i
-                key={wt.type}
-                className={`fa fa-${wt.icon} widget-type ${type === wt.type && 'selected'}`}
-                onClick={() => this.changeWidgetType(wt.type)}
-              />
+              <label key={wt.type} className="widget-type">
+                <input
+                  type="radio"
+                  name="widget-type"
+                  value={wt.type}
+                  checked={type === wt.type}
+                  onChange={this.changeWidgetType}
+                />
+                <i className={`fa fa-fw fa-${wt.icon} widget-type`} />
+                {wt.label}
+              </label>
             ))}
           </div>
         )}
