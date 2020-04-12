@@ -238,7 +238,7 @@ class MQTTFetcher {
     // Note that unsubscribe is async so it might happen that some messages come *after* the unsubscribe:
     //   https://www.eclipse.org/paho/files/jsdoc/Paho.MQTT.Client.html
     // Since we can't rush the unsubscribing process, we simply ignore such messages (they match no known topic).
-    console.debug('Message received:', message.destinationName, message.topic, message.payloadString);
+    // console.debug('Message received:', message.destinationName, message.topic, message.payloadString);
     if (!message.destinationName.startsWith('changed/')) {
       console.error('Message doesn\'t start with "changed/", how did we get it?');
       return;
