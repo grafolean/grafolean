@@ -31,7 +31,7 @@ export default class SensorsMultiSelect extends React.Component {
     return (
       <div key={sensor.id}>
         <Checkbox
-          color="#3550e1"
+          color="#3671bd"
           value={sensor.id}
           onChange={this.handleCheckboxChange}
           checked={isSensorSelected}

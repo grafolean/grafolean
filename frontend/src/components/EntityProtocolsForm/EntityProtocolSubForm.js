@@ -28,7 +28,7 @@ class EntityProtocolSubForm extends React.Component {
         ? protocols[protocol.slug]['sensors']
         : [];
     return (
-      <div key={protocol.slug} className="field framed-field">
+      <div key={protocol.slug} className="field framed-field entity-protocol-subform">
         <label>{protocol.label}</label>
 
         <div className="nested-field">
@@ -48,7 +48,7 @@ class EntityProtocolSubForm extends React.Component {
             </p>
           ) : (
             <>
-              <div className="nested-field">
+              <div className="nested-field credentials">
                 <span className="label">Credentials:</span>
                 <select
                   value={credentialId || ''}
@@ -66,7 +66,7 @@ class EntityProtocolSubForm extends React.Component {
               </div>
 
               {credentialId && (
-                <div className="nested-field">
+                <div className="nested-field bot">
                   <span className="label">Bot fetching this data:</span>
                   <select
                     value={selectedBotId || ''}
@@ -85,7 +85,7 @@ class EntityProtocolSubForm extends React.Component {
               )}
 
               {credentialId && (
-                <div className="nested-field">
+                <div className="nested-field sensors">
                   <span className="label">Enabled sensors:</span>
                   <SensorsMultiSelect
                     sensors={sensors}
