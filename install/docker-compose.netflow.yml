@@ -9,7 +9,7 @@ services:
   #
 
   db:
-    image: postgres:9.6-alpine
+    image: postgres:12.1-alpine
     container_name: postgres
     volumes:
       # You should always save DB data to a host directory unless you are prepared to lose it. By default
