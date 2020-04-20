@@ -3,7 +3,6 @@ import React from 'react';
 import isFormikForm from '../isFormikForm';
 import SensorDetailsFormSnmp from './SensorDetailsFormSnmp';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
-import SensorDetailsFormNetFlow from './SensorDetailsFormNetFlow';
 
 class SensorFormRender extends React.Component {
   static DEFAULT_VALUES = {
@@ -32,9 +31,6 @@ class SensorFormRender extends React.Component {
         case 'snmp':
           detailsErrors = SensorDetailsFormSnmp.validate(details);
           break;
-        case 'netflow':
-          detailsErrors = SensorDetailsFormNetFlow.validate(details);
-          break;
         default:
           break;
       }
@@ -56,9 +52,6 @@ class SensorFormRender extends React.Component {
     switch (value) {
       case 'snmp':
         this.props.setFieldValue('details', SensorDetailsFormSnmp.DEFAULT_VALUES, true);
-        break;
-      case 'netflow':
-        this.props.setFieldValue('details', SensorDetailsFormNetFlow.DEFAULT_VALUES, true);
         break;
       default:
         break;
@@ -118,13 +111,6 @@ class SensorFormRender extends React.Component {
 
         {protocol === 'snmp' ? (
           <SensorDetailsFormSnmp
-            values={details}
-            namePrefix="details"
-            onChange={onChange}
-            errors={errors['details']}
-          />
-        ) : protocol === 'netflow' ? (
-          <SensorDetailsFormNetFlow
             values={details}
             namePrefix="details"
             onChange={onChange}
