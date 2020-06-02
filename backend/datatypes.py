@@ -1,4 +1,5 @@
 import calendar
+from datetime import datetime, timezone
 import os
 from collections import defaultdict
 import dns
@@ -255,21 +256,23 @@ class Measurement(object):
     MAX_DATAPOINTS_RETURNED = 100000
 
     @classmethod
-    def save_values_data_to_db(cls, account_id, put_data, update_on_conflict=True):
+    def save_values_data_to_db(cls, account_id, put_data):
 
         # to use execute_values, we need an iterator which will feed our data:
         def _get_data(put_data):
             for x in put_data:
                 path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
-                yield (path.force_id, str(Timestamp(x['t'])), str(MeasuredValue(x['v'])),)
+                yield (
+                    path.force_id,
+                    str(Timestamp(x['t'])),
+                    datetime.utcfromtimestamp(float(Timestamp(x['t']))),
+                    str(MeasuredValue(x['v'])),
+                )
         data_iterator = _get_data(put_data)
 
         with db.cursor() as c:
             # https://stackoverflow.com/a/34529505/593487
-            if update_on_conflict:
-                psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
-            else:
-                psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s", data_iterator, "(%s, %s, %s)", page_size=100)
+            psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, ts2, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s, %s)", page_size=100)
 
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
@@ -299,9 +302,9 @@ class Measurement(object):
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
-                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, float(t_from), float(t_to), max_records + 1,))
+                    c.execute('SELECT ts2, value FROM measurements WHERE path = %s AND ts2 >= %s AND ts2 <= %s ORDER BY ts2 ' + sort_order + ' LIMIT %s;', (path_id, datetime.utcfromtimestamp(float(t_from)), datetime.utcfromtimestamp(float(t_to)), max_records + 1,))
                     for ts, value in c.fetchall():
-                        path_data.append({'t': float(ts), 'v': float(value)})
+                        path_data.append({'t': ts.replace(tzinfo=timezone.utc).timestamp(), 'v': float(value)})
                 else:  # fetch aggregated data
                     aggr_interval_s = 3600 * (cls.AGGR_FACTOR ** aggr_level)
                     c.execute(f"""
