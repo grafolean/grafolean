@@ -443,3 +443,8 @@ def migration_step_25():
         c.execute("ALTER TABLE persons ADD COLUMN confirm_until NUMERIC(10) NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600;")
         # confirm_pin can (and should) be NULL when not in use:
         c.execute('ALTER TABLE persons ALTER COLUMN confirm_pin DROP NOT NULL;')
+
+def migration_step_26():
+    """ Add TIMESTAMP column to measurements (TimescaleDB does not support NUMERIC). """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE measurements ADD COLUMN ts2 TIMESTAMP;")
