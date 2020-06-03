@@ -108,6 +108,6 @@ See [doc/HOWTO-dev.md](doc/HOWTO-dev.md) for details.
 This software is free (as in beer and as in some of the freedoms), but it is not FOSS. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge (both non-commercially or commercially), modify it and share modifications.
 
 What you _can't_ do however is sell it to third parties (for example as product, offering support,...); you need a commercial license for that (not yet
-available, [contact us](info@grafolean.com) if interested).
+available, [contact us](mailto:info@grafolean.com) if interested).
 
 If in doubt, please read the [license](./LICENSE.md) - it is very short. Or, [open an issue](https://github.com/grafolean/grafolean/issues) with a request for a clarification on a specific matter.
