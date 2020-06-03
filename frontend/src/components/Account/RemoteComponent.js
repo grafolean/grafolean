@@ -1,4 +1,5 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 import { resolve } from '../../remote-component.config.js';
 import { createRequires, createUseRemoteComponent } from '@paciolan/remote-component';
 
@@ -12,7 +13,7 @@ const RemoteComponent = props => {
 
   const [loading, err, Component] = useRemoteComponent(url);
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading component...</div>;
   }
   if (err != null) {
     return <div>Unknown Error: {err.toString()}</div>;
@@ -22,8 +23,9 @@ const RemoteComponent = props => {
     components: {
       PersistentFetcher: props => <PersistentFetcher {...props} />,
     },
+    urlParams: props.match.params,
   };
 
   return <Component g={g} {...rest} />;
 };
-export default RemoteComponent;
+export default withRouter(RemoteComponent);
