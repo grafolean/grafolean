@@ -9,7 +9,7 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import RemoteComponent from './RemoteComponent';
+import RemoteComponent from '../Widgets/RemoteComponent';
 
 class Account extends React.Component {
   state = {

@@ -14,19 +14,9 @@ import EditableLabel from '../EditableLabel';
 import Button from '../Button';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm/WidgetForm';
-import GLeanChartWidget from '../Widgets/GLeanChartWidget/GLeanChartWidget';
-import LastValueWidget from '../Widgets/LastValueWidget/LastValueWidget';
-import TopNWidget from '../Widgets/TopNWidget/TopNWidget';
-import NetFlowNavigationWidget from '../Widgets/NetFlowNavigationWidget/NetFlowNavigationWidget';
+import { KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
 
 import './DashboardView.scss';
-
-const KNOWN_WIDGETS = {
-  lastvalue: LastValueWidget,
-  topn: TopNWidget,
-  chart: GLeanChartWidget,
-  netflownavigation: NetFlowNavigationWidget,
-};
 
 class DashboardView extends React.Component {
   state = {
@@ -203,11 +193,11 @@ class DashboardView extends React.Component {
     const { layoutPerPage, page, sortingEnabled, sharedValues } = this.state;
     const dashboardSlug = this.props.match.params.slug;
 
-    if (!KNOWN_WIDGETS[widget.type]) {
+    const widgetDef = KNOWN_WIDGET_TYPES[widget.type];
+    if (!widgetDef) {
       return <div key={widget.id}>Unknown widget type.</div>;
     }
-
-    const WidgetComponent = KNOWN_WIDGETS[widget.type];
+    const WidgetComponent = widgetDef.widgetComponent;
     const widget_layout = layoutPerPage[page].find(l => l.i === '' + widget.id);
     const width = widget_layout.w * unitX - 10;
     const height = widget_layout.h * this.UNIT_Y - 10;
@@ -225,6 +215,7 @@ class DashboardView extends React.Component {
           setPage={this.setPage}
           setSharedValue={this.setSharedValue}
           sharedValues={sharedValues}
+          {...widgetDef.widgetAdditionalProps}
         />
         {sortingEnabled && (
           <div
@@ -242,7 +233,11 @@ class DashboardView extends React.Component {
   renderHeaderWidget(widget, containerWidth) {
     const dashboardSlug = this.props.match.params.slug;
     const { sharedValues } = this.state;
-    const WidgetComponent = KNOWN_WIDGETS[widget.type];
+    const widgetDef = KNOWN_WIDGET_TYPES[widget.type];
+    if (!widgetDef) {
+      return <div key={widget.id}>Unknown widget type.</div>;
+    }
+    const WidgetComponent = widgetDef.widgetComponent;
     return (
       <WidgetComponent
         key={widget.id}
@@ -256,6 +251,7 @@ class DashboardView extends React.Component {
         setPage={this.setPage}
         setSharedValue={this.setSharedValue}
         sharedValues={sharedValues}
+        {...widgetDef.widgetAdditionalProps}
       />
     );
   }

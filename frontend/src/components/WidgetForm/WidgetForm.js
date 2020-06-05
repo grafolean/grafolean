@@ -4,32 +4,9 @@ import { withRouter } from 'react-router-dom';
 import isFormikForm from '../isFormikForm';
 import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 
-import ChartForm from '../Widgets/GLeanChartWidget/ChartForm/ChartForm';
-import LastValueForm from '../Widgets/LastValueWidget/LastValueForm';
-import TopNWidgetForm from '../Widgets/TopNWidget/TopNWidgetForm';
-import NetFlowNavigationWidgetForm from '../Widgets/NetFlowNavigationWidget/NetFlowNavigationWidgetForm';
+import { KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
 
 import './WidgetForm.scss';
-
-const WIDGET_TYPES = [
-  { type: 'chart', icon: 'area-chart', label: 'chart', form: ChartForm, isHeaderWidget: false },
-  {
-    type: 'lastvalue',
-    icon: 'thermometer-half',
-    label: 'latest value',
-    form: LastValueForm,
-    isHeaderWidget: false,
-  },
-  { type: 'topn', icon: 'trophy', label: 'top N', form: TopNWidgetForm, isHeaderWidget: false },
-  // widgets that are meant to be on the top, above others:
-  {
-    type: 'netflownavigation',
-    icon: 'wind',
-    label: 'NetFlow navigation',
-    form: NetFlowNavigationWidgetForm,
-    isHeaderWidget: true,
-  },
-];
 
 class WidgetForm extends React.Component {
   static validate = values => {
@@ -38,9 +15,9 @@ class WidgetForm extends React.Component {
         type: 'widget type not selected',
       };
     }
-    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === values.type);
-    if (selectedWidgetType['form'].validate) {
-      const validationResult = selectedWidgetType['form'].validate(values.content);
+    const selectedWidgetType = KNOWN_WIDGET_TYPES[values.type];
+    if (selectedWidgetType['formComponent'].validate) {
+      const validationResult = selectedWidgetType['formComponent'].validate(values.content);
       // We are not sure what we will receive, but if it is empty, we want to receive an empty object (which is
       // what formik expects). So we are a bit careful when checking:
       if (Array.isArray(validationResult) && validationResult.length === 0) {
@@ -71,7 +48,7 @@ class WidgetForm extends React.Component {
   };
 
   static fixValuesBeforeSubmit = formValues => {
-    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === formValues.type);
+    const selectedWidgetType = KNOWN_WIDGET_TYPES[formValues.type];
     const x = {
       ...formValues,
       content: JSON.stringify(formValues.content),
@@ -84,8 +61,8 @@ class WidgetForm extends React.Component {
     const widgetType = ev.target.value;
     this.props.setFieldValue('type', widgetType);
     // initialize to default values:
-    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === widgetType);
-    this.props.setFieldValue('content', selectedWidgetType['form'].DEFAULT_FORM_CONTENT);
+    const selectedWidgetType = KNOWN_WIDGET_TYPES[widgetType];
+    this.props.setFieldValue('content', selectedWidgetType['formComponent'].DEFAULT_FORM_CONTENT);
     this.props.setFieldValue('p', this.props.page);
   };
 
@@ -99,8 +76,8 @@ class WidgetForm extends React.Component {
       sharedValues,
     } = this.props;
 
-    const selectedWidgetType = WIDGET_TYPES.find(wt => wt.type === type);
-    const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.form : null;
+    const selectedWidgetType = KNOWN_WIDGET_TYPES[type];
+    const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.formComponent : null;
     return (
       <div className="widget-form">
         <NoPathsHelpSnippet />
@@ -113,7 +90,7 @@ class WidgetForm extends React.Component {
         {!lockWidgetType && (
           <div className="field">
             <label>Type:</label>
-            {WIDGET_TYPES.map(wt => (
+            {Object.values(KNOWN_WIDGET_TYPES).map(wt => (
               <label key={wt.type} className="widget-type">
                 <input
                   type="radio"
