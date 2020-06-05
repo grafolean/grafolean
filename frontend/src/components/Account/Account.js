@@ -9,7 +9,6 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
-import RemoteComponent from '../Widgets/RemoteComponent';
 
 class Account extends React.Component {
   state = {
@@ -70,8 +69,6 @@ class Account extends React.Component {
       <div>
         <PersistentFetcher resource={`accounts/${accountId}`} onUpdate={this.onAccountUpdate} />
         <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onBotsUpdate} />
-
-        <RemoteComponent url="http://localhost:3000/RemoteWidget.js" name={'asdfaaaaaaa123'} />
 
         {account === null ? (
           <Loading />
