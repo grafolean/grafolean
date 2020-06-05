@@ -1,14 +1,15 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-import { resolve } from '../../remote-component.config.js';
+import { resolve } from '../../remote-component.config';
 import { createRequires, createUseRemoteComponent } from '@paciolan/remote-component';
 
+import isWidget from './isWidget.js';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 const useRemoteComponent = createUseRemoteComponent({ requires: createRequires(resolve) });
 
 // we need to use a function component because of React hooks:
-const RemoteComponent = props => {
+const RemoteWidgetComponent = props => {
   const { url, ...rest } = props;
 
   const [loading, err, Component] = useRemoteComponent(url);
@@ -28,4 +29,4 @@ const RemoteComponent = props => {
 
   return <Component g={g} {...rest} />;
 };
-export default withRouter(RemoteComponent);
+export default withRouter(isWidget(RemoteWidgetComponent));
