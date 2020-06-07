@@ -215,16 +215,22 @@ class BotToken(_RegexValidatedInputValue):
 
 class EmailAddress(object):
     def __init__(self, v, strict_check=False):
-        is_valid = self.is_valid(str(v))
-        if strict_check and is_valid is None:
-            raise ValidationError("Could not validate email: {}".format(str(v)))
+        try:
+            if not self.is_valid(str(v)):
+                raise ValidationError("Invalid email: {}".format(str(v)))
+        except dns.exception.Timeout:
+            if strict_check:
+                raise ValidationError("Could not validate email: {}".format(str(v)))
+            else:
+                pass  # allow - we were unable to check the e-mail due to DNS timeout
         self.v = str(v)
 
     @classmethod
     def is_valid(cls, v):
         """
             Returns False if validation failed (invalid format or MX DNS record
-            not available), None if DNS timed out, True otherwise.
+            not available), True otherwise. If DNS check timed out it raises
+            dns.exception.Timeout exception.
         """
         if '@' not in v:
             return False
@@ -234,7 +240,7 @@ class EmailAddress(object):
             return len(dns_records) > 0
         except dns.exception.Timeout:
             log.warning("Could not validate email address due to DNS timeout!")
-            return None
+            raise
         except:
             return False
 
