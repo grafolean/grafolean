@@ -1,12 +1,13 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import store from '../../store';
 import { onLoginSuccess, ROOT_URL } from '../../store/actions';
-
-import './LoginPage.scss';
 import Button from '../Button';
 import { VERSION_INFO } from '../../VERSION';
+
+import './LoginPage.scss';
 
 export class LoginPage extends React.Component {
   formValues = {};
@@ -121,6 +122,10 @@ export class LoginPage extends React.Component {
                 {loginError}
               </div>
             )}
+
+            <div className="signup-text">
+              New to Grafolean? <Link to="/signup">Create an account.</Link>
+            </div>
           </div>
         </form>
 
