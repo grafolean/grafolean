@@ -9,35 +9,24 @@ import { VERSION_INFO } from '../../VERSION';
 import './LoginPage.scss';
 
 export default class LoginPage extends React.Component {
-  formValues = {};
+  state = {
+    formValues: {
+      username: '',
+      password: '',
+    },
+    processingLogin: false,
+    loginError: undefined,
+  };
 
-  constructor(props) {
-    super(props);
-    this.state = {
+  changeFormValue = ev => {
+    const fieldName = ev.target.name;
+    const value = ev.target.value;
+    this.setState(prevState => ({
       formValues: {
-        username: '',
-        password: '',
-      },
-      processingLogin: false,
-      loginError: undefined,
-    };
-  }
-
-  changeFormValue(fieldName, value) {
-    this.setState(oldState => ({
-      formValues: {
-        ...oldState.formValues,
+        ...prevState.formValues,
         [fieldName]: value,
       },
     }));
-    this.formValues[fieldName] = value;
-  }
-
-  changeUsername = e => {
-    this.changeFormValue('username', e.target.value);
-  };
-  changePassword = e => {
-    this.changeFormValue('password', e.target.value);
   };
 
   handleLoginSubmit = async ev => {
@@ -48,6 +37,7 @@ export default class LoginPage extends React.Component {
     });
 
     try {
+      const { username, password } = this.state.formValues;
       const response = await fetch(`${ROOT_URL}/auth/login`, {
         headers: {
           Accept: 'application/json',
@@ -55,8 +45,8 @@ export default class LoginPage extends React.Component {
         },
         method: 'POST',
         body: JSON.stringify({
-          username: this.formValues.username,
-          password: this.formValues.password,
+          username: username,
+          password: password,
         }),
       });
       if (response.status === 401) {
@@ -97,13 +87,15 @@ export default class LoginPage extends React.Component {
           </div>
 
           <div className="login form">
+            <h3>Login</h3>
+
             <div className="field">
               <label>Username:</label>
-              <input type="text" value={username} onChange={this.changeUsername} autoFocus />
+              <input type="text" value={username} name="username" onChange={this.changeFormValue} autoFocus />
             </div>
             <div className="field">
               <label>Password:</label>
-              <input type="password" value={password} onChange={this.changePassword} />
+              <input type="password" value={password} name="password" onChange={this.changeFormValue} />
             </div>
 
             <Button
