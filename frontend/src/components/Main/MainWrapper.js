@@ -5,7 +5,7 @@ import { withRouter } from 'react-router-dom';
 import Main from './Main';
 import BackendStatusUpdater from '../BackendStatusUpdater/BackendStatusUpdater';
 
-class ThemedMain extends React.Component {
+class MainWrapper extends React.Component {
   render() {
     const { isDarkMode, ...rest } = this.props;
     return (
@@ -21,4 +21,4 @@ const mapDarkModeToProps = store => ({
   isDarkMode: store.preferences.colorScheme === 'dark',
 });
 // withRouter is needed to force re-rendering of this component when URL changes:
-export default withRouter(connect(mapDarkModeToProps)(ThemedMain));
+export default withRouter(connect(mapDarkModeToProps)(MainWrapper));
