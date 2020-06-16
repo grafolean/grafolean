@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import store from '../../store';
@@ -9,7 +8,7 @@ import { VERSION_INFO } from '../../VERSION';
 
 import './LoginPage.scss';
 
-export class LoginPage extends React.Component {
+export default class LoginPage extends React.Component {
   formValues = {};
 
   constructor(props) {
@@ -134,8 +133,3 @@ export class LoginPage extends React.Component {
     );
   }
 }
-
-const mapLoggedInStateToProps = store => ({
-  loggedIn: !!store.user,
-});
-export default connect(mapLoggedInStateToProps)(LoginPage);
