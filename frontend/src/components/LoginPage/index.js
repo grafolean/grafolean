@@ -6,6 +6,7 @@ import { onLoginSuccess, ROOT_URL } from '../../store/actions';
 import Button from '../Button';
 import { VERSION_INFO } from '../../VERSION';
 
+import '../auth-form-page.scss';
 import './LoginPage.scss';
 
 export default class LoginPage extends React.Component {
@@ -80,13 +81,13 @@ export default class LoginPage extends React.Component {
       loginError,
     } = this.state;
     return (
-      <div className="login-page">
-        <form className="login-box" onSubmit={this.handleLoginSubmit}>
+      <div className="login-page auth-form-page">
+        <form className="box" onSubmit={this.handleLoginSubmit}>
           <div className="grafolean">
             <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
           </div>
 
-          <div className="login form">
+          <div className="form">
             <h3>Login</h3>
 
             <div className="field">

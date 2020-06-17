@@ -1,0 +1,16 @@
+.signup-page.auth-form-page {
+  .box {
+    .signup-text {
+      margin-top: 20px;
+    }
+    div.form .field.agree {
+      display: flex;
+      align-items: center;
+
+      label {
+        margin-top: 6px;
+        margin-left: 6px;
+      }
+    }
+  }
+}

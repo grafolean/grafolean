@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { Switch, Route, withRouter } from 'react-router-dom';
 
+import store from '../../store';
 import { ROOT_URL, doRequestBackendStatus } from '../../store/actions';
 import Main from './Main';
 import CORSWarningPage from '../WarningPages/CORSWarningPage';
@@ -9,8 +10,7 @@ import Loading from '../Loading';
 import HostnameWarningPage from '../WarningPages/HostnameWarningPage';
 import AdminMigrateDB from '../AdminMigrateDB';
 import AdminFirst from '../AdminFirst';
-import PageNotFound from '../PageNotFound';
-import store from '../../store';
+import SignupPage from '../SignupPage/SignupPage';
 
 class MainWrapper extends React.Component {
   componentDidMount() {
@@ -56,7 +56,7 @@ class MainWrapper extends React.Component {
 
     return (
       <Switch>
-        <Route exact path="/signup" component={PageNotFound} />
+        <Route exact path="/signup" component={SignupPage} />
         <Route render={() => <Main {...rest} />} />
       </Switch>
     );
