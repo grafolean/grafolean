@@ -86,6 +86,17 @@ PersonCredentialSchemaInputs = {
 }
 
 
+PersonSignupNewPOST = {
+    'type': 'object',
+    'properties': {
+        'email': {'type': 'string'},
+        'agree': {'type': 'boolean'},
+    },
+    'additionalProperties': False,
+    'required': ['email', 'agree'],
+}
+
+
 AccountSchemaInputs = {
     'type': 'object',
     'properties': {

@@ -425,3 +425,14 @@ def migration_step_23():
     """ Entities might no longer have a unique name. """
     with db.cursor() as c:
         c.execute('DROP INDEX IF EXISTS entities_name;')
+
+def migration_step_24():
+    """ Add fields needed for person signup process. """
+    with db.cursor() as c:
+        # add a field that tells us if a person needs to confirm their e-mail address:
+        c.execute("ALTER TABLE persons ADD COLUMN email_confirmed BOOLEAN DEFAULT FALSE;")
+        c.execute("UPDATE persons SET email_confirmed = TRUE;")
+        # password might not be entered right away:
+        c.execute('ALTER TABLE persons ALTER COLUMN passhash DROP NOT NULL;')
+        # if password is not set, a temporary authentication token might be used to confirm identity:
+        c.execute("ALTER TABLE persons ADD COLUMN confirm_pin CHAR(8) NOT NULL DEFAULT substr(md5(random()::text), 0, 8);")

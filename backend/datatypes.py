@@ -17,7 +17,7 @@ from validators import (
     DashboardInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
-    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs
+    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST
 )
 from auth import Auth
 
@@ -1061,11 +1061,12 @@ class Bot(object):
 
 
 class Person(object):
-    def __init__(self, name, email, username, password, force_id=None):
+    def __init__(self, name, email, username, password, email_confirmed, force_id=None):
         self.name = name
         self.email = EmailAddress(email, strict_check=False)
         self.username = username
         self.password = password
+        self.email_confirmed = email_confirmed
         self.force_id = force_id
 
     @classmethod
@@ -1079,7 +1080,8 @@ class Person(object):
         email = json_data.get('email', None)
         username = json_data.get('username', None)
         password = json_data.get('password', None)
-        return cls(name, email, username, password, force_id)
+        email_confirmed = True  # when manually entering user, e-mail check is not performed
+        return cls(name, email, username, password, email_confirmed, force_id)
 
     @staticmethod
     def get_list():
@@ -1095,12 +1097,27 @@ class Person(object):
                 })
             return ret
 
+    @classmethod
+    def signup_new(cls, json_data):
+        jsonschema.validate(json_data, PersonSignupNewPOST)
+
+        # make sure that the user clicked "I agree...":
+        agree = json_data.get('agree', False)
+        if not agree:
+            raise ValidationError("User must agree to Terms of Use")
+        email = json_data.get('email', None)
+
+        # insert a person which needs the e-mail to be confirmed and password entered before it can login:
+        person = cls('', email, email, None, False)
+        user_id = person.insert()
+
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
             user_id, = c.fetchone()
-            pass_hash = Auth.password_hash(self.password)
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, str(self.email), self.username, pass_hash,))
+            pass_hash = Auth.password_hash(self.password) if self.password is not None else None
+            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s);",
+                (user_id, self.name, str(self.email), self.username, pass_hash, self.email_confirmed,))
             return user_id
 
     def update(self):
@@ -1178,7 +1195,7 @@ class PersonCredentials(object):
 
     def check_user_login(self):
         with db.cursor() as c:
-            c.execute("SELECT user_id, passhash FROM persons WHERE username = %s;", (self.username,))
+            c.execute("SELECT user_id, passhash FROM persons WHERE username = %s AND email_confirmed = TRUE AND passhash IS NOT NULL;", (self.username,))
             res = c.fetchone()
             if not res:
                 return None

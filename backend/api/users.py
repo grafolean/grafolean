@@ -3,7 +3,7 @@ import json
 import copy
 import psycopg2
 
-from .common import auth_no_permissions, mqtt_publish_changed
+from .common import noauth, auth_no_permissions, mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
@@ -75,6 +75,7 @@ def users_apidoc_schemas():
     yield "PersonGETWithPermissions", personGETWithPermissionsSchema
     yield "PersonPOST", validators.PersonSchemaInputsPOST
     yield "Permission", validators.PermissionSchemaInputs
+    yield "PersonSignupNewPOST", validators.PersonSignupNewPOST
 
 
 # --------------
@@ -590,4 +591,32 @@ def users_permission_delete(permission_id, user_id):
         'users/{user_id}'.format(user_id=user_id),
         'bots/{user_id}'.format(user_id=user_id),
     ])
+    return "", 204
+
+
+@users_api.route('/persons/signup/new', methods=['POST'])
+@noauth
+def users_person_signup_apply():
+    """
+        ---
+        post:
+          summary: Allows a person to sign up (first step)
+          tags:
+            - Users
+          description:
+            Creates a new person (unconfirmed, with no access rights and without access to any account) and sends a welcome e-mail.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Person data"
+              required: true
+              schema:
+                "$ref": '#/definitions/PersonSignupNewPOST'
+          responses:
+            202:
+              description: Request was accepted
+            400:
+              description: Invalid parameters
+    """
+    Person.signup_new(flask.request.get_json())
     return "", 204
