@@ -97,6 +97,29 @@ PersonSignupNewPOST = {
 }
 
 
+PersonSignupValidatePinPOST = {
+    'type': 'object',
+    'properties': {
+        'user_id': {'type': 'number'},
+        'confirm_pin': {'type': 'string', 'minLength': 8, 'maxLength': 8},
+    },
+    'additionalProperties': False,
+    'required': ['user_id', 'confirm_pin'],
+}
+
+
+PersonSignupCompletePOST = {
+    'type': 'object',
+    'properties': {
+        'user_id': {'type': 'number'},
+        'confirm_pin': {'type': 'string', 'minLength': 8, 'maxLength': 8},
+        'password': {'type': 'string', 'minLength': 1},
+    },
+    'additionalProperties': False,
+    'required': ['user_id', 'confirm_pin', 'password'],
+}
+
+
 AccountSchemaInputs = {
     'type': 'object',
     'properties': {

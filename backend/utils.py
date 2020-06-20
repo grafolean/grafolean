@@ -435,4 +435,4 @@ def migration_step_24():
         # password might not be entered right away:
         c.execute('ALTER TABLE persons ALTER COLUMN passhash DROP NOT NULL;')
         # if password is not set, a temporary authentication token might be used to confirm identity:
-        c.execute("ALTER TABLE persons ADD COLUMN confirm_pin CHAR(8) NOT NULL DEFAULT substr(md5(random()::text), 0, 8);")
+        c.execute("ALTER TABLE persons ADD COLUMN confirm_pin CHAR(8) NOT NULL DEFAULT substr(md5(random()::text), 0, 9);")

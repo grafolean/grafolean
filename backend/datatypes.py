@@ -17,7 +17,8 @@ from validators import (
     DashboardInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
-    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST
+    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST,
+    PersonSignupValidatePinPOST, PersonSignupCompletePOST,
 )
 from auth import Auth
 
@@ -1110,6 +1111,39 @@ class Person(object):
         # insert a person which needs the e-mail to be confirmed and password entered before it can login:
         person = cls('', email, email, None, False)
         user_id = person.insert()
+
+        with db.cursor() as c:
+            c.execute('SELECT confirm_pin FROM persons WHERE user_id = %s;', (user_id,))
+            confirm_pin, = c.fetchone()
+        return user_id, confirm_pin
+
+    @classmethod
+    def signup_pin_valid(cls, json_data):
+        jsonschema.validate(json_data, PersonSignupValidatePinPOST)
+
+        user_id = json_data['user_id']
+        confirm_pin = json_data['confirm_pin']
+
+        with db.cursor() as c:
+            c.execute('SELECT user_id FROM persons WHERE user_id = %s and confirm_pin = %s;', (user_id, confirm_pin,))
+            res = c.fetchone()
+            if not res:
+                return False
+            else:
+                return True
+
+    @classmethod
+    def signup_complete(cls, json_data):
+        jsonschema.validate(json_data, PersonSignupCompletePOST)
+
+        user_id = json_data['user_id']
+        confirm_pin = json_data['confirm_pin']
+        password = json_data['password']
+        pass_hash = Auth.password_hash(password)
+
+        with db.cursor() as c:
+            c.execute('UPDATE persons SET email_confirmed = TRUE, passhash = %s WHERE user_id = %s AND confirm_pin = %s AND email_confirmed = FALSE;', (pass_hash, user_id, confirm_pin,))
+            return c.rowcount
 
     def insert(self):
         with db.cursor() as c:

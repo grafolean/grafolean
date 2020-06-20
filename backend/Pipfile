@@ -15,6 +15,7 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
+flask-mail = "*"
 
 [dev-packages]
 pytest = "*"
