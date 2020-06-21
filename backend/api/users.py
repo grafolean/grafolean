@@ -604,7 +604,7 @@ Welcome, {name if name else email}!
 
 Click on this link to complete the signup process:
 
-{frontend_origin}/signup/confirm/{user_id}/?pin={confirm_pin}
+{frontend_origin}/signup/confirm/{user_id}/{confirm_pin}
 
 Grafolean lets you easily collect and visualize data. We're excited to have
 you on board! Let us know if you need anything: info@grafolean.com

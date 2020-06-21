@@ -91,7 +91,7 @@ export default class LoginPage extends React.Component {
             <h3>Login</h3>
 
             <div className="field">
-              <label>Username:</label>
+              <label>Username or e-mail:</label>
               <input type="text" value={username} name="username" onChange={this.changeFormValue} autoFocus />
             </div>
             <div className="field">

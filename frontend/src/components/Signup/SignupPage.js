@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import Button from '../Button';
+import { ROOT_URL } from '../../store/actions';
 import { VERSION_INFO } from '../../VERSION';
+import Button from '../Button';
 
 import '../auth-form-page.scss';
 import './SignupPage.scss';
-import { ROOT_URL } from '../../store/actions';
 
 class SignupPage extends React.Component {
   state = {
@@ -105,8 +105,7 @@ class SignupPage extends React.Component {
               {errorMsg && (
                 <div className="error-msg">
                   <i className="fa fa-exclamation-triangle" />
-                  &nbsp;
-                  {errorMsg}
+                  &nbsp;{errorMsg}
                 </div>
               )}
 

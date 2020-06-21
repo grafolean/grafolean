@@ -10,7 +10,8 @@ import Loading from '../Loading';
 import HostnameWarningPage from '../WarningPages/HostnameWarningPage';
 import AdminMigrateDB from '../AdminMigrateDB';
 import AdminFirst from '../AdminFirst';
-import SignupPage from '../SignupPage/SignupPage';
+import SignupPage from '../Signup/SignupPage';
+import SignupConfirm from '../Signup/SignupConfirm';
 
 class MainWrapper extends React.Component {
   componentDidMount() {
@@ -57,6 +58,7 @@ class MainWrapper extends React.Component {
     return (
       <Switch>
         <Route exact path="/signup" component={SignupPage} />
+        <Route exact path="/signup/confirm/:userId/:confirmPin" component={SignupConfirm} />
         <Route render={() => <Main {...rest} />} />
       </Switch>
     );
