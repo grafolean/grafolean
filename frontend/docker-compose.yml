@@ -52,6 +52,11 @@ services:
       - MQTT_WS_PORT=9883
       - MQTT_WS_SSL=false
       - GRAFOLEAN_CORS_DOMAINS=http://localhost:3000
+      - MAIL_SERVER=${MAIL_SERVER}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USE_TLS=${MAIL_USE_TLS}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
     ports:
       - "5000:80"
     networks:
