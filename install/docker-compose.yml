@@ -64,7 +64,12 @@ services:
       # Example setting:
       # - GRAFOLEAN_CORS_DOMAINS=http://example.com,http://grafolean.example.com,http://11.22.33.44:3000
       #
-      # These settings are needed if Grafolean is sending e-mails (for signup, forgot pass, alerts)
+      # If backend is sending out e-mails (signup), it needs to know the URL at which Grafolean frontend is
+      # accessible. In default setting there is no need to set this setting, because backend uses the same
+      # origin as frontend.
+      # - FRONTEND_ORIGIN=http://example.com:2222
+      #
+      # These settings are needed if Grafolean is sending e-mails: (for signup, forgot pass, alerts)
       #- MAIL_SERVER=smtp.grafolean.com
       #- MAIL_PORT=587
       #- MAIL_USE_TLS=true

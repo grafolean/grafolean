@@ -598,13 +598,13 @@ def users_permission_delete(permission_id, user_id):
     return "", 204
 
 
-def _generate_signup_mail_message(name, email, url_root, user_id, confirm_pin):
+def _generate_signup_mail_message(name, email, frontend_origin, user_id, confirm_pin):
     return f'''\
 Welcome, {name if name else email}!
 
 Click on this link to complete the signup process:
 
-{url_root}signup/confirm/{user_id}/?pin={confirm_pin}
+{frontend_origin}/signup/confirm/{user_id}/?pin={confirm_pin}
 
 Grafolean lets you easily collect and visualize data. We're excited to have
 you on board! Let us know if you need anything: info@grafolean.com
@@ -646,7 +646,9 @@ def users_person_signup_new():
     person_data = Person.get(user_id)
 
     mail_subject = "Welcome to Grafolean!"
-    mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], flask.request.url_root, user_id, confirm_pin)
+    # unless explicitly set otherwise, assume that backend and frontend have the same origin:
+    frontend_origin = os.environ.get('FRONTEND_ORIGIN', flask.request.url_root).rstrip('/')
+    mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], frontend_origin, user_id, confirm_pin)
 
     msg = Message(mail_subject, sender="noreply@grafolean.com", recipients=[person_data['email']], body=mail_body_text)
     mail = Mail(flask.current_app)
