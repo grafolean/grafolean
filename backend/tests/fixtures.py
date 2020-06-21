@@ -71,6 +71,14 @@ def app_client():
     _delete_all_from_db()
     migrate_if_needed()
     app.testing = True
+    app.config.update(
+        MAIL_SERVER = 'smtp.grafolean.com',
+        MAIL_PORT = 587,
+        MAIL_USE_TLS = True,
+        MAIL_USERNAME = 'noreply@grafolean.com',
+        MAIL_PASSWORD = '',
+        TESTING = True,
+    )
     return app.test_client()
 
 
