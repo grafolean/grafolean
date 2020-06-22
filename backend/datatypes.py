@@ -1133,7 +1133,7 @@ class Person(object):
                 return True
 
     @classmethod
-    def signup_complete(cls, json_data):
+    def signup_complete(cls, json_data, create_account=True):
         jsonschema.validate(json_data, PersonSignupCompletePOST)
 
         user_id = json_data['user_id']
@@ -1143,7 +1143,24 @@ class Person(object):
 
         with db.cursor() as c:
             c.execute('UPDATE persons SET email_confirmed = TRUE, passhash = %s WHERE user_id = %s AND confirm_pin = %s AND email_confirmed = FALSE;', (pass_hash, user_id, confirm_pin,))
-            return c.rowcount
+            if not c.rowcount:
+                return False
+
+        if not create_account:
+            return True
+
+        # create an account to go with this user:
+        account = Account("My account")
+        account_id = account.insert()
+
+        # grant permissions - user can access the newly created account, their profile and any systemwide bots:
+        permission = Permission(user_id, f'accounts/{account_id}', None)
+        permission.insert(None, skip_checks=True)
+        permission = Permission(user_id, f'persons/{user_id}', ["GET", "POST", "PUT"])
+        permission.insert(None, skip_checks=True)
+        permission = Permission(user_id, f'bots', ["GET"])
+        permission.insert(None, skip_checks=True)
+        return True
 
     def insert(self):
         with db.cursor() as c:

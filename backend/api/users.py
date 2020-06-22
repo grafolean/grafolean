@@ -715,7 +715,7 @@ def users_person_signup_complete():
             400:
               description: Invalid parameters
     """
-    status = Person.signup_complete(flask.request.get_json())
+    status = Person.signup_complete(flask.request.get_json(), create_account=True)
     if status:
         return "", 204
     else:

@@ -79,7 +79,7 @@ def test_signup_new_successful(app_client, admin_authorization_header):
         assert r.status_code == 204, r.data
         assert len(flask.g.outbox) == 1
         mail_message = flask.g.outbox[0]
-        m = re.search(r'/signup/confirm/([0-9]+)/[?]pin=([0-9a-f]{8})', mail_message.body)
+        m = re.search(r'/signup/confirm/([0-9]+)/([0-9a-f]{8})', mail_message.body)
         assert m
         user_id = int(m.group(1))
         confirm_pin = m.group(2)
@@ -137,3 +137,11 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     data = { 'username': 'test@grafolean.com', 'password': 'ThisIsSomeVeryStrongPassword' }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
+    authorization_header = dict(r.headers).get('X-JWT-Token', None)
+    assert re.match(r'^Bearer [0-9]+[:].+$', authorization_header)
+
+    # and we have access to our account:
+    r = app_client.get('/api/accounts', headers={'Authorization': authorization_header})
+    assert r.status_code == 200
+    actual = json.loads(r.data.decode('utf-8'))
+    assert len(actual['list']) == 1
