@@ -43,7 +43,7 @@ if os.environ.get('MAIL_SERVER'):
     app.config.update(
         MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.grafolean.com'),
         MAIL_PORT = os.environ.get('MAIL_PORT', 587),
-        MAIL_USE_TLS = os.environ.get('MAIL_USE_TSL', 'true').lower() in ['true', 'yes', '1'],
+        MAIL_USE_TLS = os.environ.get('MAIL_USE_TSL', 'true').lower() in ['true', 'yes', 'on', '1'],
         MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'noreply@grafolean.com'),
         MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', ''),
     )

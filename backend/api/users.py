@@ -641,7 +641,12 @@ def users_person_signup_new():
               description: Request was accepted
             400:
               description: Invalid parameters
+            403:
+              description: Signup disabled
     """
+    if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
+        return "Signup disabled", 403
+
     user_id, confirm_pin = Person.signup_new(flask.request.get_json())
     person_data = Person.get(user_id)
 
@@ -683,7 +688,12 @@ def users_person_signup_validatepin():
               description: Pin is valid
             400:
               description: Invalid parameters
+            403:
+              description: Signup disabled
     """
+    if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
+        return "Signup disabled", 403
+
     confirm_pin_valid = Person.signup_pin_valid(flask.request.get_json())
     if confirm_pin_valid:
         return "", 204
@@ -714,7 +724,12 @@ def users_person_signup_complete():
               description: Pin is valid
             400:
               description: Invalid parameters
+            403:
+              description: Signup disabled
     """
+    if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
+        return "Signup disabled", 403
+
     status = Person.signup_complete(flask.request.get_json(), create_account=True)
     if status:
         return "", 204
