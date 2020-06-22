@@ -1,43 +1,33 @@
 import React from 'react';
-import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import store from '../../store';
 import { onLoginSuccess, ROOT_URL } from '../../store/actions';
-
-import './LoginPage.scss';
 import Button from '../Button';
 import { VERSION_INFO } from '../../VERSION';
 
-export class LoginPage extends React.Component {
-  formValues = {};
+import '../auth-form-page.scss';
+import './LoginPage.scss';
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      formValues: {
-        username: '',
-        password: '',
-      },
-      processingLogin: false,
-      loginError: undefined,
-    };
-  }
+export default class LoginPage extends React.Component {
+  state = {
+    formValues: {
+      username: '',
+      password: '',
+    },
+    processingLogin: false,
+    loginError: undefined,
+  };
 
-  changeFormValue(fieldName, value) {
-    this.setState(oldState => ({
+  changeFormValue = ev => {
+    const fieldName = ev.target.name;
+    const value = ev.target.value;
+    this.setState(prevState => ({
       formValues: {
-        ...oldState.formValues,
+        ...prevState.formValues,
         [fieldName]: value,
       },
     }));
-    this.formValues[fieldName] = value;
-  }
-
-  changeUsername = e => {
-    this.changeFormValue('username', e.target.value);
-  };
-  changePassword = e => {
-    this.changeFormValue('password', e.target.value);
   };
 
   handleLoginSubmit = async ev => {
@@ -48,6 +38,7 @@ export class LoginPage extends React.Component {
     });
 
     try {
+      const { username, password } = this.state.formValues;
       const response = await fetch(`${ROOT_URL}/auth/login`, {
         headers: {
           Accept: 'application/json',
@@ -55,8 +46,8 @@ export class LoginPage extends React.Component {
         },
         method: 'POST',
         body: JSON.stringify({
-          username: this.formValues.username,
-          password: this.formValues.password,
+          username: username,
+          password: password,
         }),
       });
       if (response.status === 401) {
@@ -90,20 +81,22 @@ export class LoginPage extends React.Component {
       loginError,
     } = this.state;
     return (
-      <div className="login-page">
-        <form className="login-box" onSubmit={this.handleLoginSubmit}>
+      <div className="login-page auth-form-page">
+        <form className="box" onSubmit={this.handleLoginSubmit}>
           <div className="grafolean">
             <img className="grafolean-logo" src="/grafolean.svg" alt="Grafolean" />
           </div>
 
-          <div className="login form">
+          <div className="form">
+            <h3>Login</h3>
+
             <div className="field">
-              <label>Username:</label>
-              <input type="text" value={username} onChange={this.changeUsername} autoFocus />
+              <label>Username or e-mail:</label>
+              <input type="text" value={username} name="username" onChange={this.changeFormValue} autoFocus />
             </div>
             <div className="field">
               <label>Password:</label>
-              <input type="password" value={password} onChange={this.changePassword} />
+              <input type="password" value={password} name="password" onChange={this.changeFormValue} />
             </div>
 
             <Button
@@ -121,6 +114,10 @@ export class LoginPage extends React.Component {
                 {loginError}
               </div>
             )}
+
+            <div className="signup-text">
+              New to Grafolean? <Link to="/signup">Create an account.</Link>
+            </div>
           </div>
         </form>
 
@@ -129,8 +126,3 @@ export class LoginPage extends React.Component {
     );
   }
 }
-
-const mapLoggedInStateToProps = store => ({
-  loggedIn: !!store.user,
-});
-export default connect(mapLoggedInStateToProps)(LoginPage);

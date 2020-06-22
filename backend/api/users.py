@@ -1,9 +1,11 @@
 import flask
 import json
 import copy
+import os
 import psycopg2
+from flask_mail import Message, Mail
 
-from .common import auth_no_permissions, mqtt_publish_changed
+from .common import noauth, auth_no_permissions, mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
@@ -75,6 +77,9 @@ def users_apidoc_schemas():
     yield "PersonGETWithPermissions", personGETWithPermissionsSchema
     yield "PersonPOST", validators.PersonSchemaInputsPOST
     yield "Permission", validators.PermissionSchemaInputs
+    yield "PersonSignupNewPOST", validators.PersonSignupNewPOST
+    yield "PersonSignupValidatePinPOST", validators.PersonSignupValidatePinPOST
+    yield "PersonSignupCompletePOST", validators.PersonSignupCompletePOST
 
 
 # --------------
@@ -591,3 +596,127 @@ def users_permission_delete(permission_id, user_id):
         'bots/{user_id}'.format(user_id=user_id),
     ])
     return "", 204
+
+
+def _generate_signup_mail_message(name, email, frontend_origin, user_id, confirm_pin):
+    return f'''\
+Welcome, {name if name else email}!
+
+Click on this link to complete the signup process:
+
+{frontend_origin}/signup/confirm/{user_id}/{confirm_pin}
+
+Grafolean lets you easily collect and visualize data. We're excited to have
+you on board! Let us know if you need anything: info@grafolean.com
+
+Grafolean Team
+
+* If you don't know what this is about, and you didn't signup for anything,
+please ignore this e-mail - there is nothing you need to do in this case.
+Whoever has entered your e-mail address will not be able to complete their
+registration.
+'''
+
+
+@users_api.route('/persons/signup/new', methods=['POST'])
+@noauth
+def users_person_signup_new():
+    """
+        ---
+        post:
+          summary: Allows a person to sign up (first step)
+          tags:
+            - Users
+          description:
+            Creates a new person (unconfirmed, with no access rights and without access to any account) and sends a welcome e-mail.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Person data"
+              required: true
+              schema:
+                "$ref": '#/definitions/PersonSignupNewPOST'
+          responses:
+            204:
+              description: Request was accepted
+            400:
+              description: Invalid parameters
+    """
+    user_id, confirm_pin = Person.signup_new(flask.request.get_json())
+    person_data = Person.get(user_id)
+
+    mail_subject = "Welcome to Grafolean!"
+    # unless explicitly set otherwise, assume that backend and frontend have the same origin:
+    frontend_origin = os.environ.get('FRONTEND_ORIGIN', flask.request.url_root).rstrip('/')
+    mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], frontend_origin, user_id, confirm_pin)
+
+    msg = Message(mail_subject, sender="noreply@grafolean.com", recipients=[person_data['email']], body=mail_body_text)
+    mail = Mail(flask.current_app)
+    with mail.record_messages() as outbox:
+        mail.send(msg)
+        flask.g.outbox = outbox  # make sent messages accessible to tests
+
+    return "", 204
+
+
+@users_api.route('/persons/signup/validatepin', methods=['POST'])
+@noauth
+def users_person_signup_validatepin():
+    """
+        ---
+        post:
+          summary: Checks if confirmation pin is valid
+          tags:
+            - Users
+          description:
+            Checks if confirmation pin is valid (but doesn't complete the signup yet). This allows
+            frontend to ask for a password before completing the signup process.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Pin"
+              required: true
+              schema:
+                "$ref": '#/definitions/PersonSignupValidatePinPOST'
+          responses:
+            204:
+              description: Pin is valid
+            400:
+              description: Invalid parameters
+    """
+    confirm_pin_valid = Person.signup_pin_valid(flask.request.get_json())
+    if confirm_pin_valid:
+        return "", 204
+    else:
+        return "Invalid pin, invalid user id, or signup already completed", 400
+
+
+@users_api.route('/persons/signup/complete', methods=['POST'])
+@noauth
+def users_person_signup_complete():
+    """
+        ---
+        post:
+          summary: Complete the signup process
+          tags:
+            - Users
+          description:
+            Completes the user's signup process by supplying a valid confirmation pin and a new password.
+          parameters:
+            - name: "body"
+              in: body
+              description: "Pin and password"
+              required: true
+              schema:
+                "$ref": '#/definitions/PersonSignupCompletePOST'
+          responses:
+            204:
+              description: Pin is valid
+            400:
+              description: Invalid parameters
+    """
+    status = Person.signup_complete(flask.request.get_json(), create_account=True)
+    if status:
+        return "", 204
+    else:
+        return "Invalid pin, invalid user id, or signup already completed", 400

@@ -6,13 +6,17 @@ import '@fortawesome/fontawesome-free/css/all.css';
 import '@fortawesome/fontawesome-free/css/v4-shims.css';
 
 import './index.scss';
-import ThemedMain from './components/Main/ThemedMain';
+import MainWrapper from './components/Main/MainWrapper';
 import store from './store';
+import BackendStatusUpdater from './components/BackendStatusUpdater/BackendStatusUpdater';
 
 ReactDOM.render(
   <Provider store={store}>
     <BrowserRouter>
-      <ThemedMain />
+      <div id="theme" className="dark-mode">
+        <BackendStatusUpdater />
+        <MainWrapper />
+      </div>
     </BrowserRouter>
   </Provider>,
   document.getElementById('root'),

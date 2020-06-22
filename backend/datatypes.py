@@ -17,7 +17,8 @@ from validators import (
     DashboardInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
-    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs
+    SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST,
+    PersonSignupValidatePinPOST, PersonSignupCompletePOST,
 )
 from auth import Auth
 
@@ -1061,11 +1062,12 @@ class Bot(object):
 
 
 class Person(object):
-    def __init__(self, name, email, username, password, force_id=None):
+    def __init__(self, name, email, username, password, email_confirmed, force_id=None):
         self.name = name
         self.email = EmailAddress(email, strict_check=False)
         self.username = username
         self.password = password
+        self.email_confirmed = email_confirmed
         self.force_id = force_id
 
     @classmethod
@@ -1079,7 +1081,8 @@ class Person(object):
         email = json_data.get('email', None)
         username = json_data.get('username', None)
         password = json_data.get('password', None)
-        return cls(name, email, username, password, force_id)
+        email_confirmed = True  # when manually entering user, e-mail check is not performed
+        return cls(name, email, username, password, email_confirmed, force_id)
 
     @staticmethod
     def get_list():
@@ -1095,12 +1098,77 @@ class Person(object):
                 })
             return ret
 
+    @classmethod
+    def signup_new(cls, json_data):
+        jsonschema.validate(json_data, PersonSignupNewPOST)
+
+        # make sure that the user clicked "I agree...":
+        agree = json_data.get('agree', False)
+        if not agree:
+            raise ValidationError("User must agree to Terms of Use")
+        email = json_data.get('email', None)
+
+        # insert a person which needs the e-mail to be confirmed and password entered before it can login:
+        person = cls('', email, email, None, False)
+        user_id = person.insert()
+
+        with db.cursor() as c:
+            c.execute('SELECT confirm_pin FROM persons WHERE user_id = %s;', (user_id,))
+            confirm_pin, = c.fetchone()
+        return user_id, confirm_pin
+
+    @classmethod
+    def signup_pin_valid(cls, json_data):
+        jsonschema.validate(json_data, PersonSignupValidatePinPOST)
+
+        user_id = json_data['user_id']
+        confirm_pin = json_data['confirm_pin']
+
+        with db.cursor() as c:
+            c.execute('SELECT user_id FROM persons WHERE user_id = %s and confirm_pin = %s;', (user_id, confirm_pin,))
+            res = c.fetchone()
+            if not res:
+                return False
+            else:
+                return True
+
+    @classmethod
+    def signup_complete(cls, json_data, create_account=True):
+        jsonschema.validate(json_data, PersonSignupCompletePOST)
+
+        user_id = json_data['user_id']
+        confirm_pin = json_data['confirm_pin']
+        password = json_data['password']
+        pass_hash = Auth.password_hash(password)
+
+        with db.cursor() as c:
+            c.execute('UPDATE persons SET email_confirmed = TRUE, passhash = %s WHERE user_id = %s AND confirm_pin = %s AND email_confirmed = FALSE;', (pass_hash, user_id, confirm_pin,))
+            if not c.rowcount:
+                return False
+
+        if not create_account:
+            return True
+
+        # create an account to go with this user:
+        account = Account("My account")
+        account_id = account.insert()
+
+        # grant permissions - user can access the newly created account, their profile and any systemwide bots:
+        permission = Permission(user_id, f'accounts/{account_id}', None)
+        permission.insert(None, skip_checks=True)
+        permission = Permission(user_id, f'persons/{user_id}', ["GET", "POST", "PUT"])
+        permission.insert(None, skip_checks=True)
+        permission = Permission(user_id, f'bots', ["GET"])
+        permission.insert(None, skip_checks=True)
+        return True
+
     def insert(self):
         with db.cursor() as c:
             c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
             user_id, = c.fetchone()
-            pass_hash = Auth.password_hash(self.password)
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash) VALUES (%s, %s, %s, %s, %s);", (user_id, self.name, str(self.email), self.username, pass_hash,))
+            pass_hash = Auth.password_hash(self.password) if self.password is not None else None
+            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s);",
+                (user_id, self.name, str(self.email), self.username, pass_hash, self.email_confirmed,))
             return user_id
 
     def update(self):
@@ -1178,7 +1246,7 @@ class PersonCredentials(object):
 
     def check_user_login(self):
         with db.cursor() as c:
-            c.execute("SELECT user_id, passhash FROM persons WHERE username = %s;", (self.username,))
+            c.execute("SELECT user_id, passhash FROM persons WHERE username = %s AND email_confirmed = TRUE AND passhash IS NOT NULL;", (self.username,))
             res = c.fetchone()
             if not res:
                 return None

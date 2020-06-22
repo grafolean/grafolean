@@ -2,15 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Sidebar from 'react-sidebar';
 
-import store from '../../store';
-import { doRequestBackendStatus, ROOT_URL } from '../../store/actions';
-
-import AdminFirst from '../AdminFirst';
-import AdminMigrateDB from '../AdminMigrateDB';
 import Button from '../Button';
-import CORSWarningPage from '../WarningPages/CORSWarningPage';
-import HostnameWarningPage from '../WarningPages/HostnameWarningPage';
-import Loading from '../Loading';
 import LoginPage from '../LoginPage';
 import Notifications from '../Notifications';
 import SidebarContent from './SidebarContent';
@@ -37,7 +29,6 @@ class Main extends React.Component {
 
     this.updateWindowDimensions();
     window.addEventListener('resize', this.updateWindowDimensions);
-    store.dispatch(doRequestBackendStatus());
   }
 
   componentWillUnmount() {
@@ -75,52 +66,18 @@ class Main extends React.Component {
     this.setState({ sidebarOpen: open });
   };
 
-  backendIsCrossOrigin() {
-    const backendUrl = new URL(ROOT_URL, window.location); // if ROOT_URL is relative, use window.location as base url
-    return backendUrl.origin !== window.location.origin;
-  }
-
   render() {
-    const { backendStatus, loggedIn } = this.props;
-
-    // When we enter the main part of the page, we need to check a set of conditions that should be met:
-    // (like having connection to backend, being logged in and similar)
-
-    if (!backendStatus) {
-      return <Loading overlayParent={true} message={`Trying to connect to backend at: ${ROOT_URL}`} />;
-    }
-    // We want to be nice and display a warning when we are reaching a backend that we do not have access to (due
-    // to CORS). For this reason /api/status/info backend endpoint is accessible from anywhere, and we can check
-    // if our domain is in the list of CORS allowed domains, before we even request any CORS-protected resource.
-    // This of course applies only if backend really is on a different domain (which it is not, for example, if
-    // backend and frontend are behind the same nginx reverse proxy) - so this can't happen in default install.
-    if (
-      this.backendIsCrossOrigin() &&
-      !backendStatus.cors_domains.includes(window.location.origin.toLowerCase())
-    ) {
-      return <CORSWarningPage />;
-    }
-    // If user has misconfigured "EXTERNAL_HOSTNAME" setting, we can detect this by comparing it to the domain in
-    // URL. Otherwise MQTT connection would fail and user would be immediately logged out.
-    if (backendStatus.mqtt_ws_hostname !== window.location.hostname) {
-      return <HostnameWarningPage />;
-    }
-    if (backendStatus.db_migration_needed === true) {
-      return <AdminMigrateDB />;
-    }
-    if (backendStatus.user_exists === false) {
-      return <AdminFirst />;
-    }
-    if (!loggedIn) {
-      return <LoginPage />;
-    }
-
     const { widthAllowsDocking, sidebarOpen, windowWidth } = this.state;
-    const { isDarkMode, fullscreenDibs } = this.props;
+    const { isDarkMode, fullscreenDibs, loggedIn } = this.props;
+
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
     const sidebarDocked = widthAllowsDocking && !fullscreenDibs;
     const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
+
+    if (!loggedIn) {
+      return <LoginPage />;
+    }
 
     return (
       <Sidebar
@@ -172,7 +129,6 @@ class Main extends React.Component {
   }
 }
 const mapBackendStatusToProps = store => ({
-  backendStatus: store.backendStatus.status,
   loggedIn: Boolean(store.user),
   isDarkMode: store.preferences.colorScheme === 'dark',
   fullscreenDibs: store.fullscreenDibs,

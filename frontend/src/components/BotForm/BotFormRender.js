@@ -7,7 +7,7 @@ class BotFormRender extends React.Component {
   static validate = values => {
     const { name = '' } = values;
     if (!name) {
-      return { oldPassword: 'Name is required' };
+      return { name: 'Name is required' };
     }
     return {};
   };

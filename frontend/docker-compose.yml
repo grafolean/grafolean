@@ -51,7 +51,14 @@ services:
       - MQTT_WS_HOSTNAME=localhost
       - MQTT_WS_PORT=9883
       - MQTT_WS_SSL=false
+      # since backend is on a different origin than frontend, we need to set this:
+      - FRONTEND_ORIGIN=http://localhost:3000
       - GRAFOLEAN_CORS_DOMAINS=http://localhost:3000
+      - MAIL_SERVER=${MAIL_SERVER}
+      - MAIL_PORT=${MAIL_PORT}
+      - MAIL_USE_TLS=${MAIL_USE_TLS}
+      - MAIL_USERNAME=${MAIL_USERNAME}
+      - MAIL_PASSWORD=${MAIL_PASSWORD}
     ports:
       - "5000:80"
     networks:
