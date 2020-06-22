@@ -57,8 +57,10 @@ class MainWrapper extends React.Component {
 
     return (
       <Switch>
-        <Route exact path="/signup" component={SignupPage} />
-        <Route exact path="/signup/confirm/:userId/:confirmPin" component={SignupConfirm} />
+        {backendStatus.enable_signup && <Route exact path="/signup" component={SignupPage} />}
+        {backendStatus.enable_signup && (
+          <Route exact path="/signup/confirm/:userId/:confirmPin" component={SignupConfirm} />
+        )}
         <Route render={() => <Main {...rest} />} />
       </Switch>
     );

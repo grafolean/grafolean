@@ -1,8 +1,9 @@
 from collections import defaultdict
-import flask
 import json
-import psycopg2
+import os
 import time
+import flask
+import psycopg2
 
 from datatypes import Auth
 import utils
@@ -31,6 +32,7 @@ def status_info_get():
         'cors_domains': CORS_DOMAINS,
         'mqtt_ws_hostname': MQTT_WS_HOSTNAME,
         'mqtt_ws_port': MQTT_WS_PORT,
+        'enable_signup': os.environ.get('ENABLE_SIGNUP', 'false').lower() in ['true', 'yes', 'on', '1'],
     }
     return json.dumps(result), 200
 

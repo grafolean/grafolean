@@ -1033,6 +1033,7 @@ def test_status_info_before_migration(app_client_db_not_migrated):
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
         'mqtt_ws_port': actual['mqtt_ws_port'],
+        'enable_signup': False,
     }
     assert expected == actual
 
@@ -1050,6 +1051,7 @@ def test_status_info_before_migration(app_client_db_not_migrated):
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
         'mqtt_ws_port': actual['mqtt_ws_port'],
+        'enable_signup': False,
     }
     assert expected == actual
 
@@ -1066,6 +1068,7 @@ def test_status_info_before_first(app_client):
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
         'mqtt_ws_port': actual['mqtt_ws_port'],
+        'enable_signup': False,
     }
     assert expected == actual
 
@@ -1081,6 +1084,7 @@ def test_status_info_after_first(app_client, first_admin_id):
         'cors_domains': VALID_FRONTEND_ORIGINS_LOWERCASED,
         'mqtt_ws_hostname': actual['mqtt_ws_hostname'],
         'mqtt_ws_port': actual['mqtt_ws_port'],
+        'enable_signup': False,
     }
     assert expected == actual
 

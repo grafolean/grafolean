@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 import store from '../../store';
@@ -9,7 +10,7 @@ import { VERSION_INFO } from '../../VERSION';
 import '../auth-form-page.scss';
 import './LoginPage.scss';
 
-export default class LoginPage extends React.Component {
+class LoginPage extends React.Component {
   state = {
     formValues: {
       username: '',
@@ -80,6 +81,7 @@ export default class LoginPage extends React.Component {
       processingLogin,
       loginError,
     } = this.state;
+    const { backendStatus } = this.props;
     return (
       <div className="login-page auth-form-page">
         <form className="box" onSubmit={this.handleLoginSubmit}>
@@ -115,9 +117,11 @@ export default class LoginPage extends React.Component {
               </div>
             )}
 
-            <div className="signup-text">
-              New to Grafolean? <Link to="/signup">Create an account.</Link>
-            </div>
+            {backendStatus.enable_signup && (
+              <div className="signup-text">
+                New to Grafolean? <Link to="/signup">Create an account.</Link>
+              </div>
+            )}
           </div>
         </form>
 
@@ -126,3 +130,8 @@ export default class LoginPage extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  backendStatus: store.backendStatus.status,
+});
+export default connect(mapStoreToProps)(LoginPage);
