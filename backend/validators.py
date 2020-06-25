@@ -120,6 +120,16 @@ PersonSignupCompletePOST = {
 }
 
 
+ForgotPasswordPOST = {
+    'type': 'object',
+    'properties': {
+        'email': {'type': 'string'},
+    },
+    'additionalProperties': False,
+    'required': ['email'],
+}
+
+
 AccountSchemaInputs = {
     'type': 'object',
     'properties': {

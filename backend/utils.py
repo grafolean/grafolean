@@ -436,3 +436,8 @@ def migration_step_24():
         c.execute('ALTER TABLE persons ALTER COLUMN passhash DROP NOT NULL;')
         # if password is not set, a temporary authentication token might be used to confirm identity:
         c.execute("ALTER TABLE persons ADD COLUMN confirm_pin CHAR(8) NOT NULL DEFAULT substr(md5(random()::text), 0, 9);")
+
+def migration_step_25():
+    """ Add fields needed for 'forgot password' process. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE persons ADD COLUMN confirm_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600;")

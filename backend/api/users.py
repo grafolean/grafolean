@@ -80,6 +80,7 @@ def users_apidoc_schemas():
     yield "PersonSignupNewPOST", validators.PersonSignupNewPOST
     yield "PersonSignupValidatePinPOST", validators.PersonSignupValidatePinPOST
     yield "PersonSignupCompletePOST", validators.PersonSignupCompletePOST
+    yield "ForgotPasswordPOST", validators.ForgotPasswordPOST
 
 
 # --------------
@@ -735,3 +736,66 @@ def users_person_signup_complete():
         return "", 204
     else:
         return "Invalid pin, invalid user id, or signup already completed", 400
+
+
+def _generate_forgot_password_message(frontend_origin, user_id, confirm_pin):
+    return f'''\
+Hello,
+
+We heard that you need a password reset. Click the link below and you will
+be redirected to a page where you can set a new password:
+
+{frontend_origin}/forgot/{user_id}/{confirm_pin}
+
+This link expires in one hour.
+
+Grafolean Team
+'''
+
+
+@users_api.route('/persons/forgot', methods=['POST'])
+@noauth
+def users_person_forgot_password():
+    """
+        ---
+        post:
+          summary: Sends an email with a reset password link
+          tags:
+            - Users
+          description:
+            If given an existing e-mail address, sends an e-mail message with a password reset link.
+          parameters:
+            - name: "body"
+              in: body
+              description: "E-mail address"
+              required: true
+              schema:
+                "$ref": '#/definitions/ForgotPasswordPOST'
+          responses:
+            204:
+              description: Request was accepted
+            400:
+              description: Invalid parameters
+            500:
+              description: Mail sending not setup
+    """
+    if not flask.current_app.config.get('MAIL_SERVER', None):
+        return "Mail sending not setup", 500
+
+    user_id, confirm_pin = Person.forgot_password(flask.request.get_json())
+    if not user_id:
+        return "", 204
+
+    person_data = Person.get(user_id)
+    mail_subject = "Grafolean password reset link"
+    # unless explicitly set otherwise, assume that backend and frontend have the same origin:
+    frontend_origin = os.environ.get('FRONTEND_ORIGIN', flask.request.url_root).rstrip('/')
+    mail_body_text = _generate_forgot_password_message(frontend_origin, user_id, confirm_pin)
+
+    msg = Message(mail_subject, sender="noreply@grafolean.com", recipients=[person_data['email']], body=mail_body_text)
+    mail = Mail(flask.current_app)
+    with mail.record_messages() as outbox:
+        mail.send(msg)
+        flask.g.outbox = outbox  # make sent messages accessible to tests
+
+    return "", 204

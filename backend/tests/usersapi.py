@@ -12,7 +12,7 @@ os.environ['ENABLE_SIGNUP'] = 'true'
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fixtures import (
-    app_client, _delete_all_from_db, admin_authorization_header, first_admin_id,
+    app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, person_id, EMAIL_USER1,
 )
 
 
@@ -22,6 +22,11 @@ def setup_module():
 
 def teardown_module():
     _delete_all_from_db()
+
+
+##########
+# Signup #
+##########
 
 
 def test_signup_new_unsuccessful(app_client, admin_authorization_header):
@@ -149,3 +154,43 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     assert r.status_code == 200
     actual = json.loads(r.data.decode('utf-8'))
     assert len(actual['list']) == 1
+
+
+###################
+# Forgot password #
+###################
+
+
+def test_forgot_password(app_client, person_id):
+    """
+        Make sure that /api/persons/forgot endpoint rejects invalid e-mail addresses, and that it ignores valid but nonexistent
+        addresses, and that it sends an e-mail message to valid & presend addresses.
+    """
+    with app_client:  # we need to keep app context alive so that we can inspect the sent e-mail
+        data = {
+            'email': 'this.is.not.a.valid.email',
+        }
+        r = app_client.post('/api/persons/forgot', data=json.dumps(data), content_type='application/json')
+        assert r.status_code == 400, r.data
+        assert not hasattr(flask.g, 'outbox')
+
+    with app_client:
+        data = {
+            'email': 'not.exists@example.org',
+        }
+        r = app_client.post('/api/persons/forgot', data=json.dumps(data), content_type='application/json')
+        assert r.status_code == 204, r.data
+        assert not hasattr(flask.g, 'outbox')
+
+    with app_client:
+        data = {
+            'email': EMAIL_USER1,
+        }
+        r = app_client.post('/api/persons/forgot', data=json.dumps(data), content_type='application/json')
+        assert r.status_code == 204, r.data
+        assert len(flask.g.outbox) == 1
+        mail_message = flask.g.outbox[0]
+        m = re.search(r'/forgot/([0-9]+)/([0-9a-f]{8})', mail_message.body)
+        assert m
+        user_id = int(m.group(1))
+        confirm_pin = m.group(2)

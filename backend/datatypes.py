@@ -18,7 +18,7 @@ from validators import (
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
     SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST,
-    PersonSignupValidatePinPOST, PersonSignupCompletePOST,
+    PersonSignupValidatePinPOST, PersonSignupCompletePOST, ForgotPasswordPOST,
 )
 from auth import Auth
 
@@ -1161,6 +1161,19 @@ class Person(object):
         permission = Permission(user_id, f'bots', ["GET"])
         permission.insert(None, skip_checks=True)
         return True
+
+    @classmethod
+    def forgot_password(cls, json_data):
+        jsonschema.validate(json_data, ForgotPasswordPOST)
+
+        email = EmailAddress(json_data['email'], strict_check=False)
+        with db.cursor() as c:
+            c.execute('UPDATE persons SET confirm_pin = DEFAULT, confirm_until = DEFAULT WHERE email = %s AND email_confirmed = TRUE AND passhash IS NOT NULL RETURNING user_id, confirm_pin;', (str(email),))
+            res = c.fetchone()
+            if not res:
+                return None, None
+            user_id, confirm_pin, = res
+            return user_id, confirm_pin
 
     def insert(self):
         with db.cursor() as c:

@@ -37,8 +37,10 @@ from datatypes import clear_all_lru_cache
 
 USERNAME_ADMIN = 'admin'
 PASSWORD_ADMIN = 'asdf123'
+EMAIL_ADMIN = 'admin@grafolean.com'
 USERNAME_USER1 = 'user1'
 PASSWORD_USER1 = '321abc'
+EMAIL_USER1 = 'user1@grafolean.com'
 FIRST_ACCOUNT_NAME = 'First account'
 BOT_NAME1 = 'My Bot 1'
 
@@ -91,7 +93,7 @@ def app_client_db_not_migrated():
 
 @pytest.fixture
 def first_admin_id(app_client):
-    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': 'admin@grafolean.com' }
+    data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': EMAIL_ADMIN }
     r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 201
     admin_id = json.loads(r.data.decode('utf-8'))['id']
@@ -197,7 +199,7 @@ def account_sensors_factory(app_client, admin_authorization_header, account_id):
 
 @pytest.fixture
 def person_id(app_client, admin_authorization_header):
-    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': 'user1@grafolean.com' }
+    data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': EMAIL_USER1 }
     r = app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     user_id = json.loads(r.data.decode('utf-8'))['id']
