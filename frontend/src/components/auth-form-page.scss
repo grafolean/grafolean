@@ -31,6 +31,8 @@
       padding: 20px 50px;
       display: flex;
       flex-direction: column;
+      max-width: 400px;
+
       .dark-mode & {
         border-left: 1px solid #555;
       }

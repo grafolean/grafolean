@@ -122,6 +122,9 @@ class LoginPage extends React.Component {
                 New to Grafolean? <Link to="/signup">Create an account.</Link>
               </div>
             )}
+            <div className="forgot-text">
+              <Link to="/forgot">Forgot password?</Link>
+            </div>
           </div>
         </form>
 

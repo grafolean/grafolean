@@ -12,6 +12,7 @@ import AdminMigrateDB from '../AdminMigrateDB';
 import AdminFirst from '../AdminFirst';
 import SignupPage from '../Signup/SignupPage';
 import SignupConfirm from '../Signup/SignupConfirm';
+import ForgotPassword from '../ForgotPassword/ForgotPassword';
 
 class MainWrapper extends React.Component {
   componentDidMount() {
@@ -61,6 +62,7 @@ class MainWrapper extends React.Component {
         {backendStatus.enable_signup && (
           <Route exact path="/signup/confirm/:userId/:confirmPin" component={SignupConfirm} />
         )}
+        <Route exact path="/forgot" component={ForgotPassword} />
         <Route render={() => <Main {...rest} />} />
       </Switch>
     );
