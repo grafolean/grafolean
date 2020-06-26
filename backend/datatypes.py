@@ -1142,7 +1142,8 @@ class Person(object):
         pass_hash = Auth.password_hash(password)
 
         with db.cursor() as c:
-            c.execute('UPDATE persons SET email_confirmed = TRUE, passhash = %s WHERE user_id = %s AND confirm_pin = %s AND email_confirmed = FALSE;', (pass_hash, user_id, confirm_pin,))
+            c.execute('UPDATE persons SET email_confirmed = TRUE, passhash = %s, confirm_pin = NULL, confirm_until = NULL '
+                'WHERE user_id = %s AND confirm_pin = %s AND email_confirmed = FALSE;', (pass_hash, user_id, confirm_pin,))
             if not c.rowcount:
                 return False
 
