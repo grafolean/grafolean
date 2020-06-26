@@ -784,7 +784,7 @@ def users_person_forgot_password():
 
     user_id, confirm_pin = Person.forgot_password(flask.request.get_json())
     if not user_id:
-        return "", 204
+        return "Email does not correspond to any registered user", 400
 
     person_data = Person.get(user_id)
     mail_subject = "Grafolean password reset link"

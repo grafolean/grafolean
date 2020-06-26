@@ -179,7 +179,7 @@ def test_forgot_password(app_client, person_id):
             'email': 'not.exists@example.org',
         }
         r = app_client.post('/api/persons/forgot', data=json.dumps(data), content_type='application/json')
-        assert r.status_code == 204, r.data
+        assert r.status_code == 400, r.data
         assert not hasattr(flask.g, 'outbox')
 
     with app_client:
