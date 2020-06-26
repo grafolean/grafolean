@@ -3,20 +3,42 @@ import { Formik } from 'formik';
 import Button from '../Button';
 import { FormError } from '../isFormikForm';
 import { VERSION_INFO } from '../../VERSION';
+import { ROOT_URL } from '../../store/actions';
 
 export default class ForgotPassword extends React.Component {
   state = {
     submitted: false,
+    errorMsg: null,
   };
 
   handleSubmit = async (formValues, { setSubmitting }) => {
-    try {
+    this.setState({
+      errorMsg: null,
+    });
+
+    const { email } = formValues;
+    const params = JSON.stringify({
+      email: email,
+    });
+    const response = await fetch(`${ROOT_URL}/persons/forgot`, {
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      body: params,
+    });
+
+    setSubmitting(false);
+    if (!response.ok) {
+      const errorMsg = await response.text();
       this.setState({
-        submitted: true,
+        errorMsg: errorMsg,
       });
-    } finally {
-      setSubmitting(false);
+      return;
     }
+
+    this.setState({
+      errorMsg: '',
+      submitted: true,
+    });
   };
 
   render() {

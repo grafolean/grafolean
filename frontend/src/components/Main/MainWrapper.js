@@ -13,6 +13,7 @@ import AdminFirst from '../AdminFirst';
 import SignupPage from '../Signup/SignupPage';
 import SignupConfirm from '../Signup/SignupConfirm';
 import ForgotPassword from '../ForgotPassword/ForgotPassword';
+import ResetPassword from '../ForgotPassword/ResetPassword';
 
 class MainWrapper extends React.Component {
   componentDidMount() {
@@ -63,15 +64,16 @@ class MainWrapper extends React.Component {
           <Route exact path="/signup/confirm/:userId/:confirmPin" component={SignupConfirm} />
         )}
         <Route exact path="/forgot" component={ForgotPassword} />
+        <Route exact path="/forgot/:userId/:confirmPin" component={ResetPassword} />
         <Route render={() => <Main {...rest} />} />
       </Switch>
     );
   }
 }
 
-const mapDarkModeToProps = store => ({
+const mapStoreToProps = store => ({
   isDarkMode: store.preferences.colorScheme === 'dark',
   backendStatus: store.backendStatus.status,
 });
 // withRouter is needed to force re-rendering of this component when URL changes:
-export default withRouter(connect(mapDarkModeToProps)(MainWrapper));
+export default withRouter(connect(mapStoreToProps)(MainWrapper));
