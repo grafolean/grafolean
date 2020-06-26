@@ -81,6 +81,7 @@ def users_apidoc_schemas():
     yield "PersonSignupValidatePinPOST", validators.PersonSignupValidatePinPOST
     yield "PersonSignupCompletePOST", validators.PersonSignupCompletePOST
     yield "ForgotPasswordPOST", validators.ForgotPasswordPOST
+    yield "ForgotPasswordResetPOST", validators.ForgotPasswordResetPOST
 
 
 # --------------
@@ -799,3 +800,34 @@ def users_person_forgot_password():
         flask.g.outbox = outbox  # make sent messages accessible to tests
 
     return "", 204
+
+
+@users_api.route('/persons/forgot/reset', methods=['POST'])
+@noauth
+def users_person_forgot_password_reset():
+    """
+        ---
+        post:
+          summary: Resets a forgotten password
+          tags:
+            - Users
+          description:
+            Resets person's password if person exists, confirmation pin is correct and less than 1 hour old and person account is confirmed.
+          parameters:
+            - name: "body"
+              in: body
+              description: "E-mail address"
+              required: true
+              schema:
+                "$ref": '#/definitions/ForgotPasswordResetPOST'
+          responses:
+            204:
+              description: Password was reset
+            400:
+              description: Invalid parameters
+    """
+    success = Person.forgot_password_reset(flask.request.get_json())
+    if success:
+        return "", 204
+    else:
+        return "Password could not be changed - expired / invalid pin or user does not exist", 400

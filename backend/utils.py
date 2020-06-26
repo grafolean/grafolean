@@ -440,4 +440,6 @@ def migration_step_24():
 def migration_step_25():
     """ Add fields needed for 'forgot password' process. """
     with db.cursor() as c:
-        c.execute("ALTER TABLE persons ADD COLUMN confirm_until NUMERIC(10) NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600;")
+        c.execute("ALTER TABLE persons ADD COLUMN confirm_until NUMERIC(10) NULL DEFAULT EXTRACT(EPOCH FROM NOW()) + 3600;")
+        # confirm_pin can (and should) be NULL when not in use:
+        c.execute('ALTER TABLE persons ALTER COLUMN confirm_pin DROP NOT NULL;')

@@ -18,7 +18,7 @@ from validators import (
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
     SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST,
-    PersonSignupValidatePinPOST, PersonSignupCompletePOST, ForgotPasswordPOST,
+    PersonSignupValidatePinPOST, PersonSignupCompletePOST, ForgotPasswordPOST, ForgotPasswordResetPOST,
 )
 from auth import Auth
 
@@ -1174,6 +1174,23 @@ class Person(object):
                 return None, None
             user_id, confirm_pin, = res
             return user_id, confirm_pin
+
+    @classmethod
+    def forgot_password_reset(cls, json_data):
+        jsonschema.validate(json_data, ForgotPasswordResetPOST)
+
+        user_id = json_data['user_id']
+        confirm_pin = json_data['confirm_pin']
+        password = json_data['password']
+        pass_hash = Auth.password_hash(password)
+
+        with db.cursor() as c:
+            c.execute('UPDATE persons SET confirm_pin = NULL, confirm_until = NULL, passhash = %s WHERE '
+                'user_id = %s AND confirm_pin = %s AND confirm_until > EXTRACT(EPOCH FROM NOW()) '
+                'AND email_confirmed = TRUE AND passhash IS NOT NULL ;',
+                (pass_hash, user_id, confirm_pin,)
+            )
+            return c.rowcount
 
     def insert(self):
         with db.cursor() as c:

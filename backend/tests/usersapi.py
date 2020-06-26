@@ -12,7 +12,8 @@ os.environ['ENABLE_SIGNUP'] = 'true'
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fixtures import (
-    app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, person_id, EMAIL_USER1,
+    app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, person_id, EMAIL_USER1, USERNAME_USER1,
+    db,
 )
 
 
@@ -22,6 +23,9 @@ def setup_module():
 
 def teardown_module():
     _delete_all_from_db()
+
+
+SOME_PASSWORD = 'ThisIsSomeVeryStrongPassword'
 
 
 ##########
@@ -92,6 +96,7 @@ def test_signup_new_successful(app_client, admin_authorization_header):
         assert m
         user_id = int(m.group(1))
         confirm_pin = m.group(2)
+        invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
 
     # we just want to know if the pin is correct, so that we can ask user for a new password:
     data = {
@@ -104,7 +109,7 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     # invalid pin would not succeed:
     data = {
         'user_id': user_id,
-        'confirm_pin': '123456aa',
+        'confirm_pin': invalid_confirm_pin,
     }
     r = app_client.post(f'/api/persons/signup/validatepin', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 400, r.data
@@ -118,8 +123,8 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     # with invalid pin it won't work:
     data = {
         'user_id': user_id,
-        'confirm_pin': '12341234',
-        'password': 'ThisIsSomeVeryStrongPassword',
+        'confirm_pin': invalid_confirm_pin,
+        'password': SOME_PASSWORD,
     }
     r = app_client.post(f'/api/persons/signup/complete', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 400, r.data
@@ -128,7 +133,7 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     data = {
         'user_id': user_id,
         'confirm_pin': confirm_pin,
-        'password': 'ThisIsSomeVeryStrongPassword',
+        'password': SOME_PASSWORD,
     }
     r = app_client.post(f'/api/persons/signup/complete', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 204, r.data
@@ -137,13 +142,13 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     data = {
         'user_id': user_id,
         'confirm_pin': confirm_pin,
-        'password': 'ThisIsSomeVeryStrongPassword',
+        'password': SOME_PASSWORD,
     }
     r = app_client.post(f'/api/persons/signup/complete', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 400, r.data
 
-    # finally, we can successfully login:
-    data = { 'username': 'test@grafolean.com', 'password': 'ThisIsSomeVeryStrongPassword' }
+    # finally, we can login successfully:
+    data = { 'username': 'test@grafolean.com', 'password': SOME_PASSWORD }
     r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
     authorization_header = dict(r.headers).get('X-JWT-Token', None)
@@ -194,3 +199,50 @@ def test_forgot_password(app_client, person_id):
         assert m
         user_id = int(m.group(1))
         confirm_pin = m.group(2)
+        invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
+
+    # try to reset password:
+    # with invalid pin it won't work:
+    data = {
+        'user_id': user_id,
+        'confirm_pin': invalid_confirm_pin,
+        'password': SOME_PASSWORD,
+    }
+    r = app_client.post(f'/api/persons/forgot/reset', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 400, r.data
+
+    # with valid, but expired pin it won't work:
+    with db.cursor() as c:
+        c.execute("UPDATE persons SET confirm_until = confirm_until - 4000;")
+        data = {
+            'user_id': user_id,
+            'confirm_pin': confirm_pin,
+            'password': SOME_PASSWORD,
+        }
+        r = app_client.post(f'/api/persons/forgot/reset', data=json.dumps(data), content_type='application/json')
+        assert r.status_code == 400, r.data
+        # revert the change back:
+        c.execute("UPDATE persons SET confirm_until = confirm_until + 4000;")
+
+    # with a valid pin it works:
+    data = {
+        'user_id': user_id,
+        'confirm_pin': confirm_pin,
+        'password': SOME_PASSWORD,
+    }
+    r = app_client.post(f'/api/persons/forgot/reset', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 204, r.data
+
+    # and we can't repeat it - the second time it fails:
+    data = {
+        'user_id': user_id,
+        'confirm_pin': confirm_pin,
+        'password': SOME_PASSWORD,
+    }
+    r = app_client.post(f'/api/persons/forgot/reset', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 400, r.data
+
+    # finally, we can login successfully:
+    data = { 'username': USERNAME_USER1, 'password': SOME_PASSWORD }
+    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    assert r.status_code == 200
