@@ -6,15 +6,17 @@
 
 **Bots** are external scripts and applications that send values to Grafolean.
 
-There are 2 types of bots, *custom* and others (like SNMP, ICMP Ping,...). Grafolean doesn't know any details about *custom* bots, except that they will send data to backend via REST (i.e., HTTP) using their own authentication token - they are the most generic kind, but it takes an additional effort to set them up and to reconfigure them when needed. They are usually less convenient, but they provide a nice escape hatch in case we just want to send values via cron, from inside of an app, or when we are using a protocol not supported by dedicated Grafolean bots.
+There are 2 types of bots, *custom* and others (like SNMP, ICMP Ping or NetFlow).
 
-Other kinds of bots (SNMP, Ping) are configured via Grafolean user interface. By default both a SNMP and ICMP Ping bot are already installed and setup as part of (self-hosted) Grafolean system, but they can also be installed separately (possibly in remote networks). The bots periodically ask Grafolean for instructions (which *entities* to monitor, which *sensors* are enabled on them, and which *credentials* to use when fetching data). The data is then sent to Grafolean the same way the custom bots would send it (HTTP POST).
+Grafolean doesn't know any details about *custom* bots, except that they will send data to backend via REST (i.e., HTTP) using their own authentication token - they are the most generic kind, but it takes an additional effort to set them up and to reconfigure them when needed. They are usually less convenient to set up and maintain, but they provide a nice escape hatch in case we just want to send values via cron, from inside of an app, or when we are using a protocol not supported by dedicated Grafolean bots.
+
+Other kinds of bots (SNMP, Ping, NetFlow) are configured via Grafolean user interface. By default both a SNMP and ICMP Ping bot are already installed and setup as part of (self-hosted) Grafolean system, but they can also be installed separately (possibly in remote networks). The bots periodically ask Grafolean for instructions (which *entities* to monitor, which *sensors* are enabled on them, and which *credentials* to use when fetching data). The data is then sent to Grafolean the same way the custom bots would send it (using HTTP POST).
 
 ### Entities
 
-**Entities** are the things we would like to monitor (currently only devices are supported, but it could also be web pages, systems,...).
+**Entities** are the things we would like to monitor (currently only devices and network interfaces are supported, but it could also be web pages, systems,...).
 
-Note that they are only needed when we use non-custom bots. Grafolean doesn't use entities directly, it just passes their information to bots which then gather data from them.
+Note that they are only needed when we use non-custom bots. Grafolean doesn't use entities directly, it just passes their information to bots which then gather data from / about them.
 
 ### Credentials
 
@@ -24,13 +26,13 @@ Note that they are only needed when we use non-custom bots. Grafolean doesn't us
 
 **Sensors** describe which data is being gathered. When the sensors are selected on an entity, the period of data collection is also set (every minute, 10 seconds,...), with intervals being multiples of a second.
 
-For Ping the sensors are currently "boring", as they only need to be enabled on the device for the data to be gathered. For SNMP however we can specify OIDs that are being fetched, which are then used for calculating values (formula can be specified) and for composing the *paths*.
+For Ping and Netflow the sensors are currently "boring", as they only need to be enabled on the device for the data to be gathered. For SNMP however we can specify OIDs that are being fetched, which are then used for calculating values (formula can be specified) and for composing the *paths*.
 
 ### Paths
 
-As values are being collected and sent to Grafolean, they must somehow carry the information about *what* the measured value represents. Grafolean uses a concept of **paths** to mark the context of every value. For example, path *entity.1234567.snmp.network.eth-1.ifoctets-in* could mark that inbound traffic on "eth-1" network interface on entity with ID "1234567" is being measured.
+**Paths** are one of the most important concepts in Grafolean. As values are being collected and sent to Grafolean, they must somehow carry the information about *what* the measured value represents. Grafolean uses a concept of **paths** to mark the context of every value. For example, path *entity.1234567.snmp.network.eth-1.ifoctets-in* could mark that inbound traffic on "eth-1" network interface on entity with ID "1234567" is being measured.
 
-SNMP and Ping bots *do* enforce the leading part of the paths, but in general, it is up to the user to create a meaningful representation of the data. The paths should include any labels that might need to be displayed in the legends of the charts (any part between the dots can later be used as part of chart legend label).
+Non-custom bots (SNMP, Ping and NetFlow) *do* enforce the leading part of the paths, but in general, it is up to the user to create a meaningful representation of the data. The paths should include any labels that might need to be displayed in the legends of the charts (any part between the dots can later be used as part of chart legend label).
 
 ### Dashboards and widgets
 
@@ -48,9 +50,9 @@ See [README.md](../README.md) for instalation instructions. Once done, configure
 
 > For ICMP ping and SNMP, this step has already been carried out for you (the bot is systemwide and can be used with any of the accounts). You can safely skip it.
 
-You can add either a SNMP, ICMP Ping or a custom bot. Select `Bots` in sidebar menu and click `+ Add bot` button. Select the protocol (SNMP, ICMP Ping or custom) and the label by which the bot will be known to you.
+You can add either a SNMP, ICMP Ping, NetFlow or a custom bot. Select `Bots` in sidebar menu and click `+ Add bot` button. Select the protocol (SNMP, ICMP Ping or custom) and the label by which the bot will be known to you.
 
-When bot is added, its `Last successful login` field reads `Never`, because it has not accessed Grafolean yet (at least not with a provisioned token). Open a bot page (select `Bots` in menu, click on bot name). There will be a warning about bot not having connected yet, along with the instructions on how to install and configure it. Open and follow the instructions. When bot connects, `Last successful login` field will show the date and imte of last successful connection.
+When bot is added, its `Last successful login` field reads `Never`, because it has not accessed Grafolean yet (at least not with a provisioned token). Open a bot page (select `Bots` in menu, click on bot name). There will be a warning about bot not having connected yet, along with the instructions on how to install and configure it. Open and follow the instructions. When bot connects, `Last successful login` field will show the date and time of last successful connection.
 
 If you have selected a custom bot, the data is being collected and there is nothing we need to do in Grafolean except to display it in dashboards - all of the configuration is done in the script that is sending data. For SNMP and Ping however we need to configure *credentials*, *entities* and *sensors*.
 
