@@ -17,7 +17,7 @@ Grafolean is an easy to use monitoring system:
 
 - self-hosted or hosted service (currently invitation only)
 - light on resources
-- [API-first](https://grafolean.com/api-doc/)
+- [API-first](https://app.grafolean.com/api-doc/)
 - remote agents (bots)
 - UI-controlled agents (bots) for ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) - with more coming
 - auto-updating UI
@@ -25,7 +25,7 @@ Grafolean is an easy to use monitoring system:
 - granular permissions model
 - ...
 
-Demo: https://grafolean.com/ (`demo` / `demo`)
+Demo: https://app.grafolean.com/ (`demo` / `demo`)
 
 [User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
 
@@ -92,7 +92,7 @@ SNMP and ICMP Ping bots are part of the installed services, and they are control
 You can also send any values to Grafolean using a *custom* bot. First you need to create a bot (via UI) and obtain its token. Then you can use a regular POST request to send values:
 
 ```bash
-$ curl -X POST 'https://grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
+$ curl -X POST 'https://app.grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
 ```
 
 That's it! The values can now be shown in dashboards. See [backend/API.md](backend/API.md) for more info on API.
