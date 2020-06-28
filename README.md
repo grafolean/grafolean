@@ -9,6 +9,7 @@
 - [Quick start - sending values to Grafolean](#quick-start---sending-values-to-grafolean)
 - [Development](#development)
 - [License: Commons Clause](#license-commons-clause)
+
 ---
 
 ## What is Grafolean?
@@ -62,7 +63,7 @@ Demo: https://app.grafolean.com/ (`demo` / `demo`)
     ```
      and change:
 
-    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside),
+    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside - for example `grafolean.example.com` or `192.168.11.22`),
     - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
     - optional: HTTP port
 
@@ -73,7 +74,7 @@ Demo: https://app.grafolean.com/ (`demo` / `demo`)
 
 5) point your browser to `http://<IP or domain>/` (where `<IP or domain>` should be the same as `EXTERNAL_HOSTNAME` in step 3)
 
-Congratulations, you are done! :)
+Congratulations, you are done! :rocket:
 
 If you wish to setup HTTPS, see [doc/HOWTO-HTTPS.md](doc/HOWTO-HTTPS.md) for instructions.
 
@@ -87,9 +88,9 @@ $ docker-compose up -d
 
 ## Quick start - sending values to Grafolean
 
-SNMP and ICMP Ping bots are part of the installed services, and they are controlled from the Grafolean UI (see [Grafolean User Guide](doc/user-guide.md)).
+You can send data to Grafolean from your own scripts ("custom bots") or you can use one of the existing bots, which can even be configured from within the Grafolean (like ICMP ping, SNMP or Netflow - see [Grafolean User Guide](doc/user-guide.md)).
 
-You can also send any values to Grafolean using a *custom* bot. First you need to create a bot (via UI) and obtain its token. Then you can use a regular POST request to send values:
+When you just want to send values to Grafolean, create a *custom* bot (via UI) and obtain its token. Then you can use a regular POST request to send values:
 
 ```bash
 $ curl -X POST 'https://app.grafolean.com/api/accounts/1/values/?p=myhouse.livingroom.humidity&v=57.3&b=<BotAPIToken>'
