@@ -1,0 +1,95 @@
+{
+  "label": "NetFlow",
+  "widgets": [
+    {
+      "type": "netflownavigation",
+      "title": "Navigation",
+      "x": 0,
+      "y": 0,
+      "w": 12,
+      "h": 10,
+      "p": "header",
+      "content": "{\"whatever\":\"asdf\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top interfaces",
+      "x": 0,
+      "y": 0,
+      "w": 6,
+      "h": 8,
+      "p": "default",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.?\",\"renaming\":\"${interfaceName($selectedEntityId, $1)}\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top IPs",
+      "x": 0,
+      "y": 0,
+      "w": 6,
+      "h": 10,
+      "p": "netflow_interface",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface.topip.?\",\"renaming\":\"$1\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top protocols",
+      "x": 6,
+      "y": 0,
+      "w": 6,
+      "h": 8,
+      "p": "default",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.topprotocol.?\",\"renaming\":\"$1\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top protocols",
+      "x": 6,
+      "y": 0,
+      "w": 6,
+      "h": 10,
+      "p": "netflow_interface",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface.topprotocol.?\",\"renaming\":\"$1\",\"nentries\":10,\"expression\":\"$1 / (1024 * 1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top IPs",
+      "x": 0,
+      "y": 8,
+      "w": 6,
+      "h": 6,
+      "p": "default",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.topip.?\",\"renaming\":\"$1\",\"nentries\":5,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "topn",
+      "title": "Top connections",
+      "x": 6,
+      "y": 8,
+      "w": 6,
+      "h": 6,
+      "p": "default",
+      "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.topconn.?.?\",\"renaming\":\"$1 => $2\",\"nentries\":5,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
+    },
+    {
+      "type": "chart",
+      "title": "Traffic",
+      "x": 0,
+      "y": 10,
+      "w": 12,
+      "h": 10,
+      "p": "netflow_interface",
+      "content": "[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface\",\"renaming\":\"Traffic on interface\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]"
+    },
+    {
+      "type": "chart",
+      "title": "Total traffic on entity",
+      "x": 0,
+      "y": 14,
+      "w": 12,
+      "h": 10,
+      "p": "default",
+      "content": "[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId\",\"renaming\":\"Sum\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"},{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.?\",\"renaming\":\"${interfaceName($selectedEntityId, $1)}\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]"
+    }
+  ]
+}

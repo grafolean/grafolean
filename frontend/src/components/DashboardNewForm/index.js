@@ -1,23 +1,17 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
-
-import { ROOT_URL } from '../../store/actions';
-
-import { fetchAuth } from '../../utils/fetch';
-
-import '../form.scss';
-import Button from '../Button';
 import { Formik } from 'formik';
 
-const DASHBOARD_TEMPLATES = [
-  {
-    label: 'NetFlow',
-    widgets: [{ type: 'netflownavigation', content: '{}', p: 'header', title: 'Navigation' }],
-  },
-];
+import { ROOT_URL } from '../../store/actions';
+import { fetchAuth } from '../../utils/fetch';
+import Button from '../Button';
 
-class DashboardNewForm extends React.Component {
+import '../form.scss';
+
+import NETFLOW_TEMPLATE from './netflow.template.json';
+const DASHBOARD_TEMPLATES = [NETFLOW_TEMPLATE];
+
+export default class DashboardNewForm extends React.Component {
   state = {
     submitted: false,
     newSlug: null,
@@ -32,14 +26,18 @@ class DashboardNewForm extends React.Component {
     return {};
   };
 
-  handleSubmit = async (formValues, { setSubmitting }) => {
-    try {
-      const { name = '', template = '' } = formValues;
+  async createWidgetsFromTemplate(dashboardSlug, widgets) {
+    const { accountId } = this.props.match.params;
+    let positions = [];
+    for (let i = 0; i < widgets.length; i++) {
       const params = {
-        name: name,
+        type: widgets[i].type,
+        title: widgets[i].title,
+        p: widgets[i].p,
+        content: widgets[i].content,
       };
       const response = await fetchAuth(
-        `${ROOT_URL}/accounts/${this.props.match.params.accountId}/dashboards`,
+        `${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}/widgets`,
         {
           headers: {
             Accept: 'application/json',
@@ -49,6 +47,57 @@ class DashboardNewForm extends React.Component {
           body: JSON.stringify(params),
         },
       );
+      if (!response.ok) {
+        const errorMsg = await response.text();
+        throw new Error(`Error creating widgets: ${errorMsg}`);
+      }
+      const json = await response.json();
+      positions.push({
+        widget_id: json.id,
+        x: widgets[i].x,
+        y: widgets[i].y,
+        w: widgets[i].w,
+        h: widgets[i].h,
+        p: widgets[i].p,
+      });
+    }
+    await this.setWidgetsPositions(dashboardSlug, positions);
+  }
+
+  async setWidgetsPositions(dashboardSlug, positions) {
+    const { accountId } = this.props.match.params;
+    const response = await fetchAuth(
+      `${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}/widgets_positions`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'PUT',
+        body: JSON.stringify(positions),
+      },
+    );
+    if (!response.ok) {
+      const errorMsg = await response.text();
+      throw new Error(`Error creating widgets: ${errorMsg}`);
+    }
+  }
+
+  handleSubmit = async (formValues, { setSubmitting }) => {
+    try {
+      const { accountId } = this.props.match.params;
+      const { name = '', template = '' } = formValues;
+      const params = {
+        name: name,
+      };
+      const response = await fetchAuth(`${ROOT_URL}/accounts/${accountId}/dashboards`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
       if (!response.ok) {
         const errorMsg = await response.text();
         this.setState({
@@ -131,8 +180,3 @@ class DashboardNewForm extends React.Component {
     );
   }
 }
-
-const mapAccountsListToProps = store => ({
-  accounts: store.accounts,
-});
-export default connect(mapAccountsListToProps)(DashboardNewForm);
