@@ -109,7 +109,9 @@ export default class DashboardNewForm extends React.Component {
       const json = await response.json();
       const dashboardSlug = json.slug;
 
-      await this.createWidgetsFromTemplate(dashboardSlug, DASHBOARD_TEMPLATES[parseInt(template)].widgets);
+      if (template) {
+        await this.createWidgetsFromTemplate(dashboardSlug, DASHBOARD_TEMPLATES[parseInt(template)].widgets);
+      }
 
       this.setState({
         submitted: true,
