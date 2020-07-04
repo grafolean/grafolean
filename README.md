@@ -26,9 +26,11 @@ Grafolean is an easy to use monitoring system:
 - granular permissions model
 - ...
 
-Demo: https://app.grafolean.com/ (`demo` / `demo`)
+Useful resources:
 
-[User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
+- Demo: https://app.grafolean.com/ (`demo` / `demo`)
+- [User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
+- [NetFlow guide](doc/HOWTO-netflow.md) explains how to setup Grafolean for NetFlow data collection.
 
 ![screenshot](doc/screenshot-dark.png)
 
@@ -45,7 +47,7 @@ Demo: https://app.grafolean.com/ (`demo` / `demo`)
     $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.yml > docker-compose.yml
     ```
 
-    > Alternative: if you wish to install NetFlow bot as part of this installation, use [install/docker-compose.netflow.yml](https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml) instead, but you must still save it to `docker-compose.yml`:
+    > Alternative: if you wish to install NetFlow bot as part of this installation, use [install/docker-compose.netflow.yml](https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml) instead, but you should still save it to `docker-compose.yml`:
     >
     >    ```
     >    $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml > docker-compose.yml
