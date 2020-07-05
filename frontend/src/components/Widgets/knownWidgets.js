@@ -1,3 +1,4 @@
+import RemoteWidgetComponent from './RemoteWidgetComponent';
 import GLeanChartWidget from './GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from './LastValueWidget/LastValueWidget';
 import TopNWidget from './TopNWidget/TopNWidget';
@@ -54,6 +55,17 @@ export const KNOWN_WIDGET_TYPES = {
     widgetAdditionalProps: {},
     formComponent: NetFlowNavigationWidgetForm,
     isHeaderWidget: true,
+  },
+  remotetest1: {
+    type: 'remotetest1',
+    icon: 'pie-chart',
+    label: 'pie chart',
+    widgetComponent: RemoteWidgetComponent,
+    widgetAdditionalProps: {
+      url: 'http://localhost:3000/RemoteWidget.js',
+    },
+    formComponent: TopNWidgetForm,
+    isHeaderWidget: false,
   },
 };
 
