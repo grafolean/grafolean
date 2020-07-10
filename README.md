@@ -30,7 +30,7 @@ Useful resources:
 
 - Demo: https://app.grafolean.com/ (`demo` / `demo`)
 - [User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
-- [NetFlow guide](doc/HOWTO-netflow.md) explains how to setup Grafolean for NetFlow data collection.
+- [NetFlow guide](doc/HOWTO-NetFlow.md) explains how to setup Grafolean for NetFlow data collection.
 
 ![screenshot](doc/screenshot-dark.png)
 
