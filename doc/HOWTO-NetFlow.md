@@ -10,7 +10,7 @@ To collect data, NetFlow bot needs to be installed and configured. The easiest w
 
 #### 2) Enable (suggested) entity
 
-Grafolean helps with configuration by automatically creating the entities that correspond to any NetFlow exporter it is getting data from (see "Monitored entities"). It might take up to 2 minutes for the suggestions to appear.
+Grafolean helps with configuration by automatically creating the entities for any NetFlow exporter it is getting the data from (see "Monitored entities"). Note that it may take up to 2 minutes for the suggestions to appear.
 
 However, these entities are not automatically enabled. To do so, click on the name of the entity (which is IP + `"(NetFlow exporter)"` by default) -> Settings, then edit NetFlow protocol:
 - for Credentials select `Default NetFlow credential`
@@ -26,4 +26,4 @@ Grafolean should now be collecting the data automatically. To view it, create a 
 - click Dashboards in the menu -> Add dashboard
 - enter dashboard name and in the dropdown "Initialize using a template" choose `NetFlow`
 
-**IMPORTANT:** It might take up to 5 minutes (with default settings for NetFlow bot's `JOBS_REFRESH_INTERVAL`) for enough data to be collected. If you see message `There is no NetFlow data available for any entity` in NetFlow Navigation Widget, it means that the data was not aggregated and sent to Grafolean yet. If there is no change after this time (you might need to refresh browser), please review the steps above one more time. Alternatively, you can check the [NetFlow Bot docker logs](https://github.com/grafolean/grafolean-netflow-bot/#debugging) to make sure the data is being collected and sent to Grafolean.
+**IMPORTANT:** It might take up to 5 minutes (with default settings for NetFlow bot's `JOBS_REFRESH_INTERVAL`) for enough data to be collected. If you see message `There is no NetFlow data available for any entity` in NetFlow Navigation Widget, it means that the data was not aggregated and sent to Grafolean yet. Please wait some time and **refresh your browser**. If there is no change after 5 minutes, please review the steps above one more time. Alternatively, you can check the [NetFlow Bot docker logs](https://github.com/grafolean/grafolean-netflow-bot/#debugging) to make sure the data is being collected and sent to Grafolean.
