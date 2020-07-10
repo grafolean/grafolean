@@ -20,7 +20,7 @@ Grafolean is an easy to use monitoring system:
 - light on resources
 - [API-first](https://app.grafolean.com/api-doc/)
 - remote agents (bots)
-- UI-controlled agents (bots) for ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) - with more coming
+- UI-controlled agents (bots) for ICMP ping, SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) and NetFlow
 - auto-updating UI
 - uses PostgreSQL as data storage (easy maintenance)
 - granular permissions model
