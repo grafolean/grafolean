@@ -17,7 +17,7 @@ However, these entities are not automatically enabled. To do so, click on the na
 - for Bot select `Systemwide NetFlow bot`
 - at last, enable `Default NetFlow sensor`
 
-Don't forget to save changes.
+Don't forget to save changes by clicking the `Submit` button.
 
 #### 3) View data
 
