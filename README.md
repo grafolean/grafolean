@@ -16,7 +16,7 @@
 
 Grafolean is an easy to use monitoring system:
 
-- self-hosted or hosted service (currently invitation only)
+- self-hosted or [hosted service](https://app.grafolean.com/)
 - light on resources
 - [API-first](https://app.grafolean.com/api-doc/)
 - remote agents (bots)
