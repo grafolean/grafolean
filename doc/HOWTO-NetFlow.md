@@ -1,6 +1,6 @@
 # NetFlow
 
-One of the officially supported protocols in Grafolean is NetFlow. Currently versions v5 and v9 are supported (though it should be easy to improve [Grafolean NetFlow bot](https://github.com/grafolean/grafolean-netflow-bot/) to support other versions if needed).
+One of the officially supported protocols in Grafolean is NetFlow (currently versions v5 and v9 are supported).
 
 ## Configuration
 
@@ -35,5 +35,7 @@ Grafolean should now be collecting the data automatically. To view it, create a 
 - enter dashboard name and in the dropdown "Initialize using a template" choose `NetFlow`
 
 **IMPORTANT:** It might take up to 5 minutes (with default settings for NetFlow bot's `JOBS_REFRESH_INTERVAL`) for enough data to be collected. If you see a message `There is no NetFlow data available for any entity` in your dashboard (in NetFlow Navigation Widget - the one on the top), it means that the data was not aggregated and sent to Grafolean yet. Please wait some time and **refresh your browser**. If there is no change after 5 minutes, please review the steps above one more time. Alternatively, you can check the [NetFlow Bot docker logs](https://github.com/grafolean/grafolean-netflow-bot/#debugging) to make sure the data is being collected and sent to Grafolean.
+
+Final result:
 
 ![screenshot](NetFlow/dashboard.png)
