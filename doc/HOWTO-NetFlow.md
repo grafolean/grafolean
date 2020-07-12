@@ -12,12 +12,20 @@ To collect data, NetFlow bot needs to be installed and configured. The easiest w
 
 Grafolean helps with configuration by automatically creating the entities for any NetFlow exporter it is getting the data from (see "Monitored entities"). Note that it may take up to 2 minutes for the suggestions to appear.
 
-However, these entities are not automatically enabled. To do so, click on the name of the entity (which is IP + `"(NetFlow exporter)"` by default) -> Settings, then edit NetFlow protocol:
+![screenshot](NetFlow/entities-settings.png)
+
+However, these entities are not automatically enabled. To do so, click on the name of the entity (which is IP + `"(NetFlow exporter)"` by default) -> Settings:
+
+![screenshot](NetFlow/entity-settings.png)
+
+Then edit the settings for NetFlow protocol:
 - for Credentials select `Default NetFlow credential`
 - for Bot select `Systemwide NetFlow bot`
 - at last, enable `Default NetFlow sensor`
 
 Don't forget to save changes by clicking the `Submit` button.
+
+![screenshot](NetFlow/enable-netflow.png)
 
 #### 3) View data
 
@@ -27,3 +35,5 @@ Grafolean should now be collecting the data automatically. To view it, create a 
 - enter dashboard name and in the dropdown "Initialize using a template" choose `NetFlow`
 
 **IMPORTANT:** It might take up to 5 minutes (with default settings for NetFlow bot's `JOBS_REFRESH_INTERVAL`) for enough data to be collected. If you see a message `There is no NetFlow data available for any entity` in your dashboard (in NetFlow Navigation Widget - the one on the top), it means that the data was not aggregated and sent to Grafolean yet. Please wait some time and **refresh your browser**. If there is no change after 5 minutes, please review the steps above one more time. Alternatively, you can check the [NetFlow Bot docker logs](https://github.com/grafolean/grafolean-netflow-bot/#debugging) to make sure the data is being collected and sent to Grafolean.
+
+![screenshot](NetFlow/dashboard.png)

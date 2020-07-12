@@ -113,7 +113,7 @@ class Breadcrumbs extends React.Component {
         />
         <Route
           path="/accounts/:accountId/entities"
-          render={props => <BreadcrumbItem label="Entities" match={props.match} />}
+          render={props => <BreadcrumbItem label="Monitored entities" match={props.match} />}
         />
         <Route
           path="/accounts/:accountId/entities/new"
