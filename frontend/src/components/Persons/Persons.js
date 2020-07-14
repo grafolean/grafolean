@@ -8,6 +8,8 @@ import store from '../../store';
 import Button from '../Button';
 import Loading from '../Loading';
 
+import './Persons.scss';
+
 export default class Persons extends React.PureComponent {
   state = {
     persons: null,
@@ -72,6 +74,9 @@ export default class Persons extends React.PureComponent {
                     <td>{person.username}</td>
                     <td>{person.name}</td>
                     <td>{person.email}</td>
+                    <td className="email-confirmed">
+                      <i className={`fa fa-${person.email_confirmed ? 'check' : 'close'}`} />
+                    </td>
                     <td>
                       <Link className="button green" to={`/users/${person.user_id}/permissions`}>
                         <i className="fa fa-user-lock" /> Permissions

@@ -1,0 +1,12 @@
+.persons.frame {
+  td.email-confirmed {
+    text-align: center;
+
+    .fa.fa-check {
+      color: #2b9f4e;
+    }
+    .fa.fa-close {
+      color: #801212;
+    }
+  }
+}
