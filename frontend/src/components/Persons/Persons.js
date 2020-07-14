@@ -63,6 +63,7 @@ export default class Persons extends React.PureComponent {
                   <th>Username</th>
                   <th>Name</th>
                   <th>E-mail</th>
+                  <th>Activated</th>
                   <th />
                   <th />
                 </tr>

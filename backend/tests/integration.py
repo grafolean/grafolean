@@ -854,6 +854,7 @@ def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
                 'name': data['name'],
                 'username': data['username'],
                 'email': data['email'],
+                'email_confirmed': True,
             },
         ],
     }
@@ -891,6 +892,7 @@ def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
     assert actual['name'] == data['name']
     assert actual['username'] == data['username']
     assert actual['email'] == data['email']
+    assert actual['email_confirmed'] == True
 
     # DELETE:
     r = app_client.delete('/api/persons/{}'.format(person_id), headers={'Authorization': admin_authorization_header})

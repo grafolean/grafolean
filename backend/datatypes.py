@@ -1088,13 +1088,14 @@ class Person(object):
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT user_id, name, email, username FROM persons ORDER BY username ASC;')
-            for user_id, name, email, username in c:
+            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons ORDER BY username ASC;')
+            for user_id, name, email, username, email_confirmed in c:
                 ret.append({
                     'user_id': user_id,
                     'name': name,
                     'email': email,
                     'username': username,
+                    'email_confirmed': email_confirmed,
                 })
             return ret
 
@@ -1249,16 +1250,17 @@ class Person(object):
     @staticmethod
     def get(user_id):
         with db.cursor() as c:
-            c.execute('SELECT user_id, name, email, username FROM persons WHERE user_id = %s;', (user_id,))
+            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons WHERE user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, email, username = res
+            user_id, name, email, username, email_confirmed = res
         return {
             'user_id': user_id,
             'name': name,
             'email': email,
             'username': username,
+            'email_confirmed': email_confirmed,
         }
 
 
