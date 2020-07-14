@@ -2,6 +2,7 @@ import flask
 import json
 import copy
 import os
+import socket
 import psycopg2
 from flask_mail import Message, Mail
 
@@ -620,6 +621,18 @@ registration.
 '''
 
 
+def _is_tor_exit_node(ipv4):
+    ip_parts = ipv4.split('.')
+    ip_parts.reverse()
+    try:
+        addr = socket.gethostbyname(f'{".".join(ip_parts)}.dnsel.torproject.org')
+    except socket.gaierror:
+        return False
+    if addr.startswith('127.0.0') and addr != '127.0.0.1':
+        return True
+    return False
+
+
 @users_api.route('/persons/signup/new', methods=['POST'])
 @noauth
 def users_person_signup_new():
@@ -648,6 +661,14 @@ def users_person_signup_new():
     """
     if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
         return "Signup disabled", 403
+
+    if os.environ.get('SIGNUP_DISALLOW_TOR', 'true').lower() in ['true', 'yes', 'on', '1']:
+        # if user is coming from Tor exit node, disallow signup:
+        client_ip = flask.request.environ.get('HTTP_X_FORWARDED_FOR', None)
+        if not client_ip:
+            return "Could not determine client IP", 403
+        if _is_tor_exit_node(client_ip):
+            return "Sorry, Tor exit nodes are not allowed to signup due to abuse", 403
 
     user_id, confirm_pin = Person.signup_new(flask.request.get_json())
     person_data = Person.get(user_id)

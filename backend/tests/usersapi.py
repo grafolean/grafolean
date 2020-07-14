@@ -8,6 +8,7 @@ import flask
 
 
 os.environ['ENABLE_SIGNUP'] = 'true'
+os.environ['SIGNUP_DISALLOW_TOR'] = 'false'
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
