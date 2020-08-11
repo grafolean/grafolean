@@ -1,7 +1,11 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { resolve } from '../../remote-component.config';
-import { createRequires, createUseRemoteComponent } from '@paciolan/remote-component';
+
+// regular import throws a warning about a missing remote-component.config.js:
+//   https://github.com/Paciolan/remote-component#you-may-see-some-warnings
+import { createUseRemoteComponent } from '@paciolan/remote-component/dist/hooks/useRemoteComponent';
+import { createRequires } from '@paciolan/remote-component/dist/lib/createRequires';
 
 import isWidget from './isWidget.js';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
