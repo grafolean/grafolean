@@ -1,6 +1,7 @@
 import React from 'react';
 import UnitWidgetFormField from '../WidgetFormFields/UnitWidgetFormField';
 import Checkbox from '../../MultiSelect/Checkbox';
+import PathsFilterWidgetFormField from '../WidgetFormFields/PathsFilterWidgetFormField';
 
 export default class TopNWidgetForm extends React.Component {
   static DEFAULT_FORM_CONTENT = {
@@ -14,7 +15,7 @@ export default class TopNWidgetForm extends React.Component {
   };
 
   render() {
-    const { content, onChange, onBlur, setFieldValue } = this.props;
+    const { content, onChange, onBlur, setFieldValue, sharedValues } = this.props;
     if (!content || Object.keys(content).length === 0) {
       return null;
     }
@@ -30,23 +31,17 @@ export default class TopNWidgetForm extends React.Component {
     return (
       <div className="topn-widget-form">
         <div className="field">
-          <label>Paths filter:</label>
-          <input
-            type="text"
-            name="content.path_filter"
-            value={path_filter}
+          <PathsFilterWidgetFormField
+            pathFilterValue={path_filter}
+            pathFilterName="content.path_filter"
+            renamingValue={renaming}
+            renamingName="content.renaming"
             onChange={onChange}
             onBlur={onBlur}
+            sharedValues={sharedValues}
           />
         </div>
-        <div className="field">
-          <label>Construct label:</label>
-          <input type="text" value={renaming} name={`content.renaming`} onChange={onChange} onBlur={onBlur} />
-          <p className="hint markdown">
-            Hint: Use `$1` to reference first replaced part, `$2` for the second,... Leave empty to display
-            the whole path instead.
-          </p>
-        </div>
+
         <div className="field">
           <label>Number of entries: (max 10)</label>
           <input
