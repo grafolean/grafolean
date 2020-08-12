@@ -1,9 +1,9 @@
 import React from 'react';
 import { compile } from 'mathjs';
 
-import MatchingPaths from './MatchingPaths';
 import Button from '../../../Button';
-import UnitFormField from '../../UnitFormField';
+import UnitWidgetFormField from '../../WidgetFormFields/UnitWidgetFormField';
+import PathsFilterWidgetFormField from '../../WidgetFormFields/PathsFilterWidgetFormField';
 
 import './ChartForm.scss';
 
@@ -77,43 +77,15 @@ export default class ChartForm extends React.Component {
           {seriesGroups.map((sg, sgIndex) => (
             <div className="serie" key={sgIndex}>
               <div className="form-item">
-                <div className="top-part">
-                  <div className="left-column">
-                    <div className="field">
-                      <label>Path filter:</label>
-                      <input
-                        type="text"
-                        value={sg.path_filter}
-                        name={`content[${sgIndex}].path_filter`}
-                        onChange={onChange}
-                        onBlur={onBlur}
-                      />
-                      <p className="hint markdown">
-                        `*` (multiple segments) and `?` (single segment) wildcards can be used.
-                      </p>
-                    </div>
-                    <div className="field">
-                      <label>Series label:</label>
-                      <input
-                        type="text"
-                        value={sg.renaming}
-                        name={`content[${sgIndex}].renaming`}
-                        onChange={onChange}
-                        onBlur={onBlur}
-                      />
-                      <p className="hint markdown">
-                        Hint: Use `$1` to reference first replaced part, `$2` for the second,... Leave empty
-                        to display the whole path instead.
-                      </p>
-                    </div>
-                  </div>
-
-                  <MatchingPaths
-                    pathFilter={MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues)}
-                    pathRenamer={sg.renaming}
-                    displayPaths={true}
-                  />
-                </div>
+                <PathsFilterWidgetFormField
+                  pathFilterValue={sg.path_filter}
+                  pathFilterName={`content[${sgIndex}].path_filter`}
+                  renamingValue={sg.renaming}
+                  renamingName={`content[${sgIndex}].renaming`}
+                  onChange={onChange}
+                  onBlur={onBlur}
+                  sharedValues={sharedValues}
+                />
 
                 <div className="field">
                   <label>Expression for modifying values:</label>
@@ -128,7 +100,7 @@ export default class ChartForm extends React.Component {
                 </div>
               </div>
 
-              <UnitFormField
+              <UnitWidgetFormField
                 value={sg.unit || ''}
                 name={`content[${sgIndex}].unit`}
                 otherKnownUnits={otherKnownUnits}

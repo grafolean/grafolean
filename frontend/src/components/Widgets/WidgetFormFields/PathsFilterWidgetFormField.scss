@@ -1,0 +1,11 @@
+.paths-filter-widget-form-field {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    margin-right: 10px;
+  }
+}

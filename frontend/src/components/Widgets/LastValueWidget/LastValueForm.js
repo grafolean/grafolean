@@ -1,5 +1,5 @@
 import React from 'react';
-import UnitFormField from '../UnitFormField';
+import UnitWidgetFormField from '../WidgetFormFields/UnitWidgetFormField';
 
 export default class LastValueForm extends React.Component {
   static DEFAULT_FORM_CONTENT = {
@@ -44,7 +44,7 @@ export default class LastValueForm extends React.Component {
             onBlur={onBlur}
           />
         </div>
-        <UnitFormField
+        <UnitWidgetFormField
           value={unit}
           name={`content.unit`}
           onChange={onChange}

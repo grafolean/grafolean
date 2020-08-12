@@ -1,5 +1,5 @@
 import React from 'react';
-import UnitFormField from '../UnitFormField';
+import UnitWidgetFormField from '../WidgetFormFields/UnitWidgetFormField';
 import Checkbox from '../../MultiSelect/Checkbox';
 
 export default class TopNWidgetForm extends React.Component {
@@ -91,7 +91,7 @@ export default class TopNWidgetForm extends React.Component {
             onBlur={onBlur}
           />
         </div>
-        <UnitFormField
+        <UnitWidgetFormField
           value={unit}
           name={`content.unit`}
           onChange={onChange}

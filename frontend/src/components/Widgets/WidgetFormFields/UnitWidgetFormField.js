@@ -1,6 +1,6 @@
 import React from 'react';
 
-import './UnitFormField.scss';
+import './UnitWidgetFormField.scss';
 
 // const METRIC_PREFIXES = [
 //   { prefix: 'P', name: 'peta', power: 15 },
@@ -26,7 +26,7 @@ const KNOWN_UNITS = {
   Bps: { name: 'bytes per second', allowedPrefixes: 'kMGTP', kiloBase: 1024 },
 };
 
-export default class UnitFormField extends React.Component {
+export default class UnitWidgetFormField extends React.Component {
   getAllKnownUnits() {
     let allUnits = Object.keys(KNOWN_UNITS).map(unit => ({
       value: unit,
