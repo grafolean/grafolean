@@ -2,6 +2,7 @@ import GLeanChartWidget from './GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from './LastValueWidget/LastValueWidget';
 import TopNWidget from './TopNWidget/TopNWidget';
 import NetFlowNavigationWidget from './NetFlowNavigationWidget/NetFlowNavigationWidget';
+
 import ChartForm from './GLeanChartWidget/ChartForm/ChartForm';
 import LastValueForm from './LastValueWidget/LastValueForm';
 import TopNWidgetForm from './TopNWidget/TopNWidgetForm';
@@ -32,6 +33,15 @@ export const KNOWN_WIDGET_TYPES = {
     label: 'top N',
     widgetComponent: TopNWidget,
     widgetAdditionalProps: {},
+    formComponent: TopNWidgetForm,
+    isHeaderWidget: false,
+  },
+  piechart: {
+    type: 'piechart',
+    icon: 'pie-chart',
+    label: 'pie chart',
+    widgetComponent: TopNWidget,
+    widgetAdditionalProps: { display: 'pie' },
     formComponent: TopNWidgetForm,
     isHeaderWidget: false,
   },

@@ -15,6 +15,14 @@
     }
   }
 
+  .color {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    margin: 0 10px 0 0;
+  }
+
   .label {
     font-size: 15px;
   }
@@ -37,44 +45,71 @@
     justify-content: flex-end;
   }
 
-  .entry {
+  .data {
     display: flex;
-    align-items: flex-end;
+    flex-direction: row;
     flex-wrap: wrap;
 
-    .percent-bar {
-      margin-left: auto;
-      padding-bottom: 6px;
-      position: relative;
+    &.display-list {
+      width: 100%;
+      & > * {
+        flex-grow: 1;
+      }
+    }
+    &.display-pie {
+      justify-content: center;
+    }
 
-      .wrapper {
-        width: 70px;
-        border: 1px solid #444;
-        height: 17px;
-        position: relative;
+    .list {
+      .entry {
+        display: flex;
+        align-items: flex-end;
+        flex-wrap: wrap;
 
-        .bar {
-          background-color: #36c;
-          height: 100%;
+        .percent-bar {
           margin-left: auto;
-        }
-        .text-wrapper {
-          position: absolute;
-          left: 0;
-          top: 0;
-          right: 0;
-          bottom: 0;
-          display: flex;
-          justify-content: center;
-          align-items: center;
+          padding-bottom: 6px;
+          position: relative;
 
-          .text {
-            color: #ccd;
+          .wrapper {
+            width: 70px;
+            border: 1px solid #444;
+            height: 17px;
+            position: relative;
+
+            .bar {
+              background-color: #36c;
+              height: 100%;
+              margin-left: auto;
+            }
+            .text-wrapper {
+              position: absolute;
+              left: 0;
+              top: 0;
+              right: 0;
+              bottom: 0;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+
+              .text {
+                color: #ccd;
+              }
+            }
           }
         }
       }
     }
 
+    .pie {
+      display: flex;
+      justify-content: flex-end;
+      margin: 20px;
+
+      svg {
+        max-width: 150px;
+      }
+    }
   }
 
   .time {

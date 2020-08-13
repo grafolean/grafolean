@@ -66,7 +66,7 @@ export default class TopNWidgetForm extends React.Component {
           <p className="hint markdown">Hint: Use `$1` to reference the original value.</p>
         </div>
         <div className="field">
-          <label>Calculate percentages:</label>
+          <label>Display percentages:</label>
           <Checkbox
             checked={calc_percent}
             onChange={() => setFieldValue('content.calc_percent', !calc_percent)}

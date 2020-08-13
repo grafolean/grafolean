@@ -7,10 +7,11 @@ import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 import MatchingPaths from '../GLeanChartWidget/ChartForm/MatchingPaths';
 import When from '../../When';
-
-import './TopNWidget.scss';
 import Loading from '../../Loading';
 import LabelFromPath from '../../LabelFromPath/LabelFromPath';
+import { generateSerieColor } from '../GLeanChartWidget/utils';
+
+import './TopNWidget.scss';
 
 class _TopNWidget extends React.Component {
   state = {
@@ -45,9 +46,7 @@ class _TopNWidget extends React.Component {
   };
 
   onFetchStart = () => {
-    this.setState({
-      loading: true,
-    });
+    this.setState({ loading: true });
   };
 
   onFetchError = errorMsg => {
@@ -69,7 +68,7 @@ class _TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal, loading } = this.state;
-    const { sharedValues } = this.props;
+    const { sharedValues, display = 'list' } = this.props;
     const { selectedTime = null } = sharedValues;
     const { accountId } = this.props.match.params;
     const {
@@ -80,6 +79,7 @@ class _TopNWidget extends React.Component {
       unit = '',
       calc_percent = true,
       expression = '$1',
+      pie_chart = true,
     } = this.props.content;
 
     const calculatedTopList = topList
@@ -115,31 +115,71 @@ class _TopNWidget extends React.Component {
             <div className="time">
               {moment.utc(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (<When t={topListTime} />)
             </div>
-            {calc_percent && (
+            {(calc_percent || pie_chart) && (
               <div className="total">
                 Total: {totalThroughExpression.toFixed(decimals)} {unit}
               </div>
             )}
-            <div className="list">
-              {calculatedTopList.map(x => (
-                <div className="entry" key={x.p}>
-                  <div>
-                    <span className="label">
-                      <LabelFromPath
-                        path={x.p}
-                        filter={path_filter}
-                        renaming={renaming}
-                        sharedValues={sharedValues}
-                      />
-                      :
-                    </span>
-                    <span className="value">{x.c.toFixed(decimals)}</span>
-                    <span className="unit">{unit} </span>
-                  </div>
-                  {calc_percent && <PercentBar percent={x.percent} />}
+
+            {display === 'pie' ? (
+              <div className="data display-pie">
+                <div className="pie">
+                  <PieChartSvg
+                    values={calculatedTopList.map((x, i) => ({
+                      color: generateSerieColor(x.p, i),
+                      percent: parseFloat(x.percent),
+                    }))}
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="list">
+                  {calculatedTopList.map((x, i) => (
+                    <div className="entry" key={x.p}>
+                      <div>
+                        <span
+                          className="color"
+                          style={{ backgroundColor: generateSerieColor(x.p, i) }}
+                        ></span>
+                        <span className="label">
+                          <LabelFromPath
+                            path={x.p}
+                            filter={path_filter}
+                            renaming={renaming}
+                            sharedValues={sharedValues}
+                          />
+                          :
+                        </span>
+                        <span className="value">{x.c.toFixed(decimals)}</span>
+                        <span className="unit">{unit} </span>
+                        {calc_percent && <span className="percent">({x.percent}&nbsp;%)</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="data display-list">
+                <div className="list">
+                  {calculatedTopList.map((x, i) => (
+                    <div className="entry" key={x.p}>
+                      <div>
+                        <span className="label">
+                          <LabelFromPath
+                            path={x.p}
+                            filter={path_filter}
+                            renaming={renaming}
+                            sharedValues={sharedValues}
+                          />
+                          :
+                        </span>
+                        <span className="value">{x.c.toFixed(decimals)}</span>
+                        <span className="unit">{unit} </span>
+                      </div>
+                      {calc_percent && <PercentBar percent={x.percent} />}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
         {loading && (
@@ -194,6 +234,45 @@ class PercentBar extends React.Component {
           </div>
         </div>
       </div>
+    );
+  }
+}
+
+class PieChartSvg extends React.Component {
+  // We are drawing a circle with a radius 0.5 and a stroke width 1, using strike-dasharray to paint
+  // the parts of the circle in the stroke color.
+  render() {
+    const { width, height, values } = this.props;
+    const v = [];
+    let prevPercent = 0;
+    for (let i = 0; i < values.length; i++) {
+      v.push({
+        ...values[i],
+        prevPercent: prevPercent,
+      });
+      prevPercent += values[i].percent;
+    }
+    const r = 0.5;
+    return (
+      <svg width={width} height={height} viewBox="-1 -1 2 2" style={{ transform: 'rotate(-90deg)' }}>
+        <circle r="1" cx="0" cy="0" fill="white" />
+        {v.map(({ color, percent, prevPercent }, i) => (
+          <circle
+            r={r}
+            cx="0"
+            cy="0"
+            key={i}
+            fill="transparent"
+            stroke={color}
+            strokeWidth="1"
+            strokeDasharray={`0 ${r * (prevPercent / 100) * Math.PI * 2} ${r *
+              (percent / 100) *
+              Math.PI *
+              2} ${r * Math.PI * 2}`}
+          />
+        ))}
+        <circle r="0.6" cx="0" cy="0" fill="#191919" />
+      </svg>
     );
   }
 }
