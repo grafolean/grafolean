@@ -4,29 +4,27 @@ import { withRouter, Link } from 'react-router-dom';
 import SensorsMultiSelect from './SensorsMultiSelect';
 
 class EntityProtocolSubForm extends React.Component {
+  componentDidUpdate(prevProps) {
+    // whenever credentials are first selected, if there is only a single bot available, select it by default:
+    if (
+      (!prevProps.values || !prevProps.values.credential) &&
+      this.props.values &&
+      this.props.values.credential &&
+      this.props.bots.length === 1 &&
+      !this.props.values.selectedBotId
+    ) {
+      const { setFieldValue, protocol, bots } = this.props;
+      setFieldValue(`protocols[${protocol.slug}][bot]`, bots[0].id, true);
+    }
+  }
+
   render() {
-    const {
-      protocol,
-      values: { protocols = {} },
-      onChange,
-      onBlur,
-      setFieldValue,
-      credentials,
-      bots,
-      sensors,
-    } = this.props;
+    const { protocol, values = {}, onChange, onBlur, setFieldValue, credentials, bots, sensors } = this.props;
     const { accountId } = this.props.match.params;
 
-    const credentialId =
-      protocols[protocol.slug] && protocols[protocol.slug]['credential']
-        ? protocols[protocol.slug]['credential']
-        : null;
-    const selectedBotId =
-      protocols[protocol.slug] && protocols[protocol.slug]['bot'] ? protocols[protocol.slug]['bot'] : null;
-    const selectedSensors =
-      protocols[protocol.slug] && protocols[protocol.slug]['sensors']
-        ? protocols[protocol.slug]['sensors']
-        : [];
+    const credentialId = values['credential'] ? values['credential'] : null;
+    const selectedBotId = values['bot'] ? values['bot'] : null;
+    const selectedSensors = values['sensors'] ? values['sensors'] : [];
     return (
       <div key={protocol.slug} className="field framed-field entity-protocol-subform">
         <label>{protocol.label}</label>

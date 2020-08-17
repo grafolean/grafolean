@@ -78,7 +78,7 @@ class EntityProtocolsFormRender extends React.Component {
                 {SUPPORTED_PROTOCOLS.map(protocol => (
                   <EntityProtocolSubForm
                     key={protocol.slug}
-                    values={values}
+                    values={values.protocols[protocol.slug]}
                     onChange={onChange}
                     onBlur={onBlur}
                     setFieldValue={setFieldValue}
