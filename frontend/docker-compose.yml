@@ -90,6 +90,19 @@ services:
     volumes:
       - shared-secrets:/shared-secrets
 
+  pingbot:
+    image: grafolean/grafolean-ping-bot
+    container_name: grafolean-ping-bot
+    environment:
+      - BACKEND_URL=http://grafolean/api
+      - BOT_TOKEN_FROM_FILE=/shared-secrets/tokens/ping-bot.token
+      - JOBS_REFRESH_INTERVAL=60
+    restart: always
+    networks:
+      - grafoleandev
+    volumes:
+      - shared-secrets:/shared-secrets
+
 networks:
   grafoleandev:
     name: grafolean
