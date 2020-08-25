@@ -1,11 +1,13 @@
 import copy
 import json
+import math
 import os
-import pytest
 import queue
 import re
 import sys
 import time
+
+import pytest
 
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -284,26 +286,35 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-def test_values_put_many_get_aggr(app_client, admin_authorization_header, account_id):
+@pytest.mark.parametrize("n_values,aggr_level", [
+    [10, 0],
+    [10, 1],
+    [10, 3],
+    [11, 3],
+    [100, 2],
+    [100, 3],
+])
+def test_values_put_many_get_aggr(app_client, admin_authorization_header, account_id, n_values, aggr_level):
     """
         Put many values, get aggregated value. Delete path and values.
     """
     TEST_PATH = 'test.values.put.many.get.aggr'
-    t_from = 1330000000 - 1330000000 % (27*3600)  # aggr level 3 - every 3 hours
-    t_to = t_from + 27 * 3600
-    data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, 100)]
+    t_from = 1000090800  # divisible by 27 * 3600 - aggr level 3 - every 3 ^ 3 hours
+    aggr_interval_h = 3 ** aggr_level
+    t_to = t_from + aggr_interval_h * 3600
+    data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, n_values)]
 
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
-    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
+    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a={}'.format(account_id, TEST_PATH, t_from, t_to, aggr_level)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
     expected = {
         'paths': {
             TEST_PATH: {
                 'next_data_point': None,
                 'data': [
-                    {'t': t_from + 27 * 3600. / 2., 'v': 111. + (99. / 2.), 'minv': 111., 'maxv': 111. + 99. }
+                    {'t': t_from + aggr_interval_h * 3600. / 2., 'v': 111. + ((n_values - 1) / 2.), 'minv': 111., 'maxv': 111. + (n_values - 1) }
                 ]
             }
         }

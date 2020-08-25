@@ -264,7 +264,6 @@ class Measurement(object):
                 path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
                 yield (
                     path.force_id,
-                    str(Timestamp(x['t'])),
                     datetime.utcfromtimestamp(float(Timestamp(x['t']))),
                     str(MeasuredValue(x['v'])),
                 )
@@ -272,7 +271,7 @@ class Measurement(object):
 
         with db.cursor() as c:
             # https://stackoverflow.com/a/34529505/593487
-            psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, ts2, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s, %s)", page_size=100)
+            psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
 
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
@@ -294,22 +293,24 @@ class Measurement(object):
         # t_froms: an array of t_from, one for each path (because the subsequent fetchings usually request a different t_from for each path)
         paths_data = {}
         sort_order = 'ASC' if should_sort_asc else 'DESC'  # PgSQL doesn't allow sort order to be parametrized
+        t_to_timestamp = datetime.utcfromtimestamp(float(t_to))
         with db.cursor() as c:
             for p, t_from in zip(paths, t_froms):
                 str_p = str(p)
                 path_data = []
                 path_id = Path._get_path_id_from_db(account_id, str_p)
+                t_from_timestamp = datetime.utcfromtimestamp(float(t_from))
 
                 # trick: fetch one result more than is allowed (by MAX_DATAPOINTS_RETURNED) so that we know that the result set is not complete and where the client should continue from
                 if aggr_level is None:  # fetch raw data
-                    c.execute('SELECT ts2, value FROM measurements WHERE path = %s AND ts2 >= %s AND ts2 <= %s ORDER BY ts2 ' + sort_order + ' LIMIT %s;', (path_id, datetime.utcfromtimestamp(float(t_from)), datetime.utcfromtimestamp(float(t_to)), max_records + 1,))
+                    c.execute('SELECT ts, value FROM measurements WHERE path = %s AND ts >= %s AND ts <= %s ORDER BY ts ' + sort_order + ' LIMIT %s;', (path_id, t_from_timestamp, t_to_timestamp, max_records + 1,))
                     for ts, value in c.fetchall():
                         path_data.append({'t': ts.replace(tzinfo=timezone.utc).timestamp(), 'v': float(value)})
                 else:  # fetch aggregated data
-                    aggr_interval_s = 3600 * (cls.AGGR_FACTOR ** aggr_level)
+                    aggr_interval_h = cls.AGGR_FACTOR ** aggr_level
                     c.execute(f"""
                         SELECT
-                            FLOOR(ts / {aggr_interval_s}),
+                            TIME_BUCKET('{aggr_interval_h} hours'::interval, ts, TIMESTAMP '1970-01-01') AS period,
                             PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY value),
                             MIN(value),
                             MAX(value)
@@ -317,16 +318,16 @@ class Measurement(object):
                             measurements
                         WHERE
                             path = %s AND
-                            FLOOR(ts / {aggr_interval_s}) >= %s AND
-                            FLOOR(ts / {aggr_interval_s}) <= %s
+                            ts >= %s AND
+                            ts <= %s
                         GROUP BY
-                            FLOOR(ts / {aggr_interval_s})
+                            period
                         ORDER BY
-                            FLOOR(ts / {aggr_interval_s}) {sort_order}
-                    """, (path_id, math.floor(float(t_from) / aggr_interval_s), math.floor(float(t_to) / aggr_interval_s)),)
-                    # c.execute('SELECT tsmed, vavg, vmin, vmax FROM aggregations WHERE path = %s AND level = %s AND tsmed >= %s AND tsmed < %s ORDER BY tsmed ' + sort_order + ' LIMIT %s;', (path_id, aggr_level, float(t_from), float(t_to), max_records + 1,))
+                            period {sort_order}
+                    """, (path_id, t_from_timestamp, t_to_timestamp,))
+                    move_ts_to_middle_of_interval = aggr_interval_h * 1800
                     for ts, vavg, vmin, vmax in c.fetchall():
-                        path_data.append({'t': float(ts) * aggr_interval_s + aggr_interval_s / 2, 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
+                        path_data.append({'t': ts.replace(tzinfo=timezone.utc).timestamp() + move_ts_to_middle_of_interval, 'v': float(vavg), 'minv': float(vmin), 'maxv': float(vmax)})
 
                 # if we have one result too many, eliminate it and set "next_data_point" field:
                 if len(path_data) > max_records:
@@ -368,7 +369,7 @@ class Measurement(object):
                         )
                     ORDER BY m.ts DESC, m.value DESC
                     LIMIT %s
-                """, (pf_regex, float(ts_to), max_results)
+                """, (pf_regex, datetime.utcfromtimestamp(float(ts_to)), max_results)
             )
 
             found_ts = None
@@ -397,7 +398,8 @@ class Measurement(object):
             res = c.fetchone()
             if not res:
                 return None
-            return res[0]
+            ts = res[0]
+            return ts.replace(tzinfo=timezone.utc).timestamp()
 
 
 class Widget(object):

@@ -1,3 +1,4 @@
+from datetime import timezone
 import flask
 import json
 import time
@@ -659,7 +660,7 @@ def topvalues_get(account_id):
 
     ts, total, topn = Measurement.fetch_topn(account_id, pf, ts_to, max_results)
     return json.dumps({
-        't': float(ts),
+        't': ts.replace(tzinfo=timezone.utc).timestamp(),
         'total': float(total),
         'list': topn,
     }), 200

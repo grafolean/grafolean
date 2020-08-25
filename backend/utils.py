@@ -445,6 +445,37 @@ def migration_step_25():
         c.execute('ALTER TABLE persons ALTER COLUMN confirm_pin DROP NOT NULL;')
 
 def migration_step_26():
-    """ Add TIMESTAMP column to measurements (TimescaleDB does not support NUMERIC). """
+    """ Add TIMESTAMP column to measurements (TimescaleDB does not support NUMERIC).
+
+        WARNING: this step will fail if you try to migrate an existing database to TimescaleDB. The
+        reason is that /var/lib/postgresql/data/postgresql.conf (which is part of database and is
+        mounted within the Docker container) doesn't preload the timescaledb extension. To fix this:
+         1) run this migration (which will fail)
+         2) stop all Docker containers
+         3) edit postgresql.conf to include this line at the end:
+             shared_preload_libraries = 'timescaledb'
+         4) start db Docker container
+         5) run these three SQL statements:
+             CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+             SELECT create_hypertable('measurements', 'ts', migrate_data => true);
+             UPDATE runtime_data SET schema_version = 26;
+         6) run remaining containers
+    """
     with db.cursor() as c:
+        c.execute('DROP INDEX measurements_path_ts;')
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr0_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr1_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr2_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr3_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr4_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr5_value;")
+        c.execute("DROP INDEX IF EXISTS aggregations_path_aggr6_value;")
+
         c.execute("ALTER TABLE measurements ADD COLUMN ts2 TIMESTAMP;")
+        c.execute("UPDATE measurements SET ts2 = TO_TIMESTAMP(ts);")
+        c.execute("ALTER TABLE measurements DROP COLUMN ts;")
+        c.execute("ALTER TABLE measurements RENAME COLUMN ts2 TO ts;")
+        c.execute('CREATE UNIQUE INDEX measurements_path_ts ON measurements (path, ts);')
+        c.execute("ALTER TABLE measurements ALTER COLUMN ts SET NOT NULL;")
+
+        c.execute("SELECT create_hypertable('measurements', 'ts');")
