@@ -53,6 +53,45 @@ def accounts_apidoc_schemas():
         },
         'required': ['id', 'name'],
     }
+    yield "ValuesGET", {
+        'type': 'object',
+        'properties': {
+            'paths': {
+                'type': 'object',
+                'additionalProperties': {
+                    # we don't define any properties (because keys are paths and are not known in advance), but
+                    # anything below must conform to this sub-schema:
+                    'type': 'object',
+                    'properties': {
+                        'next_data_point': {
+                            'type': ['number', 'null'],
+                            'description': "Measurements time (UNIX timestamp) of the next value - null if limit was not reached",
+                            'example': 1234567890.123456,
+                        },
+                        'data': {
+                            'type': 'array',
+                            'description': "List of values",
+                            'items': {
+                                'type': 'object',
+                                'properties': {
+                                    't': {
+                                        'type': 'number',
+                                        'description': "Measurements time (UNIX timestamp) - middle of aggregation bucket if aggregation was requested",
+                                        'example': 1234567890.123456,
+                                    },
+                                    'v': {
+                                        'type': 'number',
+                                        'description': "Measurement value; median values if aggregation was requested",
+                                        'example': 12.33,
+                                    },
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    }
     yield "TopValuesGET", {
         'type': 'object',
         'properties': {
@@ -501,26 +540,101 @@ def values_post(account_id):
     return ""
 
 
-@accounts_api.route("/<int:account_id>/values", methods=['GET'])
-@accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
+# There are 3 different endpoints for returning the values, each with its own set of advantages (and
+# disadvantages).
 @accounts_api.route("/<int:account_id>/values/<string:path_input>", methods=['GET'])
-def values_get(account_id, path_input=None):
+def values_get_simple(account_id, path_input=None):
+    args = flask.request.args
+    if "," in path_input:
+        return "Only a single path is allowed as part of URL\n\n", 400
+    paths_input = path_input
+    return _values_get(account_id, paths_input, args)
+
+
+@accounts_api.route("/<int:account_id>/values", methods=['GET'])
+def values_get_multipath(account_id):
+    """
+        ---
+        get:
+          summary: Get values within the specified timeframe
+          tags:
+            - Accounts
+          description:
+            Returns the values for the specified paths. Similar to GET /accounts/<account_id>/values/<path>/, except that multiple paths can be specified.
+          parameters:
+            - name: account_id
+              in: path
+              description: "Account id"
+              required: true
+              schema:
+                type: integer
+            - name: p
+              in: query
+              description: "One or multiple paths, separated by comma (',')"
+              required: true
+              schema:
+                type: string
+            - name: t0
+              in: query
+              description: "Comma separated start times, represented as UNIX timestamps with up to 6 decimals (either a single time for all paths, or one for each path)"
+              required: true
+              schema:
+                type: string
+            - name: t1
+              in: query
+              description: "Comma separated end times, represented as UNIX timestamps with up to 6 decimals (either a single time for all paths, or one for each path)"
+              required: true
+              schema:
+                type: string
+            - name: a
+              in: query
+              description: "Aggregation level - either string 'no' or an aggregation level (size of aggregation bucket is 3 ^ aggr_level hours); if not specified, a 301 redirect to a location with this parameter set will be returned"
+              required: false
+              schema:
+                oneOf:
+                  - type: string
+                    enum: [no]
+                  - type: integer
+                    minimum: 0
+                    maximum: 6
+            - name: sort
+              in: query
+              description: "Sort order (default asc)"
+              required: false
+              schema:
+                type: string
+                enum: [asc, desc]
+            - name: limit
+              in: query
+              description: "Limit number or returned results (default 100000, max 100000)"
+              required: false
+              schema:
+                type: integer
+                minimum: 1
+                maximum: 100000
+          responses:
+            200:
+              content:
+                application/json:
+                  schema:
+                    "$ref": '#/definitions/ValuesGET'
+    """
+    args = flask.request.args
+    paths_input = args.get('p')
+    return _values_get(account_id, paths_input, args)
+
+
+@accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
+def values_get_using_post(account_id):
     # when we request data for too many paths at once, we run in trouble with URLs being too long. Using
     # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
     # we use the same arguments:
-    if flask.request.method == 'POST':
-        args = flask.request.get_json()
-    else:
-        args = flask.request.args
+    args = flask.request.get_json()
+    paths_input = args.get('p')
+    return _values_get(account_id, paths_input, args)
 
-    # validate and convert input parameters:
-    if path_input:
-        if "," in path_input:
-            return "Only a single path is allowed as part of URL\n\n", 400
-        paths_input = path_input
-    else:
-        paths_input = args.get('p')
 
+def _values_get(account_id, paths_input, args):
     if paths_input is None:
         return "Path(s) not specified\n\n", 400
     try:
