@@ -601,7 +601,7 @@ def topvalues_get(account_id):
         get:
           summary: Get highest N measurements for the latest timestamp before specified time
           tags:
-            - Admin
+            - Accounts
           description:
             Finds the latest timestamp of any measurement that was recorded for any path that matches the path filter. Returns a list of highest `n`
             measurements (for the matching paths) that were taken at that timestamp. Note that timestamp must match exactly.
