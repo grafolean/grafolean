@@ -72,7 +72,7 @@ services:
 
   snmpbot:
     image: grafolean/grafolean-snmp-bot
-    container_name: snmpbot
+    container_name: snmpdev
     depends_on:
       db:
         condition: service_healthy
@@ -92,7 +92,7 @@ services:
 
   pingbot:
     image: grafolean/grafolean-ping-bot
-    container_name: grafolean-ping-bot
+    container_name: pingdev
     environment:
       - BACKEND_URL=http://grafolean/api
       - BOT_TOKEN_FROM_FILE=/shared-secrets/tokens/ping-bot.token
