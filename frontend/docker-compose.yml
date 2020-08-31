@@ -5,7 +5,7 @@ services:
   # The assumption is that the services have already been built.
 
   db:
-    image: postgres:9.6-alpine
+    image: postgres:12.1-alpine
     environment:
       - POSTGRES_DB=grafoleandev
       - POSTGRES_USER=grafoleandev
@@ -65,7 +65,7 @@ services:
     networks:
       - grafoleandev
     volumes:
-      - ../backend/:/grafolean/backend/
+#      - ../backend/:/grafolean/backend/
       - shared-secrets:/shared-secrets
     container_name:
       grafoleandev
@@ -103,9 +103,78 @@ services:
     volumes:
       - shared-secrets:/shared-secrets
 
+  netflowbot:
+    image: grafolean/grafolean-netflow-bot
+    container_name: netflowbotdev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - BACKEND_URL=http://grafolean/api
+      - BOT_TOKEN_FROM_FILE=/shared-secrets/tokens/netflow-bot.token
+      - JOBS_REFRESH_INTERVAL=${JOBS_REFRESH_INTERVAL:-60}
+      - DB_HOST=db
+      - DB_DATABASE=grafoleandev
+      - DB_USERNAME=grafoleandev
+      - DB_PASSWORD=grafoleandev
+    restart: always
+    networks:
+      - grafoleandev
+    volumes:
+      - shared-secrets:/shared-secrets
+
+  netflowcollector:
+    image: grafolean/grafolean-netflow-bot
+    container_name: netflowcollectordev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - NAMED_PIPE_FILENAME=/shared-grafolean/netflow.pipe
+      - NETFLOW_PORT=2055
+    ports:
+      - "${NETFLOW_PORT:-2055}:2055/udp"
+    restart: always
+    # NetFlow collector uses the same docker image as bot (grafolean/grafolean-netflow-bot),
+    # but specifies a different entrypoint:
+    entrypoint:
+      - python
+      - -m
+      - netflowcollector
+    volumes:
+      - shared-grafolean:/shared-grafolean
+    # this is the only NetFlow process that listens on the host network interface:
+    network_mode: "host"
+
+  netflowwriter:
+    # Reads netflow data from named pipe and writes it to DB.
+    image: grafolean/grafolean-netflow-bot
+    container_name: netflowwriterdev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - NAMED_PIPE_FILENAME=/shared-grafolean/netflow.pipe
+      - DB_HOST=db
+      - DB_DATABASE=grafoleandev
+      - DB_USERNAME=grafoleandev
+      - DB_PASSWORD=grafoleandev
+    restart: always
+    # CAREFUL: NetFlow collector uses the same docker image as bot
+    # (grafolean/grafolean-netflow-bot), but specifies a different entrypoint:
+    entrypoint:
+      - python
+      - -m
+      - netflowwriter
+    networks:
+      - grafoleandev
+    volumes:
+      - shared-grafolean:/shared-grafolean
+
 networks:
   grafoleandev:
     name: grafolean
 
 volumes:
   shared-secrets:
+  shared-grafolean:
