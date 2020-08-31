@@ -17,7 +17,7 @@
       "x": 0,
       "y": 0,
       "w": 6,
-      "h": 8,
+      "h": 6,
       "p": "default",
       "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.?\",\"renaming\":\"${interfaceName($selectedEntityId, $1)}\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
     },
@@ -32,12 +32,12 @@
       "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface.topip.?\",\"renaming\":\"$1\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
     },
     {
-      "type": "topn",
+      "type": "piechart",
       "title": "Top protocols",
       "x": 6,
       "y": 0,
       "w": 6,
-      "h": 8,
+      "h": 6,
       "p": "default",
       "content": "{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.topprotocol.?\",\"renaming\":\"$1\",\"nentries\":10,\"expression\":\"$1 / (1024*1024)\",\"decimals\":1,\"calc_percent\":true,\"unit\":\"MB\"}"
     },
