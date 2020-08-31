@@ -57,7 +57,7 @@
       }
     }
     &.display-pie {
-      justify-content: center;
+      justify-content: space-around;
     }
 
     .list {
@@ -102,9 +102,6 @@
     }
 
     .pie {
-      display: flex;
-      justify-content: flex-end;
-      margin: 20px;
 
       svg {
         max-width: 150px;
