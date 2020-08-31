@@ -10,16 +10,18 @@ class ColorSchemeSwitch extends React.Component {
   };
 
   render() {
-    const { colorScheme } = this.props;
-    return (
-      <div className="color-scheme-switch">
-        {colorScheme === 'dark' ? (
-          <i className="fa fa-sun" onClick={() => store.dispatch(setColorScheme('light'))} />
-        ) : (
-          <i className="fa fa-moon" onClick={() => store.dispatch(setColorScheme('dark'))} />
-        )}
-      </div>
-    );
+    // since the light theme is not up-to-date, disable it for now:
+    return null;
+    // const { colorScheme } = this.props;
+    // return (
+    //   <div className="color-scheme-switch">
+    //     {colorScheme === 'dark' ? (
+    //       <i className="fa fa-sun" onClick={() => store.dispatch(setColorScheme('light'))} />
+    //     ) : (
+    //       <i className="fa fa-moon" onClick={() => store.dispatch(setColorScheme('dark'))} />
+    //     )}
+    //   </div>
+    // );
   }
 }
 const mapColorSchemeToProps = store => ({

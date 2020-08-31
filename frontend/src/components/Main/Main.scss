@@ -59,6 +59,7 @@ header {
     padding: 10px 15px 0px;
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
 
     .version-info {
       font-style: italic;
@@ -66,7 +67,7 @@ header {
       color: #666;
     }
     .api-doc {
-      margin: 0 auto;
+      margin: 0;
       font-size: 10px;
       color: #666;
     }
