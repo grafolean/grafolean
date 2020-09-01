@@ -540,19 +540,10 @@ def values_post(account_id):
     return ""
 
 
-# There are 3 different endpoints for returning the values, each with its own set of advantages (and
+# There are 2 different endpoints for returning the values, each with its own set of advantages (and
 # disadvantages).
-@accounts_api.route("/<int:account_id>/values/<string:path_input>", methods=['GET'])
-def values_get_simple(account_id, path_input=None):
-    args = flask.request.args
-    if "," in path_input:
-        return "Only a single path is allowed as part of URL\n\n", 400
-    paths_input = path_input
-    return _values_get(account_id, paths_input, args)
-
-
-@accounts_api.route("/<int:account_id>/values", methods=['GET'])
-def values_get_multipath(account_id):
+@accounts_api.route("/<int:account_id>/values/<string:path>", methods=['GET'])
+def values_get_simple(account_id, path):
     """
         ---
         get:
@@ -560,7 +551,7 @@ def values_get_multipath(account_id):
           tags:
             - Accounts
           description:
-            Returns the values for the specified paths. Similar to GET /accounts/<account_id>/values/<path>/, except that multiple paths can be specified.
+            Returns the values for the specified path. Similar to POST /accounts/<account_id>/getvalues/, except that only a single path can be specified (and GET can be used).
           parameters:
             - name: account_id
               in: path
@@ -568,9 +559,9 @@ def values_get_multipath(account_id):
               required: true
               schema:
                 type: integer
-            - name: p
-              in: query
-              description: "One or multiple paths, separated by comma (',')"
+            - name: path
+              in: path
+              description: "Path"
               required: true
               schema:
                 type: string
@@ -620,12 +611,14 @@ def values_get_multipath(account_id):
                     "$ref": '#/definitions/ValuesGET'
     """
     args = flask.request.args
-    paths_input = args.get('p')
+    if "," in path:
+        return "Only a single path is allowed\n\n", 400
+    paths_input = path
     return _values_get(account_id, paths_input, args)
 
 
 @accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
-def values_get_using_post(account_id):
+def values_get_with_post(account_id):
     # when we request data for too many paths at once, we run in trouble with URLs being too long. Using
     # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
     # we use the same arguments:

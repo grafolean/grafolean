@@ -40,7 +40,7 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
 
-    r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/values/qqqq.wwww/?t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'paths': {
@@ -74,7 +74,7 @@ def test_values_put_get_encoded_dot(app_client, admin_authorization_header, acco
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
 
-    r = app_client.get('/api/accounts/{}/values/?p=%252eqqqq.ww%252eww.asdf&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/values/%252eqqqq.ww%252eww.asdf/?t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200, r.data
     expected = {
         'paths': {
@@ -185,7 +185,7 @@ def test_values_put_get_all_formats(app_client, admin_authorization_header, acco
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json_body, content_type='application/json', headers={'Authorization': admin_authorization_header})
     print(r.data.decode('utf-8'))
     assert r.status_code == 204
-    r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
+    r = app_client.get('/api/accounts/{}/values/qqqq.wwww?t0=1234567890&t1=1234567891&a=no'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     expected = {
         'paths': {
@@ -207,7 +207,7 @@ def test_values_put_get_noaggrparam_redirect(app_client, admin_authorization_hea
     """
     t_from = 1330000000
     t_to = 1330000000 + 100*15*60 + 1
-    url = '/api/accounts/{}/values/?p=aaaa.bbbb&t0={}&t1={}&max=10'.format(account_id, t_from, t_to)
+    url = '/api/accounts/{}/values/aaaa.bbbb/?t0={}&t1={}&max=10'.format(account_id, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
 
     assert r.status_code == 301
@@ -232,7 +232,7 @@ def test_values_put_get_sort_limit(app_client, admin_authorization_header, accou
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
-    url = '/api/accounts/{}/values/?p={}&a=no&sort=desc&limit=2'.format(account_id, TEST_PATH)
+    url = '/api/accounts/{}/values/{}/?a=no&sort=desc&limit=2'.format(account_id, TEST_PATH)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
 
     expected = {
@@ -268,7 +268,7 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
 
     t_from = 1330002000  # aggr level 0 - every 1 hour
     t_to = t_from + 1*3600
-    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&a=0'.format(account_id, TEST_PATH, t_from, t_to)
+    url = '/api/accounts/{}/values/{}/?t0={}&t1={}&a=0'.format(account_id, TEST_PATH, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200, r.data
     expected = {
@@ -296,7 +296,7 @@ def test_values_put_many_get_aggr(app_client, admin_authorization_header, accoun
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204
 
-    url = '/api/accounts/{}/values/?p={}&t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
+    url = '/api/accounts/{}/values/{}/?t0={}&t1={}&max=10&a=3'.format(account_id, TEST_PATH, t_from, t_to)
     r = app_client.get(url, headers={'Authorization': admin_authorization_header})
     expected = {
         'paths': {
@@ -829,7 +829,7 @@ def test_bots_token(app_client, admin_authorization_header, bot_id, bot_token, a
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
     assert r.status_code == 200
-    r = app_client.get('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891&a=no&b={}'.format(account_id, bot_token))
+    r = app_client.get('/api/accounts/{}/values/qqqq.wwww/?t0=1234567890&t1=1234567891&a=no&b={}'.format(account_id, bot_token))
     assert r.status_code == 401
 
 
