@@ -360,7 +360,7 @@ export class ChartContainer extends React.Component {
           fetchIntervals.map(fi => (
             <PersistentFetcher
               key={`${aggrLevel}-${fi.fromTs}`}
-              resource={`accounts/${accountId}/getvalues`}
+              resource={`accounts/${accountId}/${aggrLevel < 0 ? 'getvalues' : 'getaggrvalues'}`}
               mqttTopic={`accounts/${accountId}/values/+`}
               fetchOptions={{
                 method: 'POST',
@@ -371,7 +371,7 @@ export class ChartContainer extends React.Component {
                   p: allPaths.join(','),
                   t0: fi.fromTs,
                   t1: fi.toTs,
-                  a: aggrLevel < 0 ? 'no' : aggrLevel,
+                  a: aggrLevel < 0 ? undefined : aggrLevel,
                 }),
               }}
               onFetchStart={() => this.onFetchStart(`${aggrLevel}-${fi.fromTs}`)}

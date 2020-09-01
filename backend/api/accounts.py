@@ -540,10 +540,8 @@ def values_post(account_id):
     return ""
 
 
-# There are 2 different endpoints for returning the values, each with its own set of advantages (and
-# disadvantages).
 @accounts_api.route("/<int:account_id>/values/<string:path>", methods=['GET'])
-def values_get_simple(account_id, path):
+def values_get(account_id, path):
     """
         ---
         get:
@@ -551,7 +549,7 @@ def values_get_simple(account_id, path):
           tags:
             - Accounts
           description:
-            Returns the values for the specified path. Similar to POST /accounts/<account_id>/getvalues/, except that only a single path can be specified (and GET can be used).
+            Returns the values for the specified path. Similar to POST /accounts/<account_id>/getvalues/, except that only a single path can be specified (and GET is used).
           parameters:
             - name: account_id
               in: path
@@ -567,27 +565,16 @@ def values_get_simple(account_id, path):
                 type: string
             - name: t0
               in: query
-              description: "Comma separated start times, represented as UNIX timestamps with up to 6 decimals (either a single time for all paths, or one for each path)"
+              description: "Start time (UNIX timestamp with up to 6 decimals)"
               required: true
               schema:
                 type: string
             - name: t1
               in: query
-              description: "Comma separated end times, represented as UNIX timestamps with up to 6 decimals (either a single time for all paths, or one for each path)"
+              description: "End time (UNIX timestamp with up to 6 decimals)"
               required: true
               schema:
                 type: string
-            - name: a
-              in: query
-              description: "Aggregation level - either string 'no' or an aggregation level (size of aggregation bucket is 3 ^ aggr_level hours); if not specified, a 301 redirect to a location with this parameter set will be returned"
-              required: false
-              schema:
-                oneOf:
-                  - type: string
-                    enum: [no]
-                  - type: integer
-                    minimum: 0
-                    maximum: 6
             - name: sort
               in: query
               description: "Sort order (default asc)"
@@ -614,7 +601,7 @@ def values_get_simple(account_id, path):
     if "," in path:
         return "Only a single path is allowed\n\n", 400
     paths_input = path
-    return _values_get(account_id, paths_input, args)
+    return _values_get(account_id, paths_input, None, args)
 
 
 @accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
@@ -624,10 +611,25 @@ def values_get_with_post(account_id):
     # we use the same arguments:
     args = flask.request.get_json()
     paths_input = args.get('p')
-    return _values_get(account_id, paths_input, args)
+    return _values_get(account_id, paths_input, None, args)
 
 
-def _values_get(account_id, paths_input, args):
+@accounts_api.route("/<int:account_id>/getaggrvalues", methods=['POST'])
+def aggrvalues_get_with_post(account_id):
+    args = flask.request.get_json()
+    paths_input = args.get('p')
+
+    try:
+        aggr_level = int(args.get('a'))
+    except:
+        return "Invalid parameter: a\n\n", 400
+    if not (0 <= aggr_level <= 6):
+        return "Invalid parameter a (should be a number in range from 0 to 6).\n\n", 400
+
+    return _values_get(account_id, paths_input, aggr_level, args)
+
+
+def _values_get(account_id, paths_input, aggr_level, args):
     if paths_input is None:
         return "Path(s) not specified\n\n", 400
     try:
@@ -661,26 +663,6 @@ def _values_get(account_id, paths_input, args):
             return "Error parsing t1\n\n", 400
     else:
         t_to = Timestamp(time.time())
-
-    aggr_level_input = str(args.get('a'))
-    if not aggr_level_input:
-        # suggest the aggr. level based on paths and time interval and redirect to it:
-        suggested_aggr_level = Measurement.get_suggested_aggr_level(min(t_froms), t_to)
-        if suggested_aggr_level is None:
-            str_aggr_level = 'no'
-        else:
-            str_aggr_level = str(suggested_aggr_level)
-        url = flask.request.url + ('&' if '?' in flask.request.url else '?') + 'a=' + str_aggr_level
-        return flask.redirect(url, code=301)
-    elif aggr_level_input == 'no':
-        aggr_level = None
-    else:
-        try:
-            aggr_level = int(aggr_level_input)
-        except:
-            return "Invalid parameter: a\n\n", 400
-        if not (0 <= aggr_level <= 6):
-            return "Invalid parameter a (should be 'no' or in range from 0 to 6).\n\n", 400
 
     sort_order = str(args.get('sort', 'asc'))
     if sort_order not in ['asc', 'desc']:
