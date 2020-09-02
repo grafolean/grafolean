@@ -48,6 +48,8 @@ BOT_NAME1 = 'My Bot 1'
 def _delete_all_from_db():
     # initialize DB:
     with db.cursor() as c:
+        for aggr_level in range(0, 7):
+            c.execute(f'DROP VIEW IF EXISTS measurements_aggr_{aggr_level} CASCADE')
         c.execute("SELECT tablename, schemaname FROM pg_tables WHERE schemaname = 'public';")
         results = list(c)
         log.info(results)

@@ -20,7 +20,7 @@ from fixtures import (
 )
 
 from api.common import SuperuserJWTToken
-from utils import log
+from utils import log, TIMESCALE_DB_EPOCH
 from auth import JWT
 
 
@@ -281,13 +281,15 @@ def test_values_put_few_get_aggr(app_client, admin_authorization_header, account
     [11, 3],
     [100, 2],
     [100, 3],
+    # [1000, 4],  # disabled due to slowness
+    # [10000, 5],
 ])
 def test_values_put_many_get_aggr(app_client, admin_authorization_header, account_id, n_values, aggr_level):
     """
         Put many values, get aggregated value. Delete path and values.
     """
     TEST_PATH = 'test.values.put.many.get.aggr'
-    t_from = 1000090800  # divisible by 27 * 3600 - aggr level 3 - every 3 ^ 3 hours
+    t_from = TIMESCALE_DB_EPOCH + 10 * (3**5) * 3600  # t_from - TIMESCALEDB_EPOCH is divisible by 81 * 3600 - aggr level 4 - every 3 ^ 4 hours
     aggr_interval_h = 3 ** aggr_level
     t_to = t_from + aggr_interval_h * 3600
     data = [{'p': TEST_PATH, 't': t_from + 1 + i*5, 'v': 111 + i} for i in range(0, n_values)]

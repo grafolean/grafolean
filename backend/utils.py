@@ -18,6 +18,9 @@ logging.addLevelName(logging.ERROR, color('ERR', bg='red'))
 log = logging.getLogger("{}.{}".format(__name__, "base"))
 
 
+TIMESCALE_DB_EPOCH = 946857600  # 2000-01-03 00:00:00 GMT, Mon
+
+
 db_pool = None
 
 
@@ -479,3 +482,22 @@ def migration_step_26():
         c.execute("ALTER TABLE measurements ALTER COLUMN ts SET NOT NULL;")
 
         c.execute("SELECT create_hypertable('measurements', 'ts');")
+
+def migration_step_27():
+    """ Add TimescaleDB continuous agregates for aggregated values.
+    """
+    with db.cursor() as c:
+        for aggr_level in range(0, 7):
+            c.execute(f"""
+                CREATE VIEW measurements_aggr_{aggr_level}
+                WITH (timescaledb.continuous) AS
+                SELECT
+                    path,
+                    TIME_BUCKET('{3 ** aggr_level} hours'::interval, ts) AS period,
+                    AVG(value) AS average,
+                    MIN(value) AS minimum,
+                    MAX(value) AS maximum
+                FROM
+                    measurements
+                GROUP BY path, period
+            """)

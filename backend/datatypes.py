@@ -308,20 +308,20 @@ class Measurement(object):
                         path_data.append({'t': ts.replace(tzinfo=timezone.utc).timestamp(), 'v': float(value)})
                 else:  # fetch aggregated data
                     aggr_interval_h = cls.AGGR_FACTOR ** aggr_level
+                    # TimescaleDB quirk: while we could change the offset to `TIMESTAMP '1970-01-01'` for normal SQL queries, we would not be able to create an index for
+                    # such time_bucket, so we must align our buckets with TIMESCALEDB_EPOCH (2000-01-03).
                     c.execute(f"""
                         SELECT
-                            TIME_BUCKET('{aggr_interval_h} hours'::interval, ts, TIMESTAMP '1970-01-01') AS period,
-                            PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY value),
-                            MIN(value),
-                            MAX(value)
+                            period,
+                            average,
+                            minimum,
+                            maximum
                         FROM
-                            measurements
+                            measurements_aggr_{aggr_level}
                         WHERE
                             path = %s AND
-                            ts >= %s AND
-                            ts <= %s
-                        GROUP BY
-                            period
+                            period >= %s AND
+                            period <= %s
                         ORDER BY
                             period {sort_order}
                     """, (path_id, t_from_timestamp, t_to_timestamp,))
