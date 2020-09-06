@@ -463,6 +463,9 @@ def migration_step_26():
              SELECT create_hypertable('measurements', 'ts', migrate_data => true);
              UPDATE runtime_data SET schema_version = 26;
          6) run remaining containers
+
+        Do not forget to skip this step:
+          UPDATE runtime_data SET schema_version = 26;
     """
     with db.cursor() as c:
         c.execute('DROP INDEX measurements_path_ts;')
@@ -476,15 +479,44 @@ def migration_step_26():
 
         c.execute("ALTER TABLE measurements ADD COLUMN ts2 TIMESTAMP;")
         c.execute("UPDATE measurements SET ts2 = TO_TIMESTAMP(ts);")
-        c.execute("ALTER TABLE measurements DROP COLUMN ts;")
+        c.execute("ALTER TABLE measurements RENAME COLUMN ts TO tsold;")
         c.execute("ALTER TABLE measurements RENAME COLUMN ts2 TO ts;")
-        c.execute('CREATE UNIQUE INDEX measurements_path_ts ON measurements (path, ts);')
+        c.execute("ALTER TABLE measurements DROP COLUMN tsold;")
+        c.execute('CREATE UNIQUE INDEX measurements_path_ts2 ON measurements (path, ts);')
         c.execute("ALTER TABLE measurements ALTER COLUMN ts SET NOT NULL;")
 
         c.execute("SELECT create_hypertable('measurements', 'ts');")
 
 def migration_step_27():
     """ Add TimescaleDB continuous agregates for aggregated values.
+
+        WARNING: this step will fail if you run it on an (big) existing database. The failure might not
+        be immediately apparent - there will be failures building continuous aggregates, leading to slow
+        query times. To check, run:
+
+          SELECT view_name, last_run_started_at, completed_threshold, next_scheduled_run, total_runs, total_successes, total_failures, total_crashes FROM timescaledb_information.continuous_aggregate_stats;
+
+        If there are failures, drop those caggs and re-create them - but make sure the name and _interval_ are correct.
+
+        It is important not to build two continuous aggregates at the same time:
+          https://github.com/timescale/timescaledb/issues/2308
+
+        Example:
+          DROP VIEW measurements_aggr_1 CASCADE;
+          CREATE VIEW measurements_aggr_1 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('3 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+        (use 3^N hours for interval, where N is aggregation level - measurements_aggr_<N>)
+
+        The list of SQL commands:
+          CREATE VIEW measurements_aggr_0 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('1 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_1 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('3 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_2 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('9 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_3 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('27 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_4 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('81 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_5 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('243 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+          CREATE VIEW measurements_aggr_6 WITH (timescaledb.continuous) AS SELECT path, TIME_BUCKET('729 hour'::interval, ts) AS period, AVG(value) AS average, MIN(value) AS minimum, MAX(value) AS maximum FROM measurements GROUP BY path, period;
+
+        Do not forget to skip this step:
+          UPDATE runtime_data SET schema_version = 27;
     """
     with db.cursor() as c:
         for aggr_level in range(0, 7):
@@ -493,7 +525,7 @@ def migration_step_27():
                 WITH (timescaledb.continuous) AS
                 SELECT
                     path,
-                    TIME_BUCKET('{3 ** aggr_level} hours'::interval, ts) AS period,
+                    TIME_BUCKET('{3 ** aggr_level} hour'::interval, ts) AS period,
                     AVG(value) AS average,
                     MIN(value) AS minimum,
                     MAX(value) AS maximum

@@ -11,7 +11,7 @@ services:
       - POSTGRES_USER=grafoleandev
       - POSTGRES_PASSWORD=grafoleandev
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h db -t 1 -q"]
+      test: ["CMD-SHELL", "pg_isready -h db -U grafoleandev -t 1 -q"]
       interval: 10s
       timeout: 5s
       retries: 3
