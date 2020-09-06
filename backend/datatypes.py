@@ -157,6 +157,21 @@ class PathFilter(_RegexValidatedInputValue):
         path_filter_str = "^{}$".format(path_filter_str)
         return path_filter_str
 
+    @staticmethod
+    def _like_from_filter_with_false_positives(path_filter_str, allow_trailing_chars=False):
+        """
+            Prepares LIKE for asking Postgres for paths from supplied path filter string.
+            This is an optimization because GIN indexes don't seem to optimize regex queries at all, so
+            we use both regex and LIKE in the same SELECT.
+            Important: we don't care if there are false positives here, because regex will filter them out.
+        """
+        # - replace all "*" and "?" with "%"
+        path_filter_str = path_filter_str.replace("*", "%")
+        path_filter_str = path_filter_str.replace("?", "%")
+        if allow_trailing_chars:
+            path_filter_str += '%'
+        return path_filter_str
+
 
 # when user is entering a path filter, it is not finished yet - but we must validate it to display the matches:
 class UnfinishedPathFilter(PathFilter):
@@ -346,6 +361,8 @@ class Measurement(object):
     @classmethod
     def fetch_topn(cls, account_id, path_filter, ts_to, max_results):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars=False)
+        # optimization - LIKE can use GIN index while regex doesn't:
+        pf_like_with_false_positives = PathFilter._like_from_filter_with_false_positives(path_filter, allow_trailing_chars=False)
         with db.cursor() as c:
             c.execute(
                 # correct, but slow:
@@ -362,6 +379,7 @@ class Measurement(object):
                     SELECT m.ts, p.path, m.value
                     FROM paths p, measurements m
                     WHERE
+                        p.path LIKE %s AND
                         p.path ~ %s AND
                         p.id = m.path AND
                         m.ts = (
@@ -369,7 +387,13 @@ class Measurement(object):
                         )
                     ORDER BY m.ts DESC, m.value DESC
                     LIMIT %s
-                """, (pf_regex, datetime.utcfromtimestamp(float(ts_to)), max_results)
+                """,
+                (
+                    pf_like_with_false_positives,
+                    pf_regex,
+                    datetime.utcfromtimestamp(float(ts_to)),
+                    max_results
+                )
             )
 
             found_ts = None
@@ -385,7 +409,7 @@ class Measurement(object):
                 return ts_to, 0, []
 
             # find the sum of all values at that timestamp so we can display percentages:
-            c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path ~ %s  AND p.id = m.path AND m.ts = %s", (pf_regex, found_ts,))
+            c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path LIKE %s AND p.path ~ %s AND p.id = m.path AND m.ts = %s", (pf_like_with_false_positives, pf_regex, found_ts,))
             total, = c.fetchone()
             return found_ts, total, topn
 
