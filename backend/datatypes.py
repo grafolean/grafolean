@@ -1,5 +1,5 @@
 import calendar
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 from collections import defaultdict
 import dns
@@ -155,21 +155,6 @@ class PathFilter(_RegexValidatedInputValue):
         if allow_trailing_chars:
             path_filter_str += '.*'
         path_filter_str = "^{}$".format(path_filter_str)
-        return path_filter_str
-
-    @staticmethod
-    def _like_from_filter_with_false_positives(path_filter_str, allow_trailing_chars=False):
-        """
-            Prepares LIKE for asking Postgres for paths from supplied path filter string.
-            This is an optimization because GIN indexes don't seem to optimize regex queries at all, so
-            we use both regex and LIKE in the same SELECT.
-            Important: we don't care if there are false positives here, because regex will filter them out.
-        """
-        # - replace all "*" and "?" with "%"
-        path_filter_str = path_filter_str.replace("*", "%")
-        path_filter_str = path_filter_str.replace("?", "%")
-        if allow_trailing_chars:
-            path_filter_str += '%'
         return path_filter_str
 
 
@@ -361,55 +346,73 @@ class Measurement(object):
     @classmethod
     def fetch_topn(cls, account_id, path_filter, ts_to, max_results):
         pf_regex = PathFilter._regex_from_filter(path_filter, allow_trailing_chars=False)
-        # optimization - LIKE can use GIN index while regex doesn't:
-        pf_like_with_false_positives = PathFilter._like_from_filter_with_false_positives(path_filter, allow_trailing_chars=False)
-        with db.cursor() as c:
-            c.execute(
-                # correct, but slow:
-                # """
-                # SELECT m.ts, p.path, m.value
-                # FROM paths p, measurements m
-                # WHERE
-                #     p.path ~ %s  AND
-                #     p.id = m.path AND
-                #     m.ts <= %s
-                # ORDER BY m.ts desc, m.value DESC
-                # LIMIT %s
-                """
-                    SELECT m.ts, p.path, m.value
-                    FROM paths p, measurements m
-                    WHERE
-                        p.path LIKE %s AND
-                        p.path ~ %s AND
-                        p.id = m.path AND
-                        m.ts = (
-                            SELECT max(m2.ts) FROM measurements m2 WHERE m2.path = p.id AND m2.ts <= %s
-                        )
-                    ORDER BY m.ts DESC, m.value DESC
-                    LIMIT %s
-                """,
-                (
-                    pf_like_with_false_positives,
-                    pf_regex,
-                    datetime.utcfromtimestamp(float(ts_to)),
-                    max_results
-                )
-            )
+        with db.cursor() as c, db.cursor() as c2:
+            # Correct, but slow:
+            # """
+            #     SELECT m.ts, p.path, m.value
+            #     FROM paths p, measurements m
+            #     WHERE
+            #         p.path ~ %s  AND
+            #         p.id = m.path AND
+            #         m.ts <= %s
+            #     ORDER BY m.ts desc, m.value DESC
+            #     LIMIT %s
+            #
+            # Better, but still very slow when we have ~200k matching paths, like with NetFlow top connections:
+            # """
+            #     SELECT m.ts, p.path, m.value
+            #     FROM paths p, measurements m
+            #     WHERE
+            #         p.path LIKE %s AND
+            #         p.path ~ %s AND
+            #         p.id = m.path AND
+            #         m.ts = (
+            #             SELECT max(m2.ts) FROM measurements m2 WHERE m2.path = p.id AND m2.ts <= %s
+            #         )
+            #     ORDER BY m.ts DESC, m.value DESC
+            #     LIMIT %s
+            # """,
 
-            found_ts = None
-            topn = []
-            for ts, path, value in c.fetchall():
-                if found_ts is None:
-                    found_ts = ts
-                elif found_ts != ts:
-                    break  # only use those records which have the same timestamp as the first one
-                topn.append({'p': path, 'v': float(value)})
+            # This query is problematic from performance point of view. Until we find a better way,
+            # we hardcode the groups of timestamps in the query. Note that replacing this with a SELECT
+            # slows the query down considerably.
+            for top_ts in (datetime.utcfromtimestamp(float(ts_to)) - timedelta(minutes=5 * n) for n in range(12)):
+                c.execute("SELECT DISTINCT(ts) FROM measurements WHERE ts <= %s AND ts > %s - INTERVAL '5 minute' ORDER BY ts desc;", (top_ts, top_ts,))
+                timestamps = tuple(ts for ts, in c.fetchall())
+                if not timestamps:
+                    continue
+
+                c.execute("""
+                        SELECT
+                            m.ts, p.path, m.value
+                        FROM
+                            paths p, measurements m
+                        WHERE
+                            p.path ~ %s AND
+                            p.id = m.path AND
+                            m.ts IN %s
+                        ORDER BY m.ts desc, m.value DESC
+                        LIMIT %s
+                    """, (pf_regex, timestamps, max_results,)
+                )
+
+                found_ts = None
+                topn = []
+                for ts, path, value in c.fetchall():
+                    if found_ts is None:
+                        found_ts = ts
+                    elif found_ts != ts:
+                        break  # only use those records which have the same timestamp as the first one
+                    topn.append({'p': path, 'v': float(value)})
+
+                if found_ts:
+                    break
 
             if not found_ts:
-                return ts_to, 0, []
+                return datetime.utcfromtimestamp(float(ts_to)), 0, []
 
             # find the sum of all values at that timestamp so we can display percentages:
-            c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path LIKE %s AND p.path ~ %s AND p.id = m.path AND m.ts = %s", (pf_like_with_false_positives, pf_regex, found_ts,))
+            c.execute("SELECT SUM(m.value) FROM paths p, measurements m WHERE p.path ~ %s AND p.id = m.path AND m.ts = %s", (pf_regex, found_ts,))
             total, = c.fetchone()
             return found_ts, total, topn
 
