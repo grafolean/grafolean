@@ -11,9 +11,8 @@ class ParentEntityId extends React.Component {
     }
     return (
       <div>
-        parent:{' '}
         <Link className="button green" to={`/accounts/${accountId}/entities/view/${parent}`}>
-          {parent}
+          <i className="fa fa-arrow-circle-o-up" /> parent
         </Link>
       </div>
     );
