@@ -45,12 +45,6 @@ https://app.grafolean.com/ (`demo` / `demo`)
     $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.yml > docker-compose.yml
     ```
 
-    > Alternative: if you wish to install NetFlow bot as part of this installation, use [install/docker-compose.netflow.yml](https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml) instead, but you should still save it to `docker-compose.yml`:
-    >
-    >    ```
-    >    $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.netflow.yml > docker-compose.yml
-    >    ```
-
 2) save [.env.example](https://raw.githubusercontent.com/grafolean/grafolean/master/install/.env.example) to a local file and rename it to `.env`:
 
     ```
@@ -61,11 +55,10 @@ https://app.grafolean.com/ (`demo` / `demo`)
     ```
     $ nano .env
     ```
-     and change:
+     and change the settings:
 
     - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside - for example `grafolean.example.com` or `198.51.100.12`),
     - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
-    - optional: HTTP port
 
 4) run:
     ```
@@ -114,5 +107,4 @@ That's it! The values can now be shown in dashboards. See [backend/API.md](backe
 
 This software is free (as in beer and as in some of the freedoms), but it is not FOSS. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge forever (both non-commercially and commercially), modify it and share modifications.
 
-What license limits is ability to sell Grafolean to third parties (for example as product, offering support,...); you need a commercial license for that (not yet
-available, [contact us](mailto:info@grafolean.com) if interested). Please [open an issue](https://github.com/grafolean/grafolean/issues) in case of doubt.
+What license limits is ability to sell Grafolean to third parties (for example as product, offering support,...) - you need a commercial license for that (not yet available, [contact us](mailto:info@grafolean.com) if interested). Please [open an issue](https://github.com/grafolean/grafolean/issues) or [ask directly](mailto:info@grafolean.com) if in doubt.
