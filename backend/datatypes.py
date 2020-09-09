@@ -22,6 +22,7 @@ from validators import (
     PersonSignupValidatePinPOST, PersonSignupCompletePOST, ForgotPasswordPOST, ForgotPasswordResetPOST,
 )
 from auth import Auth
+from const import SYSTEM_PATH_PREFIX, SYSTEM_PATH_INSERTED_COUNT
 
 
 def clear_all_lru_cache():
@@ -261,12 +262,22 @@ class Measurement(object):
         # to use execute_values, we need an iterator which will feed our data:
         def _get_data(put_data):
             for x in put_data:
+                if x['p'].startswith(SYSTEM_PATH_PREFIX):
+                    raise ValidationError("Invalid path - should not start with 'system.'!")
                 path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
                 yield (
                     path.force_id,
                     datetime.utcfromtimestamp(float(Timestamp(x['t']))),
                     str(MeasuredValue(x['v'])),
                 )
+            # make sure the stats are updated too:
+            path_inserted = Path.forge_from_path(SYSTEM_PATH_INSERTED_COUNT, account_id)
+            yield (
+                path_inserted.force_id,
+                datetime.utcfromtimestamp(time.time()),
+                str(MeasuredValue(len(put_data))),
+            )
+
         data_iterator = _get_data(put_data)
 
         with db.cursor() as c:
