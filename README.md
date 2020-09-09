@@ -5,7 +5,7 @@ Easy to use monitoring system.
 ---
 
 - [Demo](#demo)
-- [What is Grafolean?](#what-is-grafolean)
+- [Highlights](#highlights)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Upgrading](#upgrading)
