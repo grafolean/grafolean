@@ -1,38 +1,36 @@
 # Grafolean
 
+Easy to use monitoring system.
+
 ---
 
+- [Demo](#demo)
 - [What is Grafolean?](#what-is-grafolean)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Upgrading](#upgrading)
+- [Guides](#guides)
 - [Quick start - sending values to Grafolean](#quick-start---sending-values-to-grafolean)
 - [Development](#development)
 - [License: Commons Clause](#license-commons-clause)
 
 ---
 
-## What is Grafolean?
+## Demo
 
-Grafolean is an easy to use monitoring system:
+https://app.grafolean.com/ (`demo` / `demo`)
+
+## Highlights
 
 - self-hosted or [hosted service](https://app.grafolean.com/)
-- light on resources
 - [API-first](https://app.grafolean.com/api-doc/)
-- remote agents (bots)
+- built-in or remote agents ("bots")
 - UI-controlled agents (bots) for ICMP ping, SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) and NetFlow
-- auto-updating UI
-- uses PostgreSQL as data storage (easy maintenance)
+- uses PostgreSQL / TimescaleDB as data storage (easy data maintenance)
 - granular permissions model
-- ...
-
-Useful resources:
-
-- Demo: https://app.grafolean.com/ (`demo` / `demo`)
-- [User Guide](doc/user-guide.md) explains the core concepts and guides you through the first steps.
-- [NetFlow guide](doc/HOWTO-NetFlow.md) explains how to setup Grafolean for NetFlow data collection.
 
 ![screenshot](doc/screenshot-dark.png)
+
 
 ## Requirements
 
@@ -88,6 +86,15 @@ $ docker-compose down
 $ docker-compose up -d
 ```
 
+## Guides
+
+- [User Guide](doc/user-guide.md) - core concepts and first steps
+- [NetFlow Guide](doc/HOWTO-NetFlow.md) - step-by-step NetFlow monitoring setup guide
+- [HTTPS](doc/HOWTO-HTTPS.md) - configuring Grafolean to use SSL/TLS
+- [API Guide](backend/API.md)
+- [Development Guide](doc/HOWTO-dev.md)
+
+
 ## Quick start - sending values to Grafolean
 
 You can send data to Grafolean from your own scripts ("custom bots") or you can use one of the existing bots, which can even be configured from within the Grafolean (like ICMP ping, SNMP or Netflow - see [Grafolean User Guide](doc/user-guide.md)).
@@ -102,15 +109,10 @@ That's it! The values can now be shown in dashboards. See [backend/API.md](backe
 
 [User Guide](doc/user-guide.md) explains the core concepts and guides you further.
 
-## Development
-
-See [doc/HOWTO-dev.md](doc/HOWTO-dev.md) for details.
 
 ## License: Commons Clause
 
-This software is free (as in beer and as in some of the freedoms), but it is not FOSS. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge (both non-commercially or commercially), modify it and share modifications.
+This software is free (as in beer and as in some of the freedoms), but it is not FOSS. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge forever (both non-commercially and commercially), modify it and share modifications.
 
-What you _can't_ do however is sell it to third parties (for example as product, offering support,...); you need a commercial license for that (not yet
-available, [contact us](mailto:info@grafolean.com) if interested).
-
-If in doubt, please read the [license](./LICENSE.md) - it is very short. Or, [open an issue](https://github.com/grafolean/grafolean/issues) with a request for a clarification on a specific matter.
+What license limits is ability to sell Grafolean to third parties (for example as product, offering support,...); you need a commercial license for that (not yet
+available, [contact us](mailto:info@grafolean.com) if interested). Please [open an issue](https://github.com/grafolean/grafolean/issues) in case of doubt.
