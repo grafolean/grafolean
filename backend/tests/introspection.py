@@ -35,14 +35,12 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
         Put a value. Stats counter goes up.
     """
 
-    start_time = math.floor(time.time())
+    start_time = math.floor(time.time() / 60) * 60
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 204, r.data
-    end_time = math.ceil(time.time())
+    end_time = math.ceil(time.time() / 60) * 60
 
-    print(start_time)
-    print(end_time)
     r = app_client.get(f'/api/accounts/{account_id}/values/{SYSTEM_PATH_INSERTED_COUNT}/?t0={start_time}&t1={end_time}', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200, r.data
     actual = json.loads(r.data.decode('utf-8'))
@@ -62,3 +60,21 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
         }
     }
     assert expected == actual
+
+
+    # now insert 2 more values, stats counter should increment by 2:
+    data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}, {'p': 'qqqq.aaaa', 't': 1234567222, 'v': 333}]
+    r = app_client.put('/api/accounts/{}/values/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204, r.data
+
+    r = app_client.get(f'/api/accounts/{account_id}/values/{SYSTEM_PATH_INSERTED_COUNT}/?t0={start_time}&t1={end_time}', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200, r.data
+    actual = json.loads(r.data.decode('utf-8'))
+    actual_time = actual['paths'][SYSTEM_PATH_INSERTED_COUNT]['data'][0]['t']
+    assert start_time <= actual_time <= end_time
+    # we are interested in total count, but we might be unlucky and it is saved in two minutes:
+    actual_total_count = 0
+    for data in actual['paths'][SYSTEM_PATH_INSERTED_COUNT]['data']:
+        actual_total_count += data['v']
+    expected_total_count = 3.0
+    assert expected_total_count == actual_total_count
