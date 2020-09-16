@@ -30,7 +30,8 @@ os.environ['GRAFOLEAN_CORS_DOMAINS'] = ",".join(VALID_FRONTEND_ORIGINS)
 
 from grafolean import app
 from api.common import SuperuserJWTToken
-from utils import db, migrate_if_needed, log
+from dbutils import db, migrate_if_needed
+from utils import log
 from auth import JWT
 from datatypes import clear_all_lru_cache
 

@@ -20,7 +20,7 @@ except:
 
 
 from datatypes import ValidationError, Permission, Bot
-import utils
+import dbutils
 from utils import log
 from auth import JWT, AuthFailedException
 from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
@@ -86,9 +86,9 @@ def before_request():
                 if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
                     return 'CORS not allowed for this origin', 403
 
-    if utils.db is None:
-        utils.db_connect()
-        if utils.db is None:
+    if dbutils.db is None:
+        dbutils.db_connect()
+        if dbutils.db is None:
             # oops, DB error... we should return 5xx:
             return 'Service unavailable', 503
 

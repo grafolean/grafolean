@@ -13,7 +13,8 @@ import psycopg2.extras
 from slugify import slugify
 import jsonschema
 
-from utils import db, log
+from dbutils import db
+from utils import log
 from validators import (
     DashboardInputs, WidgetSchemaInputs, WidgetsPositionsSchemaInputs, PersonSchemaInputsPOST,
     PersonSchemaInputsPUT, PersonCredentialSchemaInputs, AccountSchemaInputs, PermissionSchemaInputs,

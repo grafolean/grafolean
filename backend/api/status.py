@@ -6,7 +6,7 @@ import flask
 import psycopg2
 
 from datatypes import Auth
-import utils
+import dbutils
 from utils import log
 from .common import noauth, CORS_DOMAINS, MQTT_WS_HOSTNAME, MQTT_WS_PORT
 
@@ -23,11 +23,11 @@ status_api = flask.Blueprint('status_api', __name__)
 @status_api.route('/info', methods=['GET'])
 @noauth
 def status_info_get():
-    db_migration_needed = utils.is_migration_needed()
+    db_migration_needed = dbutils.is_migration_needed()
     result = {
         'alive': True,
         'db_migration_needed': db_migration_needed,
-        'db_version': utils.get_existing_schema_version(),
+        'db_version': dbutils.get_existing_schema_version(),
         'user_exists': Auth.first_user_exists() if not db_migration_needed else None,
         'cors_domains': CORS_DOMAINS,
         'mqtt_ws_hostname': MQTT_WS_HOSTNAME,

@@ -12,7 +12,7 @@ os.environ['DB_PASSWORD'] = 'pytest'
 os.environ['MQTT_HOSTNAME'] = 'localhost'
 os.environ['MQTT_PORT'] = '1883'
 
-from utils import db, _construct_plsql_randid_function
+from dbutils import db, _construct_plsql_randid_function
 
 def test_randid():
     """

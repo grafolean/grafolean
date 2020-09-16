@@ -20,7 +20,8 @@ from fixtures import (
 )
 
 from api.common import SuperuserJWTToken
-from utils import log, TIMESCALE_DB_EPOCH
+from dbutils import TIMESCALE_DB_EPOCH
+from utils import log
 from auth import JWT
 
 

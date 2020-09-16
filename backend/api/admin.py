@@ -5,7 +5,7 @@ import urllib.parse
 from .common import noauth, mqtt_publish_changed
 from datatypes import Account, Permission, Person, Bot
 from auth import Auth, JWT, AuthFailedException
-import utils
+import dbutils
 from utils import log
 import validators
 
@@ -36,7 +36,7 @@ def admin_migratedb_post():
             204:
               description: Success
     """
-    was_needed = utils.migrate_if_needed()
+    was_needed = dbutils.migrate_if_needed()
     if was_needed:
         mqtt_publish_changed(['status/info'])
     return '', 204

@@ -3,7 +3,8 @@ import jwt
 from passlib.context import CryptContext
 import secrets
 
-from utils import db, log
+from dbutils import db
+from utils import log
 
 
 class AuthFailedException(Exception):
