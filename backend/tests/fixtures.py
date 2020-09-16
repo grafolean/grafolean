@@ -304,3 +304,12 @@ def mqtt_messages(app_client, mqtt_message_queue_factory):
     superuser_jwt_token = SuperuserJWTToken.get_valid_token('pytest')
     message_queue, = mqtt_message_queue_factory((superuser_jwt_token, '#'))
     return message_queue
+
+
+def mqtt_wait_for_message(message_queue, topics, timeout=2):
+    while True:
+        message = message_queue.get(timeout=timeout)
+        if message.topic in topics:
+            return message
+        else:
+            continue

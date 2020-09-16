@@ -16,7 +16,7 @@ from fixtures import (
     FIRST_ACCOUNT_NAME, BOT_NAME1, app_client, app_client_db_not_migrated, _delete_all_from_db,
     first_admin_id, admin_authorization_header, account_id_factory, account_id, bot_factory, bot_data,
     bot_id, bot_token, account_credentials_factory, account_sensors_factory, person_id,
-    person_authorization_header, mqtt_client_factory, MqttMessage, mqtt_message_queue_factory, mqtt_messages,
+    person_authorization_header, mqtt_client_factory, MqttMessage, mqtt_message_queue_factory, mqtt_messages, mqtt_wait_for_message,
 )
 
 from api.common import SuperuserJWTToken
@@ -57,10 +57,8 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    mqtt_message = mqtt_messages.get(timeout=10.0)
-    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/values/qqqq.wwww'])
     assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
-    assert mqtt_messages.empty()
 
     # remove entry: !!! not implemented
     # r = app_client.delete('/api/accounts/{}/values/?p=qqqq.wwww&t0=1234567890&t1=1234567891'.format(account_id), headers={'Authorization': admin_authorization_header})
@@ -91,10 +89,8 @@ def test_values_put_get_encoded_dot(app_client, admin_authorization_header, acco
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    mqtt_message = mqtt_messages.get(timeout=10.0)
-    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/%2eqqqq.ww%2eww.asdf'
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/values/%2eqqqq.ww%2eww.asdf'])
     assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
-    assert mqtt_messages.empty()
 
 def test_values_put_get_via_post(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
@@ -127,10 +123,8 @@ def test_values_put_get_via_post(app_client, admin_authorization_header, account
     actual = json.loads(r.data.decode('utf-8'))
     assert expected == actual
 
-    mqtt_message = mqtt_messages.get(timeout=10.0)
-    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/values/qqqq.wwww'])
     assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
-    assert mqtt_messages.empty()
 
 def test_values_put_get_none(app_client, admin_authorization_header, account_id):
     """
@@ -347,9 +341,7 @@ def test_dashboards_widgets_post_get(app_client, admin_authorization_header, acc
     r = app_client.post('/api/accounts/{}/dashboards/'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
     # check mqtt messages:
-    mqtt_message = mqtt_messages.get(timeout=10.0)
-    assert mqtt_message.topic == 'changed/accounts/{}/dashboards'.format(account_id)
-    assert mqtt_messages.empty()
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, ['changed/accounts/{}/dashboards'.format(account_id)])
 
     r = app_client.get('/api/accounts/{}/dashboards/{}'.format(account_id, DASHBOARD), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -741,12 +733,10 @@ def test_permissions_post_get(app_client, first_admin_id, admin_authorization_he
     assert r.status_code == 201
     response = json.loads(r.data.decode('utf-8'))
     new_permission_id = response['id']
-    # check mqtt:
-    m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/persons/{}'.format(person_id)
-    m = mqtt_messages.get(timeout=3.0)
-    assert m.topic == 'changed/bots/{}'.format(person_id)
-    assert mqtt_messages.empty()
+    # check mqtt - both topics must be there:
+    topics = ['changed/persons/{}'.format(person_id), 'changed/bots/{}'.format(person_id)]
+    for _ in topics:
+        m = mqtt_wait_for_message(mqtt_messages, topics)
 
     r = app_client.get('/api/persons/{}/permissions'.format(person_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
@@ -1390,11 +1380,7 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
     assert mqtt_message.topic == f'changed/accounts/{account_id}/bots'
     mqtt_message = mqtt_messages.get(timeout=3.0)
     assert mqtt_message.topic == f'changed/accounts/{account_id}/bots/{bot_id}'
-    mqtt_message = mqtt_messages.get(timeout=3.0)
-    assert mqtt_message.topic == f'changed/accounts/{account_id}/values/qqqq.wwww'
-
-    assert mqtt_messages.empty()
-
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/values/qqqq.wwww'])
 
 
 def test_account_entities(app_client, admin_authorization_header, account_id, account_sensors_factory, account_credentials_factory, bot_factory):

@@ -280,7 +280,14 @@ class Measurement(object):
             # count the number of inserted / updated records on a per-minute basis:
             path_inserted = Path.forge_from_path(SYSTEM_PATH_INSERTED_COUNT, account_id)
             minute = math.floor(time.time() / 60) * 60
-            c.execute("INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s) ON CONFLICT (path, ts) DO UPDATE SET value = measurements.value + excluded.value;", (path_inserted.force_id, datetime.utcfromtimestamp(minute), str(MeasuredValue(len(put_data))),))
+            c.execute("INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s) ON CONFLICT (path, ts) DO UPDATE SET value = measurements.value + excluded.value RETURNING value;", (path_inserted.force_id, datetime.utcfromtimestamp(minute), str(MeasuredValue(len(put_data))),))
+            new_value = float(c.fetchone()[0])
+            topics_with_payloads = [(
+                f'accounts/{account_id}/values/{SYSTEM_PATH_INSERTED_COUNT}',
+                { 'v': new_value, 't': minute },
+            )]
+            from api import mqtt_publish_changed_multiple_payloads
+            mqtt_publish_changed_multiple_payloads(topics_with_payloads)
 
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):

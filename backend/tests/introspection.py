@@ -12,6 +12,7 @@ import flask
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fixtures import (
     app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, account_id_factory, account_id,
+    mqtt_client_factory, MqttMessage, mqtt_message_queue_factory, mqtt_messages,
 )
 from const import SYSTEM_PATH_INSERTED_COUNT
 
@@ -30,10 +31,11 @@ def teardown_module():
 ##########
 
 
-def test_values_put_get_simple(app_client, admin_authorization_header, account_id):
+def test_values_put_get_simple(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Put a value. Stats counter goes up.
     """
+    assert mqtt_messages.empty()
 
     start_time = math.floor(time.time() / 60) * 60
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
@@ -60,6 +62,17 @@ def test_values_put_get_simple(app_client, admin_authorization_header, account_i
         }
     }
     assert expected == actual
+
+    while True:
+        try:
+            mqtt_message = mqtt_messages.get(timeout=1.0)
+        except:
+            assert False, "MQTT message not received"
+
+        # found the correct message:
+        if mqtt_message.topic == f'changed/accounts/{account_id}/values/{SYSTEM_PATH_INSERTED_COUNT}':
+            assert json.loads(mqtt_message.payload) == {'t': actual_time, 'v': 1.0 }
+            break
 
 
     # now insert 2 more values, stats counter should increment by 2:
