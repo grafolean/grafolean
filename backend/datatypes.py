@@ -278,18 +278,6 @@ class Measurement(object):
             # https://stackoverflow.com/a/34529505/593487
             psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
 
-            # count the number of inserted / updated records on a per-minute basis:
-            path_inserted = Path.forge_from_path(SYSTEM_PATH_INSERTED_COUNT, account_id)
-            minute = math.floor(time.time() / 60) * 60
-            c.execute("INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s) ON CONFLICT (path, ts) DO UPDATE SET value = measurements.value + excluded.value RETURNING value;", (path_inserted.force_id, datetime.utcfromtimestamp(minute), str(MeasuredValue(len(put_data))),))
-            new_value = float(c.fetchone()[0])
-            topics_with_payloads = [(
-                f'accounts/{account_id}/values/{SYSTEM_PATH_INSERTED_COUNT}',
-                { 'v': new_value, 't': minute },
-            )]
-            from api import mqtt_publish_changed_multiple_payloads
-            mqtt_publish_changed_multiple_payloads(topics_with_payloads)
-
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
         aggr_level = cls._get_aggr_level(max_points, math.ceil((float(t_to) - float(t_from))/3600.0))
@@ -444,6 +432,30 @@ class Measurement(object):
                 return None
             ts = res[0]
             return ts.replace(tzinfo=timezone.utc).timestamp()
+
+
+class Stats(object):
+    @classmethod
+    def update_account_stats(cls, account_id, stats_updates):
+        with db.cursor() as c:
+            topics_with_payloads = []
+            for k in stats_updates:
+                path = Path.forge_from_path(k, account_id)
+                t = stats_updates[k]['t']
+                v = stats_updates[k]['v']
+                c.execute("INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s) ON CONFLICT (path, ts) DO UPDATE SET value = measurements.value + excluded.value RETURNING value;",
+                (
+                    path.force_id,
+                    datetime.utcfromtimestamp(t),
+                    str(MeasuredValue(v)),
+                ))
+                new_value = float(c.fetchone()[0])
+                topics_with_payloads.append((
+                    f'accounts/{account_id}/values/{k}',
+                    { 'v': new_value, 't': t },
+                ))
+            # returns new values in a form which is ready for mqtt_publish_changed_multiple_payloads function:
+            return topics_with_payloads
 
 
 class Widget(object):

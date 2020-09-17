@@ -1,15 +1,17 @@
 from datetime import timezone
 import flask
 import json
+import math
 import time
 import re
 import psycopg2
 import validators
 
 from datatypes import (AccessDeniedError, Account, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
-    Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget
+    Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget, Stats,
 )
 from .common import auth_no_permissions, mqtt_publish_changed, mqtt_publish_changed_multiple_payloads
+from const import SYSTEM_PATH_INSERTED_COUNT, SYSTEM_PATH_UPDATED_COUNT, SYSTEM_PATH_CHANGED_COUNT
 
 
 accounts_api = flask.Blueprint('accounts_api', __name__)
@@ -496,8 +498,22 @@ def values_put(account_id):
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         Measurement.save_values_data_to_db(account_id, data)
-        for d in data:
-            mqtt_publish_changed(['accounts/{}/values/{}'.format(account_id, d['p'])], { 'v': d['v'], 't': d['t'] })
+
+        # save the stats:
+        minute = math.floor(time.time() / 60) * 60
+        stats_updates = {
+            SYSTEM_PATH_UPDATED_COUNT: { 'v': len(data), 't': minute },
+            SYSTEM_PATH_CHANGED_COUNT: { 'v': len(data), 't': minute },
+        }
+        topics_with_payloads_stats = Stats.update_account_stats(account_id, stats_updates)
+
+        # publish the changes over MQTT:
+        topics_with_payloads = [(
+            f"accounts/{account_id}/values/{d['p']}",
+            { 'v': d['v'], 't': d['t'] },
+        ) for d in data]
+        topics_with_payloads.extend(topics_with_payloads_stats)
+        mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
     return "", 204
@@ -533,10 +549,22 @@ def values_post(account_id):
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     Measurement.save_values_data_to_db(account_id, data)
+
+    # update stats:
+    minute = math.floor(time.time() / 60) * 60
+    stats_updates = {
+        SYSTEM_PATH_INSERTED_COUNT: { 'v': len(data), 't': minute },
+        SYSTEM_PATH_CHANGED_COUNT: { 'v': len(data), 't': minute },
+    }
+    topics_with_payloads_stats = Stats.update_account_stats(account_id, stats_updates)
+
+    # publish the changes over MQTT:
     topics_with_payloads = [(
         f"accounts/{account_id}/values/{d['p']}",
         { 'v': d['v'], 't': d['t'] },
     ) for d in data]
+    topics_with_payloads.extend(topics_with_payloads_stats)
+
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     return ""
 
