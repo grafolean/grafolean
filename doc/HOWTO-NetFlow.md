@@ -1,16 +1,16 @@
 # NetFlow
 
-One of the officially supported protocols in Grafolean is NetFlow (currently versions v5 and v9 are supported).
+This guide is also available as video ([vimeo](https://vimeo.com/463939591) / [youtube](https://youtu.be/5p32cFvvQ5A)).
 
 ## Configuration
 
 #### 1) Installation
 
-To collect data, NetFlow bot needs to be installed and configured. The easiest way to do so is to use a NetFlow specific `docker-compose.yml` during [installation of Grafolean](https://github.com/grafolean/grafolean#installation). The alternative option is to install NetFlow bot on a [remote machine](https://github.com/grafolean/grafolean-netflow-bot/#install).
+To collect data, NetFlow bot needs to be installed and configured. This already happens by default during [installation of Grafolean](https://github.com/grafolean/grafolean#installation). The alternative option is to install NetFlow bot on a [remote machine](https://github.com/grafolean/grafolean-netflow-bot/#install).
 
 #### 2) Enable (suggested) entity
 
-Grafolean helps with configuration by automatically creating the entities for any NetFlow exporter it is getting the data from (see "Monitored entities"). Note that it may take up to 2 minutes for the suggestions to appear.
+Grafolean helps with configuration by automatically creating the entities for any NetFlow exporter it receives data from (see "Monitored entities"). Note that it may take up to 2 minutes for the suggestions to appear.
 
 ![screenshot](NetFlow/entities-settings.png)
 
