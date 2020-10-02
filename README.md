@@ -12,7 +12,7 @@ Easy to use monitoring system.
 - [Guides](#guides)
 - [Quick start - sending values to Grafolean](#quick-start---sending-values-to-grafolean)
 - [Development](#development)
-- [License: Commons Clause](#license-commons-clause)
+- [License](#license)
 
 ---
 
@@ -103,8 +103,8 @@ That's it! The values can now be shown in dashboards. See [backend/API.md](backe
 [User Guide](doc/user-guide.md) explains the core concepts and guides you further.
 
 
-## License: Commons Clause
+## License
 
-This software is free (as in beer and as in some of the freedoms), but it is not FOSS. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge forever (both non-commercially and commercially), modify it and share modifications.
+This software is free to use, free to repair and free to share. License is Commons Clause license (on top of Apache 2.0), which means that source is available and you can use it free-of-charge forever (both non-commercially and commercially), modify it and share modifications.
 
-What license limits is ability to sell Grafolean to third parties (for example as product, offering support,...) - you need a commercial license for that (not yet available, [contact us](mailto:info@grafolean.com) if interested). Please [open an issue](https://github.com/grafolean/grafolean/issues) or [ask directly](mailto:info@grafolean.com) if in doubt.
+The license limits the ability to sell Grafolean to third parties (for example as product, offering support,...), as you need a commercial license for that (not yet available, [contact us](mailto:info@grafolean.com) if interested). Please [open an issue](https://github.com/grafolean/grafolean/issues) or [ask directly](mailto:info@grafolean.com) if in doubt.
