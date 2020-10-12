@@ -93,6 +93,12 @@ test('MatchingPaths constructChartSerieName', () => {
       pathRenamer: 'Test $1 $2 $3',
       expectedResult: 'Test 1234 qwer..aaaa zxcv',
     },
+    {
+      path: 'asdf.1234.qwer.%3aaaaa.zxcv',
+      partialPathFilter: 'asdf.?.*.?',
+      pathRenamer: 'Test $1 $2 $3',
+      expectedResult: 'Test 1234 qwer.:aaaa zxcv',
+    },
   ];
 
   for (let param of params) {

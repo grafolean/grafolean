@@ -59,7 +59,7 @@ class _RegexValidatedInputValue(object):
         return str(self.v)
 
 class PathInputValue(_RegexValidatedInputValue):
-    _regex = re.compile(r'^([a-zA-Z0-9_-]|([%]2e))+([.]([a-zA-Z0-9_-]|([%]2e))+)*$')
+    _regex = re.compile(r'^([a-zA-Z0-9_-]|([%](2e|3a)))+([.]([a-zA-Z0-9_-]|([%](2e|3a)))+)*$')
 
 class Path(object):
 

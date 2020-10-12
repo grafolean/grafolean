@@ -126,7 +126,10 @@ class MatchingPaths extends React.Component {
     const wildcardParts = parts.filter(p => p.match === this.MATCH_WILDCARD);
     let ret = pathRenamer;
     for (let i = 0; i < wildcardParts.length; i++) {
-      ret = ret.replace(new RegExp(`[$]${i + 1}`, 'g'), wildcardParts[i].part.replace(/[%]2e/g, '.'));
+      ret = ret.replace(
+        new RegExp(`[$]${i + 1}`, 'g'),
+        wildcardParts[i].part.replace(/[%]2e/g, '.').replace(/[%]3a/g, ':'),
+      );
     }
     if (!ret.includes('$')) {
       return ret;
