@@ -495,27 +495,28 @@ def account_bot_permission_delete(account_id, user_id, permission_id):
 @accounts_api.route("/<int:account_id>/values", methods=['PUT'])
 def values_put(account_id):
     data = flask.request.get_json()
+
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         Measurement.save_values_data_to_db(account_id, data)
-
-        # save the stats:
-        minute = math.floor(time.time() / 60) * 60
-        stats_updates = {
-            SYSTEM_PATH_UPDATED_COUNT: { 'v': len(data), 't': minute },
-            SYSTEM_PATH_CHANGED_COUNT: { 'v': len(data), 't': minute },
-        }
-        topics_with_payloads_stats = Stats.update_account_stats(account_id, stats_updates)
-
-        # publish the changes over MQTT:
-        topics_with_payloads = [(
-            f"accounts/{account_id}/values/{d['p']}",
-            { 'v': d['v'], 't': d['t'] },
-        ) for d in data]
-        topics_with_payloads.extend(topics_with_payloads_stats)
-        mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
+
+    # save the stats:
+    minute = math.floor(time.time() / 60) * 60
+    stats_updates = {
+        SYSTEM_PATH_UPDATED_COUNT: { 'v': len(data), 't': minute },
+        SYSTEM_PATH_CHANGED_COUNT: { 'v': len(data), 't': minute },
+    }
+    topics_with_payloads_stats = Stats.update_account_stats(account_id, stats_updates)
+
+    # publish the changes over MQTT:
+    topics_with_payloads = [(
+        f"accounts/{account_id}/values/{d['p']}",
+        { 'v': d['v'], 't': d['t'] },
+    ) for d in data]
+    topics_with_payloads.extend(topics_with_payloads_stats)
+    mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     return "", 204
 
 
@@ -548,7 +549,10 @@ def values_post(account_id):
         return "Missing data", 400
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
-    Measurement.save_values_data_to_db(account_id, data)
+    try:
+        Measurement.save_values_data_to_db(account_id, data)
+    except psycopg2.IntegrityError:
+        return "Invalid input format", 400
 
     # update stats:
     minute = math.floor(time.time() / 60) * 60
@@ -566,7 +570,7 @@ def values_post(account_id):
     topics_with_payloads.extend(topics_with_payloads_stats)
 
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
-    return ""
+    return "", 204
 
 
 @accounts_api.route("/<int:account_id>/values/<string:path>", methods=['GET'])

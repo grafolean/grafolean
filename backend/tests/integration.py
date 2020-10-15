@@ -831,7 +831,7 @@ def test_bots_token(app_client, admin_authorization_header, bot_id, bot_token, a
     assert r.status_code == 401
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 200
+    assert r.status_code == 204
     r = app_client.get('/api/accounts/{}/values/qqqq.wwww/?t0=1234567890&t1=1234567891&b={}'.format(account_id, bot_token))
     assert r.status_code == 401
 
@@ -1379,7 +1379,7 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
 
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 200
+    assert r.status_code == 204
 
     mqtt_message = mqtt_messages.get(timeout=3.0)
     assert mqtt_message.topic == f'changed/accounts/{account_id}/bots'
