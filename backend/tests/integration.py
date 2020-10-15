@@ -97,6 +97,20 @@ def test_values_put_get_encoded_dot(app_client, admin_authorization_header, acco
     mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/values/%{encoded_ch}qqqq.ww%{encoded_ch}ww.asdf'])
     assert json.loads(mqtt_message.payload) == {'t': 1234567890.123456, 'v': 111.22 }
 
+def test_values_post_new_path_mqtt(app_client, admin_authorization_header, account_id, mqtt_messages):
+    """
+        Put a value which creates a new path, make sure you get an MQTT message.
+    """
+    assert mqtt_messages.empty()
+
+    data = [{'p': f'qqqq.wwww.asdf', 'v': 111.22}]
+    r = app_client.post(f'/api/accounts/{account_id}/values/', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 204, r.data
+
+    mqtt_message = mqtt_wait_for_message(mqtt_messages, [f'changed/accounts/{account_id}/paths'])
+    j = json.loads(mqtt_message.payload)
+    assert j == [{'p': 'qqqq.wwww.asdf', 'id': j[0]["id"] }]
+
 def test_values_put_get_via_post(app_client, admin_authorization_header, account_id, mqtt_messages):
     """
         Put a value, get a value - this time get it via POST.

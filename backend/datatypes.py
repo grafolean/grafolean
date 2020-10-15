@@ -42,6 +42,10 @@ class AccessDeniedError(Exception):
     pass
 
 
+class PathNotInDBError(Exception):
+    pass
+
+
 class _RegexValidatedInputValue(object):
     """ Helper parent class; allows easy creation of classes which validate their input with a regular expression. """
     _regex = None
@@ -63,17 +67,27 @@ class PathInputValue(_RegexValidatedInputValue):
 
 class Path(object):
 
-    def __init__(self, path, account_id, force_id=None):
+    def __init__(self, path, account_id, force_id=None, newly_created=False):
         self.path = str(PathInputValue(path))
         self.account_id = account_id
         self.force_id = force_id
+        self.newly_created = newly_created
 
     @classmethod
-    def forge_from_path(cls, path, account_id, ensure_in_db=True):
+    def forge_from_path(cls, path, account_id, ensure_in_db=True, allow_system=False):
+        if not allow_system and path.startswith(SYSTEM_PATH_PREFIX):
+            raise ValidationError("Invalid path - should not start with 'system.'!")
+
         path_id = None
-        if ensure_in_db:
-            path_id = Path._get_path_id_from_db(account_id, path=path)
-        return cls(path, account_id, path_id)
+        if not ensure_in_db:
+            return cls(path, account_id)
+
+        try:
+            path_id = Path._get_path_id_from_db(account_id, path)
+            return cls(path, account_id, path_id)
+        except PathNotInDBError:
+            path_id = Path._insert_path_to_db(account_id, path)
+            return cls(path, account_id, path_id, newly_created=True)
 
     @classmethod
     def forge_from_input(cls, json_data, account_id, force_id=None):
@@ -90,8 +104,20 @@ class Path(object):
             c.execute('SELECT id FROM paths WHERE account = %s AND path=%s;', (account_id, path_cleaned,))
             res = c.fetchone()
             if not res:
-                c.execute('INSERT INTO paths (account, path) VALUES (%s, %s) RETURNING id;', (account_id, path_cleaned,))
-                res = c.fetchone()
+                # If path record doesn't exist (yet), we avoid lru_cache by throwing an exception. This works
+                # as of Python 3.6 but is not documented behaviour. The tests will warn us if it ever
+                # starts failing.
+                raise PathNotInDBError()
+
+            path_id = res[0]
+            return path_id
+
+    @staticmethod
+    def _insert_path_to_db(account_id, path):
+        with db.cursor() as c:
+            path_cleaned = path.strip()
+            c.execute('INSERT INTO paths (account, path) VALUES (%s, %s) RETURNING id;', (account_id, path_cleaned,))
+            res = c.fetchone()
             path_id = res[0]
             return path_id
 
@@ -260,23 +286,25 @@ class Measurement(object):
     @classmethod
     def save_values_data_to_db(cls, account_id, put_data):
 
+        paths = [Path.forge_from_path(x['p'], account_id, ensure_in_db=True, allow_system=False) for x in put_data]
+
         # to use execute_values, we need an iterator which will feed our data:
-        def _get_data(put_data):
-            for x in put_data:
-                if x['p'].startswith(SYSTEM_PATH_PREFIX):
-                    raise ValidationError("Invalid path - should not start with 'system.'!")
-                path = Path.forge_from_path(x['p'], account_id, ensure_in_db=True)
+        def _get_data(put_data, paths):
+            for x, path in zip(put_data, paths):
                 yield (
                     path.force_id,
                     datetime.utcfromtimestamp(float(Timestamp(x['t']))),
                     str(MeasuredValue(x['v'])),
                 )
 
-        data_iterator = _get_data(put_data)
+        data_iterator = _get_data(put_data, paths)
 
         with db.cursor() as c:
             # https://stackoverflow.com/a/34529505/593487
             psycopg2.extras.execute_values(c, "INSERT INTO measurements (path, ts, value) VALUES %s ON CONFLICT (path, ts) DO UPDATE SET value=excluded.value", data_iterator, "(%s, %s, %s)", page_size=100)
+
+        newly_created_paths = [p for p in paths if p.newly_created]
+        return newly_created_paths
 
     @classmethod
     def get_suggested_aggr_level(cls, t_from, t_to, max_points=100):
@@ -440,7 +468,7 @@ class Stats(object):
         with db.cursor() as c:
             topics_with_payloads = []
             for k in stats_updates:
-                path = Path.forge_from_path(k, account_id)
+                path = Path.forge_from_path(k, account_id, allow_system=True)
                 t = stats_updates[k]['t']
                 v = stats_updates[k]['v']
                 c.execute("INSERT INTO measurements (path, ts, value) VALUES (%s, %s, %s) ON CONFLICT (path, ts) DO UPDATE SET value = measurements.value + excluded.value RETURNING value;",

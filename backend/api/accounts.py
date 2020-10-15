@@ -498,7 +498,7 @@ def values_put(account_id):
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
-        Measurement.save_values_data_to_db(account_id, data)
+        newly_created_paths = Measurement.save_values_data_to_db(account_id, data)
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
 
@@ -516,6 +516,14 @@ def values_put(account_id):
         { 'v': d['v'], 't': d['t'] },
     ) for d in data]
     topics_with_payloads.extend(topics_with_payloads_stats)
+    if newly_created_paths:
+        topics_with_payloads.append(
+            (
+                f"accounts/{account_id}/paths",
+                [{"p": p.path, "id": p.force_id} for p in newly_created_paths],
+            ),
+        )
+
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     return "", 204
 
@@ -550,7 +558,7 @@ def values_post(account_id):
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
-        Measurement.save_values_data_to_db(account_id, data)
+        newly_created_paths = Measurement.save_values_data_to_db(account_id, data)
     except psycopg2.IntegrityError:
         return "Invalid input format", 400
 
@@ -568,6 +576,13 @@ def values_post(account_id):
         { 'v': d['v'], 't': d['t'] },
     ) for d in data]
     topics_with_payloads.extend(topics_with_payloads_stats)
+    if newly_created_paths:
+        topics_with_payloads.append(
+            (
+                f"accounts/{account_id}/paths",
+                [{"p": p.path, "id": p.force_id} for p in newly_created_paths],
+            ),
+        )
 
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
     return "", 204
