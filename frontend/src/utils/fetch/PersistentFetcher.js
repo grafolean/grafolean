@@ -6,7 +6,10 @@ import withMqttConnected from './withMqttConnected';
 class _PersistentFetcher extends React.Component {
   listenerId = null;
 
-  componentDidMount = async () => {
+  async componentDidMount() {
+    if (this.props.debugDelaySeconds) {
+      await new Promise((resolve, reject) => setTimeout(resolve, this.props.debugDelaySeconds * 1000));
+    }
     this.listenerId = await MQTTFetcherSingleton.addListener(
       this.props.resource,
       this.props.queryParams,
@@ -17,7 +20,7 @@ class _PersistentFetcher extends React.Component {
       this.props.mqttTopic ? this.props.mqttTopic : null,
       this.props.fetchOptions ? this.props.fetchOptions : {},
     );
-  };
+  }
 
   componentWillUnmount() {
     if (this.listenerId !== null) {
