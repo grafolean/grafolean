@@ -216,32 +216,30 @@ class NetFlowNavigationWidget extends React.Component {
           }}
           onUpdate={this.onEntitiesPathsUpdate}
         />
-        {entitiesIds !== null &&
-          (entitiesIds.length === 0 ? (
-            <p>There is no NetFlow data available for any entity.</p>
-          ) : (
-            <>
+        {entitiesIds === null ? (
+          <Loading />
+        ) : entitiesIds.length === 0 ? (
+          <p>There is no NetFlow data available for any entity.</p>
+        ) : (
+          <>
+            <PersistentFetcher resource={`accounts/${accountId}/entities`} onUpdate={this.onEntitiesUpdate} />
+            {selectedEntityId && (
               <PersistentFetcher
-                resource={`accounts/${accountId}/entities`}
-                onUpdate={this.onEntitiesUpdate}
+                resource={`accounts/${accountId}/paths`}
+                queryParams={{
+                  filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
+                  limit: 101,
+                  failover_trailing: false,
+                }}
+                onUpdate={this.onEntitiesInterfacesUpdate}
               />
-              {selectedEntityId && (
-                <PersistentFetcher
-                  resource={`accounts/${accountId}/paths`}
-                  queryParams={{
-                    filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
-                    limit: 101,
-                    failover_trailing: false,
-                  }}
-                  onUpdate={this.onEntitiesInterfacesUpdate}
-                />
-              )}
-              {this.renderDirectionsRadios()}
-              {this.renderIntervalsRadios()}
-              {this.renderEntitiesDropdown()}
-              {this.renderInterfacesDropdown()}
-            </>
-          ))}
+            )}
+            {this.renderDirectionsRadios()}
+            {this.renderIntervalsRadios()}
+            {this.renderEntitiesDropdown()}
+            {this.renderInterfacesDropdown()}
+          </>
+        )}
       </div>
     );
   }
