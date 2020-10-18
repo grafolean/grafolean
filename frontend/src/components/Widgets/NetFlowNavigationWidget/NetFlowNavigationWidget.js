@@ -10,6 +10,12 @@ import Loading from '../../Loading';
 import './NetFlowNavigationWidget.scss';
 
 class NetFlowNavigationWidget extends React.Component {
+  /*
+    - fetch the IDs of those entities that have ever collected any netflow traffic (check "netflow.1min.ingress.entity.?" paths)
+      - when done, set shared value "selectedEntityId"
+    - fetch extended information about these entities
+    - fetch the IDs of interfaces from paths (check "netflow.1min.ingress.entity.<entity-id>.if.?" paths)
+  */
   state = {
     entitiesIds: null,
     entities: null,
@@ -45,18 +51,22 @@ class NetFlowNavigationWidget extends React.Component {
         parseInt(MatchingPaths.constructChartSerieName(p.path, this.PATH_FILTER_ENTITIES, '$1', [])),
       );
     }
-    this.setState({
-      entitiesIds: entitiesIds,
-    });
+    this.setState(
+      {
+        entitiesIds: entitiesIds,
+      },
+      () => this.props.setSharedValue('selectedEntityId', entitiesIds.length > 0 ? entitiesIds[0] : null),
+    );
   };
 
-  onEntitiesUpdate = json => {
-    const { entitiesIds } = this.state;
-    const entities = json.list.filter(e => entitiesIds.includes(e.id));
-    this.setState({
-      entities: entities,
-    });
-    this.props.setSharedValue('selectedEntityId', entities.length > 0 ? entities[0].id : null);
+  onEntityUpdate = json => {
+    const entityId = json.id;
+    this.setState(prevState => ({
+      entities: {
+        ...prevState.entities,
+        [entityId]: json,
+      },
+    }));
   };
 
   onEntitiesInterfacesUpdate = json => {
@@ -148,14 +158,14 @@ class NetFlowNavigationWidget extends React.Component {
     if (entities === null) {
       return <Loading overlayParent={true} />;
     }
-    if (entities.length === 0) {
+    if (Object.keys(entities).length === 0) {
       return <select></select>;
     }
     return (
       <select value={selectedEntityId === null ? '' : selectedEntityId} onChange={this.onChangeEntity}>
-        {entities.map(e => (
-          <option key={e.id} value={e.id}>
-            {e.name}
+        {Object.keys(entities).map(entityId => (
+          <option key={entityId} value={entityId}>
+            {entities[entityId].name}
           </option>
         ))}
       </select>
@@ -222,18 +232,25 @@ class NetFlowNavigationWidget extends React.Component {
           <p>There is no NetFlow data available for any entity.</p>
         ) : (
           <>
-            <PersistentFetcher resource={`accounts/${accountId}/entities`} onUpdate={this.onEntitiesUpdate} />
-            {selectedEntityId && (
-              <PersistentFetcher
-                resource={`accounts/${accountId}/paths`}
-                queryParams={{
-                  filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
-                  limit: 101,
-                  failover_trailing: false,
-                }}
-                onUpdate={this.onEntitiesInterfacesUpdate}
-              />
-            )}
+            {entitiesIds.map(entityId => (
+              <React.Fragment key={entityId}>
+                <PersistentFetcher
+                  resource={`accounts/${accountId}/entities/${entityId}`}
+                  onUpdate={this.onEntityUpdate}
+                />
+                {selectedEntityId === entityId && (
+                  <PersistentFetcher
+                    resource={`accounts/${accountId}/paths`}
+                    queryParams={{
+                      filter: `netflow.1min.ingress.entity.${selectedEntityId}.if.?`,
+                      limit: 101,
+                      failover_trailing: false,
+                    }}
+                    onUpdate={this.onEntitiesInterfacesUpdate}
+                  />
+                )}
+              </React.Fragment>
+            ))}
             {this.renderDirectionsRadios()}
             {this.renderIntervalsRadios()}
             {this.renderEntitiesDropdown()}
