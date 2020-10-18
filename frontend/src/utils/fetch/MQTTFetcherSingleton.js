@@ -185,7 +185,7 @@ class MQTTFetcher {
       })
       .catch(err => {
         if (err.name !== 'AbortError') {
-          console.error(err);
+          // console.error(err);
           try {
             this.listeners[listenerId].onErrorCallback(err, false);
           } catch (callbackErr) {
