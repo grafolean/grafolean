@@ -36,6 +36,6 @@ Grafolean should now be collecting the data automatically. To view it, create a 
 
 **IMPORTANT:** It might take up to 5 minutes (with default settings for NetFlow bot's `JOBS_REFRESH_INTERVAL`) for enough data to be collected. If you see a message `It looks like there is no NetFlow data available for any entity yet` in your dashboard (in NetFlow Navigation Widget - the one on the top), it means that the data was not aggregated and sent to Grafolean yet. Please wait, the page should update automatically. If there is no change after 5 minutes, review the steps above one more time. Alternatively, you can check the [NetFlow Bot docker logs](https://github.com/grafolean/grafolean-netflow-bot/#debugging) to make sure the data is being collected and sent to Grafolean.
 
-Final result:
+## Final result
 
 ![screenshot](NetFlow/dashboard.png)
