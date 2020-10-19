@@ -167,7 +167,9 @@ export default class DashboardNewForm extends React.Component {
                 <select value={values.template} name="template" onChange={handleChange} onBlur={handleBlur}>
                   <option value="">-- no template (empty dashboard) --</option>
                   {DASHBOARD_TEMPLATES.map((dt, index) => (
-                    <option key={index} value={`${index}`}>{dt.label}</option>
+                    <option key={index} value={`${index}`}>
+                      {dt.label}
+                    </option>
                   ))}
                 </select>
               </div>
