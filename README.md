@@ -31,6 +31,8 @@ https://app.grafolean.com/ (`demo` / `demo`)
 
 ![screenshot](doc/screenshot-dark.png)
 
+![screenshot](doc/NetFlow/dashboard.png)
+
 
 ## Requirements
 
