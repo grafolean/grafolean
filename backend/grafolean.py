@@ -109,7 +109,7 @@ def before_request():
                 user_is_bot = True
 
             if user_id is None:
-                log.info("Authentication failed")
+                log.info("Authentication failed (no such user)")
                 return "Access denied", 401
 
             # check permissions:
@@ -126,8 +126,8 @@ def before_request():
 
             flask.g.grafolean_data['user_id'] = user_id
             flask.g.grafolean_data['user_is_bot'] = user_is_bot
-        except AuthFailedException:
-            log.info("Authentication failed")
+        except AuthFailedException as ex:
+            log.info(f"Authentication failed: {str(ex)}")
             return "Access denied", 401
         except:
             log.exception("Exception while checking access rights")

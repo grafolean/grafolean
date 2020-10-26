@@ -190,8 +190,8 @@ def admin_mqttauth_plug(check_type):
 
         return "Invalid endpoint", 404
 
-    except AuthFailedException:
-        log.info("Authentication failed")
+    except AuthFailedException as ex:
+        log.info(f"Authentication failed: {str(ex)}")
         return "Access denied", 401
     except:
         log.exception("Exception while checking access rights")
