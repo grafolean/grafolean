@@ -57,7 +57,10 @@ class JWT(object):
         except jwt.ExpiredSignatureError:
             if not allow_leeway:
                 raise AuthFailedException("Signature expired")
-            jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=allow_leeway)
+            try:
+                jwt_decoded = jwt.decode(jwt_token, key, algorithms='HS256', leeway=allow_leeway)
+            except jwt.ExpiredSignatureError:
+                raise AuthFailedException("Signature expired")
             decoded_with_leeway = True
         except Exception as ex:
             raise AuthFailedException("Error decoding JWT token") from ex
