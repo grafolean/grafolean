@@ -9,7 +9,12 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 from utils import log
 
+
 TIMESCALE_DB_EPOCH = 946857600  # 2000-01-03 00:00:00 GMT, Mon
+
+
+class DBConnectionError(Exception):
+    pass
 
 
 db_pool = None
@@ -19,25 +24,38 @@ db_pool = None
 @contextmanager
 def get_db_connection():
     global db_pool
+    if db_pool is None:
+        db_connect()
     try:
+        if db_pool is None:
+            # connecting to DB failed
+            raise DBConnectionError()
         conn = db_pool.getconn()
+        if conn is None:
+            # pool wasn't able to return a valid connection
+            raise DBConnectionError()
+
         conn.autocommit = True
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         yield conn
+    except DBConnectionError:
+        yield None
     finally:
-        db_pool.putconn(conn)
+        if db_pool is not None and conn is not None:
+            db_pool.putconn(conn)
 
 
 @contextmanager
-def get_db_cursor(commit=False):
+def get_db_cursor():
     with get_db_connection() as connection:
-      cursor = connection.cursor()
-      try:
-          yield cursor
-          if commit:
-              connection.commit()
-      finally:
-          cursor.close()
+        if connection is None:
+            raise DBConnectionError()
+
+        cursor = connection.cursor()
+        try:
+            yield cursor
+        finally:
+            cursor.close()
 
 
 def db_connect():

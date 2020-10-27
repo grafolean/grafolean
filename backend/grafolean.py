@@ -179,7 +179,8 @@ def handle_invalid_usage(error):
 
 @app.errorhandler(Exception)
 def handle_error(e):
-    log.exception(e)
+    if not isinstance(e, dbutils.DBConnectionError):
+        log.exception(e)
     code = 500
     if isinstance(e, HTTPException):
         code = e.code
