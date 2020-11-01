@@ -38,7 +38,8 @@ def get_db_connection():
         conn.autocommit = True
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         yield conn
-    except DBConnectionError:
+    except (DBConnectionError, psycopg2.OperationalError):
+        db_pool = None  # make sure that we reconnect next time
         yield None
     finally:
         if db_pool is not None and conn is not None:
