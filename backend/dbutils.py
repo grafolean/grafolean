@@ -42,7 +42,7 @@ def get_db_connection():
         db_pool = None  # make sure that we reconnect next time
         yield None
     finally:
-        if db_pool is not None and conn is not None:
+        if db_pool is not None:
             db_pool.putconn(conn)
 
 
@@ -50,13 +50,24 @@ def get_db_connection():
 def get_db_cursor():
     with get_db_connection() as connection:
         if connection is None:
-            raise DBConnectionError()
+            yield InvalidDBCursor()
+            return
 
         cursor = connection.cursor()
         try:
             yield cursor
         finally:
-            cursor.close()
+            if not isinstance(cursor, InvalidDBCursor):
+                cursor.close()
+
+
+# In python it is not possible to throw an exception within the __enter__ phase of a with statement:
+#   https://www.python.org/dev/peps/pep-0377/
+# If we want to handle DB connection failures gracefully we return a cursor which will throw
+# DBConnectionError exception whenever it is accessed.
+class InvalidDBCursor(object):
+    def __getattr__(self, attr):
+        raise DBConnectionError()
 
 
 def db_connect():
@@ -80,6 +91,16 @@ def db_connect():
     except:
         db_pool = None
         log.error("DB connection failed")
+
+
+def db_disconnect():
+    global db_pool
+    if not db_pool:
+        return
+    db_pool.closeall()
+    db_pool = None
+    log.info("DB connection is closed")
+
 
 db_connect()
 
