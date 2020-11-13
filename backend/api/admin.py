@@ -104,10 +104,10 @@ def admin_mqttauth_plug(check_type):
             - Admin
           description:
             >
-              If using MQTT (with mosquitto-auth-plug plugin), it should be configured
+              If using MQTT (with iegomez/mosquitto-go-auth plugin), it should be configured
               to ask this endpoint about access rights via JWT tokens (Authorization header). The JWT token is supplied
               to MQTT by frontend via websockets through username (password is not used).
-              See [mosquitto-auth-plug](https://github.com/jpmens/mosquitto-auth-plug) for more info.
+              See [mosquitto-go-auth](https://github.com/iegomez/mosquitto-go-auth) for more info.
           parameters:
             - name: check_type
               in: path
