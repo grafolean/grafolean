@@ -44,6 +44,13 @@ jobs:
         npm run lint
 
 
+    - name: Use buildx - multiarch build
+      uses: docker/setup-buildx-action@v1
+      id: buildx
+      with:
+        install: true
+
+
     - name: Deploy Grafolean to Docker Hub
       if: success() && startsWith(github.ref, 'refs/tags/v')
       env:
@@ -60,7 +67,7 @@ jobs:
         cp ./install/docker-compose/Dockerfile .
         docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
         docker pull "docker.io/$DOCKER_IMAGE" || true
-        docker build -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+        docker build --platform linux/amd64,arm/v7,arm64 -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
         [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker tag "docker.io/$DOCKER_IMAGE:$VERSION" "docker.io/$DOCKER_IMAGE:latest" || echo "NOT MARKING AS LATEST!"
         docker images
         docker push "docker.io/$DOCKER_IMAGE:$VERSION"
