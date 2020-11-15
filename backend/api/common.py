@@ -69,16 +69,8 @@ class SuperuserJWTToken(object):
 # when adding a dashboard this function is called with 'accounts/{}/dashboards' so that anyone interested in dashboards
 # can re-issue GET to the same endpoint URL.
 def mqtt_publish_changed(topics, payload='1'):
-    if not MQTT_HOSTNAME:
-        log.warn("MQTT not connected, not publishing change of: [{}]".format(topics,))
-        return
-    try:
-        # https://www.eclipse.org/paho/clients/python/docs/#id2
-        msgs = [('changed/{}'.format(t), json.dumps(payload), 1, False) for t in topics]
-        superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
-        mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
-    except Exception as ex:
-        log.warning("Could not publish change to MQTT, error: {}".format(ex))
+    topics_with_payloads = [(t, payload,) for t in topics]
+    mqtt_publish_changed_multiple_payloads(topics_with_payloads)
 
 def mqtt_publish_changed_multiple_payloads(topics_with_payloads):
     if not MQTT_HOSTNAME:
