@@ -24,12 +24,14 @@ import dbutils
 from utils import log
 from auth import JWT, AuthFailedException
 from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
-    accounts_apidoc_schemas, admin_apidoc_schemas
+    accounts_apidoc_schemas, admin_apidoc_schemas, executor
 import validators
 
 
 # since this is API, we don't care about trailing slashes - and we don't want redirects:
 app.url_map.strict_slashes = False
+# executor allows us to put long-running tasks (publish to mqtt) to background:
+executor.init_app(app)
 # register the blueprints for different api endpoints:
 app.register_blueprint(users_api, url_prefix='/api')  # /api/users, /api/persons and /api/bots
 app.register_blueprint(admin_api, url_prefix='/api/admin')

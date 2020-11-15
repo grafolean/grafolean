@@ -16,6 +16,7 @@ python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
 flask-mail = "*"
+flask-executor = "*"
 
 [dev-packages]
 pytest = "*"
