@@ -115,16 +115,15 @@ def before_request():
                 return "Access denied", 401
 
             # check permissions:
-            if not hasattr(view_func, '_auth_no_permissions'):
-                resource = flask.request.path[len('/api/'):]
-                is_allowed = Permission.is_access_allowed(
-                    user_id=user_id,
-                    resource=resource,
-                    method=flask.request.method,
-                )
-                if not is_allowed:
-                    log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
-                    return "Access denied", 401
+            resource = flask.request.path[len('/api/'):]
+            is_allowed = Permission.is_access_allowed(
+                user_id=user_id,
+                resource=resource,
+                method=flask.request.method,
+            )
+            if not is_allowed:
+                log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
+                return "Access denied", 401
 
             flask.g.grafolean_data['user_id'] = user_id
             flask.g.grafolean_data['user_is_bot'] = user_is_bot

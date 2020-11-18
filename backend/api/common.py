@@ -34,14 +34,6 @@ def noauth(func):
     return func
 
 
-def auth_no_permissions(func):
-    # Similar to noauth() decorator, except that it performs authentication, but doesn't deny access based on permissions.
-    # This is useful for endpoint which should be accessible to all authenticated users (like /profile/*), but not to
-    # unauthenticated.
-    func._auth_no_permissions = True
-    return func
-
-
 class SuperuserJWTToken(object):
     """
         SuperuserJWTToken is a workaround which allows us to post information (about changed resources) to MQTT. When we post such information,

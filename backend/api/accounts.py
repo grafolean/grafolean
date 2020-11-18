@@ -10,7 +10,7 @@ import validators
 from datatypes import (AccessDeniedError, Account, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
     Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget, Stats,
 )
-from .common import auth_no_permissions, mqtt_publish_changed, mqtt_publish_changed_multiple_payloads
+from .common import mqtt_publish_changed, mqtt_publish_changed_multiple_payloads
 from const import SYSTEM_PATH_INSERTED_COUNT, SYSTEM_PATH_UPDATED_COUNT, SYSTEM_PATH_CHANGED_COUNT
 
 
@@ -136,7 +136,7 @@ def accounts_apidoc_schemas():
 # --------------
 
 @accounts_api.route('/', methods=['GET'])
-@auth_no_permissions
+# CAREFUL: accessible to any authenticated user (permissions check bypassed)
 def accounts_root():
     """
         ---

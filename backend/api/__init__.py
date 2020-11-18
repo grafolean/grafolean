@@ -5,4 +5,4 @@ from .accounts import accounts_api, accounts_apidoc_schemas
 from .status import status_api
 from .auth import auth_api
 
-from .common import noauth, auth_no_permissions, mqtt_publish_changed, mqtt_publish_changed_multiple_payloads, MQTT_HOSTNAME, MQTT_PORT, MQTT_WS_HOSTNAME, MQTT_WS_PORT, CORS_DOMAINS, executor
+from .common import noauth, mqtt_publish_changed, mqtt_publish_changed_multiple_payloads, MQTT_HOSTNAME, MQTT_PORT, MQTT_WS_HOSTNAME, MQTT_WS_PORT, CORS_DOMAINS, executor

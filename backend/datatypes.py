@@ -823,6 +823,9 @@ class Account(object):
 
 
 class Permission(object):
+    # some of the resources (endpoints) are accessible to any authenticated user:
+    NO_PERMISSION_CHECK_RESOURCES = ["profile", "accounts", "profile/permissions"]
+
     def __init__(self, user_id, resource_prefix, methods):
         self.user_id = user_id
         # resource_prefix always implicitly ends with a slash, so let's make sure it is always in the same format here:
@@ -872,6 +875,11 @@ class Permission(object):
     def is_access_allowed(user_id, resource, method):
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
+
+        # some of the endpoints are accessible to any authenticated user:
+        if method == 'GET' and resource in Permission.NO_PERMISSION_CHECK_RESOURCES:
+            return True
+
         with db.cursor() as c:
             # with resource_prefix, make sure that it either matches the urls exactly, or that the url continues with '/' + anything (not just anything)
             c.execute('SELECT id FROM permissions WHERE ' + \

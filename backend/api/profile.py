@@ -1,7 +1,6 @@
 import flask
 import json
 
-from .common import auth_no_permissions
 from datatypes import Account, Bot, Permission, Person
 
 
@@ -14,7 +13,7 @@ profile_api = flask.Blueprint('profile_api', __name__)
 
 
 @profile_api.route('/', methods=['GET'])
-@auth_no_permissions
+# CAREFUL: accessible to any authenticated user (permissions check bypassed)
 def profile():
     user_id = flask.g.grafolean_data['user_id']
     user_is_bot = flask.g.grafolean_data['user_is_bot']
@@ -34,7 +33,7 @@ def profile():
 
 
 @profile_api.route('/permissions', methods=['GET'])
-@auth_no_permissions
+# CAREFUL: accessible to any authenticated user (permissions check bypassed)
 def profile_permissions():
     user_id = flask.g.grafolean_data['user_id']
     rec = Permission.get_list(user_id)

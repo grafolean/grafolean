@@ -6,7 +6,7 @@ import socket
 import psycopg2
 from flask_mail import Message, Mail
 
-from .common import noauth, auth_no_permissions, mqtt_publish_changed
+from .common import noauth, mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
