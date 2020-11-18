@@ -10,16 +10,22 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 
 class SelectAccount extends React.Component {
+  state = {
+    error: true,
+  };
+
   handleAccountsUpdate = json => {
     store.dispatch(onReceiveAccountsListSuccess(json));
   };
 
   handleAccountsUpdateError = err => {
     console.err(err);
+    this.setState({ error: true });
   };
 
   render() {
     const { accounts, user } = this.props;
+    const { error } = this.state;
     const { canCreateAccount } = havePermission('admin/accounts', 'POST', user.permissions);
 
     // if user can't add new accounts and only has access to a single account, there is no
@@ -35,7 +41,11 @@ class SelectAccount extends React.Component {
           onUpdate={this.handleAccountsUpdate}
           onError={this.handleAccountsUpdateError}
         />
-        {!accounts.list ? (
+        {error ? (
+          <div>
+            <i className="fa fa-fw fa-exclamation-triangle" /> Error fetching accounts list
+          </div>
+        ) : !accounts.list ? (
           <Loading />
         ) : (
           <>
