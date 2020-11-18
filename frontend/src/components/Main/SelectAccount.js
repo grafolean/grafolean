@@ -11,7 +11,7 @@ import Loading from '../Loading';
 
 class SelectAccount extends React.Component {
   state = {
-    error: true,
+    error: null,
   };
 
   handleAccountsUpdate = json => {
