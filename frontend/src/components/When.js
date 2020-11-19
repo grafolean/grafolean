@@ -42,7 +42,7 @@ export default class When extends React.Component {
       clearTimeout(this.timeoutHandle);
     }
     // when limit is reached, trigger a forced update:
-    setTimeout(() => {
+    this.timeoutHandle = setTimeout(() => {
       this.forceUpdate();
       this.timeoutHandle = null;
     }, waitS * 1000);
