@@ -3,7 +3,7 @@ import { Switch, Route, withRouter } from 'react-router-dom';
 
 import './Content.scss';
 
-import Bots from '../Bots';
+import Bots from '../Bots/Bots';
 import Changelog from '../About/Changelog';
 import DashboardNewForm from '../DashboardNewForm';
 import DashboardWidgetEdit from '../DashboardWidgetEdit';
