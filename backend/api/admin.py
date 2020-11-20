@@ -181,6 +181,7 @@ def admin_mqttauth_plug(check_type):
             # check user's access rights:
             user_id = received_jwt.data['user_id']
             resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
+            resource = resource.rstrip('/')
             is_allowed = Permission.is_access_allowed(
                 user_id=user_id,
                 resource=resource,

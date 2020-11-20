@@ -116,6 +116,7 @@ def before_request():
 
             # check permissions:
             resource = flask.request.path[len('/api/'):]
+            resource = resource.rstrip('/')
             is_allowed = Permission.is_access_allowed(
                 user_id=user_id,
                 resource=resource,
