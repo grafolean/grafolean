@@ -170,8 +170,10 @@ def admin_mqttauth_plug(check_type):
             if is_superuser:
                 return "", 200
 
-            if int(params['acc']) != 4:  # NONE = 0, READ = 1, WRITE = 2, SUBSCRIBE = 4
-                log.info("Access denied (only sub allowed)")
+            requested_access = int(params['acc'])
+            if requested_access != 4 and requested_access != 1 :  # NONE = 0, READ = 1, WRITE = 2, SUBSCRIBE = 4
+                instead_got = {0: "0/NONE", 2: "2/WRITE"}.get(requested_access, requested_access)
+                log.info(f"Access denied (only 1/READ or 4/SUBSCRIBE allowed, requested access: {instead_got})")
                 return "Access denied", 401
 
             if params['topic'][:8] != 'changed/':
