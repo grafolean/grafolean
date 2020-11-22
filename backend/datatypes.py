@@ -824,7 +824,7 @@ class Account(object):
 
 class Permission(object):
     # some of the resources (endpoints) are accessible to any authenticated user:
-    NO_PERMISSION_CHECK_RESOURCES = ["profile", "accounts", "profile/permissions"]
+    NO_PERMISSION_CHECK_RESOURCES_READ = ["profile", "accounts", "profile/permissions", "bots"]
 
     def __init__(self, user_id, resource_prefix, methods):
         self.user_id = user_id
@@ -877,7 +877,7 @@ class Permission(object):
             method = 'GET'  # access for HEAD is the same as for GET
 
         # some of the endpoints are accessible to any authenticated user:
-        if method == 'GET' and resource in Permission.NO_PERMISSION_CHECK_RESOURCES:
+        if method == 'GET' and resource in Permission.NO_PERMISSION_CHECK_RESOURCES_READ:
             return True
 
         with db.cursor() as c:

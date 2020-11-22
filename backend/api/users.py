@@ -100,6 +100,7 @@ def users_user_get(user_id):
 
 
 @users_api.route('/bots', methods=['GET', 'POST'])
+# CAREFUL: accessible to any authenticated user (permissions check bypassed)
 def users_bots():
     """
         ---
