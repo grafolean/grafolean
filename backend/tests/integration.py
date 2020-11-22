@@ -1374,11 +1374,14 @@ def test_account_bots(app_client, bot_id, admin_authorization_header, person_aut
     assert actual['list'] == []
 
 
-def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_token, mqtt_messages, admin_authorization_header):
+@pytest.mark.parametrize("listener", [
+    "superuser",
+    "person",
+])
+def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_token, admin_authorization_header, person_id, person_authorization_header, mqtt_message_queue_factory, listener):
     """
-        Bot sends some data, MQTT message is sent (because last_login was updated).
+        Bot sends some data, MQTT message is sent (because last_login was updated). Also for normal subscribers.
     """
-    assert mqtt_messages.empty()
     data = {
         'resource_prefix': 'accounts/{}/values/'.format(account_id),
         'methods': [ 'POST' ],
@@ -1386,10 +1389,20 @@ def test_bot_post_values_mqtt_last_login(app_client, account_id, bot_id, bot_tok
     r = app_client.post('/api/bots/{}/permissions'.format(bot_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 201
 
-    mqtt_message = mqtt_messages.get(timeout=3.0)
-    assert mqtt_message.topic == f'changed/persons/{bot_id}'
-    mqtt_message = mqtt_messages.get(timeout=3.0)
-    assert mqtt_message.topic == f'changed/bots/{bot_id}'
+    if listener == 'superuser':
+        jwt_token = SuperuserJWTToken.get_valid_token('pytest')
+    else:
+        jwt_token = person_authorization_header[len('Bearer '):]
+        # if we are checking what a person can get in mqtt, we must also grant them access to the account in question:
+        data = {
+            'resource_prefix': f'accounts/{account_id}',
+            'methods': [ 'GET' ],  # only GET is needed
+        }
+        r = app_client.post(f'/api/persons/{person_id}/permissions', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201
+
+    mqtt_messages, = mqtt_message_queue_factory((jwt_token, f'changed/accounts/{account_id}/#'))
+    assert mqtt_messages.empty()
 
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')

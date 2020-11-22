@@ -170,20 +170,45 @@ def admin_mqttauth_plug(check_type):
             if is_superuser:
                 return "", 200
 
+
+            # From https://github.com/iegomez/mosquitto-go-auth#acl-access-values:
+            #     ACL access values: Mosquitto 1.5 introduced a new ACL access value, MOSQ_ACL_SUBSCRIBE, which is similar
+            #     to the classic MOSQ_ACL_READ value but not quite the same:
+            #
+            #      *  MOSQ_ACL_SUBSCRIBE when a client is asking to subscribe to a topic string.
+            #      *                     This differs from MOSQ_ACL_READ in that it allows you to
+            #      *                     deny access to topic strings rather than by pattern. For
+            #      *                     example, you may use MOSQ_ACL_SUBSCRIBE to deny
+            #      *                     subscriptions to '#', but allow all topics in
+            #      *                     MOSQ_ACL_READ. This allows clients to subscribe to any
+            #      *                     topic they want, but not discover what topics are in use
+            #      *                     on the server.
+            #      *  MOSQ_ACL_READ      when a message is about to be sent to a client (i.e. whether
+            #      *                     it can read that topic or not).
+            #
+            #     The main difference is that subscribe is checked at first, when a client connects and tells the broker it
+            #     wants to subscribe to some topic, while read is checked when an actual message is being published to that
+            #     topic, which makes it particular. So in practice you could deny general subscriptions such as # by returning
+            #     false from the acl check when you receive MOSQ_ACL_SUBSCRIBE, but allow any particular one by returning true
+            #     on MOSQ_ACL_READ. Please take this into consideration when designing your ACL records on every backend.
+
+            # - from now on we only allow READ access, all other access levels are denied for non-superusers
+            # - subscribing is only allowed for resources to which user has read access too
             requested_access = int(params['acc'])
-            if requested_access != 4 and requested_access != 1 :  # NONE = 0, READ = 1, WRITE = 2, SUBSCRIBE = 4
+            if requested_access not in [1, 4] :  # NONE = 0, READ = 1, WRITE = 2, SUBSCRIBE = 4
                 instead_got = {0: "0/NONE", 2: "2/WRITE"}.get(requested_access, requested_access)
                 log.info(f"Access denied (only 1/READ or 4/SUBSCRIBE allowed, requested access: {instead_got})")
                 return "Access denied", 401
 
+            # only 'changed/#' can actually be read by normal users:
             if params['topic'][:8] != 'changed/':
                 log.info("Access denied (wrong topic)")
                 return "Access denied", 401
-
-            # check user's access rights:
-            user_id = received_jwt.data['user_id']
             resource = params['topic'][8:]  # remove 'changed/' from the start of the topic to get the resource
             resource = resource.rstrip('/')
+
+            # finally, make sure user has access rights:
+            user_id = received_jwt.data['user_id']
             is_allowed = Permission.is_access_allowed(
                 user_id=user_id,
                 resource=resource,
