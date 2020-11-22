@@ -1,63 +1,83 @@
 import React from 'react';
 import moment from 'moment';
 
+const DEFAULT_LIMITS = {
+  5: '< 5 s',
+  10: '< 10 s',
+  20: '< 20 s',
+  30: '< 30 s',
+  60: '< 1 min',
+  120: '< 2 min',
+  180: '< 3 min',
+  300: '< 5 min',
+  600: '< 10 min',
+  1200: '< 20 min',
+  1800: '< 30 min',
+  2700: '< 45 min',
+  3600: '< 1 h',
+  7200: '< 2 h',
+  21600: '< 6 h',
+  43200: '< 12 h',
+  86400: '< 1 day',
+  172800: '< 2 days',
+  604800: '< 1 week',
+  1209600: '< 2 weeks',
+  2592000: '< 30 days',
+  5184000: '< 60 days',
+  7776000: '< 90 days',
+};
+
 export default class When extends React.Component {
   static defaultProps = {
-    limits: {
-      5: '< 5 s',
-      10: '< 10 s',
-      20: '< 20 s',
-      30: '< 30 s',
-      60: '< 1 min',
-      120: '< 2 min',
-      180: '< 3 min',
-      300: '< 5 min',
-      600: '< 10 min',
-      1200: '< 20 min',
-      1800: '< 30 min',
-      2700: '< 45 min',
-      3600: '< 1 h',
-      7200: '< 2 h',
-      21600: '< 6 h',
-      43200: '< 12 h',
-      86400: '< 1 day',
-      172800: '< 2 days',
-      604800: '< 1 week',
-      1209600: '< 2 weeks',
-      2592000: '< 30 days',
-      5184000: '< 60 days',
-      7776000: '< 90 days',
-    },
+    limits: DEFAULT_LIMITS,
+  };
+  state = {
+    message: null,
   };
   timeoutHandle = null;
 
+  componentDidMount() {
+    this.handleTimeChange();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.t !== this.props.t) {
+      this.handleTimeChange();
+    }
+  }
+
   componentWillUnmount() {
-    if (this.timeoutHandle) {
+    if (this.timeoutHandle !== null) {
       clearTimeout(this.timeoutHandle);
     }
   }
 
-  registerUpdateTimeout = waitS => {
-    if (this.timeoutHandle) {
+  handleTimeChange = () => {
+    if (this.timeoutHandle !== null) {
       clearTimeout(this.timeoutHandle);
-    }
-    // when limit is reached, trigger a forced update:
-    this.timeoutHandle = setTimeout(() => {
-      this.forceUpdate();
       this.timeoutHandle = null;
-    }, waitS * 1000);
-  };
+    }
 
-  render() {
-    const { limits, t } = this.props;
+    const { t, limits } = this.props;
     const now = moment.utc().unix();
     const diff = now - t;
     const limit = Object.keys(limits).find(l => l > diff);
-    this.registerUpdateTimeout(limit - diff + 1);
-    return (
-      <span className="when">
-        {limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss')}`}
-      </span>
-    );
+    const message = limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss')}`;
+    this.setState({
+      message: message,
+    });
+    // schedule next text update:
+    if (!limit) {
+      return;
+    }
+    this.timeoutHandle = setTimeout(this.handleTimeChange, (limit - diff) * 1000 + 100);
+  };
+
+  render() {
+    const { message } = this.state;
+    if (message === null) {
+      return null;
+    }
+    return <span className="when">{message}</span>;
   }
 }
