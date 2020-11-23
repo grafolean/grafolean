@@ -62,7 +62,9 @@ class WidgetForm extends React.Component {
     this.props.setFieldValue('type', widgetType);
     // initialize to default values:
     const selectedWidgetType = KNOWN_WIDGET_TYPES[widgetType];
-    this.props.setFieldValue('content', selectedWidgetType['formComponent'].DEFAULT_FORM_CONTENT);
+    const initialFormContent =
+      selectedWidgetType.formComponent === null ? {} : selectedWidgetType.formComponent.DEFAULT_FORM_CONTENT;
+    this.props.setFieldValue('content', initialFormContent);
     this.props.setFieldValue('p', this.props.page);
   };
 

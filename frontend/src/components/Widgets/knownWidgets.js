@@ -58,13 +58,13 @@ export const KNOWN_WIDGET_TYPES = {
   },
   remotetest1: {
     type: 'remotetest1',
-    icon: 'pie-chart',
-    label: 'pie chart',
+    icon: 'bolt',
+    label: 'true bolt',
     widgetComponent: RemoteWidgetComponent,
     widgetAdditionalProps: {
       url: 'http://localhost:3000/RemoteWidget.js',
     },
-    formComponent: TopNWidgetForm,
+    formComponent: null,
     isHeaderWidget: false,
   },
 };
