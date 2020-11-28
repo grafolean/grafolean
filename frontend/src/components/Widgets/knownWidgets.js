@@ -62,17 +62,9 @@ export const KNOWN_WIDGET_TYPES = {
     label: 'true bolt',
     widgetComponent: RemoteWidgetComponent,
     widgetAdditionalProps: {
-      url: 'http://localhost:3000/RemoteWidget.js',
+      url: 'http://127.0.0.1:5000/api/plugins/widgets/1826010944/widget.js',
     },
     formComponent: null,
     isHeaderWidget: false,
   },
 };
-
-export function getKnownWidgetComponent(widgetType) {
-  const widget = KNOWN_WIDGET_TYPES[widgetType];
-  if (!widget) {
-    return null;
-  }
-  return widget.widgetComponent;
-}

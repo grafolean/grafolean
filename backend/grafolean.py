@@ -24,7 +24,7 @@ import dbutils
 from utils import log
 from auth import JWT, AuthFailedException
 from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
-    accounts_apidoc_schemas, admin_apidoc_schemas, executor
+    accounts_apidoc_schemas, admin_apidoc_schemas, executor, plugins_api
 import validators
 
 
@@ -39,6 +39,7 @@ app.register_blueprint(profile_api, url_prefix='/api/profile')
 app.register_blueprint(accounts_api, url_prefix='/api/accounts')
 app.register_blueprint(status_api, url_prefix='/api/status')
 app.register_blueprint(auth_api, url_prefix='/api/auth')
+app.register_blueprint(plugins_api, url_prefix='/api/plugins')
 
 
 if os.environ.get('MAIL_SERVER'):

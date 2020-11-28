@@ -265,3 +265,16 @@ PathSchemaInputs = {
     'additionalProperties': False,
     'required': ['path'],
 }
+
+WidgetPluginManifestSchemaInputs = {
+    'type': 'object',
+    'properties': {
+        'widget_type_id': {'type': 'string', 'pattern': '^[0-9a-z-]{0,50}$'},
+        'label': {'type': 'string', 'minLength': 1, 'maxLength': 200},
+        'icon': {'type': 'string', 'pattern': '^[0-9a-z-]{0,50}$'},  # https://fontawesome.com/v4.7.0/icons/
+        'is_header_widget': {'type': 'boolean'},
+        'version': {'type': 'string'},  # not used, but allowed in manifest.json
+    },
+    'additionalProperties': False,
+    'required': ['widget_type_id', 'icon', 'label', 'is_header_widget'],
+}

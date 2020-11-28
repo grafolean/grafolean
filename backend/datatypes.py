@@ -1,17 +1,20 @@
 import calendar
-from datetime import datetime, timezone, timedelta
-import os
-from collections import defaultdict
 import dns
-import json
+from collections import defaultdict
+from datetime import datetime, timezone, timedelta
 from functools import lru_cache
+import io
+import json
 import math
+import os
 import re
+import tarfile
 import time
 
-import psycopg2.extras
-from slugify import slugify
 import jsonschema
+import psycopg2.extras
+import requests
+from slugify import slugify
 
 from dbutils import db
 from utils import log
@@ -21,6 +24,7 @@ from validators import (
     AccountBotSchemaInputs, BotSchemaInputs, EntitySchemaInputs, CredentialSchemaInputs,
     SensorSchemaInputs, PersonChangePasswordSchemaInputsPOST, PathSchemaInputs, PersonSignupNewPOST,
     PersonSignupValidatePinPOST, PersonSignupCompletePOST, ForgotPasswordPOST, ForgotPasswordResetPOST,
+    WidgetPluginManifestSchemaInputs,
 )
 from auth import Auth
 from const import SYSTEM_PATH_PREFIX, SYSTEM_PATH_INSERTED_COUNT
@@ -1703,7 +1707,117 @@ class Sensor(object):
             return c.rowcount
 
     @staticmethod
-    def delete(credential_id, account_id):
+    def delete(record_id, account_id):
         with db.cursor() as c:
-            c.execute("DELETE FROM sensors WHERE id = %s AND account = %s;", (credential_id, account_id,))
+            c.execute("DELETE FROM sensors WHERE id = %s AND account = %s;", (record_id, account_id,))
+            return c.rowcount
+
+
+class WidgetPlugin(object):
+    MAX_TAR_GZ_SIZE = 10 * (1024 ** 2)
+
+    def __init__(self, widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js):
+        self.widget_type_id = widget_type_id
+        self.label = label
+        self.icon = icon
+        self.is_header_widget = is_header_widget
+        self.repo_url = repo_url
+        self.version = version
+        self.widget_js = widget_js
+
+    @classmethod
+    def forge_from_url(cls, github_repo_url):
+        """
+            Download .tar.gz file from an URL, decode it, validate manifest.json and widget.js
+            and construct + return an object representing a widget plugin.
+        """
+        github_repo_url = github_repo_url.rstrip('/')
+
+        # find the tag of the latest release:
+        latest_release_url = f"{github_repo_url}/releases/latest"
+        r = requests.head(latest_release_url, allow_redirects=False)
+        r.raise_for_status()
+        location = r.headers["location"]
+        version = location.split("/")[-1]
+
+        # download the archive of the latest release:
+        url = f"{github_repo_url}/releases/download/{version}/widgetplugin.tar.gz"
+        r = requests.get(url, timeout=5, stream=True, allow_redirects=True)
+        r.raise_for_status()
+        content = r.raw.read(cls.MAX_TAR_GZ_SIZE + 1, decode_content=True)
+        if len(content) > cls.MAX_TAR_GZ_SIZE:
+            raise ValidationError(f'The file is too big (limit is {int(cls.MAX_TAR_GZ_SIZE / (1024**2))} MB)')
+        f = io.BytesIO(content)
+        tar = tarfile.open(fileobj=f, mode='r:gz')
+
+        # extract and parse manifest.json:
+        manifest_json = tar.extractfile("manifest.json")
+        if not manifest_json:
+            raise ValidationError("Missing manifest.json in .tar.gz file")
+        try:
+            manifest = json.loads(manifest_json.read())
+        except Exception as ex:
+            raise ValidationError(f"Error loading manifest.json: {str(ex)}")
+        jsonschema.validate(manifest, WidgetPluginManifestSchemaInputs)
+
+        # extract widget.js:
+        widget_js_file = tar.extractfile("widget.js")
+        if not widget_js_file:
+            raise ValidationError("Missing widget.js in .tar.gz file")
+        widget_js = widget_js_file.read().decode('utf-8')
+
+        # construct and return a WidgetPlugin object:
+        widget_type_id = manifest['widget_type_id']
+        label = manifest['label']
+        icon = manifest['icon']
+        is_header_widget = manifest['is_header_widget']
+        return cls(widget_type_id, label, icon, is_header_widget, github_repo_url, version, widget_js)
+
+    @staticmethod
+    def get_list():
+        with db.cursor() as c:
+            ret = []
+            c.execute('SELECT id, widget_type_id, label, icon, is_header_widget, repo_url, version FROM widget_plugins ORDER BY widget_type_id ASC;')
+            for record_id, widget_type_id, label, icon, is_header_widget, repo_url, version in c:
+                ret.append({
+                    'id': int(record_id),
+                    'widget_type_id': widget_type_id,
+                    'label': label,
+                    'icon': icon,
+                    'is_header_widget': is_header_widget,
+                    'repo_url': repo_url,
+                    'version': version,
+                })
+            return ret
+
+    def insert(self):
+        with db.cursor() as c:
+            c.execute("INSERT INTO widget_plugins (widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+                (self.widget_type_id, self.label, self.icon, self.is_header_widget, self.repo_url, self.version, self.widget_js,))
+            record_id, = c.fetchone()
+            return record_id
+
+    @staticmethod
+    def get(record_id):
+        with db.cursor() as c:
+            c.execute('SELECT widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js FROM widget_plugins WHERE id = %s;', (record_id,))
+            res = c.fetchone()
+            if not res:
+                return None
+            widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js = res
+        return {
+            'id': int(record_id),
+            'widget_type_id': widget_type_id,
+            'label': label,
+            'icon': icon,
+            'is_header_widget': is_header_widget,
+            'repo_url': repo_url,
+            'version': version,
+            'widget_js': widget_js,
+        }
+
+    @staticmethod
+    def delete(record_id):
+        with db.cursor() as c:
+            c.execute("DELETE FROM widget_plugins WHERE id = %s;", (record_id,))
             return c.rowcount
