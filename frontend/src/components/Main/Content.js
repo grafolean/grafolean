@@ -31,6 +31,7 @@ import Bot from '../Bot/Bot';
 import ChangePassword from '../ChangePassword/ChangePassword';
 import SystemwideBots from '../SystemwideBots/SystemwideBots';
 import AccountEntitiesUpdater from '../AccountEntitiesUpdater/AccountEntitiesUpdater';
+import WidgetPlugins from '../WidgetPlugins/WidgetPlugins';
 
 // Our logged-in routes need to:
 // - know about the content width that is available to them
@@ -113,6 +114,8 @@ class Content extends React.PureComponent {
             path="/users/:userId/permissions/new"
             component={UserPermissionsNewForm}
           />
+
+          <WrappedRoute exact contentWidth={contentWidth} path="/plugins/widgets" component={WidgetPlugins} />
 
           <WrappedRoute exact contentWidth={contentWidth} path="/accounts-new/" component={AccountForm} />
           <WrappedRoute exact contentWidth={contentWidth} path="/accounts/:accountId/" component={Account} />

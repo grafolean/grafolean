@@ -32,7 +32,7 @@ class Breadcrumbs extends React.Component {
 
         <Route
           path="/bots"
-          render={props => <BreadcrumbItem label="Systemwide bots" match={props.match} />}
+          render={props => <BreadcrumbItem label="Systemwide Bots" match={props.match} />}
         />
         <Route
           path="/bots/:userId"
@@ -77,6 +77,15 @@ class Breadcrumbs extends React.Component {
         <Route
           path="/users/:userId/permissions/new"
           render={props => <BreadcrumbItem label="New" match={props.match} />}
+        />
+
+        <Route
+          path="/plugins/widgets"
+          render={props => <BreadcrumbItem label="Widget Plugins" match={props.match} />}
+        />
+        <Route
+          path="/plugins/widgets-new"
+          render={props => <BreadcrumbItem label="Install Widget Plugin" match={props.match} />}
         />
 
         <Route

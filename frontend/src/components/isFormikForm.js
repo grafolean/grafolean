@@ -89,7 +89,7 @@ const isFormikForm = WrappedComponent => {
         if (!responseCreate.ok) {
           throw await responseCreate.text();
         }
-        await handleFetchErrors(responseCreate);
+        handleFetchErrors(responseCreate);
         if (this.props.afterSubmit) {
           const afterSubmitUrl = await this.props.afterSubmit(responseCreate);
           this.setState({ afterSubmitUrl: afterSubmitUrl });
