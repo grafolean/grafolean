@@ -3,19 +3,19 @@ import { withRouter } from 'react-router-dom';
 
 import isFormikForm from '../isFormikForm';
 import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
-
-import { KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
+import { INITIAL_KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
 
 import './WidgetForm.scss';
 
 class WidgetForm extends React.Component {
   static validate = values => {
+    const { knownWidgetTypes } = this.props;
     if (!values.type) {
       return {
         type: 'widget type not selected',
       };
     }
-    const selectedWidgetType = KNOWN_WIDGET_TYPES[values.type];
+    const selectedWidgetType = knownWidgetTypes[values.type];
     if (selectedWidgetType['formComponent'].validate) {
       const validationResult = selectedWidgetType['formComponent'].validate(values.content);
       // We are not sure what we will receive, but if it is empty, we want to receive an empty object (which is
@@ -48,20 +48,23 @@ class WidgetForm extends React.Component {
   };
 
   static fixValuesBeforeSubmit = formValues => {
-    const selectedWidgetType = KNOWN_WIDGET_TYPES[formValues.type];
+    // note that this is not correct - we should also consider widget plugins:
+    // (but this is a static method; some refactoring is in order before we can do that)
+    const selectedWidgetType = INITIAL_KNOWN_WIDGET_TYPES[formValues.type];
     const x = {
       ...formValues,
       content: JSON.stringify(formValues.content),
-      p: selectedWidgetType.isHeaderWidget ? 'header' : formValues.p,
+      p: selectedWidgetType && selectedWidgetType.isHeaderWidget ? 'header' : formValues.p,
     };
     return x;
   };
 
   changeWidgetType = ev => {
+    const { knownWidgetTypes } = this.props;
     const widgetType = ev.target.value;
     this.props.setFieldValue('type', widgetType);
     // initialize to default values:
-    const selectedWidgetType = KNOWN_WIDGET_TYPES[widgetType];
+    const selectedWidgetType = knownWidgetTypes[widgetType];
     const initialFormContent =
       selectedWidgetType.formComponent === null ? {} : selectedWidgetType.formComponent.DEFAULT_FORM_CONTENT;
     this.props.setFieldValue('content', initialFormContent);
@@ -76,9 +79,10 @@ class WidgetForm extends React.Component {
       setFieldValue,
       lockWidgetType,
       sharedValues,
+      knownWidgetTypes,
     } = this.props;
 
-    const selectedWidgetType = KNOWN_WIDGET_TYPES[type];
+    const selectedWidgetType = knownWidgetTypes[type];
     const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.formComponent : null;
     return (
       <div className="widget-form">
@@ -92,7 +96,7 @@ class WidgetForm extends React.Component {
         {!lockWidgetType && (
           <div className="field">
             <label>Type:</label>
-            {Object.values(KNOWN_WIDGET_TYPES).map(wt => (
+            {Object.values(knownWidgetTypes).map(wt => (
               <label key={wt.type} className="widget-type">
                 <input
                   type="radio"

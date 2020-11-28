@@ -96,6 +96,7 @@ const isFormikForm = WrappedComponent => {
         }
         this.setState({ submitted: true });
       } catch (errorMsg) {
+        console.error(errorMsg);
         this.setState({
           errorMsg: errorMsg.toString(),
         });

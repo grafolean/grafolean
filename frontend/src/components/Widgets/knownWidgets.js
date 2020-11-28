@@ -1,4 +1,3 @@
-import RemoteWidgetComponent from './RemoteWidgetComponent';
 import GLeanChartWidget from './GLeanChartWidget/GLeanChartWidget';
 import LastValueWidget from './LastValueWidget/LastValueWidget';
 import TopNWidget from './TopNWidget/TopNWidget';
@@ -9,7 +8,7 @@ import LastValueForm from './LastValueWidget/LastValueForm';
 import TopNWidgetForm from './TopNWidget/TopNWidgetForm';
 import NetFlowNavigationWidgetForm from './NetFlowNavigationWidget/NetFlowNavigationWidgetForm';
 
-export const KNOWN_WIDGET_TYPES = {
+export const INITIAL_KNOWN_WIDGET_TYPES = {
   chart: {
     type: 'chart',
     icon: 'area-chart',
@@ -55,16 +54,5 @@ export const KNOWN_WIDGET_TYPES = {
     widgetAdditionalProps: {},
     formComponent: NetFlowNavigationWidgetForm,
     isHeaderWidget: true,
-  },
-  remotetest1: {
-    type: 'remotetest1',
-    icon: 'bolt',
-    label: 'true bolt',
-    widgetComponent: RemoteWidgetComponent,
-    widgetAdditionalProps: {
-      url: 'http://127.0.0.1:5000/api/plugins/widgets/1826010944/widget.js',
-    },
-    formComponent: null,
-    isHeaderWidget: false,
   },
 };

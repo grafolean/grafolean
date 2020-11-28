@@ -1716,8 +1716,7 @@ class Sensor(object):
 class WidgetPlugin(object):
     MAX_TAR_GZ_SIZE = 10 * (1024 ** 2)
 
-    def __init__(self, widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js):
-        self.widget_type_id = widget_type_id
+    def __init__(self, label, icon, is_header_widget, repo_url, version, widget_js):
         self.label = label
         self.icon = icon
         self.is_header_widget = is_header_widget
@@ -1767,21 +1766,19 @@ class WidgetPlugin(object):
         widget_js = widget_js_file.read().decode('utf-8')
 
         # construct and return a WidgetPlugin object:
-        widget_type_id = manifest['widget_type_id']
         label = manifest['label']
         icon = manifest['icon']
         is_header_widget = manifest['is_header_widget']
-        return cls(widget_type_id, label, icon, is_header_widget, github_repo_url, version, widget_js)
+        return cls(label, icon, is_header_widget, github_repo_url, version, widget_js)
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT id, widget_type_id, label, icon, is_header_widget, repo_url, version FROM widget_plugins ORDER BY widget_type_id ASC;')
-            for record_id, widget_type_id, label, icon, is_header_widget, repo_url, version in c:
+            c.execute('SELECT id, label, icon, is_header_widget, repo_url, version FROM widget_plugins ORDER BY label ASC;')
+            for record_id, label, icon, is_header_widget, repo_url, version in c:
                 ret.append({
                     'id': int(record_id),
-                    'widget_type_id': widget_type_id,
                     'label': label,
                     'icon': icon,
                     'is_header_widget': is_header_widget,
@@ -1792,22 +1789,21 @@ class WidgetPlugin(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO widget_plugins (widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
-                (self.widget_type_id, self.label, self.icon, self.is_header_widget, self.repo_url, self.version, self.widget_js,))
+            c.execute("INSERT INTO widget_plugins (label, icon, is_header_widget, repo_url, version, widget_js) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
+                (self.label, self.icon, self.is_header_widget, self.repo_url, self.version, self.widget_js,))
             record_id, = c.fetchone()
             return record_id
 
     @staticmethod
     def get(record_id):
         with db.cursor() as c:
-            c.execute('SELECT widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js FROM widget_plugins WHERE id = %s;', (record_id,))
+            c.execute('SELECT label, icon, is_header_widget, repo_url, version, widget_js FROM widget_plugins WHERE id = %s;', (record_id,))
             res = c.fetchone()
             if not res:
                 return None
-            widget_type_id, label, icon, is_header_widget, repo_url, version, widget_js = res
+            label, icon, is_header_widget, repo_url, version, widget_js = res
         return {
             'id': int(record_id),
-            'widget_type_id': widget_type_id,
             'label': label,
             'icon': icon,
             'is_header_widget': is_header_widget,

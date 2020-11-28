@@ -573,7 +573,6 @@ def migration_step_28():
         c.execute(f"""
             CREATE TABLE widget_plugins (
                 {ID_FIELD},
-                widget_type_id TEXT NOT NULL UNIQUE,
                 label TEXT NOT NULL,
                 icon TEXT NOT NULL,
                 is_header_widget BOOLEAN NOT NULL,
@@ -582,3 +581,4 @@ def migration_step_28():
                 widget_js TEXT NOT NULL
             );
         """)
+        c.execute('ALTER TABLE widgets ALTER COLUMN type SET DATA TYPE VARCHAR(250);')
