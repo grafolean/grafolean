@@ -1,6 +1,7 @@
 import json
 
 import flask
+import psycopg2
 
 from datatypes import Account, Bot, Permission, Person, WidgetPlugin
 from .common import mqtt_publish_changed, noauth
@@ -24,11 +25,15 @@ def plugins_widgets():
 @plugins_api.route('/widgets', methods=['POST'])
 def plugins_widgets_post():
     j = flask.request.get_json()
-    if "url" not in j:
+    if "repo_url" not in j:
         return "Missing parameter url", 400
 
-    widget_plugin = WidgetPlugin.forge_from_url(j["url"])
-    record_id = widget_plugin.insert()
+    widget_plugin = WidgetPlugin.forge_from_url(j["repo_url"])
+    try:
+        record_id = widget_plugin.insert()
+    except psycopg2.errors.UniqueViolation:
+        return "Plugin already exists", 400
+
 
     mqtt_publish_changed([
         'plugins/widgets',

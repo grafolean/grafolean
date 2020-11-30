@@ -576,7 +576,7 @@ def migration_step_28():
                 label TEXT NOT NULL,
                 icon TEXT NOT NULL,
                 is_header_widget BOOLEAN NOT NULL,
-                repo_url TEXT NOT NULL,
+                repo_url TEXT NOT NULL UNIQUE,
                 version TEXT NOT NULL,
                 widget_js TEXT NOT NULL
             );
