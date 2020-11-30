@@ -12,6 +12,7 @@ import Loading from '../Loading';
 export default class WidgetPlugins extends React.Component {
   state = {
     widgetPlugins: null,
+    upgrading: false,
   };
 
   onWidgetPluginsUpdate = json => {
@@ -33,35 +34,18 @@ export default class WidgetPlugins extends React.Component {
   handleUpgrade = async (ev, wpId) => {
     ev.preventDefault();
     const wp = this.state.widgetPlugins.find(wp => wp.id === wpId);
-
+    this.setState({ upgrading: true });
     try {
-      const response = await fetchAuth(`${ROOT_URL}/plugins/widgets/${wpId}`, { method: 'DELETE' });
+      const response = await fetchAuth(`${ROOT_URL}/plugins/widgets/${wpId}`, { method: 'POST' });
       handleFetchErrors(response);
     } catch (errorMsg) {
       store.dispatch(onFailure(errorMsg.toString()));
-      return;
     }
-
-    try {
-      const response = await fetchAuth(`${ROOT_URL}/plugins/widgets/`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          repo_url: wp.repo_url,
-        }),
-      });
-      handleFetchErrors(response);
-    } catch (errorMsg) {
-      store.dispatch(onFailure(errorMsg.toString()));
-      return;
-    }
+    this.setState({ upgrading: false });
   };
 
   render() {
-    const { widgetPlugins } = this.state;
+    const { widgetPlugins, upgrading } = this.state;
     return (
       <>
         <PersistentFetcher resource="plugins/widgets" onUpdate={this.onWidgetPluginsUpdate} />
@@ -92,7 +76,11 @@ export default class WidgetPlugins extends React.Component {
                         </td>
                         <td data-label="Version">{wp.version}</td>
                         <td>
-                          <Button className="green" onClick={ev => this.handleUpgrade(ev, wp.id)}>
+                          <Button
+                            isLoading={upgrading}
+                            className="green"
+                            onClick={ev => this.handleUpgrade(ev, wp.id)}
+                          >
                             <i className="fa fa-fw fa-level-up" /> Upgrade
                           </Button>
                         </td>

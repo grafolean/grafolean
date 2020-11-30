@@ -1812,6 +1812,12 @@ class WidgetPlugin(object):
             'widget_js': widget_js,
         }
 
+    def update(self):
+        with db.cursor() as c:
+            c.execute("UPDATE widget_plugins SET label = %s, icon = %s, is_header_widget = %s, version = %s, widget_js = %s WHERE repo_url = %s;",
+                (self.label, self.icon, self.is_header_widget, self.version, self.widget_js, self.repo_url,))
+            return c.rowcount
+
     @staticmethod
     def delete(record_id):
         with db.cursor() as c:

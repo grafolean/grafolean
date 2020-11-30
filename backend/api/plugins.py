@@ -53,6 +53,21 @@ def plugins_widgets_get(widget_plugin_id):
     return json.dumps(rec), 200
 
 
+@plugins_api.route('/widgets/<int:widget_plugin_id>', methods=['POST'])
+def plugins_widget_upgrade_post(widget_plugin_id):
+    rec = WidgetPlugin.get(widget_plugin_id)
+    if not rec:
+        return "No such widget plugin", 404
+
+    widget_plugin = WidgetPlugin.forge_from_url(rec["repo_url"])
+    widget_plugin.update()
+
+    mqtt_publish_changed([
+        'plugins/widgets',
+    ])
+    return "", 204
+
+
 @plugins_api.route('/widgets/<int:widget_plugin_id>/widget.js', methods=['GET'])
 @noauth
 def plugins_widgets_get_widget_js(widget_plugin_id):
