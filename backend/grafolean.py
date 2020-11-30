@@ -156,7 +156,7 @@ def _add_cors_headers(response):
 
     # domain in Origin header matches, return appropriate CORS headers:
     response.headers['Access-Control-Allow-Origin'] = allow_origin
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, If-None-Match'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
     response.headers['Access-Control-Expose-Headers'] = 'X-JWT-Token'
     response.headers['Access-Control-Max-Age'] = '3600'  # https://damon.ghost.io/killing-cors-preflight-requests-on-a-react-spa/
