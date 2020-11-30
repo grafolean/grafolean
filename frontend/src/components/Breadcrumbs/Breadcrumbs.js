@@ -84,7 +84,7 @@ class Breadcrumbs extends React.Component {
           render={props => <BreadcrumbItem label="Widget Plugins" match={props.match} />}
         />
         <Route
-          path="/plugins/widgets-new"
+          path="/plugins/widgets/new"
           render={props => <BreadcrumbItem label="Install Widget Plugin" match={props.match} />}
         />
 

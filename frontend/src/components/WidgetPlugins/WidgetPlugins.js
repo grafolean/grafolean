@@ -6,7 +6,6 @@ import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Button from '../Button';
-import withKnownWidgetTypes from '../DashboardView/withKnownWidgetTypes';
 import ExternalLink from '../ExternalLink/ExternalLink';
 import Loading from '../Loading';
 
@@ -51,7 +50,7 @@ export default class WidgetPlugins extends React.Component {
         },
         method: 'POST',
         body: JSON.stringify({
-          url: wp.repo_url,
+          repo_url: wp.repo_url,
         }),
       });
       handleFetchErrors(response);
@@ -108,7 +107,7 @@ export default class WidgetPlugins extends React.Component {
                 </table>
               </div>
             )}
-            <Link className="button green" to={`/plugins/widgets-new`}>
+            <Link className="button green" to={`/plugins/widgets/new`}>
               <i className="fa fa-fw fa-plus" /> Install widget plugin
             </Link>
           </>
