@@ -1,6 +1,6 @@
-# Grafolean
+<p align="center"><a href="https://grafolean.com/"><img src="frontend/public/logo.svg" alt="Grafolean" width="230" height="99" /></a></p>
 
-Easy to use monitoring system.
+<h3 align="center">Easy to use monitoring system</h3>
 
 ---
 
@@ -25,11 +25,9 @@ https://app.grafolean.com/ (`demo` / `demo`)
 - self-hosted or [hosted service](https://app.grafolean.com/)
 - [API-first](https://app.grafolean.com/api-doc/)
 - built-in or remote agents ("bots")
-- UI-controlled agents (bots) for ICMP ping, SNMP (SNMPv1, SNMPv2 and SNMPv3 - netsnmp compatible) and NetFlow
+- UI-controlled agents (bots) for [NetFlow](doc/HOWTO-NetFlow.md), ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3)
 - uses PostgreSQL / TimescaleDB as data storage (easy data maintenance)
 - granular permissions model
-
-![screenshot](doc/screenshot-dark.png)
 
 ![screenshot](doc/NetFlow/dashboard.png)
 
