@@ -301,8 +301,10 @@ class NetFlowNavigationWidget extends React.Component {
             )}
             {this.renderDirectionsRadios()}
             {this.renderIntervalsRadios()}
-            {this.renderEntitiesDropdown()}
-            {this.renderInterfacesDropdown()}
+            <div className="entities-interfaces">
+              {this.renderEntitiesDropdown()}
+              {this.renderInterfacesDropdown()}
+            </div>
           </>
         )}
       </div>

@@ -1,11 +1,18 @@
 .netflow-navigation-widget {
-  .loading-component i {
-    font-size: 30px;
-  }
   .radios {
     display: flex;
   }
-  select {
+  .entities-interfaces {
     margin-top: 10px;
+    display: flex;
+    align-items: center;
+
+    .loading-component {
+      display: inline-block;
+      padding: 0 20px;
+      i.fa {
+        font-size: 20px;
+      }
+    }
   }
 }
