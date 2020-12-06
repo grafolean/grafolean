@@ -181,7 +181,7 @@ class NetFlowNavigationWidget extends React.Component {
     } = this.props;
     const { entities } = this.state;
     if (entities === null) {
-      return <Loading overlayParent={true} />;
+      return <Loading />;
     }
     if (Object.keys(entities).length === 0) {
       return <select></select>;
@@ -208,7 +208,7 @@ class NetFlowNavigationWidget extends React.Component {
       return null;
     }
     if (interfaces === null) {
-      return <Loading overlayParent={true} />;
+      return <Loading />;
     }
     if (interfaces.length === 0) {
       return <select></select>;
