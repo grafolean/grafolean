@@ -264,9 +264,10 @@ class NetFlowNavigationWidget extends React.Component {
                 configure the NetFlow exporter of your choice (router, switch,...) to start sending data to
                 Grafolean, then
               </li>
-              <li>wait a few minutes (this page will automatically refresh).</li>
+              <li>enable the NetFlow sensor on the entity.</li>
             </ul>
-            For more info, see{' '}
+            If this was already done please wait a few minutes (this page will automatically refresh when data
+            is available). See{' '}
             <a
               href="https://github.com/grafolean/grafolean/blob/master/doc/HOWTO-NetFlow.md"
               target="_blank"
@@ -274,7 +275,7 @@ class NetFlowNavigationWidget extends React.Component {
             >
               NetFlow guide
             </a>
-            .
+            for more info.
           </div>
         ) : (
           <>
