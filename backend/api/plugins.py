@@ -2,6 +2,7 @@ import json
 
 import flask
 import psycopg2
+import requests
 
 from datatypes import Account, Bot, Permission, Person, WidgetPlugin
 from .common import mqtt_publish_changed, noauth
@@ -28,7 +29,13 @@ def plugins_widgets_post():
     if "repo_url" not in j:
         return "Missing parameter url", 400
 
-    widget_plugin = WidgetPlugin.forge_from_url(j["repo_url"])
+    try:
+        widget_plugin = WidgetPlugin.forge_from_url(j["repo_url"])
+    except requests.exceptions.ConnectionError:
+        return "Backend could not connect to plugin repository - please check firewall rules!", 400
+    except Exception as ex:
+        return f"Backend could not connect to plugin repository ({str(ex)}) - please check firewall rules!", 400
+
     try:
         record_id = widget_plugin.insert()
     except psycopg2.errors.UniqueViolation:
@@ -59,7 +66,13 @@ def plugins_widget_upgrade_post(widget_plugin_id):
     if not rec:
         return "No such widget plugin", 404
 
-    widget_plugin = WidgetPlugin.forge_from_url(rec["repo_url"])
+    try:
+        widget_plugin = WidgetPlugin.forge_from_url(rec["repo_url"])
+    except requests.exceptions.ConnectionError:
+        return "Backend could not connect to plugin repository - please check firewall rules!", 400
+    except Exception as ex:
+        return f"Backend could not connect to plugin repository ({str(ex)}) - please check firewall rules!", 400
+
     widget_plugin.update()
 
     mqtt_publish_changed([
