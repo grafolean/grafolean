@@ -1,8 +1,10 @@
 import React from 'react';
+import { withRouter } from 'react-router-dom';
 
 import { ROOT_URL } from '../../store/actions';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import isWidget from '../Widgets/isWidget';
 import { INITIAL_KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import RemoteWidgetComponent from '../Widgets/RemoteWidgetComponent';
 
 /*
@@ -26,11 +28,14 @@ const withKnownWidgetTypes = WrappedComponent => {
           type: wp.repo_url,
           icon: wp.icon,
           label: wp.label,
-          widgetComponent: RemoteWidgetComponent,
+          widgetComponent: withRouter(isWidget(RemoteWidgetComponent)),
           widgetAdditionalProps: {
             url: `${ROOT_URL}/plugins/widgets/${wp.id}/widget.js`,
           },
-          formComponent: null,
+          formComponent: withRouter(RemoteWidgetComponent),
+          formAdditionalProps: {
+            url: `${ROOT_URL}/plugins/widgets/${wp.id}/form.js`,
+          },
           isHeaderWidget: wp.is_header_widget,
         };
       });

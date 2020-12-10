@@ -1,5 +1,4 @@
 import React from 'react';
-import { withRouter } from 'react-router-dom';
 import { resolve } from '../../remote-component.config';
 
 // regular import throws a warning about a missing remote-component.config.js:
@@ -7,7 +6,6 @@ import { resolve } from '../../remote-component.config';
 import { createUseRemoteComponent } from '@paciolan/remote-component/dist/hooks/useRemoteComponent';
 import { createRequires } from '@paciolan/remote-component/dist/lib/createRequires';
 
-import isWidget from './isWidget.js';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
 const useRemoteComponent = createUseRemoteComponent({ requires: createRequires(resolve) });
@@ -33,4 +31,4 @@ const RemoteWidgetComponent = props => {
 
   return <Component g={g} {...rest} />;
 };
-export default withRouter(isWidget(RemoteWidgetComponent));
+export default RemoteWidgetComponent;

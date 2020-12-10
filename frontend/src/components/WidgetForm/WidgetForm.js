@@ -130,6 +130,7 @@ class WidgetForm extends React.Component {
                     setFieldValue={setFieldValue}
                     content={content ? content : {}}
                     sharedValues={sharedValues}
+                    {...selectedWidgetType.formAdditionalProps}
                   />
                 </div>
               )}

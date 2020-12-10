@@ -16,6 +16,7 @@ export const INITIAL_KNOWN_WIDGET_TYPES = {
     widgetComponent: GLeanChartWidget,
     widgetAdditionalProps: {},
     formComponent: ChartForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   lastvalue: {
@@ -25,6 +26,7 @@ export const INITIAL_KNOWN_WIDGET_TYPES = {
     widgetComponent: LastValueWidget,
     widgetAdditionalProps: {},
     formComponent: LastValueForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   topn: {
@@ -34,6 +36,7 @@ export const INITIAL_KNOWN_WIDGET_TYPES = {
     widgetComponent: TopNWidget,
     widgetAdditionalProps: {},
     formComponent: TopNWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   piechart: {
@@ -43,6 +46,7 @@ export const INITIAL_KNOWN_WIDGET_TYPES = {
     widgetComponent: TopNWidget,
     widgetAdditionalProps: { display: 'pie' },
     formComponent: TopNWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   // widgets that are meant to be on the top, above others:
@@ -53,6 +57,7 @@ export const INITIAL_KNOWN_WIDGET_TYPES = {
     widgetComponent: NetFlowNavigationWidget,
     widgetAdditionalProps: {},
     formComponent: NetFlowNavigationWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: true,
   },
 };
