@@ -99,6 +99,24 @@ def plugins_widgets_get_widget_js(widget_plugin_id):
     return response
 
 
+@plugins_api.route('/widgets/<int:widget_plugin_id>/form.js', methods=['GET'])
+@noauth
+def plugins_widgets_get_form_js(widget_plugin_id):
+    rec = WidgetPlugin.get(widget_plugin_id)
+    if not rec:
+        return "No such widget plugin", 404
+
+    # no need to send widget.js content if cache matches the version:
+    if_none_match_header = flask.request.headers.get('If-None-Match', None)
+    if if_none_match_header and if_none_match_header == f'"{rec["version"]}"':
+        return "", 304
+
+    response = flask.make_response(rec['form_js'], 200)
+    response.headers['Content-Type'] = "application/javascript"
+    response.headers['ETag'] = f'"{rec["version"]}"'
+    return response
+
+
 @plugins_api.route('/widgets/<int:widget_plugin_id>', methods=['DELETE'])
 def plugins_widgets_delete(widget_plugin_id):
     rowcount = WidgetPlugin.delete(widget_plugin_id)

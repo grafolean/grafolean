@@ -578,7 +578,8 @@ def migration_step_28():
                 is_header_widget BOOLEAN NOT NULL,
                 repo_url TEXT NOT NULL UNIQUE,
                 version TEXT NOT NULL,
-                widget_js TEXT NOT NULL
+                widget_js TEXT NOT NULL,
+                form_js TEXT NOT NULL
             );
         """)
         c.execute('ALTER TABLE widgets ALTER COLUMN type SET DATA TYPE VARCHAR(250);')

@@ -1716,13 +1716,14 @@ class Sensor(object):
 class WidgetPlugin(object):
     MAX_TAR_GZ_SIZE = 10 * (1024 ** 2)
 
-    def __init__(self, label, icon, is_header_widget, repo_url, version, widget_js):
+    def __init__(self, label, icon, is_header_widget, repo_url, version, widget_js, form_js):
         self.label = label
         self.icon = icon
         self.is_header_widget = is_header_widget
         self.repo_url = repo_url
         self.version = version
         self.widget_js = widget_js
+        self.form_js = form_js
 
     @classmethod
     def forge_from_url(cls, github_repo_url):
@@ -1765,11 +1766,16 @@ class WidgetPlugin(object):
             raise ValidationError("Missing widget.js in .tar.gz file")
         widget_js = widget_js_file.read().decode('utf-8')
 
+        form_js_file = tar.extractfile("form.js")
+        if not form_js_file:
+            raise ValidationError("Missing form.js in .tar.gz file")
+        form_js = form_js_file.read().decode('utf-8')
+
         # construct and return a WidgetPlugin object:
         label = manifest['label']
         icon = manifest['icon']
         is_header_widget = manifest['is_header_widget']
-        return cls(label, icon, is_header_widget, github_repo_url, version, widget_js)
+        return cls(label, icon, is_header_widget, github_repo_url, version, widget_js, form_js)
 
     @staticmethod
     def get_list():
@@ -1789,19 +1795,19 @@ class WidgetPlugin(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO widget_plugins (label, icon, is_header_widget, repo_url, version, widget_js) VALUES (%s, %s, %s, %s, %s, %s) RETURNING id;",
-                (self.label, self.icon, self.is_header_widget, self.repo_url, self.version, self.widget_js,))
+            c.execute("INSERT INTO widget_plugins (label, icon, is_header_widget, repo_url, version, widget_js, form_js) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id;",
+                (self.label, self.icon, self.is_header_widget, self.repo_url, self.version, self.widget_js, self.form_js,))
             record_id, = c.fetchone()
             return record_id
 
     @staticmethod
     def get(record_id):
         with db.cursor() as c:
-            c.execute('SELECT label, icon, is_header_widget, repo_url, version, widget_js FROM widget_plugins WHERE id = %s;', (record_id,))
+            c.execute('SELECT label, icon, is_header_widget, repo_url, version, widget_js, form_js FROM widget_plugins WHERE id = %s;', (record_id,))
             res = c.fetchone()
             if not res:
                 return None
-            label, icon, is_header_widget, repo_url, version, widget_js = res
+            label, icon, is_header_widget, repo_url, version, widget_js, form_js = res
         return {
             'id': int(record_id),
             'label': label,
@@ -1810,12 +1816,13 @@ class WidgetPlugin(object):
             'repo_url': repo_url,
             'version': version,
             'widget_js': widget_js,
+            'form_js': form_js,
         }
 
     def update(self):
         with db.cursor() as c:
-            c.execute("UPDATE widget_plugins SET label = %s, icon = %s, is_header_widget = %s, version = %s, widget_js = %s WHERE repo_url = %s;",
-                (self.label, self.icon, self.is_header_widget, self.version, self.widget_js, self.repo_url,))
+            c.execute("UPDATE widget_plugins SET label = %s, icon = %s, is_header_widget = %s, version = %s, widget_js = %s, form_js = %s WHERE repo_url = %s;",
+                (self.label, self.icon, self.is_header_widget, self.version, self.widget_js, self.form_js, self.repo_url,))
             return c.rowcount
 
     @staticmethod
