@@ -33,7 +33,6 @@ export default class WidgetPlugins extends React.Component {
 
   handleUpgrade = async (ev, wpId) => {
     ev.preventDefault();
-    const wp = this.state.widgetPlugins.find(wp => wp.id === wpId);
     this.setState({ upgrading: true });
     try {
       const response = await fetchAuth(`${ROOT_URL}/plugins/widgets/${wpId}`, { method: 'POST' });

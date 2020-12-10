@@ -1,14 +1,14 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 
-import isFormikForm from '../isFormikForm';
 import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 import { INITIAL_KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
 
 import './WidgetForm.scss';
+import FetchingFormik from '../FetchingFormik';
 
 class WidgetForm extends React.Component {
-  static validate = values => {
+  validate = values => {
     const { knownWidgetTypes } = this.props;
     if (!values.type) {
       return {
@@ -35,7 +35,7 @@ class WidgetForm extends React.Component {
     return {};
   };
 
-  static convertFetchedFormValues = fetchedFormValues => {
+  convertFetchedFormValues = fetchedFormValues => {
     return {
       ...fetchedFormValues,
       content: JSON.parse(fetchedFormValues.content),
@@ -47,7 +47,7 @@ class WidgetForm extends React.Component {
     };
   };
 
-  static fixValuesBeforeSubmit = formValues => {
+  fixValuesBeforeSubmit = formValues => {
     // note that this is not correct - we should also consider widget plugins:
     // (but this is a static method; some refactoring is in order before we can do that)
     const selectedWidgetType = INITIAL_KNOWN_WIDGET_TYPES[formValues.type];
@@ -59,73 +59,86 @@ class WidgetForm extends React.Component {
     return x;
   };
 
-  changeWidgetType = ev => {
+  changeWidgetType = (ev, setFieldValue) => {
     const { knownWidgetTypes } = this.props;
     const widgetType = ev.target.value;
-    this.props.setFieldValue('type', widgetType);
+    setFieldValue('type', widgetType);
     // initialize to default values:
     const selectedWidgetType = knownWidgetTypes[widgetType];
     const initialFormContent =
       selectedWidgetType.formComponent === null ? {} : selectedWidgetType.formComponent.DEFAULT_FORM_CONTENT;
-    this.props.setFieldValue('content', initialFormContent);
-    this.props.setFieldValue('p', this.props.page);
+    setFieldValue('content', initialFormContent);
+    setFieldValue('p', this.props.page);
   };
 
   render() {
-    const {
-      values: { type, title = '', content },
-      onChange,
-      onBlur,
-      setFieldValue,
-      lockWidgetType,
-      sharedValues,
-      knownWidgetTypes,
-    } = this.props;
+    const { lockWidgetType, sharedValues, knownWidgetTypes } = this.props;
 
-    const selectedWidgetType = knownWidgetTypes[type];
-    const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.formComponent : null;
     return (
-      <div className="widget-form">
-        <NoPathsHelpSnippet />
+      <FetchingFormik
+        convertFetchedFormValues={this.convertFetchedFormValues}
+        fixValuesBeforeSubmit={this.fixValuesBeforeSubmit}
+        validate={this.validate}
+        resource={this.props.resource}
+        editing={this.props.editing}
+        afterSubmit={this.props.afterSubmit}
+        afterSubmitRedirectTo={this.props.afterSubmitRedirectTo}
+      >
+        {({
+          values,
+          values: { type, title = '', content },
+          errors,
+          handleChange,
+          setFieldValue,
+          handleBlur,
+        }) => {
+          const selectedWidgetType = knownWidgetTypes[type];
+          const WidgetTypeForm = selectedWidgetType ? selectedWidgetType.formComponent : null;
+          return (
+            <div className="widget-form">
+              <NoPathsHelpSnippet />
 
-        <div className="field">
-          <label>Widget title:</label>
-          <input type="text" name="title" value={title} onChange={onChange} onBlur={onBlur} />
-        </div>
+              <div className="field">
+                <label>Widget title:</label>
+                <input type="text" name="title" value={title} onChange={handleChange} onBlur={handleBlur} />
+              </div>
 
-        {!lockWidgetType && (
-          <div className="field">
-            <label>Type:</label>
-            {Object.values(knownWidgetTypes).map(wt => (
-              <label key={wt.type} className="widget-type">
-                <input
-                  type="radio"
-                  name="widget-type"
-                  value={wt.type}
-                  checked={type === wt.type}
-                  onChange={this.changeWidgetType}
-                />
-                <i className={`fa fa-fw fa-${wt.icon} widget-type`} />
-                {wt.label}
-              </label>
-            ))}
-          </div>
-        )}
+              {!lockWidgetType && (
+                <div className="field">
+                  <label>Type:</label>
+                  {Object.values(knownWidgetTypes).map(wt => (
+                    <label key={wt.type} className="widget-type">
+                      <input
+                        type="radio"
+                        name="widget-type"
+                        value={wt.type}
+                        checked={values.type === wt.type}
+                        onChange={ev => this.changeWidgetType(ev, setFieldValue)}
+                      />
+                      <i className={`fa fa-fw fa-${wt.icon} widget-type`} />
+                      {wt.label}
+                    </label>
+                  ))}
+                </div>
+              )}
 
-        {WidgetTypeForm && (
-          <div className="widget-type-form nested-field">
-            <WidgetTypeForm
-              onChange={onChange}
-              onBlur={onBlur}
-              setFieldValue={setFieldValue}
-              content={content ? content : {}}
-              sharedValues={sharedValues}
-            />
-          </div>
-        )}
-      </div>
+              {WidgetTypeForm && (
+                <div className="widget-type-form nested-field">
+                  <WidgetTypeForm
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    setFieldValue={setFieldValue}
+                    content={content ? content : {}}
+                    sharedValues={sharedValues}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        }}
+      </FetchingFormik>
     );
   }
 }
 
-export default isFormikForm(withRouter(WidgetForm));
+export default withRouter(WidgetForm);
