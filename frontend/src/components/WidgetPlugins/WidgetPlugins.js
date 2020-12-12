@@ -8,15 +8,20 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Button from '../Button';
 import ExternalLink from '../ExternalLink/ExternalLink';
 import Loading from '../Loading';
+import UpgradeButton from './UpgradeButton';
 
 export default class WidgetPlugins extends React.Component {
   state = {
     widgetPlugins: null,
-    upgrading: false,
   };
 
   onWidgetPluginsUpdate = json => {
-    this.setState({ widgetPlugins: json.list });
+    const sortedWidgets = [...json.list].sort((a, b) => {
+      const labelA = a.label.toLowerCase();
+      const labelB = b.label.toLowerCase();
+      return labelA === labelB ? a.id - b.id : labelA > labelB ? 1 : -1;
+    });
+    this.setState({ widgetPlugins: sortedWidgets });
   };
 
   handleDelete = (ev, wpId) => {
@@ -31,20 +36,8 @@ export default class WidgetPlugins extends React.Component {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  handleUpgrade = async (ev, wpId) => {
-    ev.preventDefault();
-    this.setState({ upgrading: true });
-    try {
-      const response = await fetchAuth(`${ROOT_URL}/plugins/widgets/${wpId}`, { method: 'POST' });
-      handleFetchErrors(response);
-    } catch (errorMsg) {
-      store.dispatch(onFailure(errorMsg.toString()));
-    }
-    this.setState({ upgrading: false });
-  };
-
   render() {
-    const { widgetPlugins, upgrading } = this.state;
+    const { widgetPlugins } = this.state;
     return (
       <>
         <PersistentFetcher resource="plugins/widgets" onUpdate={this.onWidgetPluginsUpdate} />
@@ -75,13 +68,7 @@ export default class WidgetPlugins extends React.Component {
                         </td>
                         <td data-label="Version">{wp.version}</td>
                         <td>
-                          <Button
-                            isLoading={upgrading}
-                            className="green"
-                            onClick={ev => this.handleUpgrade(ev, wp.id)}
-                          >
-                            <i className="fa fa-fw fa-level-up" /> Upgrade
-                          </Button>
+                          <UpgradeButton widgetPluginId={wp.id} />
                         </td>
                         <td data-label="">
                           <Button className="red" onClick={ev => this.handleDelete(ev, wp.id)}>
