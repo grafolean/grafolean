@@ -21,7 +21,7 @@
 - UI-controlled agents (bots) for [NetFlow](doc/HOWTO-NetFlow.md), ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3)
 - uses PostgreSQL / TimescaleDB as data storage (easy data maintenance)
 - granular permissions model
-- support for [custom dashboard widget via plugins](https://github.com/grafolean/widget-plugin-template)
+- support for [custom dashboard widgets via plugins](https://github.com/grafolean/widget-plugin-template)
 
 ![screenshot](doc/NetFlow/dashboard.png)
 
