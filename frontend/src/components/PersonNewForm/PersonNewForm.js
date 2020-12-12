@@ -44,7 +44,7 @@ export default class PersonNewForm extends React.PureComponent {
         methods: methods,
       }),
     });
-    await handleFetchErrors(responsePermissions);
+    handleFetchErrors(responsePermissions);
     if (!responsePermissions.ok) {
       throw await responsePermissions.text();
     }

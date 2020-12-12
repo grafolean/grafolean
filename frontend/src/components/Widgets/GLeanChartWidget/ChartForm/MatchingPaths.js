@@ -32,9 +32,9 @@ class MatchingPaths extends React.Component {
     this.onPathFilterChange(this.props.pathFilter);
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.pathFilter !== this.props.pathFilter) {
-      this.onPathFilterChange(nextProps.pathFilter);
+  componentDidUpdate(prevProps) {
+    if (prevProps.pathFilter !== this.props.pathFilter) {
+      this.onPathFilterChange(this.props.pathFilter);
     }
   }
 

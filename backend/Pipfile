@@ -17,6 +17,7 @@ psycopg2-binary = "*"
 dnspython = "*"
 flask-mail = "*"
 flask-executor = "*"
+requests = "*"
 
 [dev-packages]
 pytest = "*"

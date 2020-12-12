@@ -6,6 +6,8 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/. ./
 ARG REACT_APP_BACKEND_ROOT_URL=/api
+# block "zloirock is looking for a good job" core-js message:
+ENV ADBLOCK=yes
 RUN npm run build
 # until we find a better solution, manually search and replace https://storage.googleapis.com/workbox-cdn/releases/3.6.2/workbox-sw.js
 # with a local copy of the file: (to avoid using CDN)

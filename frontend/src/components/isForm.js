@@ -9,6 +9,7 @@ import Button from './Button';
 
 import './form.scss';
 
+// DEPRECATED: use FetchingFormik instead.
 const isForm = WrappedComponent => {
   const wrappedComponent = class Form extends React.Component {
     static defaultProps = {
@@ -79,7 +80,7 @@ const isForm = WrappedComponent => {
         if (!responseCreate.ok) {
           throw await responseCreate.text();
         }
-        await handleFetchErrors(responseCreate);
+        handleFetchErrors(responseCreate);
         if (this.props.afterSubmit) {
           const afterSubmitUrl = await this.props.afterSubmit(responseCreate);
           this.setState({ afterSubmitUrl: afterSubmitUrl });

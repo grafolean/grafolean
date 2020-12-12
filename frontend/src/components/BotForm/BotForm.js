@@ -35,7 +35,7 @@ class BotForm extends React.Component {
         methods: methods,
       }),
     });
-    await handleFetchErrors(responsePermissions);
+    handleFetchErrors(responsePermissions);
   };
 
   afterSubmit = async response => {

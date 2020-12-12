@@ -26,6 +26,7 @@ export const FormError = ({ msg }) => {
   );
 };
 
+// DEPRECATED: use FetchingFormik instead.
 const isFormikForm = WrappedComponent => {
   const wrappedComponent = class FormikForm extends React.Component {
     static defaultProps = {
@@ -89,13 +90,14 @@ const isFormikForm = WrappedComponent => {
         if (!responseCreate.ok) {
           throw await responseCreate.text();
         }
-        await handleFetchErrors(responseCreate);
+        handleFetchErrors(responseCreate);
         if (this.props.afterSubmit) {
           const afterSubmitUrl = await this.props.afterSubmit(responseCreate);
           this.setState({ afterSubmitUrl: afterSubmitUrl });
         }
         this.setState({ submitted: true });
       } catch (errorMsg) {
+        console.error(errorMsg);
         this.setState({
           errorMsg: errorMsg.toString(),
         });

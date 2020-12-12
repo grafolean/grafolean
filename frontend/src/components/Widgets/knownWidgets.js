@@ -8,7 +8,7 @@ import LastValueForm from './LastValueWidget/LastValueForm';
 import TopNWidgetForm from './TopNWidget/TopNWidgetForm';
 import NetFlowNavigationWidgetForm from './NetFlowNavigationWidget/NetFlowNavigationWidgetForm';
 
-export const KNOWN_WIDGET_TYPES = {
+export const INITIAL_KNOWN_WIDGET_TYPES = {
   chart: {
     type: 'chart',
     icon: 'area-chart',
@@ -16,6 +16,7 @@ export const KNOWN_WIDGET_TYPES = {
     widgetComponent: GLeanChartWidget,
     widgetAdditionalProps: {},
     formComponent: ChartForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   lastvalue: {
@@ -25,6 +26,7 @@ export const KNOWN_WIDGET_TYPES = {
     widgetComponent: LastValueWidget,
     widgetAdditionalProps: {},
     formComponent: LastValueForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   topn: {
@@ -34,6 +36,7 @@ export const KNOWN_WIDGET_TYPES = {
     widgetComponent: TopNWidget,
     widgetAdditionalProps: {},
     formComponent: TopNWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   piechart: {
@@ -43,6 +46,7 @@ export const KNOWN_WIDGET_TYPES = {
     widgetComponent: TopNWidget,
     widgetAdditionalProps: { display: 'pie' },
     formComponent: TopNWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: false,
   },
   // widgets that are meant to be on the top, above others:
@@ -53,14 +57,7 @@ export const KNOWN_WIDGET_TYPES = {
     widgetComponent: NetFlowNavigationWidget,
     widgetAdditionalProps: {},
     formComponent: NetFlowNavigationWidgetForm,
+    formAdditionalProps: {},
     isHeaderWidget: true,
   },
 };
-
-export function getKnownWidgetComponent(widgetType) {
-  const widget = KNOWN_WIDGET_TYPES[widgetType];
-  if (!widget) {
-    return null;
-  }
-  return widget.widgetComponent;
-}

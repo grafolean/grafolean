@@ -14,7 +14,7 @@ import EditableLabel from '../EditableLabel';
 import Button from '../Button';
 import Loading from '../Loading';
 import WidgetForm from '../WidgetForm/WidgetForm';
-import { KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
+import withKnownWidgetTypes from './withKnownWidgetTypes';
 
 import './DashboardView.scss';
 
@@ -191,9 +191,10 @@ class DashboardView extends React.Component {
 
   renderWidget(widget, unitX) {
     const { layoutPerPage, page, sortingEnabled, sharedValues } = this.state;
+    const { knownWidgetTypes } = this.props;
     const dashboardSlug = this.props.match.params.slug;
 
-    const widgetDef = KNOWN_WIDGET_TYPES[widget.type];
+    const widgetDef = knownWidgetTypes[widget.type];
     if (!widgetDef) {
       return <div key={widget.id}>Unknown widget type.</div>;
     }
@@ -232,8 +233,9 @@ class DashboardView extends React.Component {
 
   renderHeaderWidget(widget, containerWidth) {
     const dashboardSlug = this.props.match.params.slug;
+    const { knownWidgetTypes } = this.props;
     const { sharedValues } = this.state;
-    const widgetDef = KNOWN_WIDGET_TYPES[widget.type];
+    const widgetDef = knownWidgetTypes[widget.type];
     if (!widgetDef) {
       return <div key={widget.id}>Unknown widget type.</div>;
     }
@@ -257,7 +259,7 @@ class DashboardView extends React.Component {
   }
 
   render() {
-    const { user } = this.props;
+    const { user, knownWidgetTypes } = this.props;
     const {
       loading,
       widgets,
@@ -366,6 +368,7 @@ class DashboardView extends React.Component {
                   afterSubmit={this.handleWidgetUpdate}
                   page={page}
                   sharedValues={sharedValues}
+                  knownWidgetTypes={knownWidgetTypes}
                 />
               </div>
             )}
@@ -379,4 +382,4 @@ class DashboardView extends React.Component {
 const mapStoreToProps = store => ({
   user: store.user,
 });
-export default connect(mapStoreToProps)(DashboardView);
+export default withKnownWidgetTypes(connect(mapStoreToProps)(DashboardView));

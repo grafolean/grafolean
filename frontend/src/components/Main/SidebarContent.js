@@ -50,6 +50,11 @@ class SidebarContent extends React.Component {
             <i className="fa fa-fw fa-users" /> Users
           </Link>
         )}
+        {user && havePermission('plugins/widgets', 'POST', user.permissions) && (
+          <Link className="button green" to="/plugins/widgets" onClick={onSidebarLinkClick}>
+            <i className="fa fa-fw fa-puzzle-piece" /> Widget Plugins
+          </Link>
+        )}
         <Link className="button green" to="/changelog">
           <i className="fa fa-fw fa-list" /> Changelog
         </Link>

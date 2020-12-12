@@ -564,3 +564,22 @@ def migration_step_27():
                     measurements
                 GROUP BY path, period
             """)
+
+def migration_step_28():
+    """ Add widget_plugins. """
+    ID_FIELD = 'id INTEGER NOT NULL PRIMARY KEY DEFAULT randid_{table_name}()'.format(table_name='widget_plugins')
+    with db.cursor() as c:
+        c.execute(_construct_plsql_randid_function('widget_plugins'))
+        c.execute(f"""
+            CREATE TABLE widget_plugins (
+                {ID_FIELD},
+                label TEXT NOT NULL,
+                icon TEXT NOT NULL,
+                is_header_widget BOOLEAN NOT NULL,
+                repo_url TEXT NOT NULL UNIQUE,
+                version TEXT NOT NULL,
+                widget_js TEXT NOT NULL,
+                form_js TEXT NOT NULL
+            );
+        """)
+        c.execute('ALTER TABLE widgets ALTER COLUMN type SET DATA TYPE VARCHAR(250);')
