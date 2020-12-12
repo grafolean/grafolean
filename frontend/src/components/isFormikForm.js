@@ -26,6 +26,7 @@ export const FormError = ({ msg }) => {
   );
 };
 
+// DEPRECATED: use FetchingFormik instead.
 const isFormikForm = WrappedComponent => {
   const wrappedComponent = class FormikForm extends React.Component {
     static defaultProps = {
