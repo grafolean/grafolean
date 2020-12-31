@@ -2,11 +2,11 @@ import flask
 import json
 import urllib.parse
 
-from .common import noauth, mqtt_publish_changed
+from .common import noauth, mqtt_publish_changed, send_telemetry_bg
 from datatypes import Account, Permission, Person, Bot
 from auth import Auth, JWT, AuthFailedException
 import dbutils
-from utils import log
+from utils import log, TelemetryActions
 import validators
 
 
@@ -39,6 +39,7 @@ def admin_migratedb_post():
     was_needed = dbutils.migrate_if_needed()
     if was_needed:
         mqtt_publish_changed(['status/info'])
+    send_telemetry_bg(TelemetryActions.MIGRATEDB)
     return '', 204
 
 

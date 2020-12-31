@@ -7,7 +7,7 @@ from flask_executor import Executor
 import paho.mqtt.publish as mqtt_publish
 
 from auth import JWT
-from utils import log
+from utils import log, telemetry_send
 
 
 MQTT_HOSTNAME = os.environ.get('MQTT_HOSTNAME')
@@ -93,3 +93,6 @@ def _bg_mqtt_publish_done(fn):
     ex = fn.exception()
     if ex:
         log.error(f"MQTT publishing: exception {''.join(traceback.format_exception(None, ex, ex.__traceback__))}")
+
+def send_telemetry_bg(action):
+    future_response = executor.submit(telemetry_send, action)

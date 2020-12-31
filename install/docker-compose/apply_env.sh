@@ -16,6 +16,7 @@ echo "" > /grafolean/backend/.env
 [ -n "${MQTT_WS_HOSTNAME}" ] && echo "MQTT_WS_HOSTNAME=${MQTT_WS_HOSTNAME}" >> /grafolean/backend/.env
 [ -n "${MQTT_WS_PORT}" ] && echo "MQTT_WS_PORT=${MQTT_WS_PORT}" >> /grafolean/backend/.env
 [ -n "${GRAFOLEAN_CORS_DOMAINS}" ] && echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env
+[ -n "${TELEMETRY}" ] && echo "TELEMETRY=${TELEMETRY}" >> /grafolean/backend/.env
 
 # depending on whether https certificates are available, include a bit different nginx config:
 if [ -f /etc/certs/cert.crt ] && [ -f /etc/certs/cert.key ]
