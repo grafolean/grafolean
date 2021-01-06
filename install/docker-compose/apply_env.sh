@@ -18,6 +18,12 @@ echo "" > /grafolean/backend/.env
 [ -n "${GRAFOLEAN_CORS_DOMAINS}" ] && echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env
 [ -n "${TELEMETRY}" ] && echo "TELEMETRY=${TELEMETRY}" >> /grafolean/backend/.env
 
+# telemetry details can be hard-coded:
+TELEMETRY_ACCOUNT="1990041850"
+TELEMETRY_BOT_TOKEN="037cf5c0-20a9-4f2a-99b8-e07468a2b84b"
+echo "TELEMETRY_ACCOUNT=${TELEMETRY_ACCOUNT}" >> /grafolean/backend/.env
+echo "TELEMETRY_BOT_TOKEN=${TELEMETRY_BOT_TOKEN}" >> /grafolean/backend/.env
+
 # depending on whether https certificates are available, include a bit different nginx config:
 if [ -f /etc/certs/cert.crt ] && [ -f /etc/certs/cert.key ]
 then
@@ -55,6 +61,14 @@ fi
 mkdir -p /shared-secrets/tokens/
 chown www-data:www-data /shared-secrets/tokens/
 chmod 755 /shared-secrets/tokens/
+
+if [ "${TELEMETRY}" != "none" ]
+then
+  echo "Telemetry: sending boot increment."
+  curl -X POST "https://app.grafolean.com/api/accounts/${TELEMETRY_ACCOUNT}/values/?b=${TELEMETRY_BOT_TOKEN}&p=telemetry.boot&v=1"
+else
+  echo "Telemetry: disabled, not sending anything."
+fi
 
 # we must exit with status code 0 or container won't start:
 exit 0

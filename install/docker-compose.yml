@@ -81,6 +81,8 @@ services:
       #
       # Uncomment this if you want the users to be able to register (and create their accounts) by themselves:
       #- ENABLE_SIGNUP=true
+      #
+      - TELEMETRY=${TELEMETRY}
     ports:
       - "${HTTP_PORT:-80}:80"
       # If you wish to enable HTTPS, you need to both enable port 443 and supply a valid certificate. See

@@ -79,7 +79,7 @@ ENV MQTT_HOSTNAME=${MQTT_HOSTNAME}
 ENV MQTT_PORT=${MQTT_PORT}
 RUN \
     apt-get update && \
-    apt-get install --no-install-recommends -q -y nginx git build-essential supervisor && \
+    apt-get install --no-install-recommends -q -y nginx git build-essential supervisor curl && \
     pip install gunicorn && \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \

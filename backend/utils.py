@@ -21,8 +21,11 @@ TELEMETRY_LEVEL = os.environ.get('TELEMETRY', 'basic')
 
 
 class TelemetryActions(Enum):
-    BOOT = 'boot'
+    BOOT = 'boot'  # sent from apply_env.sh
     MIGRATEDB = 'migratedb'
+
+    def __str__(self):
+        return str(self.value)
 
 
 def is_telemetry_allowed(action):
@@ -33,8 +36,8 @@ def is_telemetry_allowed(action):
     return False
 
 
-TELEMETRY_ACCOUNT = '1990041850'
-TELEMETRY_BOT_TOKEN = '037cf5c0-20a9-4f2a-99b8-e07468a2b84b'
+TELEMETRY_ACCOUNT = os.environ.get('TELEMETRY_ACCOUNT')
+TELEMETRY_BOT_TOKEN = os.environ.get('TELEMETRY_BOT_TOKEN')
 def telemetry_send(action):
     if not is_telemetry_allowed(action):
         return
@@ -43,9 +46,8 @@ def telemetry_send(action):
         {'p': f'telemetry.{action}', 'v': 1}
     ]
     try:
-        r = requests.post(f'https://app.grafolean.com/api/accounts/{TELEMETRY_ACCOUNT}/values/?b={TELEMETRY_BOT_TOKEN}', data=json.dumps(data), content_type='application/json')
+        log.debug(f"Telemetry: sending action '{action}'")
+        r = requests.post(f'https://app.grafolean.com/api/accounts/{TELEMETRY_ACCOUNT}/values/?b={TELEMETRY_BOT_TOKEN}', json=data)
     except:
         log.exception(f"Telemetry sending is allowed, but failed (action '{action}')")
 
-
-telemetry_send(TelemetryActions.BOOT)
