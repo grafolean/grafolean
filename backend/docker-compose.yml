@@ -47,6 +47,7 @@ services:
       - MQTT_WS_HOSTNAME=mosquitto
       - MQTT_WS_PORT=9883
       - MQTT_WS_SSL=false
+      - TELEMETRY=${TELEMETRY}
     ports:
       - "80:80"
     volumes:

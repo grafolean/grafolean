@@ -60,6 +60,7 @@ services:
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - ENABLE_SIGNUP=${ENABLE_SIGNUP:-false}
+      - TELEMETRY=${TELEMETRY}
     ports:
       - "5000:80"
     networks:

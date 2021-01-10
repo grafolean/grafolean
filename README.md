@@ -6,8 +6,9 @@
 
 - [Highlights](#highlights)
 - [Installation](#installation)
-- [Sending values to Grafolean](#quick-start---sending-values-to-grafolean)
+- [Quick start - sending values to Grafolean](#quick-start---sending-values-to-grafolean)
 - [Guides](#guides)
+- [Privacy](#privacy)
 - [License](#license)
 
 ---
@@ -93,6 +94,22 @@ The values can now be shown through dashboards.
 - [API Guide](backend/API.md)
 - [Development Guide](doc/HOWTO-dev.md)
 
+
+## Privacy
+
+We do our best to make sure no 3rd party receives any data from your installation of Grafolean or from your users.
+
+Frontend uses [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) to disallow loading of resources from anywhere except from the host itself. The limit also applies to external plugins.
+
+The backend should make no requests to the external services, except:
+- `https://app.grafolean.com/` - reporting telemetry if enabled (see below), and
+- `https://github.com/` - downloading [external plugins](https://github.com/grafolean/widget-plugin-template) when admin installs / upgrades them.
+
+Note that this list might be updated in the future, however, we will make an effort to avoid any tracking that is not strictly necessary.
+
+### Telemetry
+
+Telemetry can be disabled by setting `TELEMETRY=none` in the `.env` file when starting Grafolean (as indicated in `.env.example`). The default telemetry is `basic` and allows us to determine active installations of the app (app start, daily "ping"). We would appreciate if you leave the telemetry enabled as it helps us to focus our efforts on what matters the most, but we understand if you have concerns about it and decide to turn it off. We will not allow 3rd parties access to telemetry data, but we might publish aggregated data through public channels (blogs,...).
 
 ## License
 
