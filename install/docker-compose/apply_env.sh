@@ -18,7 +18,7 @@ echo "" > /grafolean/backend/.env
 [ -n "${GRAFOLEAN_CORS_DOMAINS}" ] && echo "GRAFOLEAN_CORS_DOMAINS=${GRAFOLEAN_CORS_DOMAINS}" >> /grafolean/backend/.env
 [ -n "${TELEMETRY}" ] && echo "TELEMETRY=${TELEMETRY}" >> /grafolean/backend/.env
 
-# telemetry details can be hard-coded:
+# telemetry details can be hard-coded and are public:
 TELEMETRY_ACCOUNT="1990041850"
 TELEMETRY_BOT_TOKEN="037cf5c0-20a9-4f2a-99b8-e07468a2b84b"
 echo "TELEMETRY_ACCOUNT=${TELEMETRY_ACCOUNT}" >> /grafolean/backend/.env
@@ -65,7 +65,9 @@ chmod 755 /shared-secrets/tokens/
 if [ "${TELEMETRY}" != "none" ]
 then
   echo "Telemetry: sending boot increment."
-  curl -X POST "https://app.grafolean.com/api/accounts/${TELEMETRY_ACCOUNT}/values/?b=${TELEMETRY_BOT_TOKEN}&p=telemetry.boot&v=1"
+  curl -s --max-time 5 -X POST "https://app.grafolean.com/api/accounts/${TELEMETRY_ACCOUNT}/values/?b=${TELEMETRY_BOT_TOKEN}&p=telemetry.boot&v=1"
+  echo "Telemetry: setting daily sending of 'up' signal."
+  echo "11 3 * * * root  (echo 'Telemetry: sending daily signal.' && /usr/bin/curl -s -X POST 'https://app.grafolean.com/api/accounts/${TELEMETRY_ACCOUNT}/values/?b=${TELEMETRY_BOT_TOKEN}&p=telemetry.daily&v=1') >/proc/1/fd/1 2>/proc/1/fd/2" > /etc/cron.d/grafolean-telemetry
 else
   echo "Telemetry: disabled, not sending anything."
 fi
