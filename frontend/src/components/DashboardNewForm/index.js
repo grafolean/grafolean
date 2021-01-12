@@ -7,6 +7,7 @@ import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
 
 import '../form.scss';
+import './DashboardNewForm.scss';
 
 import NETFLOW_TEMPLATE from './netflow.template.json';
 const DASHBOARD_TEMPLATES = [NETFLOW_TEMPLATE];
@@ -19,9 +20,15 @@ export default class DashboardNewForm extends React.Component {
   };
 
   validate = values => {
-    const { name = '' } = values;
+    const { name = '', initialize_from = '', template = '' } = values;
     if (name.length === 0) {
       return { name: 'Name must not be empty' };
+    }
+    if (initialize_from === '') {
+      return { initialize_from: 'Please select an option' };
+    }
+    if (initialize_from === 'template' && template === '') {
+      return { template: 'Please select a template' };
     }
     return {};
   };
@@ -86,7 +93,7 @@ export default class DashboardNewForm extends React.Component {
   handleSubmit = async (formValues, { setSubmitting }) => {
     try {
       const { accountId } = this.props.match.params;
-      const { name = '', template = '' } = formValues;
+      const { name = '', initialize_from = '', template = '' } = formValues;
       const params = {
         name: name,
       };
@@ -109,7 +116,7 @@ export default class DashboardNewForm extends React.Component {
       const json = await response.json();
       const dashboardSlug = json.slug;
 
-      if (template) {
+      if (initialize_from === 'template') {
         await this.createWidgetsFromTemplate(dashboardSlug, DASHBOARD_TEMPLATES[parseInt(template)].widgets);
       }
 
@@ -133,6 +140,7 @@ export default class DashboardNewForm extends React.Component {
         <Formik
           initialValues={{
             name: '',
+            initialize_from: '',
             template: '',
           }}
           validate={this.validate}
@@ -162,16 +170,49 @@ export default class DashboardNewForm extends React.Component {
                 />
               </div>
 
-              <div className="field">
-                <label>Initialize using a template:</label>
-                <select value={values.template} name="template" onChange={handleChange} onBlur={handleBlur}>
-                  <option value="">-- no template (empty dashboard) --</option>
-                  {DASHBOARD_TEMPLATES.map((dt, index) => (
-                    <option key={index} value={`${index}`}>
-                      {dt.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="initialize_from field">
+                <div className="option_container">
+                  <label>
+                    <input
+                      type="radio"
+                      name="initialize_from"
+                      value="empty"
+                      checked={values.initialize_from === 'empty'}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                    />
+                    <span>start with empty dashboard</span>
+                  </label>
+                </div>
+
+                <div className="option_container">
+                  <label>
+                    <input
+                      type="radio"
+                      name="initialize_from"
+                      value="template"
+                      checked={values.initialize_from === 'template'}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                    />
+                    <span>initialize using a template</span>
+                  </label>
+                  {values.initialize_from === 'template' && (
+                    <select
+                      value={values.template}
+                      name="template"
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                    >
+                      <option value="">-- please select --</option>
+                      {DASHBOARD_TEMPLATES.map((dt, index) => (
+                        <option key={index} value={`${index}`}>
+                          {dt.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               <Button type="submit" isLoading={isSubmitting} disabled={!isValid}>
