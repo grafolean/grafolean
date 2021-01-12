@@ -1,4 +1,5 @@
 import React from 'react';
+import { connect } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import { Formik } from 'formik';
 
@@ -12,7 +13,7 @@ import './DashboardNewForm.scss';
 import NETFLOW_TEMPLATE from './netflow.template.json';
 const DASHBOARD_TEMPLATES = [NETFLOW_TEMPLATE];
 
-export default class DashboardNewForm extends React.Component {
+class DashboardNewForm extends React.Component {
   state = {
     submitted: false,
     newSlug: null,
@@ -90,10 +91,14 @@ export default class DashboardNewForm extends React.Component {
     }
   }
 
+  async createWidgetsMatchingEntitySensors(dashboardSlug, entityId) {
+    // todo
+  }
+
   handleSubmit = async (formValues, { setSubmitting }) => {
     try {
       const { accountId } = this.props.match.params;
-      const { name = '', initialize_from = '', template = '' } = formValues;
+      const { name = '', initialize_from = '', template = '', entity = '' } = formValues;
       const params = {
         name: name,
       };
@@ -118,6 +123,8 @@ export default class DashboardNewForm extends React.Component {
 
       if (initialize_from === 'template') {
         await this.createWidgetsFromTemplate(dashboardSlug, DASHBOARD_TEMPLATES[parseInt(template)].widgets);
+      } else if (initialize_from === 'entity') {
+        await this.createWidgetsMatchingEntitySensors(dashboardSlug, parseInt(entity));
       }
 
       this.setState({
@@ -131,9 +138,12 @@ export default class DashboardNewForm extends React.Component {
 
   render() {
     const { submitted, newSlug } = this.state;
+    const { accountEntities } = this.props;
     if (submitted) {
       return <Redirect to={`/accounts/${this.props.match.params.accountId}/dashboards/view/${newSlug}`} />;
     }
+
+    const deviceEntities = accountEntities.filter(e => e.entity_type === 'device');
 
     return (
       <div className="frame">
@@ -142,6 +152,7 @@ export default class DashboardNewForm extends React.Component {
             name: '',
             initialize_from: '',
             template: '',
+            entity: '',
           }}
           validate={this.validate}
           onSubmit={this.handleSubmit}
@@ -213,6 +224,30 @@ export default class DashboardNewForm extends React.Component {
                     </select>
                   )}
                 </div>
+
+                <div className="option_container">
+                  <label>
+                    <input
+                      type="radio"
+                      name="initialize_from"
+                      value="entity"
+                      checked={values.initialize_from === 'entity'}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                    />
+                    <span>initialize according to device entity</span>
+                  </label>
+                  {values.initialize_from === 'entity' && (
+                    <select value={values.entity} name="entity" onChange={handleChange} onBlur={handleBlur}>
+                      <option value="">-- please select --</option>
+                      {deviceEntities.map(e => (
+                        <option key={e.id} value={`${e.id}`}>
+                          {e.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
               </div>
 
               <Button type="submit" isLoading={isSubmitting} disabled={!isValid}>
@@ -225,3 +260,8 @@ export default class DashboardNewForm extends React.Component {
     );
   }
 }
+
+const mapStoreToProps = store => ({
+  accountEntities: store.accountEntities,
+});
+export default connect(mapStoreToProps)(DashboardNewForm);
