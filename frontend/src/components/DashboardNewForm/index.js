@@ -114,7 +114,7 @@ class DashboardNewForm extends React.Component {
     const response = await fetchAuth(`${ROOT_URL}/accounts/${accountId}/entities/${entityId}`, {}, true);
     const entity = await response.json();
 
-    const { snmp } = entity.protocols;
+    const { snmp, ping } = entity.protocols;
     if (snmp) {
       const { sensors } = snmp;
       for (let i = 0; i < sensors.length; i++) {
@@ -154,6 +154,33 @@ class DashboardNewForm extends React.Component {
           true,
         );
       }
+    }
+
+    if (ping && ping.sensors && ping.sensors.length > 0) {
+      const params = {
+        type: 'chart',
+        title: `Ping: ${entity.name}`,
+        content: JSON.stringify([
+          {
+            path_filter: `entity.${entityId}.ping.?.rtt`,
+            renaming: 'packet: $1',
+            expression: '$1',
+            unit: 's',
+          },
+        ]),
+      };
+      await fetchAuth(
+        `${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}/widgets`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(params),
+        },
+        true,
+      );
     }
   }
 
