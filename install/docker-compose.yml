@@ -177,9 +177,8 @@ services:
         condition: service_healthy
     environment:
       - NAMED_PIPE_FILENAME=/shared-grafolean/netflow.pipe
+      # listen on UDP port: (2055 by default)
       - NETFLOW_PORT=2055
-    ports:
-      - "${NETFLOW_PORT:-2055}:2055/udp"
     restart: always
     # NetFlow collector uses the same docker image as bot (grafolean/grafolean-netflow-bot),
     # but specifies a different entrypoint:
