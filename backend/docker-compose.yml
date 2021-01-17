@@ -2,7 +2,7 @@ version: '2.1'
 services:
 
   db:
-    image: timescale/timescaledb:latest-pg12
+    image: timescale/timescaledb:1.7.4-pg12
     environment:
       - POSTGRES_DB=grafolean
       - POSTGRES_USER=admin

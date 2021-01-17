@@ -13,7 +13,7 @@ services:
   #
 
   db:
-    image: timescale/timescaledb:latest-pg12
+    image: timescale/timescaledb:1.7.4-pg12
     container_name: postgres
     volumes:
       # You should always save DB data to a host directory unless you are prepared to lose it. By default

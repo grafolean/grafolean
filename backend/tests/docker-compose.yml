@@ -5,8 +5,7 @@ services:
   # (`pytest -v integration.py`). The assumption is that services have already been built.
 
   dbpytest:
-    #image: postgres:9.6-alpine
-    image: timescale/timescaledb:latest-pg12
+    image: timescale/timescaledb:1.7.4-pg12
     environment:
       - POSTGRES_DB=pytest
       - POSTGRES_USER=pytest
