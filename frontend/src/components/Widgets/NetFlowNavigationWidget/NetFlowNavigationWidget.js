@@ -274,7 +274,7 @@ class NetFlowNavigationWidget extends React.Component {
               rel="noopener noreferrer"
             >
               NetFlow guide
-            </a>
+            </a>{' '}
             for more info.
           </div>
         ) : (

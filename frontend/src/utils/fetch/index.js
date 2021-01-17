@@ -14,7 +14,7 @@ const _addAuthHeaderToParams = (fetchOptions, authHeader) => {
   };
 };
 
-export const fetchAuth = async (url, fetchOptions = {}) => {
+export const fetchAuth = async (url, fetchOptions = {}, raiseForStatus = false) => {
   // get the JWT token (it is not expired - if it were, it would have been refreshed) and
   // handle possible errors:
   let token;
@@ -29,7 +29,14 @@ export const fetchAuth = async (url, fetchOptions = {}) => {
   // return normal fetch promise, except that we add the auth header:
   const authHeader = 'Bearer ' + token;
   const fetchOptionsWithAuth = _addAuthHeaderToParams(fetchOptions, authHeader);
-  return fetch(url, fetchOptionsWithAuth);
+  const response = await fetch(url, fetchOptionsWithAuth);
+  if (raiseForStatus) {
+    if (!response.ok) {
+      const errorMsg = await response.text();
+      throw new Error(`Error fetching: ${errorMsg}`);
+    }
+  }
+  return response;
 };
 
 export const havePermission = (resource, method, permissions) => {

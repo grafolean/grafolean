@@ -6,6 +6,7 @@ import { Formik } from 'formik';
 import { ROOT_URL } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 import Button from '../Button';
+import { FormError } from '../isFormikForm';
 
 import '../form.scss';
 import './DashboardNewForm.scss';
@@ -21,7 +22,7 @@ class DashboardNewForm extends React.Component {
   };
 
   validate = values => {
-    const { name = '', initialize_from = '', template = '' } = values;
+    const { name = '', initialize_from = '', template = '', entity = '' } = values;
     if (name.length === 0) {
       return { name: 'Name must not be empty' };
     }
@@ -30,6 +31,9 @@ class DashboardNewForm extends React.Component {
     }
     if (initialize_from === 'template' && template === '') {
       return { template: 'Please select a template' };
+    }
+    if (initialize_from === 'entity' && entity === '') {
+      return { template: 'Please select an entity' };
     }
     return {};
   };
@@ -54,11 +58,8 @@ class DashboardNewForm extends React.Component {
           method: 'POST',
           body: JSON.stringify(params),
         },
+        true,
       );
-      if (!response.ok) {
-        const errorMsg = await response.text();
-        throw new Error(`Error creating widgets: ${errorMsg}`);
-      }
       const json = await response.json();
       positions.push({
         widget_id: json.id,
@@ -74,7 +75,7 @@ class DashboardNewForm extends React.Component {
 
   async setWidgetsPositions(dashboardSlug, positions) {
     const { accountId } = this.props.match.params;
-    const response = await fetchAuth(
+    await fetchAuth(
       `${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}/widgets_positions`,
       {
         headers: {
@@ -84,15 +85,76 @@ class DashboardNewForm extends React.Component {
         method: 'PUT',
         body: JSON.stringify(positions),
       },
+      true,
     );
-    if (!response.ok) {
-      const errorMsg = await response.text();
-      throw new Error(`Error creating widgets: ${errorMsg}`);
-    }
+  }
+
+  constructPathFilterFromSensorOutputPath(outputPath) {
+    // "if.in-octets.{$index}.{$1}" -> { pathFilter: "if.in-octets.?.?", renaming: "$1 $2" }
+    // "lmsensors.temp.{$index}.{$1}" -> { pathFilter: "lmsensors.temp.?.?", renaming: "$1 $2" }
+    // "lmsensors.temp.{$index}" -> { pathFilter: "lmsensors.temp.?", renaming: "$1" }
+    let nReplacements = 0;
+    const pathFilter = outputPath.replace(/[{][$][^}]+[}]/g, () => {
+      nReplacements++;
+      return '?';
+    });
+    const renaming = [...Array(nReplacements).keys()].map(k => `$${k + 1}`).join(' ');
+    return {
+      pathFilter: pathFilter,
+      renaming: renaming,
+    };
   }
 
   async createWidgetsMatchingEntitySensors(dashboardSlug, entityId) {
-    // todo
+    /*
+      To magically construct the widgets for enabled sensors on the entity, we need to traverse the sensors
+      and guess correct chart parameters from its output_path.
+    */
+    const { accountId } = this.props.match.params;
+    const response = await fetchAuth(`${ROOT_URL}/accounts/${accountId}/entities/${entityId}`, {}, true);
+    const entity = await response.json();
+
+    const { snmp } = entity.protocols;
+    if (snmp) {
+      const { sensors } = snmp;
+      for (let i = 0; i < sensors.length; i++) {
+        const sensorId = sensors[i].sensor;
+        const responseSensor = await fetchAuth(
+          `${ROOT_URL}/accounts/${accountId}/sensors/${sensorId}`,
+          {},
+          true,
+        );
+        const sensor = await responseSensor.json();
+        const sensorName = sensor.name;
+        const outputPath = sensor.details.output_path;
+
+        const { pathFilter, renaming } = this.constructPathFilterFromSensorOutputPath(outputPath);
+        const params = {
+          type: 'chart',
+          title: sensorName,
+          content: JSON.stringify([
+            {
+              path_filter: `entity.${entityId}.snmp.${pathFilter}`,
+              renaming: renaming,
+              expression: '$1',
+              unit: '',
+            },
+          ]),
+        };
+        await fetchAuth(
+          `${ROOT_URL}/accounts/${accountId}/dashboards/${dashboardSlug}/widgets`,
+          {
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+            },
+            method: 'POST',
+            body: JSON.stringify(params),
+          },
+          true,
+        );
+      }
+    }
   }
 
   handleSubmit = async (formValues, { setSubmitting }) => {
@@ -102,21 +164,18 @@ class DashboardNewForm extends React.Component {
       const params = {
         name: name,
       };
-      const response = await fetchAuth(`${ROOT_URL}/accounts/${accountId}/dashboards`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
+      const response = await fetchAuth(
+        `${ROOT_URL}/accounts/${accountId}/dashboards`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          method: 'POST',
+          body: JSON.stringify(params),
         },
-        method: 'POST',
-        body: JSON.stringify(params),
-      });
-      if (!response.ok) {
-        const errorMsg = await response.text();
-        this.setState({
-          errorMsg: errorMsg,
-        });
-        return;
-      }
+        true,
+      );
 
       const json = await response.json();
       const dashboardSlug = json.slug;
@@ -131,13 +190,17 @@ class DashboardNewForm extends React.Component {
         submitted: true,
         newSlug: dashboardSlug,
       });
+    } catch (ex) {
+      this.setState({
+        errorMsg: ex.toString(),
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   render() {
-    const { submitted, newSlug } = this.state;
+    const { submitted, newSlug, errorMsg } = this.state;
     const { accountEntities } = this.props;
     if (submitted) {
       return <Redirect to={`/accounts/${this.props.match.params.accountId}/dashboards/view/${newSlug}`} />;
@@ -250,9 +313,11 @@ class DashboardNewForm extends React.Component {
                 </div>
               </div>
 
+              {errorMsg && <FormError msg={errorMsg} />}
               <Button type="submit" isLoading={isSubmitting} disabled={!isValid}>
                 Submit
               </Button>
+              {!isValid && <FormError msg={errors} />}
             </form>
           )}
         </Formik>
