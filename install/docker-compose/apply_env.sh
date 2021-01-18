@@ -48,11 +48,16 @@ then
   sed -i -r "s#connect-src ([^;]+);#connect-src \\1 ${ALLOW_WS};#g" /etc/nginx/grafolean.*.conf
   sed -i -r "s#connect-src ([^;]+);#connect-src \\1 ${ALLOW_WS};#g" /var/www/html/index.html
 else
-  echo "WARNING: MQTT_WS_HOSTNAME is not set, consequently Content-Security-Policy headers will disallow websockets connection."
-  echo "To avoid further problems, exiting now with error."
+  echo ""
+  echo "***********************************************************"
+  echo "* ERROR: Did you forget to set ENTERNAL_HOSTNAME in .env? *"
+  echo "***********************************************************"
+  echo "Internally, MQTT_WS_HOSTNAME is not set, consequently Content-Security-Policy headers will disallow websockets connection."
+  echo "Exiting with error to avoid further problems later on."
   echo " - if you are using default Docker installation: set this to the domain or IP under which this container will be accessible"
   echo " - otherwise: set this to the domain or IP under which the MQTT broker's websocket service will be accessible, and don't"
   echo "   forget to set MQTT_WS_PORT too (unless it is the same as the port of backend - 80 or 443)"
+  echo ""
   exit 1
 fi
 
