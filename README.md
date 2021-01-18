@@ -49,7 +49,7 @@ Before starting, make sure that both Docker ([installation instructions](https:/
     ```
      and change the settings:
 
-    - mandatory: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside - for example `grafolean.example.com` or `198.51.100.12`),
+    - **mandatory**: `EXTERNAL_HOSTNAME` (set to the IP/hostname of the server as seen from the outside - for example `grafolean.example.com` or `198.51.100.12`),
     - optional but recommended: DB admin credentials and the path where the DB data will be saved locally (`/grafolean-db/` by default).
 
 4) run:
