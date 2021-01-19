@@ -7,7 +7,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 ENV ADBLOCK=yes
 # installing python and build-essential is not needed for x86, but it is mandatory on armv7:
 RUN \
-    apt update && \
+    apt-get update && \
     apt-get install -q -y python build-essential && \
     npm ci
 COPY frontend/. ./
@@ -30,9 +30,10 @@ COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 FROM python:3.6-slim-stretch as build-backend
 ARG VERSION="0.0.0"
 WORKDIR /grafolean/backend
+# installing build-essential is not needed for x86, but it is mandatory on armv7:
 RUN \
     apt-get update && \
-    apt-get install -q -y git && \
+    apt-get install -q -y git build-essential libpq-dev python3-dev libffi-dev && \
     pip install pipenv
 # - prepare pip requirements.txt for backend:
 COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
