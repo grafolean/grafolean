@@ -52,7 +52,7 @@ jobs:
         DOCKER_IMAGE: grafolean/grafolean
         DOCKER_USER: grafolean
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BUILD_PLATFORMS: linux/amd64,linux/arm/v7,linux/arm64
+        BUILD_PLATFORMS: linux/amd64,linux/arm/v7
       run: |
         echo "Available plaftorms: ${{ steps.buildx.outputs.platforms }}"
         echo "Building for plaftorms: $BUILD_PLATFORMS"
