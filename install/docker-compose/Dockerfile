@@ -1,5 +1,5 @@
 # Prepare (build) frontend:
-FROM node:10.15-jessie-slim as build-frontend
+FROM node:10.23-buster-slim as build-frontend
 WORKDIR /usr/src/app
 # first copy just package.json & lock, so we don't re-install packages on every change:
 COPY frontend/package.json frontend/package-lock.json ./
@@ -49,7 +49,7 @@ RUN \
 
 
 # Convert API doc from Swagger/OpenAPI to static HTML:
-FROM node:10.15-jessie-slim as convert-swagger-to-html
+FROM node:10.23-buster-slim as convert-swagger-to-html
 RUN \
     npm install -g redoc-cli
 COPY --from=build-backend /api-doc-2.yml /api-doc-2.yml
