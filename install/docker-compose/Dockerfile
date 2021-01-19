@@ -82,17 +82,17 @@ ARG MQTT_HOSTNAME=""
 ARG MQTT_PORT=1883
 ENV MQTT_HOSTNAME=${MQTT_HOSTNAME}
 ENV MQTT_PORT=${MQTT_PORT}
+COPY --from=build-backend /requirements.txt /requirements.txt
 RUN \
     apt-get update && \
     apt-get install --no-install-recommends -q -y nginx git build-essential supervisor curl cron && \
     pip install gunicorn && \
+    pip install -r /requirements.txt && \
     apt-get purge -y build-essential && \
     apt-get clean autoclean && \
     apt-get autoremove --yes && \
     rm -rf /var/lib/{apt,dpkg,cache,log}/ /var/cache/apt/* /tmp/* && \
     echo "alias l='ls -altr'" >> /root/.bashrc
-COPY --from=build-backend /requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
 COPY --from=build-frontend /usr/src/app/build /var/www/html
 # nginx makes life complex when serving gzip content-encoded files, so we
 # gzip them ahead of time and serve them with appropriate header:
