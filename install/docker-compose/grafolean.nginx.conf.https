@@ -78,7 +78,7 @@ server {
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection $connection_upgrade;
-        proxy_read_timeout 3600000000s; # there doesn't seem to be a way to set this to unlimited, so we'll settle for ~100 years
+        proxy_read_timeout 10d; # there doesn't seem to be a way to set this to unlimited, so we'll settle for 10 days (we would take more, but then nginx 1.10.3 on armv7 fails)
     }
 
     location / {
