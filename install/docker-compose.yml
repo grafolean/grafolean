@@ -121,7 +121,7 @@ services:
 
   # SNMP bot (optional)
   snmpbot:
-    image: grafolean/grafolean-snmp-bot
+    image: grafolean/grafolean-snmp-bot:v0.1.7
     container_name: grafolean-snmp-bot
     depends_on:
       db:
