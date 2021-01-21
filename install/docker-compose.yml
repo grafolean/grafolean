@@ -121,7 +121,7 @@ services:
 
   # SNMP bot (optional)
   snmpbot:
-    image: grafolean/grafolean-snmp-bot:v0.1.7
+    image: grafolean/grafolean-snmp-bot:v0.1.8
     container_name: grafolean-snmp-bot
     depends_on:
       db:
@@ -144,7 +144,7 @@ services:
   # NetFlow bot is composed of 3 services: netflowbot, netflowcollector and netflowwriter.
   # If you wish to disable it, remove all three services below.
   netflowbot:
-    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.3
     container_name: grafolean-netflow-bot
     depends_on:
       db:
@@ -170,7 +170,7 @@ services:
     # IP if processed within the Docker network. To avoid that, we have a collector
     # listening on host network interface, then transferring the data to a "writer"
     # process within the network, which writes it to a DB.
-    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.3
     container_name: grafolean-netflow-collector
     depends_on:
       db:
@@ -194,7 +194,7 @@ services:
 
   netflowwriter:
     # Reads netflow data from named pipe and writes it to DB.
-    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.3
     container_name: grafolean-netflow-writer
     depends_on:
       db:
