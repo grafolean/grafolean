@@ -85,7 +85,7 @@ ENV MQTT_PORT=${MQTT_PORT}
 COPY --from=build-backend /requirements.txt /requirements.txt
 RUN \
     apt-get update && \
-    apt-get install --no-install-recommends -q -y nginx git supervisor curl cron build-essential libpq-dev python3-dev libffi-dev && \
+    apt-get install --no-install-recommends -q -y nginx git supervisor curl cron libpq5 build-essential libpq-dev python3-dev libffi-dev && \
     pip install gunicorn && \
     pip install -r /requirements.txt && \
     apt-get purge -y build-essential libpq-dev python3-dev libffi-dev && \
