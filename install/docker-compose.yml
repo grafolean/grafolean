@@ -39,7 +39,7 @@ services:
   grafolean:
     # If you wish to load an explicit version, change the next line. For example:
     #   image: grafolean/grafolean:v1.0.0
-    image: grafolean/grafolean
+    image: grafolean/grafolean:v0.4.19-rc.12
     container_name: grafolean
     depends_on:
       db:
@@ -98,7 +98,7 @@ services:
       - grafolean
 
   mosquitto:
-    image: grafolean/mosquitto
+    image: grafolean/mosquitto:v0.1.5-rc.3
     container_name: mosquitto
     restart: always
     networks:
@@ -106,7 +106,7 @@ services:
 
   # ICMP Ping bot (optional)
   pingbot:
-    image: grafolean/grafolean-ping-bot
+    image: grafolean/grafolean-ping-bot:v0.0.10-rc.1
     container_name: grafolean-ping-bot
     environment:
       - BACKEND_URL=http://grafolean/api
@@ -144,7 +144,7 @@ services:
   # NetFlow bot is composed of 3 services: netflowbot, netflowcollector and netflowwriter.
   # If you wish to disable it, remove all three services below.
   netflowbot:
-    image: grafolean/grafolean-netflow-bot
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
     container_name: grafolean-netflow-bot
     depends_on:
       db:
@@ -170,7 +170,7 @@ services:
     # IP if processed within the Docker network. To avoid that, we have a collector
     # listening on host network interface, then transferring the data to a "writer"
     # process within the network, which writes it to a DB.
-    image: grafolean/grafolean-netflow-bot
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
     container_name: grafolean-netflow-collector
     depends_on:
       db:
@@ -194,7 +194,7 @@ services:
 
   netflowwriter:
     # Reads netflow data from named pipe and writes it to DB.
-    image: grafolean/grafolean-netflow-bot
+    image: grafolean/grafolean-netflow-bot:v0.3.1-rc.2
     container_name: grafolean-netflow-writer
     depends_on:
       db:
@@ -228,17 +228,17 @@ services:
   # End of NetFlow bot services.
 
 
-  autoheal:
-    # This container automatically restarts any container that fails its health check:
-    image: willfarrell/autoheal
-    container_name: grafolean-autoheal
-    environment:
-      - AUTOHEAL_CONTAINER_LABEL=all
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    restart: always
-    networks:
-      - grafolean
+  # autoheal:
+  #   # This container automatically restarts any container that fails its health check:
+  #   image: willfarrell/autoheal
+  #   container_name: grafolean-autoheal
+  #   environment:
+  #     - AUTOHEAL_CONTAINER_LABEL=all
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock
+  #   restart: always
+  #   networks:
+  #     - grafolean
 
 
 networks:
