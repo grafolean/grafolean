@@ -37,6 +37,19 @@ Before starting, make sure that both Docker ([installation instructions](https:/
     $ curl https://raw.githubusercontent.com/grafolean/grafolean/master/install/docker-compose.yml > docker-compose.yml
     ```
 
+    <details>
+      <summary>Trying to run Grafolean on Raspberry PI? Read more...</summary>
+
+      The default build is for `x86` architecture only. If you would like to run Grafolean on an ARM (Raspberry Pi), there is a build available for it, but it is not yet included in the default branch. Use this command to fetch `docker-compose.yml` instead:
+      ```
+      $ curl https://raw.githubusercontent.com/grafolean/grafolean/feature/multi-arch/install/docker-compose.yml > docker-compose.yml
+      ```
+
+      Everything else works the same.
+
+      Note that constant writing to SD cards (which is what databases do) is in general not a good idea and might cause them to fail. If you have an option, consider using an SSD drive.
+    </details>
+
 2) save [.env.example](https://raw.githubusercontent.com/grafolean/grafolean/master/install/.env.example) to a local file and rename it to `.env`:
 
     ```
