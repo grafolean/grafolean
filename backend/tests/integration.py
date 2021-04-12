@@ -1024,7 +1024,7 @@ def test_options(app_client):
         r = app_client.options('/api/admin/first', headers={'Origin': origin})
         assert r.status_code == 200
         assert dict(r.headers).get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted
-        assert dict(r.headers).get('Access-Control-Allow-Headers', None) == 'Content-Type, Authorization'
+        assert dict(r.headers).get('Access-Control-Allow-Headers', None) == 'Content-Type, Authorization, If-None-Match'
         assert dict(r.headers).get('Access-Control-Allow-Methods', None) == 'GET, POST, DELETE, PUT, OPTIONS'
         assert dict(r.headers).get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'
         assert dict(r.headers).get('Access-Control-Max-Age', None) == '3600'

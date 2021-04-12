@@ -77,8 +77,8 @@ class JWT(object):
         enriched_data['exp'] = datetime.datetime.utcnow() + datetime.timedelta(seconds=token_valid_for_s)
         # careful: jwt.encode() changes 'enriched_data' in-place (converts field 'exp' from datetime to UNIX timestamp)
         jwt_encoded = jwt.encode(enriched_data, key, algorithm='HS256')
-        header = 'Bearer {}:{}'.format(key_id, jwt_encoded.decode("utf-8"))
-        return header, enriched_data['exp']
+        header = 'Bearer {}:{}'.format(key_id, jwt_encoded)
+        return header, enriched_data['exp'].timestamp()
 
     @classmethod
     def _private_jwt_key_for_decoding(cls, key_id):
