@@ -26,7 +26,7 @@ from auth import JWT
 
 
 def setup_module():
-    pass
+    os.environ['ENABLE_SIGNUP'] = 'false'
 
 
 def teardown_module():
