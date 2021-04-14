@@ -4,14 +4,21 @@ import { Link } from 'react-router-dom';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
+import { useTableSort } from '../../utils/useTableSort';
 
 import Loading from '../Loading';
 import Button from '../Button';
+
+const DEFAULT_SORT_ORDER = [
+  ['name', true],
+  ['id', true],
+];
 
 function Dashboards(props) {
   const accountId = props.match.params.accountId;
   const [dashboards, setDashboards] = useState(null);
   const [fetchError, setFetchError] = useState(false);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onRecordsUpdate = dashboards => {
     setDashboards(dashboards.list);
@@ -58,10 +65,13 @@ function Dashboards(props) {
             <table className="list">
               <tbody>
                 <tr>
-                  <th>Name</th>
+                  <th className="sortable" onClick={() => applySortFunc('name')}>
+                    Name
+                    {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  </th>
                   <th />
                 </tr>
-                {dashboards.map(dashboard => (
+                {dashboards.sort(sortCompareFunc).map(dashboard => (
                   <tr key={dashboard.slug}>
                     <td>
                       <Link

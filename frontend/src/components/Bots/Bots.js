@@ -7,6 +7,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
+import { useTableSort } from '../../utils/useTableSort';
 
 import Loading from '../Loading';
 import Button from '../Button';
@@ -17,7 +18,6 @@ import When from '../When';
 
 import '../form.scss';
 import './Bots.scss';
-import { useTableSort } from '../../utils/useTableSort';
 
 const DEFAULT_SORT_ORDER = [
   ['isSystemwide', true],
