@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
+import { useTableSort } from '../../utils/useTableSort';
 
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
@@ -11,10 +12,17 @@ import Button from '../Button';
 import EntityDetails from './EntityDetails';
 import ParentEntityId from './ParentEntityId';
 
+const DEFAULT_SORT_ORDER = [
+  ['type', true],
+  ['name', true],
+  ['id', true],
+];
+
 export default function Entities(props) {
   const accountId = props.match.params.accountId;
   const [entities, setEntities] = useState(null);
   const [fetchError, setFetchError] = useState(false);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onEntitiesUpdate = entities => {
     setEntities(entities.list);
@@ -59,13 +67,19 @@ export default function Entities(props) {
             <table className="list">
               <tbody>
                 <tr>
-                  <th>Type</th>
-                  <th>Name</th>
+                  <th className="sortable" onClick={() => applySortFunc('type')}>
+                    Type
+                    {firstSortKey === 'type' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  </th>
+                  <th className="sortable" onClick={() => applySortFunc('name')}>
+                    Name
+                    {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  </th>
                   <th>Details</th>
                   <th />
                   <th />
                 </tr>
-                {entities.map(entity => (
+                {entities.sort(sortCompareFunc).map(entity => (
                   <tr key={entity.id}>
                     <td>{entity.entity_type}</td>
                     <td>
