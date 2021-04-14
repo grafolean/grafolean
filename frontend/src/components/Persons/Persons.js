@@ -2,18 +2,25 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { fetchAuth } from '../../utils/fetch';
-import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
-import store from '../../store';
+import { ROOT_URL } from '../../store/actions';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { useTableSort } from '../../utils/useTableSort';
 
 import Button from '../Button';
 import Loading from '../Loading';
 
 import './Persons.scss';
-import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+
+const DEFAULT_SORT_ORDER = [
+  ['activated', false],
+  ['name', true],
+  ['id', true],
+];
 
 export default function Persons(props) {
   const [persons, setPersons] = useState(null);
   const [fetchError, setFetchError] = useState(false);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onPersonsUpdate = responseData => {
     setPersons(responseData.list);
@@ -47,14 +54,26 @@ export default function Persons(props) {
           <table className="list">
             <tbody>
               <tr>
-                <th>Username</th>
-                <th>Name</th>
-                <th>E-mail</th>
-                <th>Activated</th>
+                <th className="sortable" onClick={() => applySortFunc('username')}>
+                  Username
+                  {firstSortKey === 'username' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('name')}>
+                  Name
+                  {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('email')}>
+                  E-mail
+                  {firstSortKey === 'email' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('email_confirmed')}>
+                  Activated
+                  {firstSortKey === 'email_confirmed' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
                 <th />
                 <th />
               </tr>
-              {persons.map(person => (
+              {persons.sort(sortCompareFunc).map(person => (
                 <tr key={person.user_id}>
                   <td>{person.username}</td>
                   <td>{person.name}</td>
