@@ -4,15 +4,22 @@ import { Link } from 'react-router-dom';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
+import { useTableSort } from '../../utils/useTableSort';
 
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
 import Button from '../Button';
 
+const DEFAULT_SORT_ORDER = [
+  ['name', true],
+  ['id', true],
+];
+
 export default function Credentials(props) {
   const accountId = props.match.params.accountId;
   const [credentials, setCredentials] = useState(null);
   const [fetchError, setFetchError] = useState(false);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onCredentialsUpdate = credentials => {
     setCredentials(credentials.list);
@@ -59,13 +66,19 @@ export default function Credentials(props) {
             <table className="list">
               <tbody>
                 <tr>
-                  <th>Type</th>
-                  <th>Name</th>
+                  <th className="sortable" onClick={() => applySortFunc('protocol')}>
+                    Protocol
+                    {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  </th>
+                  <th className="sortable" onClick={() => applySortFunc('name')}>
+                    Name
+                    {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  </th>
                   <th>Details</th>
                   <th />
                   <th />
                 </tr>
-                {credentials.map(cred => (
+                {credentials.sort(sortCompareFunc).map(cred => (
                   <tr key={cred.id}>
                     <td>{cred.protocol}</td>
                     <td>{cred.name}</td>
