@@ -17,11 +17,19 @@ import When from '../When';
 
 import '../form.scss';
 import './Bots.scss';
+import { useTableSort } from '../../utils/useTableSort';
+
+const DEFAULT_SORT_ORDER = [
+  ['isSystemwide', true],
+  ['name', true],
+  ['id', true],
+];
 
 function Bots(props) {
   const accountId = props.match.params.accountId;
   const [accountBots, setAccountBots] = useState(null);
   const [systemwideBots, setSystemwideBots] = useState(null);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onAccountBotsUpdate = json => {
     // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
@@ -53,7 +61,10 @@ function Bots(props) {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  const bots = accountBots === null || systemwideBots === null ? null : accountBots.concat(systemwideBots);
+  const bots =
+    accountBots === null || systemwideBots === null
+      ? null
+      : accountBots.concat(systemwideBots).sort(sortCompareFunc);
   return (
     <>
       <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={onAccountBotsUpdate} />
@@ -65,11 +76,23 @@ function Bots(props) {
           <table className="list">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Type</th>
+                <th className="sortable" onClick={() => applySortFunc('name')}>
+                  Name
+                  {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('protocol')}>
+                  Type
+                  {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
                 <th>Token</th>
-                <th>Insert time (UTC)</th>
-                <th>Last successful login (UTC)</th>
+                <th className="sortable" onClick={() => applySortFunc('insert_time')}>
+                  Insert time (UTC)
+                  {firstSortKey === 'insert_time' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('last_login')}>
+                  Last successful login (UTC)
+                  {firstSortKey === 'last_login' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
                 <th>Removal</th>
               </tr>
             </thead>
