@@ -12,6 +12,11 @@ import Button from '../Button';
 function Sensors(props) {
   const [sensors, setSensors] = useState(null);
   const [fetchError, setFetchError] = useState(false);
+  const [sortOrder, setSortOrder] = useState([]);
+  const DEFAULT_SORT_ORDER = [
+    ['name', true],
+    ['id', true],
+  ];
 
   const accountId = props.match.params.accountId;
 
@@ -38,6 +43,33 @@ function Sensors(props) {
     });
   };
 
+  const applySortBy = key => {
+    if (sortOrder.length === 0) {
+      setSortOrder([[key, true]]);
+      return;
+    }
+    const [firstKey, firstDirection] = sortOrder.shift();
+    if (key === firstKey) {
+      setSortOrder([[key, !firstDirection], ...sortOrder]);
+    } else {
+      setSortOrder([[key, true], [firstKey, firstDirection], ...sortOrder.filter(so => so[0] !== key)]);
+    }
+  };
+
+  const sortCompareFunc = (row1, row2) => {
+    const sortOrderWithDefaults = [...sortOrder, ...DEFAULT_SORT_ORDER];
+    for (let [sortKey, sortDirection] of sortOrderWithDefaults) {
+      if (row1[sortKey] < row2[sortKey]) {
+        return sortDirection ? -1 : 1;
+      } else if (row1[sortKey] > row2[sortKey]) {
+        return sortDirection ? 1 : -1;
+      } else {
+        continue;
+      }
+    }
+    return 0;
+  };
+
   return (
     <div className="sensors frame">
       <PersistentFetcher
@@ -58,13 +90,23 @@ function Sensors(props) {
             <table className="list">
               <tbody>
                 <tr>
-                  <th>Protocol</th>
-                  <th>Name</th>
+                  <th className="sortable" onClick={() => applySortBy('protocol')}>
+                    Protocol
+                    {sortOrder.length > 0 && sortOrder[0][0] === 'protocol' && (
+                      <i className={`fa fa-sort-${sortOrder[0][1] ? 'asc' : 'desc'}`} />
+                    )}
+                  </th>
+                  <th className="sortable" onClick={() => applySortBy('name')}>
+                    Name
+                    {sortOrder.length > 0 && sortOrder[0][0] === 'name' && (
+                      <i className={`fa fa-sort-${sortOrder[0][1] ? 'asc' : 'desc'}`} />
+                    )}
+                  </th>
                   <th>Details</th>
                   <th />
                   <th />
                 </tr>
-                {sensors.map(sensor => (
+                {sensors.sort(sortCompareFunc).map(sensor => (
                   <tr key={sensor.id}>
                     <td>{sensor.protocol}</td>
                     <td>{sensor.name}</td>
