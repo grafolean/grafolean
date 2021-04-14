@@ -35,6 +35,7 @@ function Bots(props) {
     // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
+      protocol_slug: bot.protocol,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
       isSystemwide: false,
     }));
@@ -43,6 +44,7 @@ function Bots(props) {
   const onSystemwideBotsUpdate = json => {
     const bots = json.list.map(bot => ({
       ...bot,
+      protocol_slug: bot.protocol,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
       isSystemwide: true,
     }));
@@ -80,9 +82,9 @@ function Bots(props) {
                   Name
                   {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
-                <th className="sortable" onClick={() => applySortFunc('protocol')}>
+                <th className="sortable" onClick={() => applySortFunc('protocol_slug')}>
                   Type
-                  {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  {firstSortKey === 'protocol_slug' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
                 <th>Token</th>
                 <th className="sortable" onClick={() => applySortFunc('insert_time')}>

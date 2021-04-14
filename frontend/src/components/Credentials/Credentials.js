@@ -67,7 +67,7 @@ export default function Credentials(props) {
               <tbody>
                 <tr>
                   <th className="sortable" onClick={() => applySortFunc('protocol')}>
-                    Protocol
+                    Type
                     {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                   </th>
                   <th className="sortable" onClick={() => applySortFunc('name')}>

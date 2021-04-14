@@ -7,20 +7,29 @@ import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
 import { fetchAuth } from '../../utils/fetch';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { useTableSort } from '../../utils/useTableSort';
+
 import Loading from '../Loading';
 import BotToken from '../Bots/BotToken';
 import When from '../When';
 import HelpSnippet from '../HelpSnippets/HelpSnippet';
 import Button from '../Button';
 
+const DEFAULT_SORT_ORDER = [
+  ['name', true],
+  ['id', true],
+];
+
 export default function SystemwideBots(props) {
   const accountId = props.match.params.accountId;
   const [bots, setBots] = useState(null);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 
   const onBotsUpdate = json => {
     // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
+      protocol_slug: bot.protocol,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
     }));
     setBots(bots);
@@ -48,17 +57,29 @@ export default function SystemwideBots(props) {
           <table className="list">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Type</th>
+                <th className="sortable" onClick={() => applySortFunc('name')}>
+                  Name
+                  {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('protocol_slug')}>
+                  Type
+                  {firstSortKey === 'protocol_slug' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
                 <th>Token</th>
-                <th>Insert time (UTC)</th>
-                <th>Last successful login (UTC)</th>
+                <th className="sortable" onClick={() => applySortFunc('insert_time')}>
+                  Insert time (UTC)
+                  {firstSortKey === 'insert_time' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('last_login')}>
+                  Last successful login (UTC)
+                  {firstSortKey === 'last_login' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
                 <th />
                 <th />
               </tr>
             </thead>
             <tbody>
-              {bots.map(bot => (
+              {bots.sort(sortCompareFunc).map(bot => (
                 <tr key={bot.id}>
                   <td data-label="Name">
                     <Link className="button green" to={`/bots/${bot.id}/edit`}>
