@@ -1,102 +1,109 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { fetchAuth } from '../../utils/fetch';
-import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
-import store from '../../store';
+import { ROOT_URL } from '../../store/actions';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
+import { useTableSort } from '../../utils/useTableSort';
 
 import Button from '../Button';
 import Loading from '../Loading';
 
 import './Persons.scss';
 
-export default class Persons extends React.PureComponent {
-  state = {
-    persons: null,
+const DEFAULT_SORT_ORDER = [
+  ['activated', false],
+  ['name', true],
+  ['id', true],
+];
+
+export default function Persons(props) {
+  const [persons, setPersons] = useState(null);
+  const [fetchError, setFetchError] = useState(false);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+
+  const onPersonsUpdate = responseData => {
+    setPersons(responseData.list);
+    setFetchError(false);
   };
 
-  componentDidMount() {
-    this.fetchPersons();
-  }
-
-  fetchPersons = () => {
-    fetchAuth(`${ROOT_URL}/persons/`)
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json =>
-        this.setState({
-          persons: json.list,
-        }),
-      )
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+  const onPersonsUpdateError = errMsg => {
+    setPersons(null);
+    setFetchError(true);
   };
 
-  handleDelete = (ev, personId) => {
+  const performDelete = (ev, personId) => {
     ev.preventDefault();
-    const person = this.state.persons.find(person => person.user_id === personId);
+
+    const person = persons.find(person => person.user_id === personId);
     if (!window.confirm(`Are you sure you want to delete user "${person.name}" ? This can't be undone!`)) {
       return;
     }
 
-    fetchAuth(`${ROOT_URL}/persons/${personId}`, { method: 'DELETE' })
-      .then(handleFetchErrors)
-      .then(() =>
-        this.setState(
-          {
-            persons: null,
-          },
-          this.fetchPersons,
-        ),
-      )
-      .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
+    setPersons(null);
+    fetchAuth(`${ROOT_URL}/persons/${personId}`, { method: 'DELETE' });
   };
 
-  render() {
-    const { persons } = this.state;
-    return (
-      <div className="persons frame">
-        {persons === null ? (
-          <Loading />
-        ) : (
-          persons.length > 0 && (
-            <table className="list">
-              <tbody>
-                <tr>
-                  <th>Username</th>
-                  <th>Name</th>
-                  <th>E-mail</th>
-                  <th>Activated</th>
-                  <th />
-                  <th />
+  return (
+    <div className="persons frame">
+      <PersistentFetcher resource={`persons`} onUpdate={onPersonsUpdate} onError={onPersonsUpdateError} />
+      {fetchError ? (
+        <>
+          <i className="fa fa-exclamation-triangle" /> Error fetching users
+        </>
+      ) : persons === null ? (
+        <Loading />
+      ) : (
+        persons.length > 0 && (
+          <table className="list">
+            <tbody>
+              <tr>
+                <th className="sortable" onClick={() => applySortFunc('username')}>
+                  Username
+                  {firstSortKey === 'username' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('name')}>
+                  Name
+                  {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('email')}>
+                  E-mail
+                  {firstSortKey === 'email' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('email_confirmed')}>
+                  Activated
+                  {firstSortKey === 'email_confirmed' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th />
+                <th />
+              </tr>
+              {persons.sort(sortCompareFunc).map(person => (
+                <tr key={person.user_id}>
+                  <td>{person.username}</td>
+                  <td>{person.name}</td>
+                  <td>{person.email}</td>
+                  <td className="email-confirmed">
+                    <i className={`fa fa-${person.email_confirmed ? 'check' : 'close'}`} />
+                  </td>
+                  <td>
+                    <Link className="button green" to={`/users/${person.user_id}/permissions`}>
+                      <i className="fa fa-user-lock" /> Permissions
+                    </Link>
+                  </td>
+                  <td>
+                    <Button className="red" onClick={ev => performDelete(ev, person.user_id)}>
+                      <i className="fa fa-trash" /> Delete
+                    </Button>
+                  </td>
                 </tr>
-                {persons.map(person => (
-                  <tr key={person.user_id}>
-                    <td>{person.username}</td>
-                    <td>{person.name}</td>
-                    <td>{person.email}</td>
-                    <td className="email-confirmed">
-                      <i className={`fa fa-${person.email_confirmed ? 'check' : 'close'}`} />
-                    </td>
-                    <td>
-                      <Link className="button green" to={`/users/${person.user_id}/permissions`}>
-                        <i className="fa fa-user-lock" /> Permissions
-                      </Link>
-                    </td>
-                    <td>
-                      <Button className="red" onClick={ev => this.handleDelete(ev, person.user_id)}>
-                        <i className="fa fa-trash" /> Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )
-        )}
-        <Link className="button green" to="/users-new">
-          <i className="fa fa-plus" /> Add person
-        </Link>
-      </div>
-    );
-  }
+              ))}
+            </tbody>
+          </table>
+        )
+      )}
+      <Link className="button green" to="/users-new">
+        <i className="fa fa-plus" /> Add person
+      </Link>
+    </div>
+  );
 }

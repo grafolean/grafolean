@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 
@@ -7,6 +7,7 @@ import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
+import { useTableSort } from '../../utils/useTableSort';
 
 import Loading from '../Loading';
 import Button from '../Button';
@@ -16,40 +17,42 @@ import NotificationBadge from '../Main/SidebarNotificationBadges/NotificationBad
 import When from '../When';
 
 import '../form.scss';
-import './bots.scss';
+import './Bots.scss';
 
-export default class Bots extends React.PureComponent {
-  state = {
-    accountBots: null,
-    systemwideBots: null,
-  };
+const DEFAULT_SORT_ORDER = [
+  ['isSystemwide', true],
+  ['name', true],
+  ['id', true],
+];
 
-  onAccountBotsUpdate = json => {
+function Bots(props) {
+  const accountId = props.match.params.accountId;
+  const [accountBots, setAccountBots] = useState(null);
+  const [systemwideBots, setSystemwideBots] = useState(null);
+  const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+
+  const onAccountBotsUpdate = json => {
     // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
+      protocol_slug: bot.protocol,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
       isSystemwide: false,
     }));
-    this.setState({
-      accountBots: bots,
-    });
+    setAccountBots(bots);
   };
-  onSystemwideBotsUpdate = json => {
+  const onSystemwideBotsUpdate = json => {
     const bots = json.list.map(bot => ({
       ...bot,
+      protocol_slug: bot.protocol,
       protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
       isSystemwide: true,
     }));
-    this.setState({
-      systemwideBots: bots,
-    });
+    setSystemwideBots(bots);
   };
 
-  handleDelete = (ev, botId) => {
+  const handleDelete = (ev, botId) => {
     ev.preventDefault();
-    const { accountBots } = this.state;
-    const accountId = this.props.match.params.accountId;
     const bot = accountBots.find(bot => bot.id === botId);
     if (!window.confirm(`Are you sure you want to delete bot "${bot.name}" ? This can't be undone!`)) {
       return;
@@ -60,97 +63,110 @@ export default class Bots extends React.PureComponent {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
-  render() {
-    const { accountBots, systemwideBots } = this.state;
-    const accountId = this.props.match.params.accountId;
-    const bots = accountBots === null || systemwideBots === null ? null : accountBots.concat(systemwideBots);
-    return (
-      <>
-        <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={this.onAccountBotsUpdate} />
-        <PersistentFetcher resource={`bots`} onUpdate={this.onSystemwideBotsUpdate} />
-        {bots === null ? (
-          <Loading />
-        ) : bots.length > 0 ? (
-          <div className="bots frame">
-            <table className="list">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Token</th>
-                  <th>Insert time (UTC)</th>
-                  <th>Last successful login (UTC)</th>
-                  <th>Removal</th>
+  const bots =
+    accountBots === null || systemwideBots === null
+      ? null
+      : accountBots.concat(systemwideBots).sort(sortCompareFunc);
+  return (
+    <>
+      <PersistentFetcher resource={`accounts/${accountId}/bots`} onUpdate={onAccountBotsUpdate} />
+      <PersistentFetcher resource={`bots`} onUpdate={onSystemwideBotsUpdate} />
+      {bots === null ? (
+        <Loading />
+      ) : bots.length > 0 ? (
+        <div className="bots frame">
+          <table className="list">
+            <thead>
+              <tr>
+                <th className="sortable" onClick={() => applySortFunc('name')}>
+                  Name
+                  {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('protocol_slug')}>
+                  Type
+                  {firstSortKey === 'protocol_slug' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th>Token</th>
+                <th className="sortable" onClick={() => applySortFunc('insert_time')}>
+                  Insert time (UTC)
+                  {firstSortKey === 'insert_time' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th className="sortable" onClick={() => applySortFunc('last_login')}>
+                  Last successful login (UTC)
+                  {firstSortKey === 'last_login' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                </th>
+                <th>Removal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bots.map(bot => (
+                <tr key={bot.id}>
+                  <td data-label="Name">
+                    {bot.isSystemwide ? (
+                      bot.name
+                    ) : (
+                      <Link className="button green" to={`/accounts/${accountId}/bots/${bot.id}/view`}>
+                        <i className="fa fa-robot" /> {bot.name}
+                      </Link>
+                    )}
+                  </td>
+                  <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
+                  <td data-label="Token">
+                    {bot.isSystemwide ? (
+                      <BotToken botId={bot.id} isSystemwide={true} />
+                    ) : (
+                      <BotToken botId={bot.id} isSystemwide={false} accountId={accountId} />
+                    )}
+                  </td>
+                  <td data-label="Insert time (UTC)">
+                    {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                  </td>
+                  <td data-label="Last successful login (UTC)">
+                    {bot.last_login === null ? (
+                      <>
+                        Never
+                        {!bot.isSystemwide && (
+                          <Link to={`/accounts/${accountId}/bots/${bot.id}/view`}>
+                            <NotificationBadge />
+                          </Link>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
+                        <When t={bot.last_login} />)
+                      </>
+                    )}
+                  </td>
+                  <td data-label="">
+                    {bot.isSystemwide ? (
+                      <i className="systemwide">N/A (systemwide)</i>
+                    ) : (
+                      <Button className="red" onClick={ev => handleDelete(ev, bot.id)}>
+                        <i className="fa fa-trash" /> Delete
+                      </Button>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {bots.map(bot => (
-                  <tr key={bot.id}>
-                    <td data-label="Name">
-                      {bot.isSystemwide ? (
-                        bot.name
-                      ) : (
-                        <Link className="button green" to={`/accounts/${accountId}/bots/${bot.id}/view`}>
-                          <i className="fa fa-robot" /> {bot.name}
-                        </Link>
-                      )}
-                    </td>
-                    <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
-                    <td data-label="Token">
-                      {bot.isSystemwide ? (
-                        <BotToken botId={bot.id} isSystemwide={true} />
-                      ) : (
-                        <BotToken botId={bot.id} isSystemwide={false} accountId={accountId} />
-                      )}
-                    </td>
-                    <td data-label="Insert time (UTC)">
-                      {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
-                    </td>
-                    <td data-label="Last successful login (UTC)">
-                      {bot.last_login === null ? (
-                        <>
-                          Never
-                          {!bot.isSystemwide && (
-                            <Link to={`/accounts/${accountId}/bots/${bot.id}/view`}>
-                              <NotificationBadge />
-                            </Link>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
-                          <When t={bot.last_login} />)
-                        </>
-                      )}
-                    </td>
-                    <td data-label="">
-                      {bot.isSystemwide ? (
-                        <i className="systemwide">N/A (systemwide)</i>
-                      ) : (
-                        <Button className="red" onClick={ev => this.handleDelete(ev, bot.id)}>
-                          <i className="fa fa-trash" /> Delete
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
-              <i className="fa fa-plus" /> Add bot
-            </Link>
-          </div>
-        ) : (
-          <HelpSnippet title="There are no bots yet" className="first-steps">
-            <p>
-              <b>Bots</b> are external scripts and applications that send values to Grafolean.
-            </p>
-            <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
-              <i className="fa fa-plus" /> Add bot
-            </Link>
-          </HelpSnippet>
-        )}
-      </>
-    );
-  }
+              ))}
+            </tbody>
+          </table>
+          <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
+            <i className="fa fa-plus" /> Add bot
+          </Link>
+        </div>
+      ) : (
+        <HelpSnippet title="There are no bots yet" className="first-steps">
+          <p>
+            <b>Bots</b> are external scripts and applications that send values to Grafolean.
+          </p>
+          <Link className="button green" to={`/accounts/${accountId}/bots-new`}>
+            <i className="fa fa-plus" /> Add bot
+          </Link>
+        </HelpSnippet>
+      )}
+    </>
+  );
 }
+
+export default Bots;
