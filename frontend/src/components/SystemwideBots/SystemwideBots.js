@@ -21,7 +21,6 @@ const DEFAULT_SORT_ORDER = [
 ];
 
 export default function SystemwideBots(props) {
-  const accountId = props.match.params.accountId;
   const [bots, setBots] = useState(null);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
 

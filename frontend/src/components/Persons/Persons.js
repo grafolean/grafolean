@@ -47,7 +47,11 @@ export default function Persons(props) {
   return (
     <div className="persons frame">
       <PersistentFetcher resource={`persons`} onUpdate={onPersonsUpdate} onError={onPersonsUpdateError} />
-      {persons === null ? (
+      {fetchError ? (
+        <>
+          <i className="fa fa-exclamation-triangle" /> Error fetching users
+        </>
+      ) : persons === null ? (
         <Loading />
       ) : (
         persons.length > 0 && (
