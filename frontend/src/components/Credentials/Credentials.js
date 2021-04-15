@@ -5,6 +5,8 @@ import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
 import { useTableSort } from '../../utils/useTableSort';
+import { useTableFilter } from '../../utils/useTableFilter';
+import TableFilterInput from '../../utils/TableFilterInput';
 
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
@@ -14,12 +16,14 @@ const DEFAULT_SORT_ORDER = [
   ['name', true],
   ['id', true],
 ];
+const FILTERABLE_FIELDS = ['name', 'protocol'];
 
 export default function Credentials(props) {
   const accountId = props.match.params.accountId;
   const [credentials, setCredentials] = useState(null);
   const [fetchError, setFetchError] = useState(false);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+  const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const onCredentialsUpdate = credentials => {
     setCredentials(credentials.list);
@@ -75,26 +79,30 @@ export default function Credentials(props) {
                     {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                   </th>
                   <th>Details</th>
-                  <th />
-                  <th />
+                  <th colSpan="2" align="right">
+                    <TableFilterInput filter={filter} setFilter={setFilter} />
+                  </th>
                 </tr>
-                {credentials.sort(sortCompareFunc).map(cred => (
-                  <tr key={cred.id}>
-                    <td>{cred.protocol}</td>
-                    <td>{cred.name}</td>
-                    <td>/</td>
-                    <td>
-                      <LinkButton title="Edit" to={`/accounts/${accountId}/credentials/edit/${cred.id}`}>
-                        <i className="fa fa-pencil" /> Edit
-                      </LinkButton>
-                    </td>
-                    <td>
-                      <Button className="red" onClick={ev => performDelete(ev, cred.id)}>
-                        <i className="fa fa-trash" /> Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {credentials
+                  .filter(filterTableFunc)
+                  .sort(sortCompareFunc)
+                  .map(cred => (
+                    <tr key={cred.id}>
+                      <td>{cred.protocol}</td>
+                      <td>{cred.name}</td>
+                      <td>/</td>
+                      <td>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/credentials/edit/${cred.id}`}>
+                          <i className="fa fa-pencil" /> Edit
+                        </LinkButton>
+                      </td>
+                      <td>
+                        <Button className="red" onClick={ev => performDelete(ev, cred.id)}>
+                          <i className="fa fa-trash" /> Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           )}
