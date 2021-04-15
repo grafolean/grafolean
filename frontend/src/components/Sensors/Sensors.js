@@ -14,11 +14,13 @@ const DEFAULT_SORT_ORDER = [
   ['name', true],
   ['id', true],
 ];
+const FILTERABLE_FIELDS = ['name', 'protocol'];
 
 function Sensors(props) {
   const [sensors, setSensors] = useState(null);
   const [fetchError, setFetchError] = useState(false);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+  const [tableFilter, setTableFilter] = useState('');
 
   const accountId = props.match.params.accountId;
 
@@ -43,6 +45,16 @@ function Sensors(props) {
     fetchAuth(`${ROOT_URL}/accounts/${accountId}/sensors/${sensorId}`, {
       method: 'DELETE',
     });
+  };
+
+  const filterTableFunc = row => {
+    const tableFilterLowercase = tableFilter.toLowerCase();
+    for (let key of FILTERABLE_FIELDS) {
+      if (row[key].toLowerCase().includes(tableFilterLowercase)) {
+        return true;
+      }
+    }
+    return false;
   };
 
   return (
@@ -74,26 +86,41 @@ function Sensors(props) {
                     {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                   </th>
                   <th>Details</th>
-                  <th />
-                  <th />
+                  <th colSpan="2" align="right">
+                    <div className="table-filter">
+                      <input
+                        type="text"
+                        value={tableFilter}
+                        onChange={ev => setTableFilter(ev.target.value)}
+                        placeholder="Filter table"
+                      />
+                      <i
+                        className={`fa fa-close ${tableFilter === '' ? 'disabled' : ''}`}
+                        onClick={() => setTableFilter('')}
+                      />
+                    </div>
+                  </th>
                 </tr>
-                {sensors.sort(sortCompareFunc).map(sensor => (
-                  <tr key={sensor.id}>
-                    <td>{sensor.protocol}</td>
-                    <td>{sensor.name}</td>
-                    <td>/</td>
-                    <td>
-                      <LinkButton title="Edit" to={`/accounts/${accountId}/sensors/edit/${sensor.id}`}>
-                        <i className="fa fa-pencil" /> Edit
-                      </LinkButton>
-                    </td>
-                    <td>
-                      <Button className="red" onClick={ev => performDelete(ev, sensor.id)}>
-                        <i className="fa fa-trash" /> Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {sensors
+                  .filter(filterTableFunc)
+                  .sort(sortCompareFunc)
+                  .map(sensor => (
+                    <tr key={sensor.id}>
+                      <td>{sensor.protocol}</td>
+                      <td>{sensor.name}</td>
+                      <td>/</td>
+                      <td>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/sensors/edit/${sensor.id}`}>
+                          <i className="fa fa-pencil" /> Edit
+                        </LinkButton>
+                      </td>
+                      <td>
+                        <Button className="red" onClick={ev => performDelete(ev, sensor.id)}>
+                          <i className="fa fa-trash" /> Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           )}
