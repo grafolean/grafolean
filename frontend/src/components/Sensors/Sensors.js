@@ -5,6 +5,8 @@ import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
 import { useTableSort } from '../../utils/useTableSort';
+import { useTableFilter } from '../../utils/useTableFilter';
+import TableFilterInput from '../../utils/TableFilterInput';
 
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
@@ -20,7 +22,7 @@ function Sensors(props) {
   const [sensors, setSensors] = useState(null);
   const [fetchError, setFetchError] = useState(false);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
-  const [tableFilter, setTableFilter] = useState('');
+  const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const accountId = props.match.params.accountId;
 
@@ -45,16 +47,6 @@ function Sensors(props) {
     fetchAuth(`${ROOT_URL}/accounts/${accountId}/sensors/${sensorId}`, {
       method: 'DELETE',
     });
-  };
-
-  const filterTableFunc = row => {
-    const tableFilterLowercase = tableFilter.toLowerCase();
-    for (let key of FILTERABLE_FIELDS) {
-      if (row[key].toLowerCase().includes(tableFilterLowercase)) {
-        return true;
-      }
-    }
-    return false;
   };
 
   return (
@@ -87,18 +79,7 @@ function Sensors(props) {
                   </th>
                   <th>Details</th>
                   <th colSpan="2" align="right">
-                    <div className="table-filter">
-                      <input
-                        type="text"
-                        value={tableFilter}
-                        onChange={ev => setTableFilter(ev.target.value)}
-                        placeholder="Filter table"
-                      />
-                      <i
-                        className={`fa fa-close ${tableFilter === '' ? 'disabled' : ''}`}
-                        onClick={() => setTableFilter('')}
-                      />
-                    </div>
+                    <TableFilterInput filter={filter} setFilter={setFilter} />
                   </th>
                 </tr>
                 {sensors
