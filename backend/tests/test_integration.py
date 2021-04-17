@@ -842,12 +842,12 @@ def test_bots_token(app_client, admin_authorization_header, bot_id, bot_token, a
 
     data = [{'p': 'qqqq.wwww', 't': 1234567890.123456, 'v': 111.22}]
     r = app_client.put('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 401
+    assert r.status_code == 403  # PUT fails
     data = [{'p': 'qqqq.wwww', 'v': 111.22}]
     r = app_client.post('/api/accounts/{}/values/?b={}'.format(account_id, bot_token), data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 204
+    assert r.status_code == 204  # POST succeeds
     r = app_client.get('/api/accounts/{}/values/qqqq.wwww/?t0=1234567890&t1=1234567891&b={}'.format(account_id, bot_token))
-    assert r.status_code == 401
+    assert r.status_code == 403  # GET fails
 
 
 def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
@@ -933,7 +933,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
         - admin assigns permissions to user, check that appropriate endpoints work
     """
     r = app_client.get('/api/accounts/{}/paths'.format(account_id), headers={'Authorization': person_authorization_header})
-    assert r.status_code == 401
+    assert r.status_code == 403
 
     # grant a permission:
     data = {
@@ -948,7 +948,7 @@ def test_auth_grant_permission(app_client, admin_authorization_header, person_id
     assert r.status_code == 200
     # but DELETE is denied:
     r = app_client.delete('/api/accounts/{}/paths/1234'.format(account_id), headers={'Authorization': person_authorization_header})
-    assert r.status_code == 401  # it would have been 4xx anyway, but it must be denied before that
+    assert r.status_code == 403  # it would have been 4xx anyway, but it must be denied before that
 
 
 def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, person_id, person_authorization_header, account_id):
@@ -961,11 +961,11 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         Also, the effect of `asdf/ghij/` should be the same as `asdf/ghij` (it should match URL `asdf/ghij` without trailing slash too).
     """
     r = app_client.get('/api/accounts/{}'.format(account_id), headers={'Authorization': person_authorization_header})
-    assert r.status_code == 401
+    assert r.status_code == 403
     r = app_client.get('/api/accounts/{}/'.format(account_id), headers={'Authorization': person_authorization_header})
-    assert r.status_code == 401
+    assert r.status_code == 403
     r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
-    assert r.status_code == 401
+    assert r.status_code == 403
 
     # we want to test that both versions (with an without trailing slash) of resource_prefix perform the same:
     for resource_prefix in ['accounts/{}'.format(account_id), 'accounts/{}/'.format(account_id)]:
@@ -987,7 +987,7 @@ def test_auth_trailing_slash_not_needed(app_client, admin_authorization_header, 
         assert r.status_code == 200
         assert json.loads(r.data.decode('utf-8')) == expected
         r = app_client.get('/api/accounts/{}1'.format(account_id), headers={'Authorization': person_authorization_header})
-        assert r.status_code == 401  # stays denied
+        assert r.status_code == 403  # stays denied
 
         # then clean up:
         r = app_client.delete('/api/persons/{}/permissions/{}'.format(person_id, permission_id), headers={'Authorization': admin_authorization_header})
