@@ -5,6 +5,8 @@ import { fetchAuth } from '../../utils/fetch';
 import { ROOT_URL } from '../../store/actions';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { useTableSort } from '../../utils/useTableSort';
+import { useTableFilter } from '../../utils/useTableFilter';
+import TableFilterInput from '../../utils/TableFilterInput';
 
 import Button from '../Button';
 import Loading from '../Loading';
@@ -16,11 +18,13 @@ const DEFAULT_SORT_ORDER = [
   ['name', true],
   ['id', true],
 ];
+const FILTERABLE_FIELDS = ['username', 'name', 'email'];
 
 export default function Persons(props) {
   const [persons, setPersons] = useState(null);
   const [fetchError, setFetchError] = useState(false);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+  const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const onPersonsUpdate = responseData => {
     setPersons(responseData.list);
@@ -74,29 +78,33 @@ export default function Persons(props) {
                   Activated
                   {firstSortKey === 'email_confirmed' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
-                <th />
-                <th />
+                <th colSpan="2" align="right">
+                  <TableFilterInput filter={filter} setFilter={setFilter} />
+                </th>
               </tr>
-              {persons.sort(sortCompareFunc).map(person => (
-                <tr key={person.user_id}>
-                  <td>{person.username}</td>
-                  <td>{person.name}</td>
-                  <td>{person.email}</td>
-                  <td className="email-confirmed">
-                    <i className={`fa fa-${person.email_confirmed ? 'check' : 'close'}`} />
-                  </td>
-                  <td>
-                    <Link className="button green" to={`/users/${person.user_id}/permissions`}>
-                      <i className="fa fa-user-lock" /> Permissions
-                    </Link>
-                  </td>
-                  <td>
-                    <Button className="red" onClick={ev => performDelete(ev, person.user_id)}>
-                      <i className="fa fa-trash" /> Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {persons
+                .filter(filterTableFunc)
+                .sort(sortCompareFunc)
+                .map(person => (
+                  <tr key={person.user_id}>
+                    <td>{person.username}</td>
+                    <td>{person.name}</td>
+                    <td>{person.email}</td>
+                    <td className="email-confirmed">
+                      <i className={`fa fa-${person.email_confirmed ? 'check' : 'close'}`} />
+                    </td>
+                    <td>
+                      <Link className="button green" to={`/users/${person.user_id}/permissions`}>
+                        <i className="fa fa-user-lock" /> Permissions
+                      </Link>
+                    </td>
+                    <td>
+                      <Button className="red" onClick={ev => performDelete(ev, person.user_id)}>
+                        <i className="fa fa-trash" /> Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         )
