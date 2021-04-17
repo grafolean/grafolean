@@ -26,7 +26,7 @@ const DEFAULT_SORT_ORDER = [
   ['name', true],
   ['id', true],
 ];
-const FILTERABLE_FIELDS = ['name', 'protocol_slug'];
+const FILTERABLE_FIELDS = ['name', 'protocol'];
 
 function Bots(props) {
   const accountId = props.match.params.accountId;
@@ -36,11 +36,10 @@ function Bots(props) {
   const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const onAccountBotsUpdate = json => {
-    // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
-      protocol_slug: bot.protocol,
-      protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+      // instead of a protocol slug, use label from SUPPORTED_PROTOCOLS:
+      protocol: (SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol) || { label: 'custom' }).label,
       isSystemwide: false,
     }));
     setAccountBots(bots);
@@ -48,8 +47,7 @@ function Bots(props) {
   const onSystemwideBotsUpdate = json => {
     const bots = json.list.map(bot => ({
       ...bot,
-      protocol_slug: bot.protocol,
-      protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+      protocol: (SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol) || { label: 'custom' }).label,
       isSystemwide: true,
     }));
     setSystemwideBots(bots);
@@ -83,9 +81,9 @@ function Bots(props) {
                   Name
                   {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
-                <th className="sortable" onClick={() => applySortFunc('protocol_slug')}>
+                <th className="sortable" onClick={() => applySortFunc('protocol')}>
                   Type
-                  {firstSortKey === 'protocol_slug' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
                 <th>Token</th>
                 <th className="sortable" onClick={() => applySortFunc('insert_time')}>
@@ -116,7 +114,7 @@ function Bots(props) {
                         </Link>
                       )}
                     </td>
-                    <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
+                    <td data-label="Type">{bot.protocol}</td>
                     <td data-label="Token">
                       {bot.isSystemwide ? (
                         <BotToken botId={bot.id} isSystemwide={true} />

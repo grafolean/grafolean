@@ -8,6 +8,8 @@ import { fetchAuth } from '../../utils/fetch';
 import { ROOT_URL, handleFetchErrors, onFailure } from '../../store/actions';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { useTableSort } from '../../utils/useTableSort';
+import { useTableFilter } from '../../utils/useTableFilter';
+import TableFilterInput from '../../utils/TableFilterInput';
 
 import Loading from '../Loading';
 import BotToken from '../Bots/BotToken';
@@ -19,17 +21,18 @@ const DEFAULT_SORT_ORDER = [
   ['name', true],
   ['id', true],
 ];
+const FILTERABLE_FIELDS = ['name', 'protocol'];
 
 export default function SystemwideBots(props) {
   const [bots, setBots] = useState(null);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+  const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const onBotsUpdate = json => {
-    // instead of just protocol slug, include all information from SUPPORTED_PROTOCOLS: (like label)
     const bots = json.list.map(bot => ({
       ...bot,
-      protocol_slug: bot.protocol,
-      protocol: SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol),
+      // instead of a protocol slug, use label from SUPPORTED_PROTOCOLS:
+      protocol: (SUPPORTED_PROTOCOLS.find(p => p.slug === bot.protocol) || { label: 'custom' }).label,
     }));
     setBots(bots);
   };
@@ -60,9 +63,9 @@ export default function SystemwideBots(props) {
                   Name
                   {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
-                <th className="sortable" onClick={() => applySortFunc('protocol_slug')}>
+                <th className="sortable" onClick={() => applySortFunc('protocol')}>
                   Type
-                  {firstSortKey === 'protocol_slug' && <i className={`fa fa-sort-${firstSortDirection}`} />}
+                  {firstSortKey === 'protocol' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
                 <th>Token</th>
                 <th className="sortable" onClick={() => applySortFunc('insert_time')}>
@@ -73,47 +76,51 @@ export default function SystemwideBots(props) {
                   Last successful login (UTC)
                   {firstSortKey === 'last_login' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
-                <th />
-                <th />
+                <th colSpan="2" align="right">
+                  <TableFilterInput filter={filter} setFilter={setFilter} />
+                </th>
               </tr>
             </thead>
             <tbody>
-              {bots.sort(sortCompareFunc).map(bot => (
-                <tr key={bot.id}>
-                  <td data-label="Name">
-                    <Link className="button green" to={`/bots/${bot.id}/edit`}>
-                      <i className="fa fa-robot" /> {bot.name}
-                    </Link>
-                  </td>
-                  <td data-label="Type">{bot.protocol ? bot.protocol.label : 'custom'}</td>
-                  <td data-label="Token">
-                    <BotToken botId={bot.id} isSystemwide={true} />
-                  </td>
-                  <td data-label="Insert time (UTC)">
-                    {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
-                  </td>
-                  <td data-label="Last successful login (UTC)">
-                    {bot.last_login === null ? (
-                      <>Never</>
-                    ) : (
-                      <>
-                        {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
-                        <When t={bot.last_login} />)
-                      </>
-                    )}
-                  </td>
-                  <td>
-                    <Link className="button green" to={`/bots/${bot.id}/permissions`}>
-                      <i className="fa fa-user-lock" /> Permissions
-                    </Link>
-                  </td>
-                  <td data-label="">
-                    <Button className="red" onClick={ev => handleDelete(ev, bot.id)}>
-                      <i className="fa fa-trash" /> Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              {bots
+                .filter(filterTableFunc)
+                .sort(sortCompareFunc)
+                .map(bot => (
+                  <tr key={bot.id}>
+                    <td data-label="Name">
+                      <Link className="button green" to={`/bots/${bot.id}/edit`}>
+                        <i className="fa fa-robot" /> {bot.name}
+                      </Link>
+                    </td>
+                    <td data-label="Type">{bot.protocol}</td>
+                    <td data-label="Token">
+                      <BotToken botId={bot.id} isSystemwide={true} />
+                    </td>
+                    <td data-label="Insert time (UTC)">
+                      {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                    </td>
+                    <td data-label="Last successful login (UTC)">
+                      {bot.last_login === null ? (
+                        <>Never</>
+                      ) : (
+                        <>
+                          {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
+                          <When t={bot.last_login} />)
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      <Link className="button green" to={`/bots/${bot.id}/permissions`}>
+                        <i className="fa fa-user-lock" /> Permissions
+                      </Link>
+                    </td>
+                    <td data-label="">
+                      <Button className="red" onClick={ev => handleDelete(ev, bot.id)}>
+                        <i className="fa fa-trash" /> Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
           <Link className="button green" to={`/bots-new`}>
