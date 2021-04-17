@@ -88,7 +88,7 @@ class NetFlowNavigationWidget extends React.Component {
       })
       .filter(entityId => entityId !== null);
     this.setState(prevState => ({
-      entitiesIds: [...prevState.entitiesIds, ...newEntities],
+      entitiesIds: [...(prevState.entitiesIds || []), ...newEntities],
     }));
     // do not trigger fetch, we got all the information we need:
     return false;
