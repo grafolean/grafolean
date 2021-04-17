@@ -178,21 +178,6 @@ table.list {
       margin-left: 10px;
     }
   }
-
-  th > div.table-filter-input {
-    align-items: center;
-
-    i.fa.fa-close {
-      cursor: pointer;
-      margin-left: 5px;
-      padding: 5px;
-
-      &.disabled {
-        color: #999;
-        cursor: auto;
-      }
-    }
-  }
 }
 
 .fa-exclamation-triangle {

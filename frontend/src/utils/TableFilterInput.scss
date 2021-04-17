@@ -1,0 +1,25 @@
+div.table-filter-input {
+  align-items: center;
+  position: relative;
+
+  input {
+    margin: 0;
+    padding: 0 25px 0 5px;
+    height: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  i.fa.fa-close {
+    position: absolute;
+    right: 0px;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 6px 8px;
+
+    &.disabled {
+      color: #999;
+      cursor: auto;
+    }
+  }
+}
