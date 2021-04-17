@@ -28,6 +28,7 @@ export default class ChartView extends React.Component {
     fetchedIntervalsData: [],
     drawnChartSeries: [],
     yAxesProperties: {},
+    setSharedValue: () => {},
   };
   state = {
     closestPoint: null,

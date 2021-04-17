@@ -5,9 +5,9 @@ import { compile } from 'mathjs';
 import get from 'lodash/get';
 
 import { getSuggestedAggrLevel } from './utils';
+import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 import ChartView from './ChartView';
-import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 export class ChartContainer extends React.Component {
   state = {
