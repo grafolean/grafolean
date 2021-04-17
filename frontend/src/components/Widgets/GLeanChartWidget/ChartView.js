@@ -4,7 +4,7 @@ import { generateGridColor } from './utils';
 
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import { LineChartCanvases } from './LineChartCanvas';
+import LineChartCanvases from './LineChartCanvas';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
