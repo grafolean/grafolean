@@ -5,6 +5,8 @@ import { fetchAuth } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { ROOT_URL } from '../../store/actions';
 import { useTableSort } from '../../utils/useTableSort';
+import { useTableFilter } from '../../utils/useTableFilter';
+import TableFilterInput from '../../utils/TableFilterInput';
 
 import LinkButton from '../LinkButton/LinkButton';
 import Loading from '../Loading';
@@ -13,16 +15,18 @@ import EntityDetails from './EntityDetails';
 import ParentEntityId from './ParentEntityId';
 
 const DEFAULT_SORT_ORDER = [
-  ['type', true],
+  ['entity_type', true],
   ['name', true],
   ['id', true],
 ];
+const FILTERABLE_FIELDS = ['name', 'entity_type'];
 
 export default function Entities(props) {
   const accountId = props.match.params.accountId;
   const [entities, setEntities] = useState(null);
   const [fetchError, setFetchError] = useState(false);
   const [firstSortKey, firstSortDirection, applySortFunc, sortCompareFunc] = useTableSort(DEFAULT_SORT_ORDER);
+  const [filterTableFunc, filter, setFilter] = useTableFilter(FILTERABLE_FIELDS);
 
   const onEntitiesUpdate = entities => {
     setEntities(entities.list);
@@ -76,33 +80,40 @@ export default function Entities(props) {
                     {firstSortKey === 'name' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                   </th>
                   <th>Details</th>
-                  <th />
-                  <th />
+                  <th colSpan="2" align="right">
+                    <TableFilterInput filter={filter} setFilter={setFilter} />
+                  </th>
                 </tr>
-                {entities.sort(sortCompareFunc).map(entity => (
-                  <tr key={entity.id}>
-                    <td>{entity.entity_type}</td>
-                    <td>
-                      <Link className="button green" to={`/accounts/${accountId}/entities/view/${entity.id}`}>
-                        <i className="fa fa-cube" /> {entity.name}
-                      </Link>
-                    </td>
-                    <td>
-                      <EntityDetails details={entity.details} />
-                      <ParentEntityId parent={entity.parent} />
-                    </td>
-                    <td>
-                      <LinkButton title="Edit" to={`/accounts/${accountId}/entities/edit/${entity.id}`}>
-                        <i className="fa fa-pencil" /> Edit
-                      </LinkButton>
-                    </td>
-                    <td>
-                      <Button className="red" onClick={ev => performDelete(ev, entity.id)}>
-                        <i className="fa fa-trash" /> Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {entities
+                  .filter(filterTableFunc)
+                  .sort(sortCompareFunc)
+                  .map(entity => (
+                    <tr key={entity.id}>
+                      <td>{entity.entity_type}</td>
+                      <td>
+                        <Link
+                          className="button green"
+                          to={`/accounts/${accountId}/entities/view/${entity.id}`}
+                        >
+                          <i className="fa fa-cube" /> {entity.name}
+                        </Link>
+                      </td>
+                      <td>
+                        <EntityDetails details={entity.details} />
+                        <ParentEntityId parent={entity.parent} />
+                      </td>
+                      <td>
+                        <LinkButton title="Edit" to={`/accounts/${accountId}/entities/edit/${entity.id}`}>
+                          <i className="fa fa-pencil" /> Edit
+                        </LinkButton>
+                      </td>
+                      <td>
+                        <Button className="red" onClick={ev => performDelete(ev, entity.id)}>
+                          <i className="fa fa-trash" /> Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           )}
