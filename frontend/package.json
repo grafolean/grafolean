@@ -24,7 +24,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "lint": "eslint --max-warnings 0 --ext .js src/",
-    "prettier": "prettier --write \"src/**/*.js\"",
+    "prettier": "prettier --write \"src/**/*.js\" \".storybook/**/*.js\"",
     "test": "react-scripts test --env=jsdom",
     "storybook": "start-storybook -p 9001 -c .storybook",
     "eject": "echo 'Bad idea.'"

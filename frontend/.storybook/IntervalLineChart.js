@@ -1,12 +1,16 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
+import { Provider } from 'react-redux';
+
+import store from '../src/store';
 import LineChartCanvases from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
 import ChartView from '../src/components/Widgets/GLeanChartWidget/ChartView';
+import { CoreGLeanChartWidget } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
 
 import '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget.scss';
+import { setAccountEntities } from '../src/store/actions';
 
 const stories = storiesOf('Line chart', module);
-
 
 // test data:
 const timeFrom = 1550926131;
@@ -202,4 +206,27 @@ stories.add('ChartView', () => {
   };
 
   return <ChartView {...props} />;
+});
+
+stories.add('CoreGLeanChartWidget', () => {
+  store.dispatch(setAccountEntities([]));
+
+  return (
+    <Provider store={store}>
+      <CoreGLeanChartWidget
+        match={{ params: { accountId: 123 } }} // simulate React Router
+        content={[
+          {
+            path_filter: 'asdf.test.?',
+            renaming: 'Test $1',
+            expression: '$1',
+            unit: 'kg',
+          },
+        ]}
+        width={800}
+        height={300}
+        isFullscreen={false}
+      />
+    </Provider>
+  );
 });
