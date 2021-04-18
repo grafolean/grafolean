@@ -1,5 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import { stringify } from 'qs';
@@ -233,11 +232,8 @@ class _GLeanChartWidget extends React.Component {
   }
 }
 
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
-});
 // export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
-const GLeanChartWidget = withRouter(connect(mapStoreToProps)(isWidget(_GLeanChartWidget)));
+const GLeanChartWidget = withRouter(isWidget(_GLeanChartWidget));
 
 // there is no need for GLeanChartWidget to concern itself with sharedValues, we take care of substituting them here:
 export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {
