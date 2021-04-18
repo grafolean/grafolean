@@ -15,7 +15,7 @@ import TimeIntervalSelector from './TimeIntervalSelector';
 
 import './GLeanChartWidget.scss';
 
-class _GLeanChartWidget extends React.Component {
+export class CoreGLeanChartWidget extends React.Component {
   state = {
     loading: true,
     drawnChartSeries: [],
@@ -127,17 +127,19 @@ class _GLeanChartWidget extends React.Component {
 
   render() {
     const MAX_YAXIS_WIDTH = 70;
+    const { width, height, isFullscreen, setSharedValue } = this.props;
+    const accountId = this.props.match.params.accountId;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
-    if (this.props.width > 500) {
-      legendWidth = Math.min(this.props.width * 0.3, 200);
-      chartWidth = this.props.width - legendWidth;
+    if (width > 500) {
+      legendWidth = Math.min(width * 0.3, 200);
+      chartWidth = width - legendWidth;
       legendIsDockable = false;
       legendPositionStyle = {
         float: 'right',
       };
     } else {
-      legendWidth = Math.min(this.props.width, 200);
-      chartWidth = this.props.width;
+      legendWidth = Math.min(width, 200);
+      chartWidth = width;
       legendIsDockable = true;
       // if legend is dockable, it should be taken out of flow:
       legendPositionStyle = {
@@ -147,7 +149,7 @@ class _GLeanChartWidget extends React.Component {
       };
     }
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.1), MAX_YAXIS_WIDTH); // 10% of chart width, max. 100px
-    const xAxisHeight = Math.min(Math.round(this.props.height * 0.1), 50); // 10% of chart height, max. 50px
+    const xAxisHeight = Math.min(Math.round(height * 0.1), 50); // 10% of chart height, max. 50px
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
     const yAxesWidth = yAxesCount * yAxisWidth;
 
@@ -165,20 +167,20 @@ class _GLeanChartWidget extends React.Component {
         className="widget-dialog-container"
         style={{
           position: 'relative',
-          minHeight: this.props.height,
-          width: this.props.width,
+          minHeight: height,
+          width: width,
         }}
       >
         <RePinchy
-          width={this.props.width}
-          height={this.props.height}
+          width={width}
+          height={height}
           activeArea={{
             x: yAxesWidth,
             y: 0,
             w: chartWidth - yAxesWidth,
-            h: this.props.height - timeIntervalSelectorHeight,
+            h: height - timeIntervalSelectorHeight,
           }}
-          kidnapScroll={this.props.isFullscreen}
+          kidnapScroll={isFullscreen}
           initialState={{
             x: initialPanX,
             y: 0.0,
@@ -190,10 +192,11 @@ class _GLeanChartWidget extends React.Component {
           {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
             <div className="repinchy-content">
               <ChartContainer
+                accountId={accountId}
                 allChartSeries={this.state.allChartSeries}
                 drawnChartSeries={this.state.drawnChartSeries}
                 width={chartWidth}
-                height={this.props.height - timeIntervalSelectorHeight}
+                height={height - timeIntervalSelectorHeight}
                 fromTs={Math.round(-(x - yAxesWidth) / scale)}
                 toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
                 scale={scale}
@@ -202,13 +205,13 @@ class _GLeanChartWidget extends React.Component {
                 yAxisWidth={yAxisWidth}
                 registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
                 registerClickHandler={this.registerRePinchyClickHandler}
-                setSharedValue={this.props.setSharedValue}
+                setSharedValue={setSharedValue}
               />
               <div style={legendPositionStyle}>
                 <Legend
                   dockingEnabled={legendIsDockable}
                   width={legendWidth}
-                  height={this.props.height - timeIntervalSelectorHeight}
+                  height={height - timeIntervalSelectorHeight}
                   chartSeries={this.state.allChartSeries}
                   onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                 />
@@ -232,8 +235,7 @@ class _GLeanChartWidget extends React.Component {
   }
 }
 
-// export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
-const GLeanChartWidget = withRouter(isWidget(_GLeanChartWidget));
+const GLeanChartWidget = withRouter(isWidget(CoreGLeanChartWidget));
 
 // there is no need for GLeanChartWidget to concern itself with sharedValues, we take care of substituting them here:
 export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {

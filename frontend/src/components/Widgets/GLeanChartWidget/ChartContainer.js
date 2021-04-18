@@ -1,6 +1,4 @@
 import React from 'react';
-import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
 import { compile } from 'mathjs';
 import get from 'lodash/get';
 
@@ -9,7 +7,7 @@ import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 import ChartView from './ChartView';
 
-export class ChartContainer extends React.Component {
+export default class ChartContainer extends React.Component {
   state = {
     fetchedPathsValues: {},
     errorMsg: null,
@@ -236,13 +234,12 @@ export class ChartContainer extends React.Component {
   };
 
   onNotification = (mqttPayload, topic) => {
-    const { allChartSeries } = this.props;
+    const { allChartSeries, accountId } = this.props;
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs <= mqttPayload.t && fi.toTs > mqttPayload.t);
     if (!interval) {
       return false; // none of our intervals cares about this timestamp, ignore
     }
-    const { accountId } = this.props.match.params;
     const prefix = `accounts/${accountId}/values/`;
     if (topic.substring(0, prefix.length) !== prefix) {
       console.error('Oops, this should not happen - we received a notification we did not expect!');
@@ -348,9 +345,8 @@ export class ChartContainer extends React.Component {
   };
 
   render() {
-    const { allChartSeries } = this.props;
+    const { allChartSeries, accountId } = this.props;
     const { aggrLevel, fetchingPerFetcher } = this.state;
-    const { accountId } = this.props.match.params;
     const allPaths = allChartSeries.map(cs => cs.path);
     const fetchIntervals = this.getFetchIntervals();
     const fetching = Object.values(fetchingPerFetcher).some(x => x);
@@ -393,14 +389,9 @@ export class ChartContainer extends React.Component {
           yAxesProperties={this.state.yAxesProperties}
           onMinYChange={this.onMinYChange}
           onMaxYChange={this.onMaxYChange}
+          isDarkMode={true}
         />
       </>
     );
   }
 }
-
-const mapStoreToPropsChartContainer = store => ({
-  accounts: store.accounts,
-  isDarkMode: store.preferences.colorScheme === 'dark',
-});
-export default withRouter(connect(mapStoreToPropsChartContainer)(ChartContainer));

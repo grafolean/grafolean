@@ -1,6 +1,6 @@
 import React from 'react';
 import { shallow } from 'enzyme';
-import { ChartContainer } from '../ChartContainer';
+import ChartContainer from '../ChartContainer';
 import { ChartView } from '../ChartView';
 
 const chartSeries = [
