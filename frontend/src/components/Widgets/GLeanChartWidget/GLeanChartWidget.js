@@ -1,10 +1,8 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import moment from 'moment';
-import { stringify } from 'qs';
 
-import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
-import { fetchAuth } from '../../../utils/fetch';
+import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 import RePinchy from '../../RePinchy';
 import ChartContainer from './ChartContainer';
@@ -23,70 +21,39 @@ export class CoreGLeanChartWidget extends React.Component {
   };
   repinchyMouseMoveHandler = null;
   repinchyClickHandler = null;
-  fetchPathsAbortController = null;
 
-  componentDidMount() {
-    this.fetchPaths();
-  }
+  onPathsUpdate = json => {
+    const { content: seriesGroups } = this.props;
+    // construct a better representation of the data for display in the chart:
+    const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
+      return result.concat(
+        json.paths[c.path_filter].map(p => ({
+          chartSerieId: `${seriesGroupIndex}-${p.id}`,
+          path: p.path,
+          serieNameParts: {
+            path: p.path,
+            filter: c.path_filter,
+            renaming: c.renaming,
+          },
+          expression: c.expression,
+          unit: c.unit,
+        })),
+      );
+    }, []);
+    const indexedAllChartSeries = allChartSeries.map((cs, i) => ({
+      ...cs,
+      index: i,
+    }));
 
-  componentWillUnmount() {
-    if (this.fetchPathsAbortController !== null) {
-      this.fetchPathsAbortController.abort();
-    }
-  }
-
-  fetchPaths = () => {
-    if (this.fetchPathsAbortController !== null) {
-      return; // fetch is already in progress
-    }
-    this.fetchPathsAbortController = new window.AbortController();
-    const seriesGroups = this.props.content;
-    const query_params = {
-      filter: seriesGroups.map(cc => cc.path_filter).join(','),
-      limit: 1001,
-      failover_trailing: 'false',
-    };
-    const accountId = this.props.match.params.accountId;
-    fetchAuth(`${ROOT_URL}/accounts/${accountId}/paths/?${stringify(query_params)}`, {
-      signal: this.fetchPathsAbortController.signal,
-    })
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json => {
-        // construct a better representation of the data for display in the chart:
-        const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
-          return result.concat(
-            json.paths[c.path_filter].map(p => ({
-              chartSerieId: `${seriesGroupIndex}-${p.id}`,
-              path: p.path,
-              serieNameParts: {
-                path: p.path,
-                filter: c.path_filter,
-                renaming: c.renaming,
-              },
-              expression: c.expression,
-              unit: c.unit,
-            })),
-          );
-        }, []);
-        const indexedAllChartSeries = allChartSeries.map((cs, i) => ({
-          ...cs,
-          index: i,
-        }));
-
-        this.setState({
-          drawnChartSeries: indexedAllChartSeries,
-          allChartSeries: indexedAllChartSeries,
-        });
-      })
-      .catch(errorMsg => {
-        this.setState({
-          fetchingError: true,
-        });
-      })
-      .then(() => {
-        this.fetchPathsAbortController = null;
-      });
+    this.setState({
+      drawnChartSeries: indexedAllChartSeries,
+      allChartSeries: indexedAllChartSeries,
+    });
+  };
+  onPathsUpdateError = () => {
+    this.setState({
+      fetchingError: true,
+    });
   };
 
   // We need to do this weird dance around mousemove events because of performance
@@ -127,7 +94,7 @@ export class CoreGLeanChartWidget extends React.Component {
 
   render() {
     const MAX_YAXIS_WIDTH = 70;
-    const { width, height, isFullscreen, setSharedValue } = this.props;
+    const { width, height, isFullscreen, setSharedValue, content: seriesGroups } = this.props;
     const accountId = this.props.match.params.accountId;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
     if (width > 500) {
@@ -171,6 +138,16 @@ export class CoreGLeanChartWidget extends React.Component {
           width: width,
         }}
       >
+        <PersistentFetcher
+          resource={`accounts/${accountId}/paths`}
+          queryParams={{
+            filter: seriesGroups.map(cc => cc.path_filter).join(','),
+            limit: 1001,
+            failover_trailing: 'false',
+          }}
+          onUpdate={this.onPathsUpdate}
+          onError={this.onPathsUpdateError}
+        />
         <RePinchy
           width={width}
           height={height}
