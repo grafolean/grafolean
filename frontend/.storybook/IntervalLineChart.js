@@ -6,9 +6,10 @@ import store from '../src/store';
 import LineChartCanvases from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
 import ChartView from '../src/components/Widgets/GLeanChartWidget/ChartView';
 import { CoreGLeanChartWidget } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
+import { setAccountEntities } from '../src/store/actions';
 
 import '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget.scss';
-import { setAccountEntities } from '../src/store/actions';
+import MockContext from './MockContext';
 
 const stories = storiesOf('Line chart', module);
 
@@ -211,22 +212,50 @@ stories.add('ChartView', () => {
 stories.add('CoreGLeanChartWidget', () => {
   store.dispatch(setAccountEntities([]));
 
+  const mockPersistentFetcherValue = {
+    onMount: props => {
+      switch (props.resource) {
+        case 'accounts/123/paths':
+          setTimeout(() => {
+            props.onUpdate({
+              paths: {
+                'asdf.test.?': [
+                  { id: 370710533, path: 'asdf.test.1.LAN' },
+                  { id: 543178329, path: 'asdf.test.1.sfp1' },
+                  { id: 918128875, path: 'asdf.test.10.ether9' },
+                  { id: 1783775626, path: 'asdf.test.11.ether10' },
+                  { id: 283963377, path: 'asdf.test.12.wlan1' },
+                ],
+              },
+              limit_reached: false,
+            });
+          }, 500);
+          break;
+        default:
+          props.onError(`Don't know how to mock resource fetching: ${props.resource}`);
+          break;
+      }
+    },
+  };
+
   return (
-    <Provider store={store}>
-      <CoreGLeanChartWidget
-        match={{ params: { accountId: 123 } }} // simulate React Router
-        content={[
-          {
-            path_filter: 'asdf.test.?',
-            renaming: 'Test $1',
-            expression: '$1',
-            unit: 'kg',
-          },
-        ]}
-        width={800}
-        height={300}
-        isFullscreen={false}
-      />
-    </Provider>
+    <MockContext.Provider value={mockPersistentFetcherValue}>
+      <Provider store={store}>
+        <CoreGLeanChartWidget
+          match={{ params: { accountId: 123 } }} // simulate React Router
+          content={[
+            {
+              path_filter: 'asdf.test.?',
+              renaming: 'Test $1',
+              expression: '$1',
+              unit: 'kg',
+            },
+          ]}
+          width={800}
+          height={300}
+          isFullscreen={false}
+        />
+      </Provider>
+    </MockContext.Provider>
   );
 });
