@@ -50,14 +50,13 @@ class LineChartSingleCanvas extends React.PureComponent {
           maxY: v2y(p.maxv),
         }));
 
-        if (chartType === CHART_TYPE_POINTS) {
+        if (chartType !== CHART_TYPE_POINTS) {
+          ctx.lineWidth = 0;
           pathPoints.forEach(p => {
-            ctx.beginPath();
-            ctx.lineWidth = 0;
-            ctx.arc(p.x, p.y, 1, 0, 2 * Math.PI);
-            ctx.fill();
+            ctx.fillRect(p.x, p.y, 2, 2);
           });
         } else {
+          ctx.lineWidth = 1;
           if (this.props.isAggr) {
             const areaMinPoints = pathPoints.map(p => `${p.x},${p.minY}`);
             const areaMaxPointsReversed = pathPoints.map(p => `${p.x},${p.maxY}`).reverse();
