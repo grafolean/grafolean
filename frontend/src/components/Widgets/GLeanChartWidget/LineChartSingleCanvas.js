@@ -39,6 +39,9 @@ class LineChartSingleCanvas extends React.PureComponent {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           return;
         }
+        if (interval.csData[cs.chartSerieId].length === 0) {
+          return; // no points
+        }
         if (!this.props.yAxesProperties[cs.unit]) {
           return;
         }
@@ -61,7 +64,7 @@ class LineChartSingleCanvas extends React.PureComponent {
             ctx.beginPath();
             ctx.globalAlpha = 0.2;
             ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-            for (let i = 0; i < pathPoints.length; i++) {
+            for (let i = 1; i < pathPoints.length; i++) {
               ctx.lineTo(pathPoints[i].x, pathPoints[i].minY);
             }
             for (let i = pathPoints.length - 1; i >= 0; i--) {
@@ -73,7 +76,7 @@ class LineChartSingleCanvas extends React.PureComponent {
 
           ctx.beginPath();
           ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-          for (let i = 0; i < pathPoints.length; i++) {
+          for (let i = 1; i < pathPoints.length; i++) {
             ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
           }
           ctx.stroke();
