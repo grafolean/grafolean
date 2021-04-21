@@ -58,8 +58,6 @@ class LineChartSingleCanvas extends React.PureComponent {
         } else {
           ctx.lineWidth = 1;
           if (this.props.isAggr) {
-            const areaMinPoints = pathPoints.map(p => `${p.x},${p.minY}`);
-            const areaMaxPointsReversed = pathPoints.map(p => `${p.x},${p.maxY}`).reverse();
             ctx.beginPath();
             ctx.globalAlpha = 0.2;
             ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
