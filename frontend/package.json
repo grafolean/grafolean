@@ -23,7 +23,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "lint": "eslint --max-warnings 0 --ext .js src/",
+    "lint": "eslint --max-warnings 0 --ext .js src/ .storybook/",
     "prettier": "prettier --write \"src/**/*.js\" \".storybook/**/*.js\"",
     "test": "react-scripts test --env=jsdom",
     "storybook": "start-storybook -p 9001 --no-version-updates -c .storybook",

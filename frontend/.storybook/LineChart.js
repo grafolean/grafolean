@@ -1,0 +1,115 @@
+import React from 'react';
+import { storiesOf } from '@storybook/react';
+import { Provider } from 'react-redux';
+
+import store from '../src/store';
+import { CoreGLeanChartWidget } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
+import { setAccountEntities, setColorScheme } from '../src/store/actions';
+import MockContext from './MockContext';
+
+import '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget.scss';
+import '../src/index.scss';
+import './index.scss';
+
+const stories = storiesOf('Line chart - complete', module);
+
+stories.add('Complete chart widget', () => {
+  const PATH_FILTER = 'asdf.test.?.?';
+  const PATHS = [
+    'asdf.test.1.LAN',
+    'asdf.test.1.sfp1',
+    'asdf.test.10.ether9',
+    'asdf.test.11.ether10',
+    'asdf.test.12.wlan1',
+  ];
+
+  store.dispatch(setAccountEntities([]));
+  store.dispatch(setColorScheme('dark'));
+
+  function random(index) {
+    var x = Math.sin(index) * 10000;
+    return x - Math.floor(x);
+  }
+
+  function generateRandomData(fromTs, toTs, aggrLevel, step, seed) {
+    let data = [];
+    for (let t = fromTs; t <= toTs && t <= Date.now() / 1000; t += step) {
+      data.push({
+        t: t + random(t), // we wish for all the paths to have the same "randomized" times
+        v: 5.0 * (3.0 + random(t + seed)) + 26 * random(seed), // while the values should differ
+      });
+    }
+    return data;
+  }
+
+  const mockPersistentFetcherValue = {
+    onMount: props => {
+      switch (props.resource) {
+        case 'accounts/123/paths':
+          setTimeout(() => {
+            props.onUpdate({
+              paths: {
+                [PATH_FILTER]: PATHS.map((p, i) => ({ id: i + 1, path: p })),
+              },
+              limit_reached: false,
+            });
+          }, 200);
+          break;
+        case 'accounts/123/getvalues':
+          const postBody = JSON.parse(props.fetchOptions.body);
+          setTimeout(() => {
+            const result = {};
+            for (let i = 0; i < PATHS.length; i++) {
+              result[PATHS[i]] = {
+                next_data_point: null,
+                data: generateRandomData(postBody.t0, postBody.t1, postBody.a, 10, i),
+              };
+            }
+            props.onUpdate(
+              {
+                paths: result,
+                limit_reached: false,
+              },
+              {
+                fetchOptions: props.fetchOptions,
+              },
+            );
+          }, 200);
+          break;
+        default:
+          console.error(
+            `MockPersistentFetcher: don't know how to mock resource fetching: ${props.resource}`,
+            props,
+          );
+          console.log(props);
+          props.onError(`Don't know how to mock resource fetching: ${props.resource}`);
+          break;
+      }
+    },
+    onUnmount: () => {},
+  };
+
+  return (
+    <MockContext.Provider value={mockPersistentFetcherValue}>
+      <Provider store={store}>
+        <div className="dark-mode dark-bg">
+          <CoreGLeanChartWidget
+            match={{ params: { accountId: 123 } }} // simulate React Router
+            content={[
+              {
+                path_filter: PATH_FILTER,
+                renaming: 'Test $2',
+                expression: '$1',
+                unit: 'kg',
+              },
+            ]}
+            width={800}
+            height={300}
+            isFullscreen={false}
+            isDarkMode={true}
+          />
+        </div>
+      </Provider>
+    </MockContext.Provider>
+  );
+});

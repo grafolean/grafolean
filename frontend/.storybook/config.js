@@ -7,6 +7,7 @@ import '../src/index.scss';
 
 function loadStories() {
   require('./IntervalLineChart.js');
+  require('./LineChart.js');
   require('./YAxisMinMaxAdjuster.js');
   require('./TimestampXAxis.js');
   require('./MultiSelect.js');
