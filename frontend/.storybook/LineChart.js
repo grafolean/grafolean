@@ -31,19 +31,25 @@ stories.add('Complete chart widget', () => {
     return x - Math.floor(x);
   }
 
-  function generateRandomData(fromTs, toTs, aggrLevel, step, seed) {
+  function generateRandomData(fromTs, toTs, isAggr, step, seed) {
     let data = [];
     for (let t = fromTs; t <= toTs && t <= Date.now() / 1000; t += step) {
-      data.push({
+      const d = {
         t: t + random(t), // we wish for all the paths to have the same "randomized" times
         v: 5.0 * (3.0 + random(t + seed)) + 26 * random(seed), // while the values should differ
-      });
+      };
+      if (isAggr) {
+        d.minv = d.v - 2.0;
+        d.maxv = d.v + 2.0;
+      }
+      data.push(d);
     }
     return data;
   }
 
   const mockPersistentFetcherValue = {
     onMount: props => {
+      const postBody = props.fetchOptions ? JSON.parse(props.fetchOptions.body) : null;
       switch (props.resource) {
         case 'accounts/123/paths':
           setTimeout(() => {
@@ -53,16 +59,15 @@ stories.add('Complete chart widget', () => {
               },
               limit_reached: false,
             });
-          }, 200);
+          }, 0);
           break;
         case 'accounts/123/getvalues':
-          const postBody = JSON.parse(props.fetchOptions.body);
           setTimeout(() => {
             const result = {};
             for (let i = 0; i < PATHS.length; i++) {
               result[PATHS[i]] = {
                 next_data_point: null,
-                data: generateRandomData(postBody.t0, postBody.t1, postBody.a, 10, i),
+                data: generateRandomData(postBody.t0, postBody.t1, false, 10, i),
               };
             }
             props.onUpdate(
@@ -74,7 +79,27 @@ stories.add('Complete chart widget', () => {
                 fetchOptions: props.fetchOptions,
               },
             );
-          }, 200);
+          }, 0);
+          break;
+        case 'accounts/123/getaggrvalues':
+          setTimeout(() => {
+            const result = {};
+            for (let i = 0; i < PATHS.length; i++) {
+              result[PATHS[i]] = {
+                next_data_point: null,
+                data: generateRandomData(postBody.t0, postBody.t1, true, 1000, i),
+              };
+            }
+            props.onUpdate(
+              {
+                paths: result,
+                limit_reached: false,
+              },
+              {
+                fetchOptions: props.fetchOptions,
+              },
+            );
+          }, 0);
           break;
         default:
           console.error(
