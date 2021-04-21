@@ -2,6 +2,9 @@ import React from 'react';
 
 import { generateSerieColor } from './utils';
 
+export const CHART_TYPE_LINE = 0;
+export const CHART_TYPE_POINTS = 1;
+
 class LineChartSingleCanvas extends React.PureComponent {
   constructor(props) {
     super(props);
@@ -18,6 +21,7 @@ class LineChartSingleCanvas extends React.PureComponent {
   }
 
   drawOnCanvas() {
+    const { chartType = CHART_TYPE_LINE } = this.props;
     const ctx = this.canvasContext;
     const { fromTs, scale } = this.props;
     const ts2x = ts => (ts - fromTs) * scale;
@@ -27,6 +31,10 @@ class LineChartSingleCanvas extends React.PureComponent {
     // ctx.rect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
     // ctx.stroke();
     this.props.drawnChartSeries.forEach(cs => {
+      const serieColor = generateSerieColor(cs.path, cs.index);
+      ctx.strokeStyle = serieColor;
+      ctx.fillStyle = serieColor;
+
       this.props.intervals.forEach(interval => {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           return;
@@ -41,32 +49,38 @@ class LineChartSingleCanvas extends React.PureComponent {
           minY: v2y(p.minv),
           maxY: v2y(p.maxv),
         }));
-        //pathPoints.sort((a, b) => (a.x < b.x ? -1 : 1)); // seems like the points weren't sorted by now... we should fix this properly
-        const linePoints = pathPoints.map(p => `${p.x},${p.y}`);
-        const areaMinPoints = pathPoints.map(p => `${p.x},${p.minY}`);
-        const areaMaxPointsReversed = pathPoints.map(p => `${p.x},${p.maxY}`).reverse();
-        const serieColor = generateSerieColor(cs.path, cs.index);
-        ctx.strokeStyle = serieColor;
-        ctx.fillStyle = serieColor;
 
-        if (this.props.isAggr) {
+        if (chartType === CHART_TYPE_POINTS) {
+          pathPoints.forEach(p => {
+            ctx.beginPath();
+            ctx.lineWidth = 0;
+            ctx.arc(p.x, p.y, 1, 0, 2 * Math.PI);
+            ctx.fill();
+          });
+        } else {
+          if (this.props.isAggr) {
+            const areaMinPoints = pathPoints.map(p => `${p.x},${p.minY}`);
+            const areaMaxPointsReversed = pathPoints.map(p => `${p.x},${p.maxY}`).reverse();
+            ctx.beginPath();
+            ctx.globalAlpha = 0.2;
+            ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+            for (let i = 0; i < pathPoints.length; i++) {
+              ctx.lineTo(pathPoints[i].x, pathPoints[i].minY);
+            }
+            for (let i = pathPoints.length - 1; i >= 0; i--) {
+              ctx.lineTo(pathPoints[i].x, pathPoints[i].maxY);
+            }
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+          }
+
           ctx.beginPath();
-          ctx.globalAlpha = 0.2;
-          const areaPath = new Path2D(`M${areaMinPoints.join('L')}L${areaMaxPointsReversed}Z`);
-          ctx.fill(areaPath);
-          ctx.globalAlpha = 1.0;
+          ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+          for (let i = 0; i < pathPoints.length; i++) {
+            ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+          }
+          ctx.stroke();
         }
-
-        ctx.beginPath();
-        const linePath = new Path2D(`M${linePoints.join('L')}`);
-        ctx.stroke(linePath);
-
-        pathPoints.forEach(p => {
-          ctx.beginPath();
-          ctx.lineWidth = 0;
-          ctx.arc(p.x, p.y, 1, 0, 2 * Math.PI);
-          ctx.fill();
-        });
       });
     });
   }
