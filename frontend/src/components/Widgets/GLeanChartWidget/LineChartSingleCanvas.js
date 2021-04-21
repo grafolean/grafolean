@@ -50,7 +50,7 @@ class LineChartSingleCanvas extends React.PureComponent {
           maxY: v2y(p.maxv),
         }));
 
-        if (chartType !== CHART_TYPE_POINTS) {
+        if (chartType === CHART_TYPE_POINTS) {
           ctx.lineWidth = 0;
           pathPoints.forEach(p => {
             ctx.fillRect(p.x, p.y, 2, 2);
