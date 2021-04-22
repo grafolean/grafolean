@@ -101,7 +101,7 @@ export class CoreGLeanChartWidget extends React.Component {
       height,
       isFullscreen,
       setSharedValue,
-      content: { series_groups: seriesGroups },
+      content: { chart_type, series_groups: seriesGroups },
     } = this.props;
     const accountId = this.props.match.params.accountId;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
@@ -191,6 +191,7 @@ export class CoreGLeanChartWidget extends React.Component {
                 registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
                 registerClickHandler={this.registerRePinchyClickHandler}
                 setSharedValue={setSharedValue}
+                chartType={chart_type}
               />
               <div style={legendPositionStyle}>
                 <Legend

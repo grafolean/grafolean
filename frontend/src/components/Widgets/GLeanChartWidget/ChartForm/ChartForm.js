@@ -6,6 +6,7 @@ import UnitWidgetFormField from '../../WidgetFormFields/UnitWidgetFormField';
 import PathsFilterWidgetFormField from '../../WidgetFormFields/PathsFilterWidgetFormField';
 
 import './ChartForm.scss';
+import { CHART_TYPE_LINE, CHART_TYPE_POINT, KNOWN_CHART_TYPES } from '../LineChartSingleCanvas';
 
 export default class ChartForm extends React.Component {
   static DEFAULT_SERIE_GROUP_CONTENT = {
@@ -15,11 +16,16 @@ export default class ChartForm extends React.Component {
     unit: '',
   };
   static DEFAULT_FORM_CONTENT = {
-    chart_type: 'line',
+    chart_type: CHART_TYPE_LINE,
     series_groups: [ChartForm.DEFAULT_SERIE_GROUP_CONTENT],
   };
 
   static validate = ({ chart_type, series_groups }) => {
+    if (!KNOWN_CHART_TYPES.includes(chart_type)) {
+      return {
+        chart_type: 'Chart type not valid',
+      };
+    }
     if (series_groups.length === 0) {
       return 'At least one chart series group must be defined';
     }
@@ -77,7 +83,7 @@ export default class ChartForm extends React.Component {
 
   render() {
     const {
-      content: { series_groups: seriesGroups },
+      content: { chart_type, series_groups: seriesGroups },
       onChange,
       onBlur,
       setFieldValue,
@@ -86,6 +92,36 @@ export default class ChartForm extends React.Component {
     const otherKnownUnits = this.getOtherKnownUnits();
     return (
       <div className="chart-form">
+        <div className="field">
+          <label>Type of chart:</label>
+          <div className="radio_option_container">
+            <label>
+              <input
+                type="radio"
+                name={`content.chart_type`}
+                value={CHART_TYPE_LINE}
+                checked={!chart_type || chart_type === CHART_TYPE_LINE}
+                onChange={onChange}
+                onBlur={onBlur}
+              />
+              <span>line chart</span>
+            </label>
+          </div>
+          <div className="radio_option_container">
+            <label>
+              <input
+                type="radio"
+                name={`content.chart_type`}
+                value={CHART_TYPE_POINT}
+                checked={chart_type === CHART_TYPE_POINT}
+                onChange={onChange}
+                onBlur={onBlur}
+              />
+              <span>point chart</span>
+            </label>
+          </div>
+        </div>
+
         <div className="field">
           <label>Chart series:</label>
           {seriesGroups.map((sg, sgIndex) => (

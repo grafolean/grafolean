@@ -2,8 +2,9 @@ import React from 'react';
 
 import { generateSerieColor } from './utils';
 
-export const CHART_TYPE_LINE = 0;
-export const CHART_TYPE_POINTS = 1;
+export const CHART_TYPE_LINE = 'line';
+export const CHART_TYPE_POINT = 'point';
+export const KNOWN_CHART_TYPES = [CHART_TYPE_LINE, CHART_TYPE_POINT];
 
 class LineChartSingleCanvas extends React.PureComponent {
   constructor(props) {
@@ -53,7 +54,7 @@ class LineChartSingleCanvas extends React.PureComponent {
           maxY: v2y(p.maxv),
         }));
 
-        if (chartType === CHART_TYPE_POINTS) {
+        if (chartType === CHART_TYPE_POINT) {
           ctx.lineWidth = 0;
           pathPoints.forEach(p => {
             ctx.fillRect(p.x, p.y, 2, 2);

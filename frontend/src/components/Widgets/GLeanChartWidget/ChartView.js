@@ -268,6 +268,7 @@ export default class ChartView extends React.Component {
                 aggrLevel={this.props.aggrLevel}
                 drawnChartSeries={this.props.drawnChartSeries}
                 yAxesProperties={this.props.yAxesProperties}
+                chartType={this.props.chartType}
               />
 
               {closest && (

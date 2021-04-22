@@ -590,7 +590,7 @@ def migration_step_29():
         c.execute("SELECT id, content FROM widgets WHERE type = 'chart';")
         for widget_id, content in c:
             new_content = json.dumps({
-                "type": "line",
+                "chart_type": "line",
                 "series_groups": json.loads(content),
             })
             c2.execute("UPDATE widgets SET content = %s WHERE id = %s;", (new_content, widget_id,))
