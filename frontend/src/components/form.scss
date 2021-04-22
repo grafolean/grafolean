@@ -26,6 +26,28 @@ form {
       margin: 5px 0;
       max-width: 250px;
     }
+
+    .radio_option_container {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      label {
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+
+        & > * {
+          margin: 0;
+          padding: 0;
+          font-size: 12px;
+        }
+      }
+
+      input[type=radio] {
+        margin-right: 5px;
+      }
+    }
   }
   button {
     margin-top: 10px;

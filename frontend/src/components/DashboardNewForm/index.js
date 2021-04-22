@@ -9,7 +9,6 @@ import Button from '../Button';
 import { FormError } from '../isFormikForm';
 
 import '../form.scss';
-import './DashboardNewForm.scss';
 
 import NETFLOW_TEMPLATE from './netflow.template.json';
 const DASHBOARD_TEMPLATES = [NETFLOW_TEMPLATE];
@@ -272,7 +271,7 @@ class DashboardNewForm extends React.Component {
               </div>
 
               <div className="initialize_from field">
-                <div className="option_container">
+                <div className="radio_option_container">
                   <label>
                     <input
                       type="radio"
@@ -286,7 +285,7 @@ class DashboardNewForm extends React.Component {
                   </label>
                 </div>
 
-                <div className="option_container">
+                <div className="radio_option_container">
                   <label>
                     <input
                       type="radio"
@@ -315,7 +314,7 @@ class DashboardNewForm extends React.Component {
                   )}
                 </div>
 
-                <div className="option_container">
+                <div className="radio_option_container">
                   <label>
                     <input
                       type="radio"
