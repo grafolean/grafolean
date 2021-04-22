@@ -23,7 +23,9 @@ export class CoreGLeanChartWidget extends React.Component {
   repinchyClickHandler = null;
 
   onPathsUpdate = json => {
-    const { content: seriesGroups } = this.props;
+    const {
+      content: { series_groups: seriesGroups },
+    } = this.props;
     // construct a better representation of the data for display in the chart:
     const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
       return result.concat(
@@ -94,7 +96,13 @@ export class CoreGLeanChartWidget extends React.Component {
 
   render() {
     const MAX_YAXIS_WIDTH = 70;
-    const { width, height, isFullscreen, setSharedValue, content: seriesGroups } = this.props;
+    const {
+      width,
+      height,
+      isFullscreen,
+      setSharedValue,
+      content: { series_groups: seriesGroups },
+    } = this.props;
     const accountId = this.props.match.params.accountId;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
     if (width > 500) {
@@ -218,15 +226,19 @@ const GLeanChartWidget = withRouter(isWidget(CoreGLeanChartWidget));
 export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {
   render() {
     const { sharedValues, content, ...rest } = this.props;
-    const contentSubstituted = content.map(sg => ({
+    const seriesGroupsSubstituted = content.series_groups.map(sg => ({
       ...sg,
       path_filter: MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues),
       renaming: MatchingPaths.substituteSharedValues(sg.renaming, sharedValues),
     }));
+    const contentSubstituted = {
+      ...content,
+      series_groups: seriesGroupsSubstituted,
+    };
 
     // We want to rerender GLeanChartWidget whenever one of the (applicable) sharedValues changes. The
     // safest way to achieve this is to construct a key from the path_filter-s:
-    const pathFiltersForKey = contentSubstituted.map(sg => sg.path_filter).join('#');
+    const pathFiltersForKey = seriesGroupsSubstituted.map(sg => sg.path_filter).join('#');
 
     const areSharedValuesSubstituted = !pathFiltersForKey.includes('$');
     if (!areSharedValuesSubstituted) {
