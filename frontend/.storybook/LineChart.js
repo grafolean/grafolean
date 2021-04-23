@@ -120,16 +120,19 @@ stories.add('Complete chart widget', () => {
         <div className="dark-mode dark-bg">
           <CoreGLeanChartWidget
             match={{ params: { accountId: 123 } }} // simulate React Router
-            content={[
-              {
-                path_filter: PATH_FILTER,
-                renaming: 'Test $2',
-                expression: '$1',
-                unit: 'kg',
-              },
-            ]}
-            width={800}
-            height={300}
+            content={{
+              chart_type: 'line',
+              series_groups: [
+                {
+                  path_filter: PATH_FILTER,
+                  renaming: 'Test $2',
+                  expression: '$1',
+                  unit: 'kg',
+                },
+              ],
+            }}
+            width={1000}
+            height={500}
             isFullscreen={false}
             isDarkMode={true}
           />
