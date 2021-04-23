@@ -1,9 +1,10 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import { LineChartCanvas } from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
+
+import LineChartCanvases from '../src/components/Widgets/GLeanChartWidget/LineChartCanvas';
 import ChartView from '../src/components/Widgets/GLeanChartWidget/ChartView';
 
-const stories = storiesOf('LineChartCanvas', module);
+const stories = storiesOf('Line chart - components', module);
 
 // test data:
 const timeFrom = 1550926131;
@@ -50,13 +51,13 @@ const maxY = 10.0;
 const v2y_empty_unit = v => YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY);
 const width = 600;
 
-stories.add('random data - raw', () => {
+stories.add('LineChartCanvases - random data - raw', () => {
   const scale = 0.061930808018780474;
 
   // both should have the same props:
   const props = {
-    timeFrom: timeFrom,
-    timeTo: timeFrom + width / scale,
+    fromTs: timeFrom,
+    toTs: timeFrom + width / scale,
     scale: scale,
     //width: 500, // derived from timeFrom/To and scale
     // scale: 0.3130274288565287,
@@ -74,9 +75,6 @@ stories.add('random data - raw', () => {
       },
     ],
     isAggr: false,
-    v2y: {
-      '': v2y_empty_unit,
-    },
     yAxesProperties: {
       '': {
         minYValue: minY,
@@ -96,22 +94,23 @@ stories.add('random data - raw', () => {
         width={width}
         height={props.height}
         style={{
-          border: '1px solid #eee',
+          border: '1px solid #999',
+          backgroundColor: '#eee',
         }}
       >
-        <LineChartCanvas {...props} />
+        <LineChartCanvases {...props} />
       </svg>
     </>
   );
 });
 
-stories.add('random data - aggregated', () => {
+stories.add('LineChartCanvases - random data - aggregated', () => {
   const scale = 0.061930808018780474;
 
   // both should have the same props:
   const props = {
-    timeFrom: timeFrom,
-    timeTo: timeFrom + width / scale,
+    fromTs: timeFrom,
+    toTs: timeFrom + width / scale,
     scale: scale,
     //width: width, // derived from timeFrom/To and scale
 
@@ -128,9 +127,6 @@ stories.add('random data - aggregated', () => {
       },
     ],
     isAggr: true,
-    v2y: {
-      '': v2y_empty_unit,
-    },
     yAxesProperties: {
       '': {
         minYValue: minY,
@@ -153,13 +149,13 @@ stories.add('random data - aggregated', () => {
           border: '1px solid #eee',
         }}
       >
-        <LineChartCanvas {...props} />
+        <LineChartCanvases {...props} />
       </svg>
     </>
   );
 });
 
-stories.add('whole chart', () => {
+stories.add('ChartView', () => {
   const scale = 0.061930808018780474;
   const props = {
     aggrLevel: 2,
@@ -171,21 +167,20 @@ stories.add('whole chart', () => {
         fromTs: timeFrom,
         toTs: timeTo,
         csData: {
-          'dummy.random.1min': csDataRandom,
-          'dummy.sin.1min': csDataSin,
+          '0-dummy.random.1min': csDataRandom,
+          '0-dummy.sin.1min': csDataSin,
         },
       },
     ],
     fetching: false,
     fromTs: timeFrom,
-    height: yAxisHeight + YAXIS_TOP_PADDING,
+    toTs: timeTo,
     isAggr: true,
     minKnownTs: timeFrom,
     nDecimals: 2,
     registerClickHandler: () => {},
     registerMouseMoveHandler: () => {},
     scale: scale,
-    toTs: timeTo,
     width: width,
     xAxisHeight: 43,
     yAxesProperties: {
@@ -200,6 +195,7 @@ stories.add('whole chart', () => {
     },
     yAxisHeight: yAxisHeight,
     yAxisWidth: 70,
+    height: yAxisHeight + YAXIS_TOP_PADDING + 43,
     zoomInProgress: false,
   };
 

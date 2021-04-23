@@ -125,7 +125,7 @@ def before_request():
             )
             if not is_allowed:
                 log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
-                return "Access denied", 401
+                return "Access to resource denied, insufficient permissions", 403
 
             flask.g.grafolean_data['user_id'] = user_id
             flask.g.grafolean_data['user_is_bot'] = user_is_bot

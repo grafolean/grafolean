@@ -4,6 +4,7 @@ import { compile } from 'mathjs';
 import Button from '../../../Button';
 import UnitWidgetFormField from '../../WidgetFormFields/UnitWidgetFormField';
 import PathsFilterWidgetFormField from '../../WidgetFormFields/PathsFilterWidgetFormField';
+import { KNOWN_CHART_TYPES, KNOWN_CHART_TYPES_NAMES, CHART_TYPE_LINE } from '../LineChartSingleCanvas';
 
 import './ChartForm.scss';
 
@@ -14,19 +15,29 @@ export default class ChartForm extends React.Component {
     expression: '$1',
     unit: '',
   };
-  static DEFAULT_FORM_CONTENT = [ChartForm.DEFAULT_SERIE_GROUP_CONTENT];
+  static DEFAULT_FORM_CONTENT = {
+    chart_type: CHART_TYPE_LINE,
+    series_groups: [ChartForm.DEFAULT_SERIE_GROUP_CONTENT],
+  };
 
-  static validate = content => {
-    if (content.length === 0) {
+  static validate = ({ chart_type, series_groups }) => {
+    if (!KNOWN_CHART_TYPES.includes(chart_type)) {
+      return {
+        chart_type: 'Chart type not valid',
+      };
+    }
+    if (series_groups.length === 0) {
       return 'At least one chart series group must be defined';
     }
-    for (let i = 0; i < content.length; i++) {
+    for (let i = 0; i < series_groups.length; i++) {
       try {
-        compile(content[i].expression);
+        compile(series_groups[i].expression);
       } catch (err) {
         return {
-          [i]: {
-            expression: 'Error compiling an expression',
+          series_groups: {
+            [i]: {
+              expression: 'Error compiling an expression',
+            },
           },
         };
       }
@@ -43,14 +54,17 @@ export default class ChartForm extends React.Component {
   };
 
   handleAddEmptySerie = ev => {
-    this.props.setFieldValue('content', [...this.props.content, ChartForm.DEFAULT_SERIE_GROUP_CONTENT]);
+    this.props.setFieldValue('content.series_groups', [
+      ...this.props.content,
+      ChartForm.DEFAULT_SERIE_GROUP_CONTENT,
+    ]);
     ev.preventDefault();
   };
 
   getOtherKnownUnits() {
     let otherUnits = [];
     // we need to list all possible units, otherwise they won't be visible as selected options:
-    for (let sg of this.props.content) {
+    for (let sg of this.props.content.series_groups) {
       if (sg.unit === '') {
         continue;
       }
@@ -68,10 +82,35 @@ export default class ChartForm extends React.Component {
   }
 
   render() {
-    const { content: seriesGroups, onChange, onBlur, setFieldValue, sharedValues } = this.props;
+    const {
+      content: { chart_type, series_groups: seriesGroups },
+      onChange,
+      onBlur,
+      setFieldValue,
+      sharedValues,
+    } = this.props;
     const otherKnownUnits = this.getOtherKnownUnits();
     return (
       <div className="chart-form">
+        <div className="field">
+          <label>Type of chart:</label>
+          {KNOWN_CHART_TYPES.map((chart_type_id, i) => (
+            <div className="radio_option_container">
+              <label>
+                <input
+                  type="radio"
+                  name={`content.chart_type`}
+                  value={chart_type_id}
+                  checked={chart_type === chart_type_id}
+                  onChange={onChange}
+                  onBlur={onBlur}
+                />
+                <span>{KNOWN_CHART_TYPES_NAMES[i]}</span>
+              </label>
+            </div>
+          ))}
+        </div>
+
         <div className="field">
           <label>Chart series:</label>
           {seriesGroups.map((sg, sgIndex) => (
@@ -79,9 +118,9 @@ export default class ChartForm extends React.Component {
               <div className="form-item">
                 <PathsFilterWidgetFormField
                   pathFilterValue={sg.path_filter}
-                  pathFilterName={`content[${sgIndex}].path_filter`}
+                  pathFilterName={`content.series_groups[${sgIndex}].path_filter`}
                   renamingValue={sg.renaming}
-                  renamingName={`content[${sgIndex}].renaming`}
+                  renamingName={`content.series_groups[${sgIndex}].renaming`}
                   onChange={onChange}
                   onBlur={onBlur}
                   sharedValues={sharedValues}
@@ -92,7 +131,7 @@ export default class ChartForm extends React.Component {
                   <input
                     type="text"
                     value={sg.expression}
-                    name={`content[${sgIndex}].expression`}
+                    name={`content.series_groups[${sgIndex}].expression`}
                     onChange={onChange}
                     onBlur={onBlur}
                   />
@@ -102,7 +141,7 @@ export default class ChartForm extends React.Component {
 
               <UnitWidgetFormField
                 value={sg.unit || ''}
-                name={`content[${sgIndex}].unit`}
+                name={`content.series_groups[${sgIndex}].unit`}
                 otherKnownUnits={otherKnownUnits}
                 onChange={onChange}
                 onBlur={onBlur}

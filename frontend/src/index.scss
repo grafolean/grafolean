@@ -170,6 +170,14 @@ table.list {
     border: 1px solid #999999;
     padding: 10px 20px;
   }
+
+  th.sortable {
+    cursor: pointer;
+
+    i.fa {
+      margin-left: 10px;
+    }
+  }
 }
 
 .fa-exclamation-triangle {

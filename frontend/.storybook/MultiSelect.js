@@ -20,18 +20,14 @@ stories.add('multiselect', () => {
       <div style={{ backgroundColor: '#fff' }}>
         <MultiSelect
           options={options}
-          initialSelectedOptionsIds={[
-            '2',
-            '4',
-            '6',
-          ]}
+          initialSelectedOptionsIds={['2', '4', '6']}
           onChangeSelected={selectedOptionsIds => console.log({ selectedOptionsIds })}
           onChangeFilteredSelected={selectedFilteredOptionsIds => console.log({ selectedFilteredOptionsIds })}
         />
       </div>
     </div>
   );
-})
+});
 
 stories.add('multiselect dark mode', () => {
   return (
@@ -39,11 +35,7 @@ stories.add('multiselect dark mode', () => {
       <div style={{ backgroundColor: '#333' }}>
         <MultiSelect
           options={options}
-          initialSelectedOptionsIds={[
-            '2',
-            '4',
-            '6',
-          ]}
+          initialSelectedOptionsIds={['2', '4', '6']}
           onChangeSelected={selectedOptionsIds => console.log({ selectedOptionsIds })}
           onChangeFilteredSelected={selectedFilteredOptionsIds => console.log({ selectedFilteredOptionsIds })}
           isDarkMode={true}
@@ -51,4 +43,4 @@ stories.add('multiselect dark mode', () => {
       </div>
     </div>
   );
-})
+});

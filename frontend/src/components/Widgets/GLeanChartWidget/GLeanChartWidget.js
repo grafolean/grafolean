@@ -1,11 +1,8 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import moment from 'moment';
-import { stringify } from 'qs';
 
-import { ROOT_URL, handleFetchErrors } from '../../../store/actions';
-import { fetchAuth } from '../../../utils/fetch';
+import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 import RePinchy from '../../RePinchy';
 import ChartContainer from './ChartContainer';
@@ -16,7 +13,7 @@ import TimeIntervalSelector from './TimeIntervalSelector';
 
 import './GLeanChartWidget.scss';
 
-class _GLeanChartWidget extends React.Component {
+export class CoreGLeanChartWidget extends React.Component {
   state = {
     loading: true,
     drawnChartSeries: [],
@@ -24,70 +21,41 @@ class _GLeanChartWidget extends React.Component {
   };
   repinchyMouseMoveHandler = null;
   repinchyClickHandler = null;
-  fetchPathsAbortController = null;
 
-  componentDidMount() {
-    this.fetchPaths();
-  }
+  onPathsUpdate = json => {
+    const {
+      content: { series_groups: seriesGroups },
+    } = this.props;
+    // construct a better representation of the data for display in the chart:
+    const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
+      return result.concat(
+        json.paths[c.path_filter].map(p => ({
+          chartSerieId: `${seriesGroupIndex}-${p.id}`,
+          path: p.path,
+          serieNameParts: {
+            path: p.path,
+            filter: c.path_filter,
+            renaming: c.renaming,
+          },
+          expression: c.expression,
+          unit: c.unit,
+        })),
+      );
+    }, []);
+    const indexedAllChartSeries = allChartSeries.map((cs, i) => ({
+      ...cs,
+      index: i,
+    }));
 
-  componentWillUnmount() {
-    if (this.fetchPathsAbortController !== null) {
-      this.fetchPathsAbortController.abort();
-    }
-  }
-
-  fetchPaths = () => {
-    if (this.fetchPathsAbortController !== null) {
-      return; // fetch is already in progress
-    }
-    this.fetchPathsAbortController = new window.AbortController();
-    const seriesGroups = this.props.content;
-    const query_params = {
-      filter: seriesGroups.map(cc => cc.path_filter).join(','),
-      limit: 1001,
-      failover_trailing: 'false',
-    };
-    const accountId = this.props.match.params.accountId;
-    fetchAuth(`${ROOT_URL}/accounts/${accountId}/paths/?${stringify(query_params)}`, {
-      signal: this.fetchPathsAbortController.signal,
-    })
-      .then(handleFetchErrors)
-      .then(response => response.json())
-      .then(json => {
-        // construct a better representation of the data for display in the chart:
-        const allChartSeries = seriesGroups.reduce((result, c, seriesGroupIndex) => {
-          return result.concat(
-            json.paths[c.path_filter].map(p => ({
-              chartSerieId: `${seriesGroupIndex}-${p.id}`,
-              path: p.path,
-              serieNameParts: {
-                path: p.path,
-                filter: c.path_filter,
-                renaming: c.renaming,
-              },
-              expression: c.expression,
-              unit: c.unit,
-            })),
-          );
-        }, []);
-        const indexedAllChartSeries = allChartSeries.map((cs, i) => ({
-          ...cs,
-          index: i,
-        }));
-
-        this.setState({
-          drawnChartSeries: indexedAllChartSeries,
-          allChartSeries: indexedAllChartSeries,
-        });
-      })
-      .catch(errorMsg => {
-        this.setState({
-          fetchingError: true,
-        });
-      })
-      .then(() => {
-        this.fetchPathsAbortController = null;
-      });
+    this.setState({
+      drawnChartSeries: indexedAllChartSeries,
+      allChartSeries: indexedAllChartSeries,
+    });
+  };
+  onPathsUpdateError = () => {
+    this.setState({
+      fetchingError: true,
+    });
   };
 
   // We need to do this weird dance around mousemove events because of performance
@@ -128,17 +96,25 @@ class _GLeanChartWidget extends React.Component {
 
   render() {
     const MAX_YAXIS_WIDTH = 70;
+    const {
+      width,
+      height,
+      isFullscreen,
+      setSharedValue,
+      content: { chart_type, series_groups: seriesGroups },
+    } = this.props;
+    const accountId = this.props.match.params.accountId;
     let legendWidth, chartWidth, legendIsDockable, legendPositionStyle;
-    if (this.props.width > 500) {
-      legendWidth = Math.min(this.props.width * 0.3, 200);
-      chartWidth = this.props.width - legendWidth;
+    if (width > 500) {
+      legendWidth = Math.min(width * 0.3, 200);
+      chartWidth = width - legendWidth;
       legendIsDockable = false;
       legendPositionStyle = {
         float: 'right',
       };
     } else {
-      legendWidth = Math.min(this.props.width, 200);
-      chartWidth = this.props.width;
+      legendWidth = Math.min(width, 200);
+      chartWidth = width;
       legendIsDockable = true;
       // if legend is dockable, it should be taken out of flow:
       legendPositionStyle = {
@@ -148,7 +124,7 @@ class _GLeanChartWidget extends React.Component {
       };
     }
     const yAxisWidth = Math.min(Math.round(chartWidth * 0.1), MAX_YAXIS_WIDTH); // 10% of chart width, max. 100px
-    const xAxisHeight = Math.min(Math.round(this.props.height * 0.1), 50); // 10% of chart height, max. 50px
+    const xAxisHeight = Math.min(Math.round(height * 0.1), 50); // 10% of chart height, max. 50px
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
     const yAxesWidth = yAxesCount * yAxisWidth;
 
@@ -166,20 +142,30 @@ class _GLeanChartWidget extends React.Component {
         className="widget-dialog-container"
         style={{
           position: 'relative',
-          minHeight: this.props.height,
-          width: this.props.width,
+          minHeight: height,
+          width: width,
         }}
       >
+        <PersistentFetcher
+          resource={`accounts/${accountId}/paths`}
+          queryParams={{
+            filter: seriesGroups.map(cc => cc.path_filter).join(','),
+            limit: 1001,
+            failover_trailing: 'false',
+          }}
+          onUpdate={this.onPathsUpdate}
+          onError={this.onPathsUpdateError}
+        />
         <RePinchy
-          width={this.props.width}
-          height={this.props.height}
+          width={width}
+          height={height}
           activeArea={{
             x: yAxesWidth,
             y: 0,
             w: chartWidth - yAxesWidth,
-            h: this.props.height - timeIntervalSelectorHeight,
+            h: height - timeIntervalSelectorHeight,
           }}
-          kidnapScroll={this.props.isFullscreen}
+          kidnapScroll={isFullscreen}
           initialState={{
             x: initialPanX,
             y: 0.0,
@@ -191,10 +177,11 @@ class _GLeanChartWidget extends React.Component {
           {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
             <div className="repinchy-content">
               <ChartContainer
+                accountId={accountId}
                 allChartSeries={this.state.allChartSeries}
                 drawnChartSeries={this.state.drawnChartSeries}
                 width={chartWidth}
-                height={this.props.height - timeIntervalSelectorHeight}
+                height={height - timeIntervalSelectorHeight}
                 fromTs={Math.round(-(x - yAxesWidth) / scale)}
                 toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
                 scale={scale}
@@ -203,13 +190,14 @@ class _GLeanChartWidget extends React.Component {
                 yAxisWidth={yAxisWidth}
                 registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
                 registerClickHandler={this.registerRePinchyClickHandler}
-                setSharedValue={this.props.setSharedValue}
+                setSharedValue={setSharedValue}
+                chartType={chart_type}
               />
               <div style={legendPositionStyle}>
                 <Legend
                   dockingEnabled={legendIsDockable}
                   width={legendWidth}
-                  height={this.props.height - timeIntervalSelectorHeight}
+                  height={height - timeIntervalSelectorHeight}
                   chartSeries={this.state.allChartSeries}
                   onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
                 />
@@ -233,25 +221,25 @@ class _GLeanChartWidget extends React.Component {
   }
 }
 
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
-});
-// export default withRouter(connect(mapStoreToProps)(isWidget(GLeanChartWidget)));
-const GLeanChartWidget = withRouter(connect(mapStoreToProps)(isWidget(_GLeanChartWidget)));
+const GLeanChartWidget = withRouter(isWidget(CoreGLeanChartWidget));
 
 // there is no need for GLeanChartWidget to concern itself with sharedValues, we take care of substituting them here:
 export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {
   render() {
     const { sharedValues, content, ...rest } = this.props;
-    const contentSubstituted = content.map(sg => ({
+    const seriesGroupsSubstituted = content.series_groups.map(sg => ({
       ...sg,
       path_filter: MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues),
       renaming: MatchingPaths.substituteSharedValues(sg.renaming, sharedValues),
     }));
+    const contentSubstituted = {
+      ...content,
+      series_groups: seriesGroupsSubstituted,
+    };
 
     // We want to rerender GLeanChartWidget whenever one of the (applicable) sharedValues changes. The
     // safest way to achieve this is to construct a key from the path_filter-s:
-    const pathFiltersForKey = contentSubstituted.map(sg => sg.path_filter).join('#');
+    const pathFiltersForKey = seriesGroupsSubstituted.map(sg => sg.path_filter).join('#');
 
     const areSharedValuesSubstituted = !pathFiltersForKey.includes('$');
     if (!areSharedValuesSubstituted) {

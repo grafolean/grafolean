@@ -7,10 +7,6 @@ import pytest
 import flask
 
 
-os.environ['ENABLE_SIGNUP'] = 'true'
-os.environ['SIGNUP_DISALLOW_TOR'] = 'false'
-
-
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fixtures import (
     app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, person_id, EMAIL_USER1, USERNAME_USER1,
@@ -19,7 +15,8 @@ from fixtures import (
 
 
 def setup_module():
-    pass
+    os.environ['ENABLE_SIGNUP'] = 'true'
+    os.environ['SIGNUP_DISALLOW_TOR'] = 'false'
 
 
 def teardown_module():

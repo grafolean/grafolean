@@ -55,7 +55,7 @@ services:
       # In default configuration this is the same hostname as used for everything else (backend and frontend) because
       # Mosquitto is served through nginx. Port can be ignored in default configuration.
       - MQTT_WS_HOSTNAME=${EXTERNAL_HOSTNAME}
-      - MQTT_WS_PORT=
+      - MQTT_WS_PORT=${HTTP_PORT:-80}
       # In default setting (where backend API is proxied through nginx, and is thus available on the same
       # domain) GRAFOLEAN_CORS_DOMAINS can be ignored. It is only needed if you want to install
       # Grafolean backend on a different origin than frontend. You will also be warned if this needs to be changed.

@@ -583,3 +583,14 @@ def migration_step_28():
             );
         """)
         c.execute('ALTER TABLE widgets ALTER COLUMN type SET DATA TYPE VARCHAR(250);')
+
+def migration_step_29():
+    """ Convert chart widget's content field from list to dics (within JSON). """
+    with db.cursor() as c, db.cursor() as c2:
+        c.execute("SELECT id, content FROM widgets WHERE type = 'chart';")
+        for widget_id, content in c:
+            new_content = json.dumps({
+                "chart_type": "line",
+                "series_groups": json.loads(content),
+            })
+            c2.execute("UPDATE widgets SET content = %s WHERE id = %s;", (new_content, widget_id,))

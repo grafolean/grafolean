@@ -46,7 +46,10 @@ then
   fi
   echo "Setting Content-Security-Policy so that it allows connect-src: ${ALLOW_WS}"
   sed -i -r "s#connect-src ([^;]+);#connect-src \\1 ${ALLOW_WS};#g" /etc/nginx/grafolean.*.conf
-  sed -i -r "s#connect-src ([^;]+);#connect-src \\1 ${ALLOW_WS};#g" /var/www/html/index.html
+  # index.html is actually gzip-ed in advance, so if we want to change it, we need to gunzip/sed/gzip:
+  mv /var/www/html/index.html /var/www/html/index.html.gz
+  cat /var/www/html/index.html.gz | gunzip | sed -r "s#connect-src ([^;]+);#connect-src \\1 ${ALLOW_WS};#g" | gzip > /var/www/html/index.html
+  rm /var/www/html/index.html.gz
 else
   echo ""
   echo "***********************************************************"
