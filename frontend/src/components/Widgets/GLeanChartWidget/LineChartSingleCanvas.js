@@ -3,8 +3,10 @@ import React from 'react';
 import { generateSerieColor } from './utils';
 
 export const CHART_TYPE_LINE = 'line';
+export const CHART_TYPE_LINEFILL = 'linefill';
 export const CHART_TYPE_POINT = 'point';
-export const KNOWN_CHART_TYPES = [CHART_TYPE_LINE, CHART_TYPE_POINT];
+export const KNOWN_CHART_TYPES = [CHART_TYPE_LINE, CHART_TYPE_POINT, CHART_TYPE_LINEFILL];
+export const KNOWN_CHART_TYPES_NAMES = ['line chart', 'point chart', 'filled line chart'];
 
 class LineChartSingleCanvas extends React.PureComponent {
   constructor(props) {
@@ -54,17 +56,20 @@ class LineChartSingleCanvas extends React.PureComponent {
           maxY: v2y(p.maxv),
         }));
 
-        if (chartType === CHART_TYPE_POINT) {
+        // single point behaves like it's a point chart:
+        if (chartType === CHART_TYPE_POINT || pathPoints.length === 1) {
           ctx.lineWidth = 0;
           pathPoints.forEach(p => {
             ctx.fillRect(p.x, p.y, 2, 2);
           });
         } else {
+          const firstPathPoint = pathPoints[0];
+          const lastPathPoint = pathPoints[pathPoints.length - 1];
           ctx.lineWidth = 1;
           if (this.props.isAggr) {
             ctx.beginPath();
             ctx.globalAlpha = 0.2;
-            ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+            ctx.moveTo(firstPathPoint.x, firstPathPoint.minY);
             for (let i = 1; i < pathPoints.length; i++) {
               ctx.lineTo(pathPoints[i].x, pathPoints[i].minY);
             }
@@ -76,11 +81,24 @@ class LineChartSingleCanvas extends React.PureComponent {
           }
 
           ctx.beginPath();
-          ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+          ctx.moveTo(firstPathPoint.x, firstPathPoint.y);
           for (let i = 1; i < pathPoints.length; i++) {
             ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
           }
           ctx.stroke();
+
+          if (chartType === CHART_TYPE_LINEFILL && !this.props.isAggr) {
+            ctx.beginPath();
+            ctx.globalAlpha = 0.1;
+            ctx.moveTo(firstPathPoint.x, firstPathPoint.y);
+            for (let i = 1; i < pathPoints.length; i++) {
+              ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+            }
+            ctx.lineTo(lastPathPoint.x, this.canvasRef.current.height);
+            ctx.lineTo(pathPoints[0].x, this.canvasRef.current.height);
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+          }
         }
       });
     });

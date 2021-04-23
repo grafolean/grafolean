@@ -121,7 +121,7 @@ stories.add('Complete chart widget', () => {
           <CoreGLeanChartWidget
             match={{ params: { accountId: 123 } }} // simulate React Router
             content={{
-              chart_type: 'line',
+              chart_type: 'linefill',
               series_groups: [
                 {
                   path_filter: PATH_FILTER,

@@ -4,9 +4,9 @@ import { compile } from 'mathjs';
 import Button from '../../../Button';
 import UnitWidgetFormField from '../../WidgetFormFields/UnitWidgetFormField';
 import PathsFilterWidgetFormField from '../../WidgetFormFields/PathsFilterWidgetFormField';
+import { KNOWN_CHART_TYPES, KNOWN_CHART_TYPES_NAMES, CHART_TYPE_LINE } from '../LineChartSingleCanvas';
 
 import './ChartForm.scss';
-import { CHART_TYPE_LINE, CHART_TYPE_POINT, KNOWN_CHART_TYPES } from '../LineChartSingleCanvas';
 
 export default class ChartForm extends React.Component {
   static DEFAULT_SERIE_GROUP_CONTENT = {
@@ -94,32 +94,21 @@ export default class ChartForm extends React.Component {
       <div className="chart-form">
         <div className="field">
           <label>Type of chart:</label>
-          <div className="radio_option_container">
-            <label>
-              <input
-                type="radio"
-                name={`content.chart_type`}
-                value={CHART_TYPE_LINE}
-                checked={!chart_type || chart_type === CHART_TYPE_LINE}
-                onChange={onChange}
-                onBlur={onBlur}
-              />
-              <span>line chart</span>
-            </label>
-          </div>
-          <div className="radio_option_container">
-            <label>
-              <input
-                type="radio"
-                name={`content.chart_type`}
-                value={CHART_TYPE_POINT}
-                checked={chart_type === CHART_TYPE_POINT}
-                onChange={onChange}
-                onBlur={onBlur}
-              />
-              <span>point chart</span>
-            </label>
-          </div>
+          {KNOWN_CHART_TYPES.map((chart_type_id, i) => (
+            <div className="radio_option_container">
+              <label>
+                <input
+                  type="radio"
+                  name={`content.chart_type`}
+                  value={chart_type_id}
+                  checked={chart_type === chart_type_id}
+                  onChange={onChange}
+                  onBlur={onBlur}
+                />
+                <span>{KNOWN_CHART_TYPES_NAMES[i]}</span>
+              </label>
+            </div>
+          ))}
         </div>
 
         <div className="field">
