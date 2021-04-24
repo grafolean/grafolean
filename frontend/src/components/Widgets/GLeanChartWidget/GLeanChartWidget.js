@@ -99,7 +99,6 @@ export class CoreGLeanChartWidget extends React.Component {
     const {
       width,
       height,
-      isFullscreen,
       setSharedValue,
       content: { chart_type, series_groups: seriesGroups },
     } = this.props;
@@ -166,7 +165,7 @@ export class CoreGLeanChartWidget extends React.Component {
             h: height - timeIntervalSelectorHeight,
             zIndex: 2222,
           }}
-          kidnapScroll={isFullscreen}
+          kidnapScroll={true}
           initialState={{
             x: initialPanX,
             y: 0.0,
