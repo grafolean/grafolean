@@ -164,6 +164,7 @@ export class CoreGLeanChartWidget extends React.Component {
             y: 0,
             w: chartWidth - yAxesWidth,
             h: height - timeIntervalSelectorHeight,
+            zIndex: 2222,
           }}
           kidnapScroll={isFullscreen}
           initialState={{
