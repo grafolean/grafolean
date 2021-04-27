@@ -5,6 +5,7 @@ import moment from 'moment';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 
 import RePinchy from '../../RePinchy';
+import ZoomDebounce from '../../ZoomDebounce';
 import ChartContainer from './ChartContainer';
 import Legend from './Legend/Legend';
 import MatchingPaths from './ChartForm/MatchingPaths';
@@ -175,45 +176,63 @@ export class CoreGLeanChartWidget extends React.Component {
           handleClick={this.handleRePinchyClick}
         >
           {(x, y, scale, zoomInProgress, pointerPosition, setXYScale) => (
-            <div className="repinchy-content">
-              <ChartContainer
-                accountId={accountId}
-                allChartSeries={this.state.allChartSeries}
-                drawnChartSeries={this.state.drawnChartSeries}
-                width={chartWidth}
-                height={height - timeIntervalSelectorHeight}
-                fromTs={Math.round(-(x - yAxesWidth) / scale)}
-                toTs={Math.round(-(x - yAxesWidth) / scale) + Math.round(chartWidth / scale)}
-                scale={scale}
-                zoomInProgress={zoomInProgress}
-                xAxisHeight={xAxisHeight}
-                yAxisWidth={yAxisWidth}
-                registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
-                registerClickHandler={this.registerRePinchyClickHandler}
-                setSharedValue={setSharedValue}
-                chartType={chart_type}
-              />
-              <div style={legendPositionStyle}>
-                <Legend
-                  dockingEnabled={legendIsDockable}
-                  width={legendWidth}
-                  height={height - timeIntervalSelectorHeight}
-                  chartSeries={this.state.allChartSeries}
-                  onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
-                />
-              </div>
-              <TimeIntervalSelector
-                onChange={intervalDuration => {
-                  const toTs = moment().unix();
-                  const fromTs = moment()
-                    .subtract(intervalDuration)
-                    .unix();
-                  const scale = chartWidth / (toTs - fromTs);
-                  const panX = -fromTs * scale;
-                  setXYScale(panX, 0, scale);
-                }}
-              />
-            </div>
+            <ZoomDebounce
+              zoomInProgress={zoomInProgress}
+              scale={scale}
+              panX={x}
+              activeArea={{
+                x: yAxesWidth,
+                y: 0,
+                w: chartWidth - yAxesWidth,
+                h: height - timeIntervalSelectorHeight,
+              }}
+            >
+              {(debouncedX, debouncedScale) => (
+                <div className="repinchy-content">
+                  <ChartContainer
+                    accountId={accountId}
+                    allChartSeries={this.state.allChartSeries}
+                    drawnChartSeries={this.state.drawnChartSeries}
+                    width={chartWidth}
+                    height={height - timeIntervalSelectorHeight}
+                    fromTs={Math.round(-(debouncedX - yAxesWidth) / debouncedScale)}
+                    toTs={
+                      Math.round(-(debouncedX - yAxesWidth) / debouncedScale) +
+                      Math.round(chartWidth / debouncedScale)
+                    }
+                    scale={debouncedScale}
+                    zoomInProgress={zoomInProgress}
+                    xAxisHeight={xAxisHeight}
+                    yAxisWidth={yAxisWidth}
+                    registerMouseMoveHandler={this.registerRePinchyMouseMoveHandler}
+                    registerClickHandler={this.registerRePinchyClickHandler}
+                    setSharedValue={setSharedValue}
+                    chartType={chart_type}
+                  />
+
+                  <div style={legendPositionStyle}>
+                    <Legend
+                      dockingEnabled={legendIsDockable}
+                      width={legendWidth}
+                      height={height - timeIntervalSelectorHeight}
+                      chartSeries={this.state.allChartSeries}
+                      onDrawnChartSeriesChange={this.handleDrawnChartSeriesChange}
+                    />
+                  </div>
+                  <TimeIntervalSelector
+                    onChange={intervalDuration => {
+                      const toTs = moment().unix();
+                      const fromTs = moment()
+                        .subtract(intervalDuration)
+                        .unix();
+                      const newScale = chartWidth / (toTs - fromTs);
+                      const panX = -fromTs * newScale;
+                      setXYScale(panX, 0, newScale);
+                    }}
+                  />
+                </div>
+              )}
+            </ZoomDebounce>
           )}
         </RePinchy>
       </div>
