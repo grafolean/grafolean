@@ -18,11 +18,6 @@ RUN npm run build
 RUN sed -i -e 's#https://storage[.]googleapis[.]com/workbox-cdn/releases/[0-9.]*/workbox-sw.js#/workbox/workbox-sw.js#g' build/service-worker.js
 
 
-FROM python:3.8-slim-buster as python-requirements
-WORKDIR /grafolean/backend
-COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
-
-
 # Prepare backend:
 #  - /requirements.txt
 #  - /api-doc.yml
