@@ -53,14 +53,20 @@ jobs:
         install: false
 
 
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+
+
     - name: Deploy Grafolean to Docker Hub - multiplatform
       if: success() && startsWith(github.ref, 'refs/tags/v')
       env:
         GITHUB_REF_TAG: ${{ github.ref }}
         DOCKER_IMAGE: grafolean/grafolean
         BUILD_PLATFORMS: linux/arm/v7
-      # for caching purposes, we push builder images of the multistage build to docker registry:
-      # https://lipanski.com/posts/speed-up-your-docker-builds-with-cache-from
+      # caching docker builds: https://github.com/docker/buildx/issues/402
       run: |
         echo "Available plaftorms: ${{ steps.buildx.outputs.platforms }}"
         echo "Building for plaftorms: $BUILD_PLATFORMS"
@@ -70,13 +76,11 @@ jobs:
         echo "Last known version is $LAST_KNOWN_VERSION"
         cp ./install/docker-compose/Dockerfile .
 
-        docker pull "docker.io/$DOCKER_IMAGE:cache-build-frontend" || true
-        docker pull "docker.io/$DOCKER_IMAGE:cache-build-backend" || true
-        docker pull "docker.io/$DOCKER_IMAGE:cache-build-swagger" || true
-        docker buildx build --target build-frontend --cache-from "docker.io/${DOCKER_IMAGE}:cache-build-frontend" --push --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-frontend" .
-        docker buildx build --target build-backend --cache-from "docker.io/${DOCKER_IMAGE}:cache-build-backend" --push --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-backend" .
-        docker buildx build --target convert-swagger-to-html --cache-from "docker.io/${DOCKER_IMAGE}:cache-build-swagger" --push --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-swagger" .
+        export CACHE_FILE="type=local,src=/tmp/.buildx-cache/cache-build-frontend"
+        docker buildx build --target build-frontend --cache-from $CACHE_FILE --cache-to $CACHE_FILE,mode=max --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-frontend" .
+        # docker buildx build --target build-backend --cache-from "docker.io/${DOCKER_IMAGE}:cache-build-backend" --push --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-backend" .
+        # docker buildx build --target convert-swagger-to-html --cache-from "docker.io/${DOCKER_IMAGE}:cache-build-swagger" --push --platform "$BUILD_PLATFORMS" -t "docker.io/${DOCKER_IMAGE}:cache-build-swagger" .
 
-        docker pull "docker.io/$DOCKER_IMAGE" || true
-        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && echo "MARKING AS LATEST!" || echo "NOT MARKING AS LATEST!"
-        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker buildx build --cache-from "docker.io/$DOCKER_IMAGE:latest" --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') . || docker buildx build --cache-from "docker.io/$DOCKER_IMAGE:latest"--push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+        # docker pull "docker.io/$DOCKER_IMAGE" || true
+        # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && echo "MARKING AS LATEST!" || echo "NOT MARKING AS LATEST!"
+        # [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker buildx build --cache-from "docker.io/$DOCKER_IMAGE:latest" --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') . || docker buildx build --cache-from "docker.io/$DOCKER_IMAGE:latest"--push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
