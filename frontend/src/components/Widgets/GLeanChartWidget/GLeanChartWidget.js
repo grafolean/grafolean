@@ -246,7 +246,7 @@ const GLeanChartWidget = withRouter(isWidget(CoreGLeanChartWidget));
 export default class ChartWidgetWithSubstitutedSharedValues extends React.Component {
   render() {
     const { sharedValues, content, ...rest } = this.props;
-    const seriesGroupsSubstituted = content.series_groups.map(sg => ({
+    const seriesGroupsSubstituted = (content.series_groups || []).map(sg => ({
       ...sg,
       path_filter: MatchingPaths.substituteSharedValues(sg.path_filter, sharedValues),
       renaming: MatchingPaths.substituteSharedValues(sg.renaming, sharedValues),
