@@ -3,9 +3,10 @@ import { withRouter } from 'react-router-dom';
 
 import NoPathsHelpSnippet from '../HelpSnippets/NoPathsHelpSnippet';
 import { INITIAL_KNOWN_WIDGET_TYPES } from '../Widgets/knownWidgets';
+import FetchingFormik from '../FetchingFormik';
+import withErrorBoundary from '../withErrorBoundary';
 
 import './WidgetForm.scss';
-import FetchingFormik from '../FetchingFormik';
 
 class WidgetForm extends React.Component {
   validate = values => {
@@ -142,4 +143,4 @@ class WidgetForm extends React.Component {
   }
 }
 
-export default withRouter(WidgetForm);
+export default withRouter(withErrorBoundary(WidgetForm));
