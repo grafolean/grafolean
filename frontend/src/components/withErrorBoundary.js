@@ -28,7 +28,7 @@ const withErrorBoundary = WrappedComponent => {
           </p>
           <details>
             <summary>{errorStr}</summary>
-            <pre>{this.state.errorInfo.componentStack}</pre>
+            <pre>{errorInfo.componentStack}</pre>
           </details>
         </div>
       );
