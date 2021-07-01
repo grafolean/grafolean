@@ -1,6 +1,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import moment from 'moment-timezone/builds/moment-timezone-with-data';
 
+import store from '../../store';
 import { doLogout } from '../../store/helpers';
 
 import Button from '../Button';
@@ -8,17 +10,19 @@ import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Loading from '../Loading';
 import EditableLabel from '../EditableLabel';
 import { fetchAuth, havePermission } from '../../utils/fetch';
-import { handleFetchErrors, ROOT_URL } from '../../store/actions';
+import { handleFetchErrors, onFailure, ROOT_URL } from '../../store/actions';
 import LinkButton from '../LinkButton/LinkButton';
 
 class Profile extends React.Component {
   state = {
     person: null,
+    selectedTimezone: null,
   };
 
   handlePersonUpdate = json => {
     this.setState({
       person: json,
+      selectedTimezone: json.timezone || 'UTC',
     });
   };
 
@@ -30,6 +34,12 @@ class Profile extends React.Component {
   };
   changeEmail = newValue => {
     this.updatePerson({ email: newValue });
+  };
+  handleTimezoneSelectChange = ev => {
+    this.setState({ selectedTimezone: ev.target.value });
+  };
+  saveTimezone = () => {
+    this.updatePerson({ timezone: this.state.selectedTimezone });
   };
 
   updatePerson = changes => {
@@ -50,11 +60,14 @@ class Profile extends React.Component {
       body: JSON.stringify(personData),
     })
       .then(handleFetchErrors)
-      .catch(err => console.error(err));
+      .catch(errorMsg => {
+        console.error(errorMsg);
+        store.dispatch(onFailure(errorMsg.toString()));
+      });
   };
 
   render() {
-    const { person } = this.state;
+    const { person, selectedTimezone } = this.state;
     const { user } = this.props;
     const canChangePassword = havePermission(`persons/${user.user_id}/password`, 'POST', user.permissions);
     const canChangePerson = havePermission(`persons/${user.user_id}`, 'PUT', user.permissions);
@@ -86,6 +99,16 @@ class Profile extends React.Component {
             <LinkButton to="/profile/change-password" disabled={!canChangePassword}>
               <i className="fa fa-fw fa-key" /> Change password
             </LinkButton>
+            <hr />
+            <p>Timezone:</p>
+            <select onChange={this.handleTimezoneSelectChange} value={selectedTimezone}>
+              {moment.tz.names().map(tzName => (
+                <option value={tzName}>{tzName}</option>
+              ))}
+            </select>
+            <Button onClick={this.saveTimezone} disabled={person.timezone === selectedTimezone}>
+              Save
+            </Button>
             <hr />
             <Button onClick={doLogout}>
               <i className="fa fa-fw fa-power-off" /> Logout

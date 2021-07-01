@@ -10,6 +10,7 @@
     "lodash": "^4.17.15",
     "mathjs": "^6.0.0",
     "moment": "^2.19.3",
+    "moment-timezone": "^0.5.33",
     "qs": "^6.5.1",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",

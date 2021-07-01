@@ -594,3 +594,8 @@ def migration_step_29():
                 "series_groups": json.loads(content),
             })
             c2.execute("UPDATE widgets SET content = %s WHERE id = %s;", (new_content, widget_id,))
+
+def migration_step_30():
+    """ Persons should be able to select their timezone. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE persons ADD COLUMN timezone VARCHAR(64) NOT NULL DEFAULT 'UTC';")

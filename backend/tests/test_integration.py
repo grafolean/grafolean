@@ -871,6 +871,7 @@ def test_persons_crud(app_client, first_admin_id, admin_authorization_header):
                 'name': data['name'],
                 'username': data['username'],
                 'email': data['email'],
+                'timezone': 'UTC',
                 'email_confirmed': True,
             },
         ],

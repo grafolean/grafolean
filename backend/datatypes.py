@@ -1163,11 +1163,12 @@ class Bot(object):
 
 
 class Person(object):
-    def __init__(self, name, email, username, password, email_confirmed, force_id=None):
+    def __init__(self, name, email, username, password, timezone, email_confirmed, force_id=None):
         self.name = name
         self.email = EmailAddress(email, strict_check=False)
         self.username = username
         self.password = password
+        self.timezone = timezone
         self.email_confirmed = email_confirmed
         self.force_id = force_id
 
@@ -1182,20 +1183,22 @@ class Person(object):
         email = json_data.get('email', None)
         username = json_data.get('username', None)
         password = json_data.get('password', None)
+        timezone = json_data.get('timezone', 'UTC')
         email_confirmed = True  # when manually entering user, e-mail check is not performed
-        return cls(name, email, username, password, email_confirmed, force_id)
+        return cls(name, email, username, password, timezone, email_confirmed, force_id)
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons ORDER BY username ASC;')
-            for user_id, name, email, username, email_confirmed in c:
+            c.execute('SELECT user_id, name, email, username, timezone, email_confirmed FROM persons ORDER BY username ASC;')
+            for user_id, name, email, username, timezone, email_confirmed in c:
                 ret.append({
                     'user_id': user_id,
                     'name': name,
                     'email': email,
                     'username': username,
+                    'timezone': timezone,
                     'email_confirmed': email_confirmed,
                 })
             return ret
@@ -1211,7 +1214,7 @@ class Person(object):
         email = json_data.get('email', None)
 
         # insert a person which needs the e-mail to be confirmed and password entered before it can login:
-        person = cls('', email, email, None, False)
+        person = cls('', email, email, None, 'UTC', False)
         user_id = person.insert()
 
         with db.cursor() as c:
@@ -1300,8 +1303,8 @@ class Person(object):
             c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
             user_id, = c.fetchone()
             pass_hash = Auth.password_hash(self.password) if self.password is not None else None
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s);",
-                (user_id, self.name, str(self.email), self.username, pass_hash, self.email_confirmed,))
+            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, timezone, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                (user_id, self.name, str(self.email), self.username, pass_hash, self.timezone, self.email_confirmed,))
             return user_id
 
     def update(self):
@@ -1314,6 +1317,8 @@ class Person(object):
                 c.execute("UPDATE persons SET username = %s WHERE user_id = %s;", (self.username, self.force_id,))
             if self.email:
                 c.execute("UPDATE persons SET email = %s WHERE user_id = %s;", (str(self.email), self.force_id,))
+            if self.timezone:
+                c.execute("UPDATE persons SET timezone = %s WHERE user_id = %s;", (str(self.timezone), self.force_id,))
             # changing password is disabled here - it is only allowed through change_password(), which requests the old password too.
             # if self.password:
             #     pass_hash = Auth.password_hash(self.password)
@@ -1351,16 +1356,17 @@ class Person(object):
     @staticmethod
     def get(user_id):
         with db.cursor() as c:
-            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons WHERE user_id = %s;', (user_id,))
+            c.execute('SELECT user_id, name, email, username, timezone, email_confirmed FROM persons WHERE user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, email, username, email_confirmed = res
+            user_id, name, email, username, timezone, email_confirmed = res
         return {
             'user_id': user_id,
             'name': name,
             'email': email,
             'username': username,
+            'timezone': timezone,
             'email_confirmed': email_confirmed,
         }
 

@@ -2,7 +2,7 @@ import json
 import secrets
 import flask
 
-from datatypes import Permission, PersonCredentials
+from datatypes import Permission, PersonCredentials, Person
 from auth import JWT
 from .common import noauth
 
@@ -22,10 +22,12 @@ def auth_login_post():
     user_id = credentials.check_user_login()
     if not user_id:
         return "Invalid credentials", 401
+    user = Person.get(user_id)
 
     session_data = {
         'user_id': user_id,
         'session_id': secrets.token_hex(32),
+        'user': user,
         'permissions': Permission.get_list(user_id),
     }
     response = flask.make_response(json.dumps(session_data), 200)
