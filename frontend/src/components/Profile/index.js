@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import moment from 'moment-timezone/builds/moment-timezone-with-data';
+import moment from 'moment-timezone';
 
 import store from '../../store';
 import { doLogout } from '../../store/helpers';

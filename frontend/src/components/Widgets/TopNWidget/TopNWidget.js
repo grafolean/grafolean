@@ -1,8 +1,7 @@
 import React from 'react';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router-dom';
 import { evaluate } from 'mathjs';
-import moment from 'moment-timezone/builds/moment-timezone-with-data';
+import moment from 'moment-timezone';
 
 import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
@@ -69,7 +68,7 @@ class _TopNWidget extends React.Component {
 
   render() {
     const { topList, topListTime, topListTotal, loading } = this.state;
-    const { sharedValues, display = 'list', timezone } = this.props;
+    const { sharedValues, display = 'list' } = this.props;
     const { selectedTime = null } = sharedValues;
     const { accountId } = this.props.match.params;
     const {
@@ -114,11 +113,7 @@ class _TopNWidget extends React.Component {
         {calculatedTopList && (
           <div>
             <div className="time">
-              {moment
-                .utc(topListTime * 1000)
-                .tz(timezone)
-                .format('YYYY-MM-DD HH:mm:ss z')}{' '}
-              (<When t={topListTime} />)
+              {moment(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss z')} (<When t={topListTime} />)
             </div>
             {(calc_percent || pie_chart) && (
               <div className="total">
@@ -197,10 +192,7 @@ class _TopNWidget extends React.Component {
   }
 }
 
-const mapStoreToProps = store => ({
-  timezone: store.user.user.timezone,
-});
-const TopNWidget = connect(mapStoreToProps)(withRouter(isWidget(_TopNWidget)));
+const TopNWidget = withRouter(isWidget(_TopNWidget));
 
 // We want to rerender the widget whenever one of the (applicable) sharedValues changes. The
 // safest way to achieve this is to construct a key from the path_filter-s:

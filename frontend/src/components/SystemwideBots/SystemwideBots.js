@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import store from '../../store';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
@@ -49,6 +49,7 @@ export default function SystemwideBots(props) {
       .catch(errorMsg => store.dispatch(onFailure(errorMsg.toString())));
   };
 
+  const timezoneAbbr = moment().format('z');
   return (
     <>
       <PersistentFetcher resource={`bots`} onUpdate={onBotsUpdate} />
@@ -69,11 +70,11 @@ export default function SystemwideBots(props) {
                 </th>
                 <th>Token</th>
                 <th className="sortable" onClick={() => applySortFunc('insert_time')}>
-                  Insert time (UTC)
+                  Insert time ({timezoneAbbr})
                   {firstSortKey === 'insert_time' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
                 <th className="sortable" onClick={() => applySortFunc('last_login')}>
-                  Last successful login (UTC)
+                  Last successful login ({timezoneAbbr})
                   {firstSortKey === 'last_login' && <i className={`fa fa-sort-${firstSortDirection}`} />}
                 </th>
                 <th colSpan="2" align="right">
@@ -96,15 +97,15 @@ export default function SystemwideBots(props) {
                     <td data-label="Token">
                       <BotToken botId={bot.id} isSystemwide={true} />
                     </td>
-                    <td data-label="Insert time (UTC)">
-                      {moment.utc(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
+                    <td data-label={`Insert time (${timezoneAbbr})`}>
+                      {moment(bot.insert_time * 1000).format('YYYY-MM-DD HH:mm:ss')}
                     </td>
-                    <td data-label="Last successful login (UTC)">
+                    <td data-label={`Last successful login (${timezoneAbbr})`}>
                       {bot.last_login === null ? (
                         <>Never</>
                       ) : (
                         <>
-                          {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
+                          {moment(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} (
                           <When t={bot.last_login} />)
                         </>
                       )}

@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import TooltipPopup from '../../TooltipPopup';
 import LabelFromPath from '../../LabelFromPath/LabelFromPath';
@@ -35,7 +35,7 @@ export default class ChartTooltipPopup extends React.PureComponent {
             <p>
               At:{' '}
               {moment(closest.point.t * 1000).format(
-                closest.point.minv ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss',
+                closest.point.minv ? 'YYYY-MM-DD' : 'YYYY-MM-DD HH:mm:ss z',
               )}
             </p>
           </div>

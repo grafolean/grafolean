@@ -1,6 +1,6 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Link } from 'react-router-dom';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { SUPPORTED_PROTOCOLS } from '../../utils/protocols';
@@ -178,7 +178,7 @@ class Bot extends React.Component {
                       'never'
                     ) : (
                       <>
-                        {moment.utc(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (
+                        {moment(bot.last_login * 1000).format('YYYY-MM-DD HH:mm:ss z')} (
                         <When t={bot.last_login} />)
                       </>
                     )}

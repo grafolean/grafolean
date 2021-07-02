@@ -1,5 +1,5 @@
 import React from 'react';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 const DEFAULT_LIMITS = {
   5: '< 5 s',
@@ -62,7 +62,7 @@ export default class When extends React.Component {
     const now = moment.utc().unix();
     const diff = now - t;
     const limit = Object.keys(limits).find(l => l > diff);
-    const message = limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss')}`;
+    const message = limit ? `${limits[limit]} ago` : `at ${moment(t * 1000).format('YYYY-MM-DD HH:mm:ss z')}`;
     this.setState({
       message: message,
     });
