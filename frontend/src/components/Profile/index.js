@@ -101,7 +101,11 @@ class Profile extends React.Component {
             </LinkButton>
             <hr />
             <p>Timezone:</p>
-            <select onChange={this.handleTimezoneSelectChange} value={selectedTimezone}>
+            <select
+              onChange={this.handleTimezoneSelectChange}
+              value={selectedTimezone}
+              disabled={!canChangePerson}
+            >
               {moment.tz.names().map(tzName => (
                 <option value={tzName}>{tzName}</option>
               ))}
