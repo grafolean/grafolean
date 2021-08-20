@@ -84,7 +84,7 @@ class MainWrapper extends React.Component {
 const mapStoreToProps = store => ({
   isDarkMode: store.preferences.colorScheme === 'dark',
   backendStatus: store.backendStatus.status,
-  timezone: store.user ? store.user.user.timezone : null,
+  timezone: store.user && store.user.personData ? store.user.personData.timezone : 'UTC',
 });
 // withRouter is needed to force re-rendering of this component when URL changes:
 export default withRouter(connect(mapStoreToProps)(MainWrapper));

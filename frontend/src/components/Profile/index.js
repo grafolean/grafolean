@@ -17,6 +17,7 @@ class Profile extends React.Component {
   state = {
     person: null,
     selectedTimezone: null,
+    loadingKeys: [],
   };
 
   handlePersonUpdate = json => {
@@ -42,32 +43,36 @@ class Profile extends React.Component {
     this.updatePerson({ timezone: this.state.selectedTimezone });
   };
 
-  updatePerson = changes => {
+  updatePerson = async changes => {
     const { person } = this.state;
     const { user } = this.props;
     const personData = {
       name: person.name,
       username: person.username,
       email: person.email,
+      timezone: person.timezone,
       ...changes,
     };
-    fetchAuth(`${ROOT_URL}/persons/${user.user_id}`, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      method: 'PUT',
-      body: JSON.stringify(personData),
-    })
-      .then(handleFetchErrors)
-      .catch(errorMsg => {
-        console.error(errorMsg);
-        store.dispatch(onFailure(errorMsg.toString()));
+    this.setState({ loadingKeys: Object.keys(changes) });
+    try {
+      const response = await fetchAuth(`${ROOT_URL}/persons/${user.user_id}`, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        method: 'PUT',
+        body: JSON.stringify(personData),
       });
+      handleFetchErrors(response);
+    } catch (errorMsg) {
+      console.error(errorMsg);
+      store.dispatch(onFailure(errorMsg.toString()));
+    }
+    this.setState({ loadingKeys: [] });
   };
 
   render() {
-    const { person, selectedTimezone } = this.state;
+    const { person, selectedTimezone, loadingKeys } = this.state;
     const { user } = this.props;
     const canChangePassword = havePermission(`persons/${user.user_id}/password`, 'POST', user.permissions);
     const canChangePerson = havePermission(`persons/${user.user_id}`, 'PUT', user.permissions);
@@ -81,19 +86,35 @@ class Profile extends React.Component {
             <p>User ID: {person.user_id}</p>
             <p>
               Name:{' '}
-              <EditableLabel label={person.name} onChange={this.changeName} isEditable={canChangePerson} />
+              {loadingKeys.includes('name') ? (
+                <Loading />
+              ) : (
+                <EditableLabel label={person.name} onChange={this.changeName} isEditable={canChangePerson} />
+              )}
             </p>
             <p>
               Username:{' '}
-              <EditableLabel
-                label={person.username}
-                onChange={this.changeUsername}
-                isEditable={canChangePerson}
-              />
+              {loadingKeys.includes('username') ? (
+                <Loading />
+              ) : (
+                <EditableLabel
+                  label={person.username}
+                  onChange={this.changeUsername}
+                  isEditable={canChangePerson}
+                />
+              )}
             </p>
             <p>
               E-mail:{' '}
-              <EditableLabel label={person.email} onChange={this.changeEmail} isEditable={canChangePerson} />
+              {loadingKeys.includes('email') ? (
+                <Loading />
+              ) : (
+                <EditableLabel
+                  label={person.email}
+                  onChange={this.changeEmail}
+                  isEditable={canChangePerson}
+                />
+              )}
             </p>
             <hr />
             <LinkButton to="/profile/change-password" disabled={!canChangePassword}>
@@ -110,9 +131,13 @@ class Profile extends React.Component {
                 <option value={tzName}>{tzName}</option>
               ))}
             </select>
-            <Button onClick={this.saveTimezone} disabled={person.timezone === selectedTimezone}>
-              Save
-            </Button>
+            {loadingKeys.includes('timezone') ? (
+              <Loading />
+            ) : (
+              <Button onClick={this.saveTimezone} disabled={person.timezone === selectedTimezone}>
+                Save
+              </Button>
+            )}
             <hr />
             <Button onClick={doLogout}>
               <i className="fa fa-fw fa-power-off" /> Logout
