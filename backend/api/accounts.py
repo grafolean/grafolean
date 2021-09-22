@@ -1,12 +1,15 @@
 from datetime import timezone
-import flask
 import json
 import math
-import time
 import re
-import psycopg2
-import validators
+import time
 
+from fastapi import Depends, Response, status, BackgroundTasks, HTTPException, Form, Security, Request
+from fastapi.responses import JSONResponse
+import psycopg2
+
+from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication, api_authorization_header
+import validators
 from datatypes import (AccessDeniedError, Account, Bot, Dashboard, Entity, Credential, Sensor, Measurement,
     Path, PathInputValue, PathFilter, Permission, Timestamp, UnfinishedPathFilter, ValidationError, Widget, Stats,
 )
@@ -14,28 +17,29 @@ from .common import mqtt_publish_changed, mqtt_publish_changed_multiple_payloads
 from const import SYSTEM_PATH_INSERTED_COUNT, SYSTEM_PATH_UPDATED_COUNT, SYSTEM_PATH_CHANGED_COUNT
 
 
-accounts_api = flask.Blueprint('accounts_api', __name__)
+accounts_api = APIRouter()
 
 
-@accounts_api.before_request
-def accounts_before_request():
-    # If bot has successfully logged in (and retrieved the list of its accounts), we should
-    # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
-    # show/hide notification badges based on it:
-    if flask.g.grafolean_data['user_is_bot']:
-        bot_id = flask.g.grafolean_data['user_id']
-        m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
-        if m:
-            account_id = m.groups()[0]
-            mqtt_publish_changed([
-                'accounts/{account_id}/bots'.format(account_id=account_id),
-                'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
-            ])
-        else:
-            mqtt_publish_changed([
-                'bots',
-                'bots/{bot_id}'.format(bot_id=bot_id),
-            ])
+# TBD!
+# @accounts_api.before_request
+# def accounts_before_request():
+#     # If bot has successfully logged in (and retrieved the list of its accounts), we should
+#     # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
+#     # show/hide notification badges based on it:
+#     if flask.g.grafolean_data['user_is_bot']:
+#         bot_id = flask.g.grafolean_data['user_id']
+#         m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
+#         if m:
+#             account_id = m.groups()[0]
+#             mqtt_publish_changed([
+#                 'accounts/{account_id}/bots'.format(account_id=account_id),
+#                 'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
+#             ])
+#         else:
+#             mqtt_publish_changed([
+#                 'bots',
+#                 'bots/{bot_id}'.format(bot_id=bot_id),
+#             ])
 
 
 def accounts_apidoc_schemas():
@@ -135,9 +139,9 @@ def accounts_apidoc_schemas():
 # /accounts/
 # --------------
 
-@accounts_api.route('/', methods=['GET'])
-# CAREFUL: accessible to any authenticated user (permissions check bypassed)
-def accounts_root():
+@accounts_api.get('/api/accounts/')
+# CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
+def accounts_root(auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -158,13 +162,12 @@ def accounts_root():
                         items:
                           "$ref": '#/definitions/AccountGET'
     """
-    user_id = flask.g.grafolean_data['user_id']
-    accounts = Account.get_list(user_id)
-    return json.dumps({'list': accounts}), 200
+    accounts = Account.get_list(auth.user_id)
+    return JSONResponse(content={'list': accounts}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>', methods=['GET', 'PUT'])
-def account_crud(account_id):
+@accounts_api.get('/api/accounts/{account_id}')
+def accounts_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -188,6 +191,17 @@ def account_crud(account_id):
                     "$ref": '#/definitions/AccountGET'
             404:
               description: No such account
+    """
+    rec = Account.get(account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such account")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put('/api/accounts/{account_id}')
+async def accounts_put(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    """
+        ---
         put:
           summary: Update the account
           tags:
@@ -214,293 +228,310 @@ def account_crud(account_id):
               description: No such account
 
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Account.get(account_id)
-        if not rec:
-            return "No such account", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        rec = Account.forge_from_input(flask.request.get_json(), force_id=account_id)
-        rowcount = rec.update()
-        if not rowcount:
-            return "No such account", 404
-        mqtt_publish_changed([
-            'accounts/{account_id}'.format(account_id=account_id),
-        ])
-        return "", 204
+    rec = Account.forge_from_input(await request.json(), force_id=account_id)
+    rowcount = rec.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such account")
+    mqtt_publish_changed([
+        'accounts/{account_id}'.format(account_id=account_id),
+    ])
+    return Response(status_code=204)
 
 
-@accounts_api.route('/<int:account_id>/bots', methods=['GET', 'POST'])
-def account_bots(account_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get_list(account_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id)
-        user_id, _ = bot.insert()
-        rec = Bot.get(user_id, account_id)
-        mqtt_publish_changed([
-            'accounts/{account_id}/bots'.format(account_id=account_id),
-            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
-        ])
-        return json.dumps(rec), 201
+@accounts_api.get('/api/accounts/{account_id}/bots')
+def account_bots_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Bot.get_list(account_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_bot_crud(account_id, user_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get(user_id, account_id)
-        if not rec:
-            return "No such bot", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_account=account_id, force_id=user_id)
-        rowcount = bot.update()
-        if not rowcount:
-            return "No such bot", 404
-
-        mqtt_publish_changed([
-            'accounts/{account_id}/bots'.format(account_id=account_id),
-            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        # bot should not be able to delete himself, otherwise they could lock themselves out:
-        if int(flask.g.grafolean_data['user_id']) == int(user_id):
-            return "Can't delete yourself", 403
-        rowcount = Bot.delete(user_id, force_account=account_id)
-        if not rowcount:
-            return "No such bot", 404
-        mqtt_publish_changed([
-            'accounts/{account_id}/bots'.format(account_id=account_id),
-            'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
-        ])
-        return "", 204
+@accounts_api.post('/api/accounts/{account_id}/bots')
+async def account_bots_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    bot = Bot.forge_from_input(await request.json(), force_account=account_id)
+    user_id, _ = bot.insert()
+    rec = Bot.get(user_id, account_id)
+    mqtt_publish_changed([
+        'accounts/{account_id}/bots'.format(account_id=account_id),
+        'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+    ])
+    return JSONResponse(content=rec, status_code=201)
 
 
-@accounts_api.route('/<int:account_id>/bots/<int:user_id>/token', methods=['GET'])
-def account_bot_token_get(account_id, user_id):
+@accounts_api.get('/api/accounts/{account_id}/bots/{user_id}')
+def account_bot_get(account_id: int, user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such bot")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put('/api/accounts/{account_id}/bots/{user_id}')
+async def account_bot_put(account_id: int, user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    bot = Bot.forge_from_input(await request.json(), force_account=account_id, force_id=user_id)
+    rowcount = bot.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such bot")
+
+    mqtt_publish_changed([
+        'accounts/{account_id}/bots'.format(account_id=account_id),
+        'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.delete('/api/accounts/{account_id}/bots/{user_id}')
+def account_bot_delete(account_id: int, user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    # bot should not be able to delete himself, otherwise they could lock themselves out:
+    if int(auth.user_id) == int(user_id):
+        raise HTTPException(status_code=403, detail="Can't delete yourself")
+    rowcount = Bot.delete(user_id, force_account=account_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such bot")
+    mqtt_publish_changed([
+        'accounts/{account_id}/bots'.format(account_id=account_id),
+        'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=user_id),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.get('/api/accounts/{account_id}/bots/{user_id}/token')
+def account_bot_token_get(account_id: int, user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     # make sure the user who is requesting to see the bot token has every permission that this token has, and
     # also that this user can add the bot:
-    request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
+    request_user_permissions = Permission.get_list(int(auth.user_id))
     if not Permission.has_all_permissions(request_user_permissions, user_id):
-        return "Not enough permissions to see this bot's token", 401
+        raise HTTPException(status_code=403, detail="Not enough permissions to see this bot's token")
     if not Permission.can_grant_permission(request_user_permissions, 'accounts/{}/bots'.format(account_id), 'POST'):
-        return "Not enough permissions to see this bot's token - POST to accounts/:account_id/bots not allowed", 401
+        raise HTTPException(status_code=403, detail="Not enough permissions to see this bot's token - POST to accounts/:account_id/bots not allowed")
+
     token = Bot.get_token(user_id, account_id)
     if not token:
-        return "No such bot", 404
-    return {'token': token}, 200
+        raise HTTPException(status_code=404, detail="No such bot")
+    return JSONResponse(content={'token': token}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/entities', methods=['GET', 'POST'])
-def account_entities(account_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Entity.get_list(account_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        entity = Entity.forge_from_input(flask.request.get_json(), account_id)
-        entity_id = entity.insert()
-        rec = {'id': entity_id}
-        mqtt_publish_changed([
-            'accounts/{}/entities'.format(account_id),
-        ])
-        return json.dumps(rec), 201
+@accounts_api.get('/api/accounts/{account_id}/entities')
+def account_entities_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Entity.get_list(account_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/entities/<string:entity_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_entity_crud(account_id, entity_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Entity.get(entity_id, account_id)
-        if not rec:
-            return "No such entity", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        entity = Entity.forge_from_input(flask.request.get_json(), account_id, force_id=entity_id)
-        rowcount = entity.update()
-        if not rowcount:
-            return "No such entity", 404
-        mqtt_publish_changed([
-            'accounts/{}/entities'.format(account_id),
-            'accounts/{}/entities/{}'.format(account_id, entity_id),
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Entity.delete(entity_id, account_id)
-        if not rowcount:
-            return "No such entity", 404
-        mqtt_publish_changed([
-            'accounts/{}/entities'.format(account_id),
-            'accounts/{}/entities/{}'.format(account_id, entity_id),
-        ])
-        return "", 204
+@accounts_api.post('/api/accounts/{account_id}/entities')
+async def account_entities_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    entity = Entity.forge_from_input(await request.json(), account_id)
+    entity_id = entity.insert()
+    rec = {'id': entity_id}
+    mqtt_publish_changed([
+        'accounts/{}/entities'.format(account_id),
+    ])
+    return JSONResponse(content=rec, status_code=201)
 
 
-@accounts_api.route('/<int:account_id>/credentials', methods=['GET', 'POST'])
-def account_credentials(account_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Credential.get_list(account_id)
-        return json.dumps({'list': rec}), 200
+@accounts_api.get('/api/accounts/{account_id}/entities/{entity_id}')
+def account_entity_crud_get(account_id: int, entity_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Entity.get(entity_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such entity")
+    return JSONResponse(content=rec, status_code=200)
 
-    elif flask.request.method == 'POST':
-        credential = Credential.forge_from_input(flask.request.get_json(), account_id)
-        credential_id = credential.insert()
-        rec = {'id': credential_id}
-        mqtt_publish_changed([
-            'accounts/{}/credentials'.format(account_id),
-        ])
-        return json.dumps(rec), 201
+@accounts_api.put('/api/accounts/{account_id}/entities/{entity_id}')
+async def account_entity_crud_put(account_id: int, entity_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    entity = Entity.forge_from_input(await request.json(), account_id, force_id=entity_id)
+    rowcount = entity.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such entity")
+    mqtt_publish_changed([
+        'accounts/{}/entities'.format(account_id),
+        'accounts/{}/entities/{}'.format(account_id, entity_id),
+    ])
+    return Response(status_code=204)
 
-
-@accounts_api.route('/<int:account_id>/credentials/<string:credential_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_credential_crud(account_id, credential_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Credential.get(credential_id, account_id)
-        if not rec:
-            return "No such credential", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        credential = Credential.forge_from_input(flask.request.get_json(), account_id, force_id=credential_id)
-        rowcount = credential.update()
-        if not rowcount:
-            return "No such credential", 404
-        mqtt_publish_changed([
-            'accounts/{}/credentials'.format(account_id),
-            'accounts/{}/credentials/{}'.format(account_id, credential_id),
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Credential.delete(credential_id, account_id)
-        if not rowcount:
-            return "No such credential", 404
-        mqtt_publish_changed([
-            'accounts/{}/credentials'.format(account_id),
-            'accounts/{}/credentials/{}'.format(account_id, credential_id),
-        ])
-        return "", 204
+@accounts_api.delete('/api/accounts/{account_id}/entities/{entity_id}')
+def account_entity_crud_delete(account_id: int, entity_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Entity.delete(entity_id, account_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such entity")
+    mqtt_publish_changed([
+        'accounts/{}/entities'.format(account_id),
+        'accounts/{}/entities/{}'.format(account_id, entity_id),
+    ])
+    return Response(status_code=204)
 
 
-@accounts_api.route('/<int:account_id>/sensors', methods=['GET', 'POST'])
-def account_sensors(account_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Sensor.get_list(account_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id)
-        sensor_id = sensor.insert()
-        rec = {'id': sensor_id}
-        mqtt_publish_changed([
-            'accounts/{}/sensors'.format(account_id),
-        ])
-        return json.dumps(rec), 201
+@accounts_api.get('/api/accounts/{account_id}/credentials')
+def account_credentials_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Credential.get_list(account_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/sensors/<string:sensor_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_sensor_crud(account_id, sensor_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Sensor.get(sensor_id, account_id)
-        if not rec:
-            return "No such sensor", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        sensor = Sensor.forge_from_input(flask.request.get_json(), account_id, force_id=sensor_id)
-        rowcount = sensor.update()
-        if not rowcount:
-            return "No such sensor", 404
-        mqtt_publish_changed([
-            'accounts/{}/sensors'.format(account_id),
-            'accounts/{}/sensors/{}'.format(account_id, sensor_id),
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Sensor.delete(sensor_id, account_id)
-        if not rowcount:
-            return "No such sensor", 404
-        mqtt_publish_changed([
-            'accounts/{}/sensors'.format(account_id),
-            'accounts/{}/sensors/{}'.format(account_id, sensor_id),
-        ])
-        return "", 204
+@accounts_api.post('/api/accounts/{account_id}/credentials')
+async def account_credentials_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    credential = Credential.forge_from_input(await request.json(), account_id)
+    credential_id = credential.insert()
+    rec = {'id': credential_id}
+    mqtt_publish_changed([
+        'accounts/{}/credentials'.format(account_id),
+    ])
+    return JSONResponse(content=rec, status_code=201)
 
 
-@accounts_api.route('/<int:account_id>/bots/<string:user_id>/permissions', methods=['GET', 'POST'])
-def account_bot_permissions(account_id, user_id):
+@accounts_api.get('/api/accounts/{account_id}/credentials/{credential_id}')
+def account_credential_crud_get(account_id: int, credential_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Credential.get(credential_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such credential")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put('/api/accounts/{account_id}/credentials/{credential_id}')
+async def account_credential_crud_put(account_id: int, credential_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    credential = Credential.forge_from_input(await request.json(), account_id, force_id=credential_id)
+    rowcount = credential.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such credential")
+    mqtt_publish_changed([
+        'accounts/{}/credentials'.format(account_id),
+        'accounts/{}/credentials/{}'.format(account_id, credential_id),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.delete('/api/accounts/{account_id}/credentials/{credential_id}')
+def account_credential_crud_delete(account_id: int, credential_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Credential.delete(credential_id, account_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such credential")
+    mqtt_publish_changed([
+        'accounts/{}/credentials'.format(account_id),
+        'accounts/{}/credentials/{}'.format(account_id, credential_id),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.get('/api/accounts/{account_id}/sensors')
+def account_sensors_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Sensor.get_list(account_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
+
+
+@accounts_api.post('/api/accounts/{account_id}/sensors')
+async def account_sensors_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    sensor = Sensor.forge_from_input(await request.json(), account_id)
+    sensor_id = sensor.insert()
+    rec = {'id': sensor_id}
+    mqtt_publish_changed([
+        'accounts/{}/sensors'.format(account_id),
+    ])
+    return JSONResponse(content=rec, status_code=201)
+
+
+@accounts_api.get('/api/accounts/{account_id}/sensors/{sensor_id}')
+def account_sensor_crud_get(account_id: int, sensor_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Sensor.get(sensor_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such sensor")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put('/api/accounts/{account_id}/sensors/{sensor_id}')
+async def account_sensor_crud_put(account_id: int, sensor_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    sensor = Sensor.forge_from_input(await request.json(), account_id, force_id=sensor_id)
+    rowcount = sensor.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such sensor")
+    mqtt_publish_changed([
+        'accounts/{}/sensors'.format(account_id),
+        'accounts/{}/sensors/{}'.format(account_id, sensor_id),
+    ])
+    return Response(status_code=204)
+
+@accounts_api.delete('/api/accounts/{account_id}/sensors/{sensor_id}')
+def account_sensor_crud_delete(account_id: int, sensor_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Sensor.delete(sensor_id, account_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such sensor")
+    mqtt_publish_changed([
+        'accounts/{}/sensors'.format(account_id),
+        'accounts/{}/sensors/{}'.format(account_id, sensor_id),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.get('/api/accounts/{account_id}/bots/{user_id}/permissions')
+def account_bot_permissions_get(account_id: int, user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
-        Allows reading and assigning permissions to account bots (bots which are tied to a specific account).
+        Allows reading the permissions of account bots (bots which are tied to a specific account).
     """
     # make sure the bot really belongs to the account:
     rec = Bot.get(user_id, account_id)
     if not rec:
-        return "No such bot", 404
+        raise HTTPException(status_code=404, detail="No such bot")
 
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list(user_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
-        try:
-            permission_id = permission.insert(granting_user_id)
-            mqtt_publish_changed([
-                'persons/{}'.format(permission.user_id),
-                'bots/{}'.format(permission.user_id),
-            ])
-            return json.dumps({
-                'user_id': permission.user_id,
-                'resource_prefix': permission.resource_prefix,
-                'methods': permission.methods,
-                'id': permission_id,
-            }), 201
-        except AccessDeniedError as ex:
-            return str(ex), 401
-        except psycopg2.IntegrityError:
-            return "Invalid parameters", 400
+    rec = Permission.get_list(user_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-def account_bot_permission_delete(account_id, user_id, permission_id):
+@accounts_api.post('/api/accounts/{account_id}/bots/{user_id}/permissions')
+async def account_bot_permissions_post(account_id: int, user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    """
+        Allows assigning permissions to account bots (bots which are tied to a specific account).
+    """
+    # make sure the bot really belongs to the account:
+    rec = Bot.get(user_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such bot")
+
+    granting_user_id = auth.user_id
+    permission = Permission.forge_from_input(await request.json(), user_id)
+    try:
+        permission_id = permission.insert(granting_user_id)
+        mqtt_publish_changed([
+            'persons/{}'.format(permission.user_id),
+            'bots/{}'.format(permission.user_id),
+        ])
+        result = {
+            'user_id': permission.user_id,
+            'resource_prefix': permission.resource_prefix,
+            'methods': permission.methods,
+            'id': permission_id,
+        }
+        return JSONResponse(content=result, status_code=201)
+    except AccessDeniedError as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
+    except psycopg2.IntegrityError:
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+
+
+@accounts_api.delete('/api/accounts/{account_id}/bots/{user_id}/permissions/{permission_id}')
+def account_bot_permission_delete(account_id: int, user_id: int, permission_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """ Revoke permission from account bot """
     # make sure the bot really belongs to the account:
     rec = Bot.get(user_id, account_id)
     if not rec:
-        return "No such bot", 404
+        raise HTTPException(status_code=404, detail="No such bot")
 
-    granting_user_id = flask.g.grafolean_data['user_id']
+    granting_user_id = auth.user_id
     try:
         rowcount = Permission.delete(permission_id, user_id, granting_user_id)
     except AccessDeniedError as ex:
-        return str(ex), 401
+        raise HTTPException(status_code=403, detail=str(ex))
     if not rowcount:
-        return "No such permission", 404
+        raise HTTPException(status_code=404, detail="No such permission")
     mqtt_publish_changed([
         'persons/{user_id}'.format(user_id=user_id),
         'bots/{user_id}'.format(user_id=user_id),
     ])
-    return "", 204
+    return Response(status_code=204)
 
 
-@accounts_api.route("/<int:account_id>/values", methods=['PUT'])
-def values_put(account_id):
-    data = flask.request.get_json()
+@accounts_api.put("/api/accounts/{account_id}/values")
+async def values_put(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    data = await request.json()
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         newly_created_paths = Measurement.save_values_data_to_db(account_id, data)
     except psycopg2.IntegrityError:
-        return "Invalid input format", 400
+        raise HTTPException(status_code=400, detail="Invalid input format")
 
     # save the stats:
     minute = math.floor(time.time() / 60) * 60
@@ -525,42 +556,42 @@ def values_put(account_id):
         )
 
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
-    return "", 204
+    return Response(status_code=204)
 
 
-@accounts_api.route("/<int:account_id>/values", methods=['POST'])
-def values_post(account_id):
+@accounts_api.post("/api/accounts/{account_id}/values")
+async def values_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     # data comes from two sources, query params and JSON body. We use both and append timestamp to each
     # piece, then we use the same function as for PUT:
     data = []
     now = time.time()
-    json_data = flask.request.get_json()
-    query_params_p = flask.request.args.get('p')
+    json_data = await request.json()
+    query_params_p = request.query_params.get('p')
     if json_data:
         for x in json_data:
             if x.get('t'):
-                return "Parameter 't' shouldn't be specified with POST", 400
+                raise HTTPException(status_code=400, detail="Parameter 't' shouldn't be specified with POST")
         data = [{
                 'p': x['p'],
                 'v': x['v'],
                 't': now,
                 } for x in json_data]
     elif query_params_p:
-        if flask.request.args.get('t'):
-            return "Query parameter 't' shouldn't be specified with POST", 400
+        if request.query_params.get('t'):
+            raise HTTPException(status_code=400, detail="Query parameter 't' shouldn't be specified with POST")
         data.append({
             'p': query_params_p,
-            'v': flask.request.args.get('v'),
+            'v': request.query_params.get('v'),
             't': now,
         })
     else:
-        return "Missing data", 400
+        raise HTTPException(status_code=400, detail="Missing data")
 
     # let's just pretend our data is of correct form, otherwise Exception will be thrown and Flask will return error response:
     try:
         newly_created_paths = Measurement.save_values_data_to_db(account_id, data)
     except psycopg2.IntegrityError:
-        return "Invalid input format", 400
+        raise HTTPException(status_code=400, detail="Invalid input format")
 
     # update stats:
     minute = math.floor(time.time() / 60) * 60
@@ -585,11 +616,11 @@ def values_post(account_id):
         )
 
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
-    return "", 204
+    return Response(status_code=204)
 
 
-@accounts_api.route("/<int:account_id>/values/<string:path>", methods=['GET'])
-def values_get(account_id, path):
+@accounts_api.get("/api/accounts/{account_id}/values/{path}")
+def values_get(account_id: int, path: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -645,45 +676,45 @@ def values_get(account_id, path):
                   schema:
                     "$ref": '#/definitions/ValuesGET'
     """
-    args = flask.request.args
+    args = request.query_params
     if "," in path:
-        return "Only a single path is allowed\n\n", 400
+        raise HTTPException(status_code=400, detail="Only a single path is allowed")
     paths_input = path
     return _values_get(account_id, paths_input, None, args)
 
 
-@accounts_api.route("/<int:account_id>/getvalues", methods=['POST'])
-def values_get_with_post(account_id):
+@accounts_api.post("/api/accounts/{account_id}/getvalues")
+async def values_get_with_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     # when we request data for too many paths at once, we run in trouble with URLs being too long. Using
     # POST is not ideal, but it works... We do however keep the interface as close to GET as possible, so
     # we use the same arguments:
-    args = flask.request.get_json()
+    args = await request.json()
     paths_input = args.get('p')
     return _values_get(account_id, paths_input, None, args)
 
 
-@accounts_api.route("/<int:account_id>/getaggrvalues", methods=['POST'])
-def aggrvalues_get_with_post(account_id):
-    args = flask.request.get_json()
+@accounts_api.post("/api/accounts/{account_id}/getaggrvalues")
+async def aggrvalues_get_with_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    args = await request.json()
     paths_input = args.get('p')
 
     try:
         aggr_level = int(args.get('a'))
     except:
-        return "Invalid parameter: a\n\n", 400
+        raise HTTPException(status_code=400, detail="Invalid parameter: a")
     if not (0 <= aggr_level <= 6):
-        return "Invalid parameter a (should be a number in range from 0 to 6).\n\n", 400
+        raise HTTPException(status_code=400, detail="Invalid parameter a (should be a number in range from 0 to 6).")
 
     return _values_get(account_id, paths_input, aggr_level, args)
 
 
 def _values_get(account_id, paths_input, aggr_level, args):
     if paths_input is None:
-        return "Path(s) not specified\n\n", 400
+        raise HTTPException(status_code=400, detail="Path(s) not specified")
     try:
         paths = [Path(p, account_id).path for p in paths_input.split(',')]
     except:
-        return "Path(s) not specified correctly\n\n", 400
+        raise HTTPException(status_code=400, detail="Path(s) not specified correctly")
 
     t_from_input = args.get('t0')
     if t_from_input:
@@ -694,9 +725,9 @@ def _values_get(account_id, paths_input, aggr_level, args):
             elif len(t_froms) == len(paths):
                 pass
             else:
-                return "Number of t0 timestamps must be 1 or equal to number of paths\n\n", 400
+                raise HTTPException(status_code=400, detail="Number of t0 timestamps must be 1 or equal to number of paths")
         except:
-            return "Error parsing t0\n\n", 400
+            raise HTTPException(status_code=400, detail="Error parsing t0")
     else:
         t_from = Measurement.get_oldest_measurement_time(account_id, paths)
         if not t_from:
@@ -708,31 +739,29 @@ def _values_get(account_id, paths_input, aggr_level, args):
         try:
             t_to = Timestamp(t_to_input)
         except:
-            return "Error parsing t1\n\n", 400
+            raise HTTPException(status_code=400, detail="Error parsing t1")
     else:
         t_to = Timestamp(time.time())
 
     sort_order = str(args.get('sort', 'asc'))
     if sort_order not in ['asc', 'desc']:
-        return "Invalid parameter: sort (should be 'asc' or 'desc')\n\n", 400
+        raise HTTPException(status_code=400, detail="Invalid parameter: sort (should be 'asc' or 'desc')")
     should_sort_asc = True if sort_order == 'asc' else False
 
     try:
         max_records = int(args.get('limit', Measurement.MAX_DATAPOINTS_RETURNED))
         if max_records > Measurement.MAX_DATAPOINTS_RETURNED:
-            return "Invalid parameter: limit (max. value is {})\n\n".format(Measurement.MAX_DATAPOINTS_RETURNED), 400
+            raise HTTPException(status_code=400, detail="Invalid parameter: limit (max. value is {})\n\n".format(Measurement.MAX_DATAPOINTS_RETURNED))
     except:
-        return "Invalid parameter: limit\n\n", 400
+        raise HTTPException(status_code=400, detail="Invalid parameter: limit")
 
     # finally, return the data:
     paths_data = Measurement.fetch_data(account_id, paths, aggr_level, t_froms, t_to, should_sort_asc, max_records)
-    return json.dumps({
-        'paths': paths_data,
-    }), 200
+    return JSONResponse(content={'paths': paths_data}, status_code=200)
 
 
-@accounts_api.route("/<int:account_id>/topvalues", methods=['GET'])
-def topvalues_get(account_id):
+@accounts_api.get("/api/accounts/{account_id}/topvalues")
+def topvalues_get(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -777,40 +806,41 @@ def topvalues_get(account_id):
                   schema:
                     "$ref": '#/definitions/TopValuesGET'
     """
-    max_results_input = flask.request.args.get('n')
+    max_results_input = request.query_params.get('n')
     max_results = max(0, int(max_results_input)) if max_results_input else 5
 
-    path_filter_input = flask.request.args.get('f')
+    path_filter_input = request.query_params.get('f')
     if not path_filter_input:
-        return "Path filter not specified\n\n", 400
+        raise HTTPException(status_code=400, detail="Path filter not specified")
     try:
         pf = str(PathFilter(path_filter_input))
     except ValidationError:
         raise ValidationError("Invalid path filter")
 
-    ts_to_input = flask.request.args.get('t', time.time())
+    ts_to_input = request.query_params.get('t', time.time())
     try:
         ts_to = Timestamp(ts_to_input)
     except ValidationError:
         raise ValidationError("Invalid parameter t")
 
     ts, total, topn = Measurement.fetch_topn(account_id, pf, ts_to, max_results)
-    return json.dumps({
+    return JSONResponse(content={
         't': ts.replace(tzinfo=timezone.utc).timestamp(),
         'total': float(total),
         'list': topn,
-    }), 200
+    }, status_code=200)
 
 
-@accounts_api.route("/<int:account_id>/paths", methods=['GET'])
-def paths_get(account_id):
-    max_results_input = flask.request.args.get('limit')
+
+@accounts_api.get("/api/accounts/{account_id}/paths")
+def paths_get(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    max_results_input = request.query_params.get('limit')
     if not max_results_input:
         max_results = 10
     else:
         max_results = max(0, int(max_results_input))
-    path_filters_input = flask.request.args.get('filter')
-    failover_trailing = flask.request.args.get('failover_trailing', 'false').lower() == 'true'
+    path_filters_input = request.query_params.get('filter')
+    failover_trailing = request.query_params.get('failover_trailing', 'false').lower() == 'true'
 
     try:
         matching_paths = {}
@@ -839,139 +869,146 @@ def paths_get(account_id):
             ret['paths_with_trailing'][upf], limit_reached = UnfinishedPathFilter.find_matching_paths(account_id, upf, limit=max_results, allow_trailing_chars=True)
             ret['limit_reached'] = ret['limit_reached'] or limit_reached
 
-    return json.dumps(ret), 200
+    return JSONResponse(content=ret, status_code=200)
 
 
-@accounts_api.route('/<int:account_id>/paths/<int:path_id>', methods=['GET', 'PUT', 'DELETE'])
-def account_path_crud(account_id, path_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Path.get(path_id, account_id)
-        if not rec:
-            return "No such path", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        record = Path.forge_from_input(flask.request.get_json(), account_id, force_id=path_id)
-        rowcount = record.update()
-        if not rowcount:
-            return "No such path", 404
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Path.delete(path_id, account_id)
-        if not rowcount:
-            return "No such path", 404
-        return "", 204
+@accounts_api.get('/api/accounts/{account_id}/paths/{path_id}')
+def account_path_crud_get(account_id: int, path_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Path.get(path_id, account_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such path")
+    return JSONResponse(content=rec, status_code=200)
 
 
-@accounts_api.route("/<int:account_id>/dashboards", methods=['GET', 'POST'])
-def dashboards_crud(account_id):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Dashboard.get_list(account_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json())
-        try:
-            dashboard.insert()
-        except psycopg2.IntegrityError:
-            return "Dashboard with this slug already exists", 400
-        mqtt_publish_changed(['accounts/{}/dashboards'.format(account_id)])
-        return json.dumps({'slug': dashboard.slug}), 201
+@accounts_api.put('/api/accounts/{account_id}/paths/{path_id}')
+async def account_path_crud_put(account_id: int, path_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    record = Path.forge_from_input(await request.json(), account_id, force_id=path_id)
+    rowcount = record.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such path")
+    return Response(status_code=204)
 
 
-@accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>", methods=['GET', 'PUT', 'DELETE'])
-def dashboard_crud(account_id, dashboard_slug):
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Dashboard.get(account_id, slug=dashboard_slug)
-        if not rec:
-            return "No such dashboard", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        dashboard = Dashboard.forge_from_input(account_id, flask.request.get_json(), force_slug=dashboard_slug)
-        rowcount = dashboard.update()
-        if not rowcount:
-            return "No such dashboard", 404
-        mqtt_publish_changed([
-            'accounts/{}/dashboards'.format(account_id),
-            'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Dashboard.delete(account_id, dashboard_slug)
-        if not rowcount:
-            return "No such dashboard", 404
-        mqtt_publish_changed([
-            'accounts/{}/dashboards'.format(account_id),
-            'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
-        ])
-        return "", 200
+@accounts_api.delete('/api/accounts/{account_id}/paths/{path_id}')
+def account_path_crud_delete(account_id: int, path_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Path.delete(path_id, account_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such path")
+    return Response(status_code=204)
 
 
-@accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets", methods=['GET', 'POST'])
-def widgets_crud(account_id, dashboard_slug):
-    if flask.request.method in ['GET', 'HEAD']:
-        try:
-            paths_limit = int(flask.request.args.get('paths_limit', 200))
-        except:
-            return "Invalid parameter: paths_limit\n\n", 400
-        rec = Widget.get_list(account_id, dashboard_slug, paths_limit=paths_limit)
-        return json.dumps({'list': rec}), 200
-    elif flask.request.method == 'POST':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json())
-        try:
-            widget_id = widget.insert()
-        except psycopg2.IntegrityError as ex:
-            return "Error inserting widget" + str(ex), 400
-        mqtt_publish_changed([
-            f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        ])
-        return json.dumps({'id': widget_id}), 201
+@accounts_api.get("/api/accounts/{account_id}/dashboards")
+def dashboards_crud_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Dashboard.get_list(account_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets/<string:widget_id>", methods=['GET', 'PUT', 'DELETE'])
-def widget_crud(account_id, dashboard_slug, widget_id):
+@accounts_api.post("/api/accounts/{account_id}/dashboards")
+async def dashboards_crud_post(account_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    dashboard = Dashboard.forge_from_input(account_id, await request.json())
     try:
-        widget_id = int(widget_id)
+        dashboard.insert()
+    except psycopg2.IntegrityError:
+        return "Dashboard with this slug already exists", 400
+    mqtt_publish_changed(['accounts/{}/dashboards'.format(account_id)])
+    return JSONResponse(content={'slug': dashboard.slug}, status_code=201)
+
+
+@accounts_api.get("/api/accounts/{account_id}/dashboards/{dashboard_slug}")
+def dashboard_crud_get(account_id: int, dashboard_slug: str, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rec = Dashboard.get(account_id, slug=dashboard_slug)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such dashboard")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put("/api/accounts/{account_id}/dashboards/{dashboard_slug}")
+async def dashboard_crud_put(account_id: int, dashboard_slug: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    dashboard = Dashboard.forge_from_input(account_id, await request.json(), force_slug=dashboard_slug)
+    rowcount = dashboard.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such dashboard")
+    mqtt_publish_changed([
+        'accounts/{}/dashboards'.format(account_id),
+        'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.delete("/api/accounts/{account_id}/dashboards/{dashboard_slug}")
+def dashboard_crud_delete(account_id: int, dashboard_slug: str, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Dashboard.delete(account_id, dashboard_slug)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such dashboard")
+    mqtt_publish_changed([
+        'accounts/{}/dashboards'.format(account_id),
+        'accounts/{}/dashboards/{}'.format(account_id, dashboard_slug),
+    ])
+    return Response(content='', status_code=200)
+
+
+@accounts_api.get("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets")
+def widgets_crud_get(account_id: int, dashboard_slug: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    try:
+        paths_limit = int(request.query_params.get('paths_limit', 200))
     except:
-        raise ValidationError("Invalid widget id")
-
-    if flask.request.method in ['GET', 'HEAD']:
-        try:
-            paths_limit = int(flask.request.args.get('paths_limit', 200))
-        except:
-            return "Invalid parameter: paths_limit\n\n", 400
-        rec = Widget.get(account_id, dashboard_slug, widget_id, paths_limit=paths_limit)
-        if not rec:
-            return "No such widget", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        widget = Widget.forge_from_input(account_id, dashboard_slug, flask.request.get_json(), widget_id=widget_id)
-        rowcount = widget.update()
-        if not rowcount:
-            return "No such widget", 404
-        mqtt_publish_changed([
-            f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        rowcount = Widget.delete(account_id, dashboard_slug, widget_id)
-        if not rowcount:
-            return "No such widget", 404
-        mqtt_publish_changed([
-            f'accounts/{account_id}/dashboards/{dashboard_slug}',
-        ])
-        return "", 200
+        raise HTTPException(status_code=400, detail="Invalid parameter: paths_limit")
+    rec = Widget.get_list(account_id, dashboard_slug, paths_limit=paths_limit)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@accounts_api.route("/<int:account_id>/dashboards/<string:dashboard_slug>/widgets_positions/", methods=['PUT'])
-def widgets_positions(account_id, dashboard_slug):
-    Widget.set_positions(account_id, dashboard_slug, flask.request.get_json())
+@accounts_api.post("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets")
+async def widgets_crud_post(account_id: int, dashboard_slug: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    widget = Widget.forge_from_input(account_id, dashboard_slug, await request.json())
+    try:
+        widget_id = widget.insert()
+    except psycopg2.IntegrityError as ex:
+        raise HTTPException(status_code=400, detail="Error inserting widget" + str(ex))
     mqtt_publish_changed([
         f'accounts/{account_id}/dashboards/{dashboard_slug}',
     ])
-    return "", 204
+    return JSONResponse(content={'id': widget_id}, status_code=201)
+
+
+@accounts_api.get("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets/{widget_id}")
+def widget_crud_get(account_id: int, dashboard_slug: str, widget_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    try:
+        paths_limit = int(request.query_params.get('paths_limit', 200))
+    except:
+        raise HTTPException(status_code=400, detail="Invalid parameter: paths_limit")
+    rec = Widget.get(account_id, dashboard_slug, widget_id, paths_limit=paths_limit)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such widget")
+    return JSONResponse(content=rec, status_code=200)
+
+
+@accounts_api.put("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets/{widget_id}")
+async def widget_crud_put(account_id: int, dashboard_slug: str, widget_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    widget = Widget.forge_from_input(account_id, dashboard_slug, await request.json(), widget_id=widget_id)
+    rowcount = widget.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such widget")
+    mqtt_publish_changed([
+        f'accounts/{account_id}/dashboards/{dashboard_slug}',
+    ])
+    return Response(status_code=204)
+
+
+@accounts_api.delete("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets/{widget_id}")
+def widget_crud_delete(account_id: int, dashboard_slug: str, widget_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Widget.delete(account_id, dashboard_slug, widget_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such widget")
+    mqtt_publish_changed([
+        f'accounts/{account_id}/dashboards/{dashboard_slug}',
+    ])
+    return Response(content='', status_code=200)
+
+
+@accounts_api.put("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets_positions/")
+async def widgets_positions_put(account_id: int, dashboard_slug: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    Widget.set_positions(account_id, dashboard_slug, await request.json())
+    mqtt_publish_changed([
+        f'accounts/{account_id}/dashboards/{dashboard_slug}',
+    ])
+    return Response(status_code=204)

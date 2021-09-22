@@ -11,6 +11,8 @@ import re
 import tarfile
 import time
 
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 import jsonschema
 import psycopg2.extras
 import requests
@@ -38,8 +40,9 @@ def clear_all_lru_cache():
     pass
 
 
-class ValidationError(Exception):
-    pass
+class ValidationError(HTTPException):
+    def __init__(self, s):
+        super().__init__(status_code=400, detail=s)
 
 
 class AccessDeniedError(Exception):
@@ -252,7 +255,7 @@ class EmailAddress(object):
         try:
             if not self.is_valid(str(v)):
                 raise ValidationError("Invalid email: {}".format(str(v)))
-        except dns.exception.Timeout:
+        except (dns.exception.Timeout, dns.resolver.NoResolverConfiguration):
             if strict_check:
                 raise ValidationError("Could not validate email: {}".format(str(v)))
             else:
@@ -780,33 +783,34 @@ class Account(object):
             return c.rowcount
 
     @staticmethod
-    def get_list(user_id=None):
+    def get_list(user_id):
         with db.cursor() as c:
             ret = []
-            if user_id is None:
-                c.execute('SELECT id, name FROM accounts ORDER BY name;')
-            else:
-                # get the list of accounts that this user has the permission to access: (GET)
-                # - get user's permissions, then:
-                #   - find a permission that grants access to all accounts, or
-                #   - find specific accounts that users has GET permission for
-                can_access_all_accounts = False
-                specific_accounts = []
-                for permission in Permission.get_list(user_id):
-                    # we are only interested in GET methods: (or None)
-                    if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
-                        can_access_all_accounts = True
-                        break
-                    m = Account.RESOURCE_ACCOUNTS_REGEX.match(permission['resource_prefix'])
-                    if m:
-                        specific_accounts.append(int(m.group(1)))
+            if not user_id:
+                #c.execute('SELECT id, name FROM accounts ORDER BY name;')
+                raise AccessDeniedError("User id not available - this should not happen!")
 
-                if can_access_all_accounts:
-                    c.execute('SELECT id, name FROM accounts ORDER BY name;')
-                elif specific_accounts:
-                    c.execute('SELECT id, name FROM accounts WHERE id IN %s ORDER BY name;', (tuple(specific_accounts),))
-                else:
-                    c = []
+            # get the list of accounts that this user has the permission to access: (GET)
+            # - get user's permissions, then:
+            #   - find a permission that grants access to all accounts, or
+            #   - find specific accounts that users has GET permission for
+            can_access_all_accounts = False
+            specific_accounts = []
+            for permission in Permission.get_list(user_id):
+                # we are only interested in GET methods: (or None)
+                if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
+                    can_access_all_accounts = True
+                    break
+                m = Account.RESOURCE_ACCOUNTS_REGEX.match(permission['resource_prefix'])
+                if m:
+                    specific_accounts.append(int(m.group(1)))
+
+            if can_access_all_accounts:
+                c.execute('SELECT id, name FROM accounts ORDER BY name;')
+            elif specific_accounts:
+                c.execute('SELECT id, name FROM accounts WHERE id IN %s ORDER BY name;', (tuple(specific_accounts),))
+            else:
+                c = []
 
             for account_id, name in c:
                 ret.append({'id': account_id, 'name': name})
@@ -877,6 +881,7 @@ class Permission(object):
 
     @staticmethod
     def is_access_allowed(user_id, resource, method):
+        method = method.upper()
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
 
@@ -1173,17 +1178,19 @@ class Person(object):
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, json_data, force_id=None):
+    def forge_from_input(cls, person_data, force_id=None):
         if force_id is None:
-            jsonschema.validate(json_data, PersonSchemaInputsPOST)
+            jsonschema.validate(person_data, PersonSchemaInputsPOST)
         else:
-            jsonschema.validate(json_data, PersonSchemaInputsPUT)
+            jsonschema.validate(person_data, PersonSchemaInputsPUT)
 
-        name = json_data.get('name', None)
-        email = json_data.get('email', None)
-        username = json_data.get('username', None)
-        password = json_data.get('password', None)
-        timezone = json_data.get('timezone', 'UTC')
+        name = person_data.get('name', None)
+        email = person_data.get('email', None)
+        username = person_data.get('username', None)
+        password = person_data.get('password', None)
+        timezone = person_data.get('timezone', None)
+        if timezone is None:
+            timezone = 'UTC'
         email_confirmed = True  # when manually entering user, e-mail check is not performed
         return cls(name, email, username, password, timezone, email_confirmed, force_id)
 
