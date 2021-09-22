@@ -1,10 +1,13 @@
-import flask
 import json
 
+from fastapi import Depends
+from fastapi.responses import JSONResponse
+
+from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication
 from datatypes import Account, Bot, Permission, Person
 
 
-profile_api = flask.Blueprint('profile_api', __name__)
+profile_api = APIRouter()
 
 
 # --------------
@@ -12,29 +15,29 @@ profile_api = flask.Blueprint('profile_api', __name__)
 # --------------
 
 
-@profile_api.route('/', methods=['GET'])
-# CAREFUL: accessible to any authenticated user (permissions check bypassed)
-def profile():
-    user_id = flask.g.grafolean_data['user_id']
-    user_is_bot = flask.g.grafolean_data['user_is_bot']
+@profile_api.get('/api/profile/')
+# CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
+def profile(auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    user_id = auth.user_id
+    user_is_bot = auth.user_is_bot
     if user_is_bot:
         tied_to_account = Bot.get_tied_to_account(user_id)
-        return json.dumps({
+        return JSONResponse(content={
             'user_id': user_id,
             'user_type': 'bot',
             'record': Bot.get(user_id, tied_to_account=tied_to_account),
-        }), 200
+        }, status_code=200)
     else:
-        return json.dumps({
+        return JSONResponse(content={
             'user_id': user_id,
             'user_type': 'person',
             'record': Person.get(user_id),
-        }), 200
+        }, status_code=200)
 
 
-@profile_api.route('/permissions', methods=['GET'])
-# CAREFUL: accessible to any authenticated user (permissions check bypassed)
-def profile_permissions():
-    user_id = flask.g.grafolean_data['user_id']
+@profile_api.get('/api/profile/permissions')
+# CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
+def profile_permissions(auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    user_id = auth.user_id
     rec = Permission.get_list(user_id)
-    return json.dumps({'list': rec}), 200
+    return JSONResponse(content={'list': rec}, status_code=200)

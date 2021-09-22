@@ -1,17 +1,28 @@
-import flask
-import json
 import copy
+import json
 import os
 import socket
-import psycopg2
-from flask_mail import Message, Mail
 
+from fastapi import Depends, HTTPException, Request, BackgroundTasks
+from fastapi.responses import JSONResponse, Response
+# from flask_mail import Message, Mail
+import psycopg2
+
+from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication
 from .common import noauth, mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
 
-users_api = flask.Blueprint('users_api', __name__)
+users_api = APIRouter()
+
+
+MAIL_SERVER = os.environ.get('MAIL_SERVER', None),
+MAIL_PORT = os.environ.get('MAIL_PORT', 587),
+MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'yes', 'on', '1'],
+MAIL_USERNAME = os.environ.get('MAIL_USERNAME', None),
+MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None),
+MAIL_REPLY_TO = os.environ.get('MAIL_REPLY_TO', None),
 
 
 def users_apidoc_schemas():
@@ -85,23 +96,31 @@ def users_apidoc_schemas():
     yield "ForgotPasswordResetPOST", validators.ForgotPasswordResetPOST
 
 
+def send_grafolean_noreply_email(subject, recipients, body):
+    # msg = Message(mail_subject, sender=MAIL_REPLY_TO, recipients=[person_data['email']], body=mail_body_text)
+    # mail = Mail(flask.current_app)
+    # with mail.record_messages() as outbox:
+    #     mail.send(msg)
+    #     flask.g.outbox = outbox  # make sent messages accessible to tests
+    pass
+
 # --------------
 # /api/users/, /api/persons/ and /api/bots/ - user management
 # --------------
 
 
-@users_api.route('/users/<int:user_id>', methods=['GET'])
-def users_user_get(user_id):
+@users_api.get('/api/users/{user_id}')
+def users_user_get(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     rec = User.get(user_id)
     if not rec:
-        return "No such user", 404
+        raise HTTPException(status_code=404, detail="No such user")
     rec['permissions'] = Permission.get_list(user_id)
-    return json.dumps(rec), 200
+    return JSONResponse(content=rec, status_code=201)
 
 
-@users_api.route('/bots', methods=['GET', 'POST'])
-# CAREFUL: accessible to any authenticated user (permissions check bypassed)
-def users_bots():
+@users_api.get('/api/bots')
+# CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
+def users_bots_get(auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -142,22 +161,24 @@ def users_bots():
                   schema:
                     "$ref": '#/definitions/BotGET'
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        bot = Bot.forge_from_input(flask.request.get_json())
-        user_id, _ = bot.insert()
-        rec = Bot.get(user_id, None)
-        mqtt_publish_changed([
-            'bots',
-        ])
-        return json.dumps(rec), 201
+    rec = Bot.get_list()
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@users_api.route('/bots/<string:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def users_bot_crud(user_id):
+@users_api.post('/api/bots')
+# CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
+async def users_bots_post(request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    bot = Bot.forge_from_input(await request.json())
+    user_id, _ = bot.insert()
+    rec = Bot.get(user_id, None)
+    mqtt_publish_changed([
+        'bots',
+    ])
+    return JSONResponse(content=rec, status_code=201)
+
+
+@users_api.get('/api/bots/{user_id}')
+def users_bot_crud_get(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -226,54 +247,57 @@ def users_bot_crud(user_id):
             404:
               description: No such bot
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Bot.get(user_id, None)
-        if not rec:
-            return "No such bot", 404
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        bot = Bot.forge_from_input(flask.request.get_json(), force_id=user_id)
-        rowcount = bot.update()
-        if not rowcount:
-            return "No such bot", 404
-        mqtt_publish_changed([
-            'bots/{user_id}'.format(user_id=user_id),
-            'bots',
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        # bot should not be able to delete himself, otherwise they could lock themselves out:
-        if int(flask.g.grafolean_data['user_id']) == int(user_id):
-            return "Can't delete yourself", 403
-        rowcount = Bot.delete(user_id)
-        if not rowcount:
-            return "No such bot", 404
-        mqtt_publish_changed([
-            'bots/{user_id}'.format(user_id=user_id),
-            'bots',
-        ])
-        return "", 204
+    rec = Bot.get(user_id, None)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such bot")
+    return JSONResponse(content=rec, status_code=200)
 
 
-@users_api.route('/bots/<int:user_id>/token', methods=['GET'])
-def users_bot_token_get(user_id):
+@users_api.put('/api/bots/{user_id}')
+async def users_bot_crud_put(user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    bot = Bot.forge_from_input(await request.json(), force_id=user_id)
+    rowcount = bot.update()
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such bot")
+    mqtt_publish_changed([
+        'bots/{user_id}'.format(user_id=user_id),
+        'bots',
+    ])
+    return Response(status_code=204)
+
+
+@users_api.delete('/api/bots/{user_id}')
+def users_bot_crud_delete(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    # bot should not be able to delete himself, otherwise they could lock themselves out:
+    if int(auth.user_id) == int(user_id):
+        raise HTTPException(status_code=403, detail="Can't delete yourself")
+    rowcount = Bot.delete(user_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such bot")
+    mqtt_publish_changed([
+        'bots/{user_id}'.format(user_id=user_id),
+        'bots',
+    ])
+    return Response(status_code=204)
+
+
+@users_api.get('/api/bots/{user_id}/token')
+def users_bot_token_get(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     # make sure the user who is requesting to see the bot token has every permission that this token has, and
     # also that this user can add the bot:
-    request_user_permissions = Permission.get_list(int(flask.g.grafolean_data['user_id']))
+    request_user_permissions = Permission.get_list(int(auth.user_id))
     if not Permission.has_all_permissions(request_user_permissions, user_id):
-        return "Not enough permissions to see this bot's token", 401
+        raise HTTPException(status_code=403, detail="Not enough permissions to see this bot's token")
     if not Permission.can_grant_permission(request_user_permissions, 'bots', 'POST'):
-        return "Not enough permissions to see this bot's token - POST to /bots not allowed", 401
+        raise HTTPException(status_code=403, detail="Not enough permissions to see this bot's token - POST to /bots not allowed")
     token = Bot.get_token(user_id, None)
     if not token:
-        return "No such bot", 404
-    return {'token': token}, 200
+        raise HTTPException(status_code=404, detail="No such bot")
+    return JSONResponse(content={'token': token}, status_code=200)
 
 
-@users_api.route('/persons', methods=['GET', 'POST'])
-def users_persons():
+@users_api.get('/api/persons')
+def users_persons_get(auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -316,23 +340,22 @@ def users_persons():
                       id:
                         type: integer
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get_list()
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        person = Person.forge_from_input(flask.request.get_json())
-        user_id = person.insert()
-        mqtt_publish_changed([
-            'persons',
-        ])
-        return json.dumps({
-            'id': user_id,
-        }), 201
+    rec = Person.get_list()
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@users_api.route('/persons/<int:user_id>', methods=['GET', 'PUT', 'DELETE'])
-def users_person_crud(user_id):
+@users_api.post('/api/persons')
+async def users_persons_post(request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    person = Person.forge_from_input(await request.json())
+    user_id = person.insert()
+    mqtt_publish_changed([
+        'persons',
+    ])
+    return JSONResponse(content={'id': user_id}, status_code=201)
+
+
+@users_api.get('/api/persons/{user_id}')
+def users_person_crud_get(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -401,51 +424,54 @@ def users_person_crud(user_id):
             404:
               description: No such person
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Person.get(user_id)
-        if not rec:
-            return "No such person", 404
-        rec['permissions'] = Permission.get_list(user_id)
-        return json.dumps(rec), 200
-
-    elif flask.request.method == 'PUT':
-        person = Person.forge_from_input(flask.request.get_json(), force_id=user_id)
-        rowcount = person.update()
-        if not rowcount:
-            return "No such person", 404
-        mqtt_publish_changed([
-            'persons/{user_id}'.format(user_id=user_id),
-            'persons',
-        ])
-        return "", 204
-
-    elif flask.request.method == 'DELETE':
-        # user should not be able to delete himself, otherwise they could lock themselves out:
-        if int(flask.g.grafolean_data['user_id']) == int(user_id):
-            return "Can't delete yourself", 403
-        rowcount = Person.delete(user_id)
-        if not rowcount:
-            return "No such person", 404
-        mqtt_publish_changed([
-            'persons/{user_id}'.format(user_id=user_id),
-            'persons',
-        ])
-        return "", 204
+    rec = Person.get(user_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="No such person")
+    rec['permissions'] = Permission.get_list(user_id)
+    return JSONResponse(content=rec, status_code=200)
 
 
-@users_api.route('/persons/<int:user_id>/password', methods=['POST'])
-def users_person_change_password(user_id):
-    rowcount = Person.change_password(user_id, flask.request.get_json())
+@users_api.put('/api/persons/{user_id}')
+async def users_person_crud_put(user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    person = Person.forge_from_input(await request.json(), force_id=user_id)
+    rowcount = person.update()
     if not rowcount:
-        return "Change failed", 400
+        raise HTTPException(status_code=404, detail="No such person")
+    mqtt_publish_changed([
+        'persons/{user_id}'.format(user_id=user_id),
+        'persons',
+    ])
+    return Response(status_code=204)
+
+
+@users_api.delete('/api/persons/{user_id}')
+def users_person_crud_delete(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    # user should not be able to delete himself, otherwise they could lock themselves out:
+    if int(auth.user_id) == int(user_id):
+        raise HTTPException(status_code=403, detail="Can't delete yourself")
+    rowcount = Person.delete(user_id)
+    if not rowcount:
+        raise HTTPException(status_code=404, detail="No such person")
+    mqtt_publish_changed([
+        'persons/{user_id}'.format(user_id=user_id),
+        'persons',
+    ])
+    return Response(status_code=204)
+
+
+@users_api.post('/api/persons/{user_id}/password')
+async def users_person_change_password(user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    rowcount = Person.change_password(user_id, await request.json())
+    if not rowcount:
+        raise HTTPException(status_code=400, detail="Change failed")
     # no need to publish to mqtt - nobody cares
-    return "", 204
+    return Response(status_code=204)
 
 
-@users_api.route('/users/<int:user_id>/permissions', methods=['GET', 'POST'])
-@users_api.route('/bots/<int:user_id>/permissions', methods=['GET', 'POST'])
-@users_api.route('/persons/<int:user_id>/permissions', methods=['GET', 'POST'])
-def users_permissions_get_post(user_id):
+@users_api.get('/api/users/{user_id}/permissions')
+@users_api.get('/api/bots/{user_id}/permissions')
+@users_api.get('/api/persons/{user_id}/permissions')
+def users_permissions_get(user_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -538,32 +564,33 @@ def users_permissions_get_post(user_id):
             401:
               description: Not allowed to grant permissions
     """
-    if flask.request.method in ['GET', 'HEAD']:
-        rec = Permission.get_list(user_id=user_id)
-        return json.dumps({'list': rec}), 200
-
-    elif flask.request.method == 'POST':
-        granting_user_id = flask.g.grafolean_data['user_id']
-        permission = Permission.forge_from_input(flask.request.get_json(), user_id)
-        try:
-            permission_id = permission.insert(granting_user_id)
-            mqtt_publish_changed([
-                'persons/{user_id}'.format(user_id=user_id),
-                'bots/{user_id}'.format(user_id=user_id),
-            ])
-            return json.dumps({
-                'id': permission_id,
-            }), 201
-        except AccessDeniedError as ex:
-            return str(ex), 401
-        except psycopg2.IntegrityError:
-            return "Invalid parameters", 400
+    rec = Permission.get_list(user_id=user_id)
+    return JSONResponse(content={'list': rec}, status_code=200)
 
 
-@users_api.route('/users/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-@users_api.route('/bots/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-@users_api.route('/persons/<int:user_id>/permissions/<int:permission_id>', methods=['DELETE'])
-def users_permission_delete(permission_id, user_id):
+@users_api.post('/api/users/{user_id}/permissions')
+@users_api.post('/api/bots/{user_id}/permissions')
+@users_api.post('/api/persons/{user_id}/permissions')
+async def users_permissions_post(user_id: int, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+    granting_user_id = auth.user_id
+    permission = Permission.forge_from_input(await request.json(), user_id)
+    try:
+        permission_id = permission.insert(granting_user_id)
+        mqtt_publish_changed([
+            'persons/{user_id}'.format(user_id=user_id),
+            'bots/{user_id}'.format(user_id=user_id),
+        ])
+        return JSONResponse(content={'id': permission_id}, status_code=201)
+    except AccessDeniedError as ex:
+        raise HTTPException(status_code=403, detail=str(ex))
+    except psycopg2.IntegrityError:
+        raise HTTPException(status_code=400, detail="Invalid parameters")
+
+
+@users_api.delete('/api/users/{user_id}/permissions/{permission_id}')
+@users_api.delete('/api/bots/{user_id}/permissions/{permission_id}')
+@users_api.delete('/api/persons/{user_id}/permissions/{permission_id}')
+def users_permission_delete(user_id: int, permission_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         delete:
@@ -587,19 +614,19 @@ def users_permission_delete(permission_id, user_id):
             404:
               description: No such permission
     """
-    granting_user_id = flask.g.grafolean_data['user_id']
+    granting_user_id = auth.user_id
     try:
         rowcount = Permission.delete(permission_id, user_id, granting_user_id)
     except AccessDeniedError as ex:
-        return str(ex), 401
+        raise HTTPException(status_code=403, detail=str(ex))
     if not rowcount:
-        return "No such permission", 404
+        raise HTTPException(status_code=403, detail="No such permission")
     mqtt_publish_changed([
         'persons/{user_id}'.format(user_id=user_id),
         'users/{user_id}'.format(user_id=user_id),
         'bots/{user_id}'.format(user_id=user_id),
     ])
-    return "", 204
+    return Response(status_code=204)
 
 
 def _generate_signup_mail_message(name, email, frontend_origin, user_id, confirm_pin):
@@ -634,9 +661,9 @@ def _is_tor_exit_node(ipv4):
     return False
 
 
-@users_api.route('/persons/signup/new', methods=['POST'])
+@users_api.post('/api/persons/signup/new')
 @noauth
-def users_person_signup_new():
+async def users_person_signup_new(request: Request, background_tasks: BackgroundTasks):
     """
         ---
         post:
@@ -661,36 +688,33 @@ def users_person_signup_new():
               description: Signup disabled
     """
     if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
-        return "Signup disabled", 403
+        raise HTTPException(status_code=403, detail="Signup disabled")
 
     if os.environ.get('SIGNUP_DISALLOW_TOR', 'true').lower() in ['true', 'yes', 'on', '1']:
         # if user is coming from Tor exit node, disallow signup:
-        client_ip = flask.request.environ.get('HTTP_X_FORWARDED_FOR', None)
+        client_ip = request.headers.get('x-forwarded-for', None)
         if not client_ip:
-            return "Could not determine client IP", 403
+            raise HTTPException(status_code=403, detail="Could not determine client IP")
         if _is_tor_exit_node(client_ip):
-            return "Sorry, Tor exit nodes are not allowed to signup due to abuse", 403
+            raise HTTPException(status_code=403, detail="Sorry, Tor exit nodes are not allowed to signup due to abuse")
 
-    user_id, confirm_pin = Person.signup_new(flask.request.get_json())
+    user_id, confirm_pin = Person.signup_new(await request.json())
     person_data = Person.get(user_id)
 
     mail_subject = "Welcome to Grafolean!"
     # unless explicitly set otherwise, assume that backend and frontend have the same origin:
-    frontend_origin = os.environ.get('FRONTEND_ORIGIN', flask.request.url_root).rstrip('/')
+    backend_origin = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}"
+    frontend_origin = os.environ.get('FRONTEND_ORIGIN', backend_origin).rstrip('/')
     mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], frontend_origin, user_id, confirm_pin)
 
-    msg = Message(mail_subject, sender="noreply@grafolean.com", recipients=[person_data['email']], body=mail_body_text)
-    mail = Mail(flask.current_app)
-    with mail.record_messages() as outbox:
-        mail.send(msg)
-        flask.g.outbox = outbox  # make sent messages accessible to tests
+    background_tasks.add_task(send_grafolean_noreply_email, mail_subject, recipients=[person_data['email']], body=mail_body_text)
 
-    return "", 204
+    return Response(status_code=204)
 
 
-@users_api.route('/persons/signup/validatepin', methods=['POST'])
+@users_api.post('/api/persons/signup/validatepin')
 @noauth
-def users_person_signup_validatepin():
+async def users_person_signup_validatepin(request: Request):
     """
         ---
         post:
@@ -716,18 +740,19 @@ def users_person_signup_validatepin():
               description: Signup disabled
     """
     if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
-        return "Signup disabled", 403
+        raise HTTPException(status_code=403, detail="Signup disabled")
 
-    confirm_pin_valid = Person.signup_pin_valid(flask.request.get_json())
+    confirm_pin_valid = Person.signup_pin_valid(await request.json())
     if confirm_pin_valid:
-        return "", 204
+        raise HTTPException(status_code=400, detail="Invalid pin, invalid user id, or signup already completed")
     else:
-        return "Invalid pin, invalid user id, or signup already completed", 400
+        return Response(status_code=204)
 
 
-@users_api.route('/persons/signup/complete', methods=['POST'])
+@users_api.post('/api/persons/signup/complete')
 @noauth
-def users_person_signup_complete():
+# async def users_person_signup_complete(request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+async def users_person_signup_complete(request: Request):
     """
         ---
         post:
@@ -752,13 +777,13 @@ def users_person_signup_complete():
               description: Signup disabled
     """
     if os.environ.get('ENABLE_SIGNUP', 'false').lower() not in ['true', 'yes', 'on', '1']:
-        return "Signup disabled", 403
+        raise HTTPException(status_code=403, detail="Signup disabled")
 
-    status = Person.signup_complete(flask.request.get_json(), create_account=True)
+    status = Person.signup_complete(await request.json(), create_account=True)
     if status:
-        return "", 204
+        return Response(status_code=204)
     else:
-        return "Invalid pin, invalid user id, or signup already completed", 400
+        raise HTTPException(status_code=400, detail="Invalid pin, invalid user id, or signup already completed")
 
 
 def _generate_forgot_password_message(frontend_origin, user_id, confirm_pin):
@@ -776,9 +801,9 @@ Grafolean Team
 '''
 
 
-@users_api.route('/persons/forgot', methods=['POST'])
+@users_api.post('/api/persons/forgot')
 @noauth
-def users_person_forgot_password():
+async def users_person_forgot_password(request: Request, background_tasks: BackgroundTasks):
     """
         ---
         post:
@@ -802,31 +827,28 @@ def users_person_forgot_password():
             500:
               description: Mail sending not setup
     """
-    if not flask.current_app.config.get('MAIL_SERVER', None):
-        return "Mail sending not setup", 500
+    if not os.environ.get('MAIL_SERVER', None):
+        raise HTTPException(status_code=500, detail="Mail sending not setup")
 
-    user_id, confirm_pin = Person.forgot_password(flask.request.get_json())
+    user_id, confirm_pin = Person.forgot_password(await request.json())
     if not user_id:
-        return "Email does not correspond to any registered user", 400
+        raise HTTPException(status_code=400, detail="Email does not correspond to any registered user")
 
     person_data = Person.get(user_id)
     mail_subject = "Grafolean password reset link"
     # unless explicitly set otherwise, assume that backend and frontend have the same origin:
-    frontend_origin = os.environ.get('FRONTEND_ORIGIN', flask.request.url_root).rstrip('/')
+    backend_origin = f"{request.url.scheme}://{request.url.host}:{request.url.port}"
+    frontend_origin = os.environ.get('FRONTEND_ORIGIN', backend_origin).rstrip('/')
     mail_body_text = _generate_forgot_password_message(frontend_origin, user_id, confirm_pin)
 
-    msg = Message(mail_subject, sender="noreply@grafolean.com", recipients=[person_data['email']], body=mail_body_text)
-    mail = Mail(flask.current_app)
-    with mail.record_messages() as outbox:
-        mail.send(msg)
-        flask.g.outbox = outbox  # make sent messages accessible to tests
+    background_tasks.add_task(send_grafolean_noreply_email, mail_subject, recipients=[person_data['email']], body=mail_body_text)
 
-    return "", 204
+    return Response(status_code=204)
 
 
-@users_api.route('/persons/forgot/reset', methods=['POST'])
+@users_api.post('/api/persons/forgot/reset')
 @noauth
-def users_person_forgot_password_reset():
+async def users_person_forgot_password_reset(request: Request):
     """
         ---
         post:
@@ -848,8 +870,8 @@ def users_person_forgot_password_reset():
             400:
               description: Invalid parameters
     """
-    success = Person.forgot_password_reset(flask.request.get_json())
+    success = Person.forgot_password_reset(await request.json())
     if success:
-        return "", 204
+        return Response(status_code=204)
     else:
-        return "Password could not be changed - expired / invalid pin or user does not exist", 400
+        raise HTTPException(status_code=400, detail="Password could not be changed - expired / invalid pin or user does not exist")

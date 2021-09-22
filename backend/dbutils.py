@@ -111,7 +111,6 @@ class ThinDBWrapper(object):
         return get_db_cursor()
 db = ThinDBWrapper
 
-
 ###########################
 #   DB schema migration   #
 ###########################

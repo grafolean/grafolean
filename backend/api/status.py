@@ -2,16 +2,19 @@ from collections import defaultdict
 import json
 import os
 import time
-import flask
+
+from fastapi import Response, Request
+from fastapi.responses import JSONResponse
 import psycopg2
 
+from .fastapiutils import APIRouter
 from datatypes import Auth
 import dbutils
 from utils import log
 from .common import noauth, CORS_DOMAINS, MQTT_WS_HOSTNAME, MQTT_WS_PORT
 
 
-status_api = flask.Blueprint('status_api', __name__)
+status_api = APIRouter()
 
 
 # --------------
@@ -20,7 +23,7 @@ status_api = flask.Blueprint('status_api', __name__)
 
 
 # Useful for determining status of backend (is it available, is the first user initialized,...)
-@status_api.route('/info', methods=['GET'])
+@status_api.get('/api/status/info')
 @noauth
 def status_info_get():
     db_migration_needed = dbutils.is_migration_needed()
@@ -34,22 +37,22 @@ def status_info_get():
         'mqtt_ws_port': MQTT_WS_PORT,
         'enable_signup': os.environ.get('ENABLE_SIGNUP', 'false').lower() in ['true', 'yes', 'on', '1'],
     }
-    return json.dumps(result), 200
+    return JSONResponse(content=result, status_code=200)
 
 
-@status_api.route('/sitemap', methods=['GET'])
+# @status_api.get('/api/status/sitemap')
+# @noauth
+# def status_sitemap_get():
+#     ignored_methods = set(['HEAD', 'OPTIONS'])
+#     rules = defaultdict(set)
+#     for rule in flask.current_app.url_map.iter_rules():
+#         rules[str(rule)] |= rule.methods
+#     result = [{ 'url': k, 'methods': sorted(list(v - ignored_methods))} for k, v in rules.items()]
+#     return JSONResponse(content=result, status_code=200)
+
+
+@status_api.post('/api/status/cspreport')
 @noauth
-def status_sitemap_get():
-    ignored_methods = set(['HEAD', 'OPTIONS'])
-    rules = defaultdict(set)
-    for rule in flask.current_app.url_map.iter_rules():
-        rules[str(rule)] |= rule.methods
-    result = [{ 'url': k, 'methods': sorted(list(v - ignored_methods))} for k, v in rules.items()]
-    return json.dumps(result), 200
-
-
-@status_api.route('/cspreport', methods=['POST'])
-@noauth
-def status_cspreport():
-    log.error("CSP report received: {}".format(flask.request.data))
-    return '', 200
+async def status_cspreport(request: Request):
+    log.error("CSP report received: {}".format(await request.body()))
+    return Response(status_code=204)
