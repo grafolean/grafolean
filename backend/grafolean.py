@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import re
 import sys
 
 from dotenv import load_dotenv
@@ -41,34 +42,45 @@ app.include_router(profile_api)
 app.include_router(plugins_api)
 
 
+NO_AUTH_ENDPOINTS = [
+    ('POST', '/api/persons/signup/new'),
+    ('POST', '/api/admin/migratedb'),
+    ('POST', '/api/admin/first'),
+    ('POST', '/api/admin/mqtt-auth-plug/getuser'),
+    ('POST', '/api/admin/mqtt-auth-plug/superuser'),
+    ('POST', '/api/admin/mqtt-auth-plug/aclcheck'),
+    ('POST', '/api/auth/login'),
+    ('POST', '/api/auth/refresh'),
+    ('GET', '/api/plugins/widgets'),
+    ('GET', '/api/status/info'),
+    ('GET', '/api/status/sitemap'),
+    ('POST', '/api/status/cspreport'),
+    ('POST', '/api/persons/signup/new'),
+    ('POST', '/api/persons/signup/validatepin'),
+    ('POST', '/api/persons/signup/complete'),
+    ('POST', '/api/persons/forgot'),
+    ('POST', '/api/persons/forgot/reset'),
+]
+NO_AUTH_GET_ENDPOINTS_REGEXES = [
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+')),
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/widget[.]js')),
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/form[.]js')),
+]
+
+
 @app.middleware("http")
 async def grafolean_auth(request: Request, call_next):
     request.state.grafolean_auth = {}
-    NO_AUTH_ENDPOINTS = [
-        ('POST', '/api/persons/signup/new'),
-        ('POST', '/api/admin/migratedb'),
-        ('POST', '/api/admin/first'),
-        ('POST', '/api/admin/mqtt-auth-plug/getuser'),
-        ('POST', '/api/admin/mqtt-auth-plug/superuser'),
-        ('POST', '/api/admin/mqtt-auth-plug/aclcheck'),
-        ('POST', '/api/auth/login'),
-        ('POST', '/api/auth/refresh'),
-        ('GET', '/api/plugins/widgets'),
-        ('GET', '/api/plugins/widgets/{widget_plugin_id}'),  # !!!
-        ('GET', '/api/plugins/widgets/{widget_plugin_id}/widget.js'),
-        ('GET', '/api/plugins/widgets/{widget_plugin_id}/form.js'),
-        ('GET', '/api/status/info'),
-        ('GET', '/api/status/sitemap'),
-        ('POST', '/api/status/cspreport'),
-        ('POST', '/api/persons/signup/new'),
-        ('POST', '/api/persons/signup/validatepin'),
-        ('POST', '/api/persons/signup/complete'),
-        ('POST', '/api/persons/forgot'),
-        ('POST', '/api/persons/forgot/reset'),
-    ]
 
-    if (request.method.upper(), request.url.path) in NO_AUTH_ENDPOINTS:
+    # some endpoints do not want us to perform any authorization for them:
+    method = request.method.upper()
+    url_path = request.url.path
+    if (method, url_path) in NO_AUTH_ENDPOINTS:
         return await call_next(request)
+    # some of these endpoints use path params and must be matched via regex:
+    for no_auth_method, no_auth_path_pattern in NO_AUTH_GET_ENDPOINTS_REGEXES:
+        if method == no_auth_method and re.match(no_auth_path_pattern, url_path):
+            return await call_next(request)
 
     try:
         user_id = None
