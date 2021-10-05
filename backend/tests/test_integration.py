@@ -1143,8 +1143,11 @@ def test_sitemap(app_client):
     assert expected_entry in actual
 
 # https://github.com/tiangolo/fastapi/issues/1773
-@pytest.mark.skip("TBD!")
+@pytest.mark.skip("HEAD method currently not supported by FastAPI/Starlette")
 def test_head_method(app_client, admin_authorization_header, account_id):
+    r = app_client.get('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 200
+
     r = app_client.head('/api/accounts/{}/dashboards'.format(account_id), headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
 
