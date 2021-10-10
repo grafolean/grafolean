@@ -841,7 +841,7 @@ async def users_person_forgot_password(request: Request, background_tasks: Backg
     person_data = Person.get(user_id)
     mail_subject = "Grafolean password reset link"
     # unless explicitly set otherwise, assume that backend and frontend have the same origin:
-    backend_origin = f"{request.url.scheme}://{request.url.host}:{request.url.port}"
+    backend_origin = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}"
     frontend_origin = os.environ.get('FRONTEND_ORIGIN', backend_origin).rstrip('/')
     mail_body_text = _generate_forgot_password_message(frontend_origin, user_id, confirm_pin)
 
