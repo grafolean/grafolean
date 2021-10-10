@@ -9,13 +9,19 @@ import pytest
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fixtures import (
     app_client, _delete_all_from_db, admin_authorization_header, first_admin_id, person_id, EMAIL_USER1, USERNAME_USER1,
-    db,
+    db, smtp_messages
 )
 
 
 def setup_module():
     os.environ['ENABLE_SIGNUP'] = 'true'
     os.environ['SIGNUP_DISALLOW_TOR'] = 'false'
+    os.environ['MAIL_SERVER'] = '127.0.0.1'
+    os.environ['MAIL_PORT'] = '22587'
+    os.environ['MAIL_USE_TLS'] = 'false'
+    os.environ['MAIL_USERNAME'] = ''  # testing smtpd does not support authentication
+    os.environ['MAIL_PASSWORD'] = ''
+    os.environ['MAIL_REPLY_TO'] = 'nouser@grafolean.com'
 
 
 def teardown_module():
@@ -67,11 +73,11 @@ def test_signup_new_unsuccessful(app_client, admin_authorization_header):
     assert len(actual['list']) == 1  # just admin
 
 
-@pytest.mark.skip("TBD!")
-def test_signup_new_successful(app_client, admin_authorization_header):
+def test_signup_new_successful(app_client, admin_authorization_header, smtp_messages):
     """
         Sign up as anonymous user, then as admin make sure that person exists and can't login.
     """
+
     r = app_client.get('/api/persons/', headers={'Authorization': admin_authorization_header})
     assert r.status_code == 200
     actual = r.json()
@@ -81,20 +87,21 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     # user_id and confirm_pin paramaters from it:
     user_id = None
     confirm_pin = None
-    with app_client:  # we need to keep app context alive so that we can inspect the sent e-mail
-        data = {
-            'email': 'test@grafolean.com',
-            'agree': True,
-        }
-        r = app_client.post('/api/persons/signup/new', json=data)
-        assert r.status_code == 204, r.text
-        assert len(flask.g.outbox) == 1
-        mail_message = flask.g.outbox[0]
-        m = re.search(r'/signup/confirm/([0-9]+)/([0-9a-f]{8})', mail_message.body)
-        assert m
-        user_id = int(m.group(1))
-        confirm_pin = m.group(2)
-        invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
+    data = {
+        'email': 'test@grafolean.com',
+        'agree': True,
+    }
+    r = app_client.post('/api/persons/signup/new', json=data)
+    assert r.status_code == 204, r.text
+
+    mail_from, mail_recepients, mail_body = smtp_messages.get(timeout=1)
+    assert mail_from == 'nouser@grafolean.com'
+    assert mail_recepients == ['test@grafolean.com']
+    m = re.search(r'/signup/confirm/([0-9]+)/([0-9a-f]{8})', mail_body)
+    assert m
+    user_id = int(m.group(1))
+    confirm_pin = m.group(2)
+    invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
 
     # we just want to know if the pin is correct, so that we can ask user for a new password:
     data = {
@@ -149,7 +156,7 @@ def test_signup_new_successful(app_client, admin_authorization_header):
     data = { 'username': 'test@grafolean.com', 'password': SOME_PASSWORD }
     r = app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
-    authorization_header = dict(r.headers).get('X-JWT-Token', None)
+    authorization_header = r.headers.get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', authorization_header)
 
     # and we have access to our account:

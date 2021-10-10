@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import smtplib
 import socket
 
 from fastapi import Depends, HTTPException, Request, BackgroundTasks
@@ -15,14 +16,6 @@ from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 
 
 users_api = APIRouter()
-
-
-MAIL_SERVER = os.environ.get('MAIL_SERVER', None),
-MAIL_PORT = os.environ.get('MAIL_PORT', 587),
-MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'yes', 'on', '1'],
-MAIL_USERNAME = os.environ.get('MAIL_USERNAME', None),
-MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None),
-MAIL_REPLY_TO = os.environ.get('MAIL_REPLY_TO', None),
 
 
 def users_apidoc_schemas():
@@ -97,12 +90,23 @@ def users_apidoc_schemas():
 
 
 def send_grafolean_noreply_email(subject, recipients, body):
-    # msg = Message(mail_subject, sender=MAIL_REPLY_TO, recipients=[person_data['email']], body=mail_body_text)
-    # mail = Mail(flask.current_app)
-    # with mail.record_messages() as outbox:
-    #     mail.send(msg)
-    #     flask.g.outbox = outbox  # make sent messages accessible to tests
-    pass
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', None)
+    MAIL_PORT = os.environ.get('MAIL_PORT', 587)
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'yes', 'on', '1']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', None)
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
+    MAIL_REPLY_TO = os.environ.get('MAIL_REPLY_TO', None)
+
+    mailer = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
+    if MAIL_USE_TLS:
+        mailer.starttls()
+    if MAIL_USERNAME:
+        mailer.login(MAIL_USERNAME, MAIL_PASSWORD)
+    mailer.helo()
+    for recipient_address in recipients:
+        mailer.sendmail(MAIL_REPLY_TO, recipient_address, "\n" + body)
+    mailer.quit()
+
 
 # --------------
 # /api/users/, /api/persons/ and /api/bots/ - user management
@@ -743,7 +747,7 @@ async def users_person_signup_validatepin(request: Request):
         raise HTTPException(status_code=403, detail="Signup disabled")
 
     confirm_pin_valid = Person.signup_pin_valid(await request.json())
-    if confirm_pin_valid:
+    if not confirm_pin_valid:
         raise HTTPException(status_code=400, detail="Invalid pin, invalid user id, or signup already completed")
     else:
         return Response(status_code=204)
