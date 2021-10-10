@@ -1,9 +1,13 @@
+import asyncore
 from collections import namedtuple
 import json
 import multiprocessing
 import os
 import pytest
 import re
+from smtpd import SMTPServer
+import smtplib
+import threading
 import time
 
 from fastapi.testclient import TestClient
@@ -315,3 +319,30 @@ def mqtt_wait_for_message(message_queue, topics, timeout=2):
             return message
         else:
             continue
+
+
+@pytest.fixture
+def smtp_messages():
+    messages = multiprocessing.Queue()
+
+    # run a smtp server in a separate thread:
+    class _SMTPServer(SMTPServer):
+        def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
+            messages.put((mailfrom, rcpttos, data.decode('utf-8'),))
+    smtp_server = _SMTPServer(('127.0.0.1', 22587,), None)
+
+    loop_thread = threading.Thread(target=asyncore.loop)
+    loop_thread.daemon = True
+    loop_thread.start()
+
+    # before using it, double check that the testing SMTP daemon is started:
+    mailer = smtplib.SMTP('127.0.0.1', 22587)
+    mailer.helo()
+    mailer.sendmail('test@grafolean.com', 'test_to@grafolean.com', "\ntest body")
+    mailer.quit()
+    _from, _to, _body = messages.get(timeout=1)
+    assert _from == 'test@grafolean.com'
+    assert _to == ['test_to@grafolean.com']
+    assert _body == "\ntest body"
+
+    yield messages
