@@ -171,41 +171,36 @@ def test_signup_new_successful(app_client, admin_authorization_header, smtp_mess
 ###################
 
 
-@pytest.mark.skip("TBD!")
-def test_forgot_password(app_client, person_id):
+def test_forgot_password(app_client, person_id, smtp_messages):
     """
         Make sure that /api/persons/forgot endpoint rejects invalid e-mail addresses, and that it ignores valid but nonexistent
         addresses, and that it sends an e-mail message to valid & presend addresses.
     """
-    with app_client:  # we need to keep app context alive so that we can inspect the sent e-mail
-        data = {
-            'email': 'this.is.not.a.valid.email',
-        }
-        r = app_client.post('/api/persons/forgot', json=data)
-        assert r.status_code == 400, r.text
-        assert not hasattr(flask.g, 'outbox')
+    data = {
+        'email': 'this.is.not.a.valid.email',
+    }
+    r = app_client.post('/api/persons/forgot', json=data)
+    assert r.status_code == 400, r.text
+    assert smtp_messages.empty()
 
-    with app_client:
-        data = {
-            'email': 'not.exists@example.org',
-        }
-        r = app_client.post('/api/persons/forgot', json=data)
-        assert r.status_code == 400, r.text
-        assert not hasattr(flask.g, 'outbox')
+    data = {
+        'email': 'not.exists@example.org',
+    }
+    r = app_client.post('/api/persons/forgot', json=data)
+    assert r.status_code == 400, r.text
+    assert smtp_messages.empty()
 
-    with app_client:
-        data = {
-            'email': EMAIL_USER1,
-        }
-        r = app_client.post('/api/persons/forgot', json=data)
-        assert r.status_code == 204, r.text
-        assert len(flask.g.outbox) == 1
-        mail_message = flask.g.outbox[0]
-        m = re.search(r'/forgot/([0-9]+)/([0-9a-f]{8})', mail_message.body)
-        assert m
-        user_id = int(m.group(1))
-        confirm_pin = m.group(2)
-        invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
+    data = {
+        'email': EMAIL_USER1,
+    }
+    r = app_client.post('/api/persons/forgot', json=data)
+    assert r.status_code == 204, r.text
+    mail_from, mail_recepients, mail_body = smtp_messages.get(timeout=1)
+    m = re.search(r'/forgot/([0-9]+)/([0-9a-f]{8})', mail_body)
+    assert m
+    user_id = int(m.group(1))
+    confirm_pin = m.group(2)
+    invalid_confirm_pin = '1234aaaa' if confirm_pin != '1234aaaa' else '4321bbbb'
 
     # try to reset password:
     # with invalid pin it won't work:
