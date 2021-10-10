@@ -53,7 +53,7 @@ NO_AUTH_ENDPOINTS = [
     ('POST', '/api/auth/refresh'),
     ('GET', '/api/plugins/widgets'),
     ('GET', '/api/status/info'),
-    ('GET', '/api/status/sitemap'),
+    # ('GET', '/api/status/sitemap'),
     ('POST', '/api/status/cspreport'),
     ('POST', '/api/persons/signup/new'),
     ('POST', '/api/persons/signup/validatepin'),
