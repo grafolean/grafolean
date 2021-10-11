@@ -20,28 +20,6 @@ from const import SYSTEM_PATH_INSERTED_COUNT, SYSTEM_PATH_UPDATED_COUNT, SYSTEM_
 accounts_api = APIRouter()
 
 
-# TBD!
-# @accounts_api.before_request
-# def accounts_before_request():
-#     # If bot has successfully logged in (and retrieved the list of its accounts), we should
-#     # publish an MQTT message so that frontend can update 'Last login' field of the bot, and
-#     # show/hide notification badges based on it:
-#     if flask.g.grafolean_data['user_is_bot']:
-#         bot_id = flask.g.grafolean_data['user_id']
-#         m = re.match(r'^/api/accounts/([0-9]+)(/.*)?$', flask.request.path)
-#         if m:
-#             account_id = m.groups()[0]
-#             mqtt_publish_changed([
-#                 'accounts/{account_id}/bots'.format(account_id=account_id),
-#                 'accounts/{account_id}/bots/{bot_id}'.format(account_id=account_id, bot_id=bot_id),
-#             ])
-#         else:
-#             mqtt_publish_changed([
-#                 'bots',
-#                 'bots/{bot_id}'.format(bot_id=bot_id),
-#             ])
-
-
 def accounts_apidoc_schemas():
     yield "AccountPOST", validators.AccountSchemaInputs
     yield "AccountGET", {
@@ -139,9 +117,9 @@ def accounts_apidoc_schemas():
 # /accounts/
 # --------------
 
-@accounts_api.get('/api/accounts/')
+@accounts_api.get('/api/accounts')
 # CAREFUL: accessible to any authenticated user (permissions check bypassed) - NO_PERMISSION_CHECK_RESOURCES_READ
-def accounts_root(auth: AuthenticatedUser = Depends(validate_user_authentication)):
+def accounts_root(background_tasks: BackgroundTasks, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -163,11 +141,18 @@ def accounts_root(auth: AuthenticatedUser = Depends(validate_user_authentication
                           "$ref": '#/definitions/AccountGET'
     """
     accounts = Account.get_list(auth.user_id)
+
+    if auth.user_is_bot:
+        bot_id = auth.user_id
+        background_tasks.add_task(mqtt_publish_changed, [
+            'bots',
+            f'bots/{bot_id}',
+        ])
     return JSONResponse(content={'list': accounts}, status_code=200)
 
 
 @accounts_api.get('/api/accounts/{account_id}')
-def accounts_get(account_id: int, auth: AuthenticatedUser = Depends(validate_user_authentication)):
+def accounts_get(account_id: int, background_tasks: BackgroundTasks, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     """
         ---
         get:
@@ -195,6 +180,13 @@ def accounts_get(account_id: int, auth: AuthenticatedUser = Depends(validate_use
     rec = Account.get(account_id)
     if not rec:
         raise HTTPException(status_code=404, detail="No such account")
+
+    if auth.user_is_bot:
+        bot_id = auth.user_id
+        background_tasks.add_task(mqtt_publish_changed, [
+            f'accounts/{account_id}/bots',
+            f'accounts/{account_id}/bots/{bot_id}',
+        ])
     return JSONResponse(content=rec, status_code=200)
 
 
@@ -1005,7 +997,7 @@ def widget_crud_delete(account_id: int, dashboard_slug: str, widget_id: int, aut
     return Response(content='', status_code=200)
 
 
-@accounts_api.put("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets_positions/")
+@accounts_api.put("/api/accounts/{account_id}/dashboards/{dashboard_slug}/widgets_positions")
 async def widgets_positions_put(account_id: int, dashboard_slug: str, request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
     Widget.set_positions(account_id, dashboard_slug, await request.json())
     mqtt_publish_changed([
