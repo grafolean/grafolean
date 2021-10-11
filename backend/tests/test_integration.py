@@ -1017,7 +1017,7 @@ def test_options(app_client):
     # assert r.headers.get('Allow', '').split(",") == ['OPTIONS', 'POST']
     # we didn't set the Origin header, so CORS headers should not be set:
     assert r.headers.get('Access-Control-Allow-Origin', None) == 'https://example.org:1234'
-    assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, OPTIONS, PATCH, POST, PUT'
+    assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'
     assert r.headers.get('Access-Control-Expose-Headers', None) is None
     assert r.headers.get('Access-Control-Max-Age', None) == '3600'
 
@@ -1026,7 +1026,7 @@ def test_options(app_client):
     assert r.text == 'Disallowed CORS origin'
     # our Origin header is not whitelisted, so CORS headers should not be set:
     assert r.headers.get('Access-Control-Allow-Origin', None) is None
-    assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, OPTIONS, PATCH, POST, PUT'
+    assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'
     assert r.headers.get('Access-Control-Expose-Headers', None) is None
     assert r.headers.get('Access-Control-Max-Age', None) == '3600'
 
@@ -1039,7 +1039,7 @@ def test_options(app_client):
         assert r.status_code == 200
         assert r.headers.get('Access-Control-Allow-Origin', None) == origin  # our Origin header is whitelisted
         assert r.headers.get('Access-Control-Allow-Headers', None) == 'Accept, Accept-Language, Authorization, Content-Language, Content-Type, If-None-Match'
-        assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, OPTIONS, PATCH, POST, PUT'
+        assert r.headers.get('Access-Control-Allow-Methods', None) == 'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'
         # assert r.headers.get('Access-Control-Expose-Headers', None) == 'X-JWT-Token'  # this is only in response to normal requests, not preflight
         assert r.headers.get('Access-Control-Max-Age', None) == '3600'
 
