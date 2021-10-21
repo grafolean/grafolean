@@ -125,10 +125,14 @@ async def grafolean_auth(request: Request, call_next):
     return await call_next(request)
 
 
-# TBD!
-#     if flask.request.path == '/api/status/info':
-#         # we are nice to the frontend - we allow call to (only) this path, so that if CORS is misconfigured, frontend can advise on proper solution:
-#         allow_origin = '*'
+# we are nice to the frontend - we allow call to (only) this path, so that if CORS is misconfigured, frontend can advise on proper solution:
+@app.middleware("http")
+async def status_info_no_cors(request: Request, call_next):
+    url_path = request.url.path
+    response = await call_next(request)
+    if url_path == '/api/status/info':
+        response.headers['access-control-allow-origin'] = '*'
+    return response
 
 
 app.add_middleware(

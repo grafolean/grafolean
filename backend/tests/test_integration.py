@@ -1051,7 +1051,6 @@ def test_csrf_get_post_protection(app_client):
     r = app_client.post('/api/admin/migratedb', headers={'Origin': 'https://invalid.example.org'})
     assert r.status_code == 403
 
-@pytest.mark.skip("TBD!")
 def test_status_info_cors(app_client_db_not_migrated):
     r = app_client_db_not_migrated.get('/api/status/info')
     assert r.status_code == 200
