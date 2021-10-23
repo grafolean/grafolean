@@ -118,7 +118,8 @@ class SignupPage extends React.Component {
               <h3>Confirm e-mail address</h3>
 
               <div className="field">
-                An e-mail was sent to your address (<b>{email}</b>). Check your e-mail to continue!
+                If the account doesn't exist yet, an e-mail with further instructions was sent to your address
+                (<b>{email}</b>).
               </div>
             </div>
           )}

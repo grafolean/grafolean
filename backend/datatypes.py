@@ -1223,6 +1223,8 @@ class Person(object):
         # insert a person which needs the e-mail to be confirmed and password entered before it can login:
         person = cls('', email, email, None, 'UTC', False)
         user_id = person.insert()
+        if user_id is None:
+            return None, None
 
         with db.cursor() as c:
             c.execute('SELECT confirm_pin FROM persons WHERE user_id = %s;', (user_id,))
@@ -1307,12 +1309,22 @@ class Person(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
-            user_id, = c.fetchone()
-            pass_hash = Auth.password_hash(self.password) if self.password is not None else None
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, timezone, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s, %s);",
-                (user_id, self.name, str(self.email), self.username, pass_hash, self.timezone, self.email_confirmed,))
-            return user_id
+            c.execute("START TRANSACTION;")
+            try:
+                c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
+                user_id, = c.fetchone()
+                pass_hash = Auth.password_hash(self.password) if self.password is not None else None
+                c.execute("INSERT INTO persons (user_id, name, email, username, passhash, timezone, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                    (user_id, self.name, str(self.email), self.username, pass_hash, self.timezone, self.email_confirmed,))
+                c.execute("COMMIT;")
+                return user_id
+            except psycopg2.errors.UniqueViolation:
+                # duplicated record - but we do not let the user know this, we just rollback the partial insert:
+                c.execute("ROLLBACK;")
+                return None
+            except:
+                c.execute("ROLLBACK;")
+                raise
 
     def update(self):
         if self.force_id is None:
