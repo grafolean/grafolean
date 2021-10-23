@@ -13,6 +13,7 @@ from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentica
 from .common import noauth, mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
+from utils import log
 
 
 users_api = APIRouter()
@@ -97,14 +98,26 @@ def send_grafolean_noreply_email(subject, recipients, body):
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', None)
     MAIL_REPLY_TO = os.environ.get('MAIL_REPLY_TO', None)
 
+    if not MAIL_SERVER:
+        log.error("Please set MAIL_SERVER to send e-mails!")
+        return
+    if not MAIL_REPLY_TO:
+        log.error("Please set MAIL_REPLY_TO to send e-mails!")
+        return
+
     mailer = smtplib.SMTP(MAIL_SERVER, MAIL_PORT)
     if MAIL_USE_TLS:
         mailer.starttls()
     if MAIL_USERNAME:
         mailer.login(MAIL_USERNAME, MAIL_PASSWORD)
-    mailer.helo()
+    mailer.ehlo()  # must be called explicitly or "SMTPSenderRefused - malformed address" error happens
     for recipient_address in recipients:
-        mailer.sendmail(MAIL_REPLY_TO, recipient_address, "\n" + body)
+        header = "\n".join([
+            f"From: {MAIL_REPLY_TO}",
+            f"To: {recipient_address}",
+            f"Subject: {subject}",
+        ])
+        mailer.sendmail(MAIL_REPLY_TO, recipient_address, header + "\n\n" + body)
     mailer.quit()
 
 

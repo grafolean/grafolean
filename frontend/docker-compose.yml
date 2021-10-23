@@ -59,6 +59,7 @@ services:
       - MAIL_USE_TLS=${MAIL_USE_TLS}
       - MAIL_USERNAME=${MAIL_USERNAME}
       - MAIL_PASSWORD=${MAIL_PASSWORD}
+      - MAIL_REPLY_TO=${MAIL_REPLY_TO}
       - ENABLE_SIGNUP=${ENABLE_SIGNUP:-false}
       - TELEMETRY=${TELEMETRY}
     ports:
