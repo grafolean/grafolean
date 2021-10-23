@@ -716,15 +716,16 @@ async def users_person_signup_new(request: Request, background_tasks: Background
             raise HTTPException(status_code=403, detail="Sorry, Tor exit nodes are not allowed to signup due to abuse")
 
     user_id, confirm_pin = Person.signup_new(await request.json())
-    person_data = Person.get(user_id)
 
-    mail_subject = "Welcome to Grafolean!"
-    # unless explicitly set otherwise, assume that backend and frontend have the same origin:
-    backend_origin = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}"
-    frontend_origin = os.environ.get('FRONTEND_ORIGIN', backend_origin).rstrip('/')
-    mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], frontend_origin, user_id, confirm_pin)
+    if user_id is not None:
+        person_data = Person.get(user_id)
+        mail_subject = "Welcome to Grafolean!"
+        # unless explicitly set otherwise, assume that backend and frontend have the same origin:
+        backend_origin = f"{request.url.scheme}://{request.url.hostname}:{request.url.port}"
+        frontend_origin = os.environ.get('FRONTEND_ORIGIN', backend_origin).rstrip('/')
+        mail_body_text = _generate_signup_mail_message(person_data['name'], person_data['email'], frontend_origin, user_id, confirm_pin)
 
-    background_tasks.add_task(send_grafolean_noreply_email, mail_subject, recipients=[person_data['email']], body=mail_body_text)
+        background_tasks.add_task(send_grafolean_noreply_email, mail_subject, recipients=[person_data['email']], body=mail_body_text)
 
     return Response(status_code=204)
 
