@@ -73,11 +73,12 @@ services:
       # - FRONTEND_ORIGIN=http://example.com:2222
       #
       # These settings are needed if Grafolean is sending e-mails: (for signup, forgot pass, alerts)
-      #- MAIL_SERVER=smtp.grafolean.com
+      #- MAIL_SERVER=${MAIL_SERVER}
       #- MAIL_PORT=587
       #- MAIL_USE_TLS=true
-      #- MAIL_USERNAME=noreply@grafolean.com
+      #- MAIL_USERNAME=${MAIL_USERNAME}
       #- MAIL_PASSWORD=${MAIL_PASSWORD}
+      #- MAIL_REPLY_TO=${MAIL_REPLY_TO}
       #
       # Uncomment this if you want the users to be able to register (and create their accounts) by themselves:
       #- ENABLE_SIGNUP=true
