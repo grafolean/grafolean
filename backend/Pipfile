@@ -18,6 +18,7 @@ requests = "*"
 fastapi = "*"
 uvicorn = "*"
 python-multipart = "*"
+aiofiles = "*"
 
 [dev-packages]
 pytest = "*"
