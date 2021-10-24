@@ -12,7 +12,26 @@ import jsonschema
 import uvicorn
 
 
-app = FastAPI()
+from version import GRAFOLEAN_VERSION
+
+
+app = FastAPI(
+    title="Grafolean",
+    description="Easy to use monitoring solution",
+    version=GRAFOLEAN_VERSION,
+    openapi_url="/api/swagger.json",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    contact={
+        "name": "Grafolean",
+        "url": "https://grafolean.com/",
+        "email": "info@grafolean.com",
+    },
+    license_info={
+        'name': 'Commons Clause',
+        'url': 'https://github.com/grafolean/grafolean/blob/master/LICENSE.md',
+    },
+)
 
 
 try:
@@ -51,6 +70,9 @@ NO_AUTH_ENDPOINTS = [
     ('POST', '/api/admin/mqtt-auth-plug/aclcheck'),
     ('POST', '/api/auth/login'),
     ('POST', '/api/auth/refresh'),
+    ('GET', '/api/docs'),
+    ('GET', '/api/redoc'),
+    ('GET', '/api/swagger.json'),
     ('GET', '/api/plugins/widgets'),
     ('GET', '/api/status/info'),
     # ('GET', '/api/status/sitemap'),
