@@ -8,6 +8,8 @@ from fastapi import FastAPI, Request, Response, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
+from fastapi.staticfiles import StaticFiles
 import jsonschema
 import uvicorn
 
@@ -20,8 +22,8 @@ app = FastAPI(
     description="Easy to use monitoring solution",
     version=GRAFOLEAN_VERSION,
     openapi_url="/api/swagger.json",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc",
+    docs_url=None,  # https://github.com/tiangolo/fastapi/issues/2518#issuecomment-827513744
+    redoc_url=None,
     contact={
         "name": "Grafolean",
         "url": "https://grafolean.com/",
@@ -32,6 +34,7 @@ app = FastAPI(
         'url': 'https://github.com/grafolean/grafolean/blob/master/LICENSE.md',
     },
 )
+app.mount("/api/static", StaticFiles(directory="static"), name="static")
 
 
 try:
@@ -41,6 +44,35 @@ try:
     load_dotenv(dotenv_filename)
 except:
     pass
+
+
+# custom documentation endpoints to avoid leaking any information to third parties:
+@app.get("/api/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="/api/static/swagger-ui-bundle.min.js",
+        swagger_css_url="/api/static/swagger-ui.css",
+        swagger_favicon_url="/api/static/favicon.ico",
+    )
+
+
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()
+
+
+@app.get("/api/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url="/api/static/redoc.standalone.min.js",
+        redoc_favicon_url="/api/static/favicon.ico",
+        with_google_fonts=False,
+    )
 
 
 from datatypes import ValidationError, Permission, Bot
@@ -87,6 +119,7 @@ NO_AUTH_GET_ENDPOINTS_REGEXES = [
     ('GET', re.compile(r'/api/plugins/widgets/[0-9]+')),
     ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/widget[.]js')),
     ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/form[.]js')),
+    ('GET', re.compile(r'/api/static/[a-zA-Z0-9_.-]+[.](js|css|ico)')),
 ]
 
 

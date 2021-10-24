@@ -38,7 +38,7 @@ RUN \
 # - build .py files to .pyc:
 COPY ./backend/ /grafolean/backend/
 RUN \
-    find ./ ! -name '*.py' -type f -exec rm '{}' ';' && \
+    find ./ -not -path "./static/*" -not -name '*.py' -type f -exec rm '{}' ';' && \
     rm -rf tests/ .vscode/ .pytest_cache/ __pycache__/ && \
     python3.8 -m compileall -b ./ && \
     find ./ -name '*.py' -exec rm '{}' ';'
