@@ -10,7 +10,7 @@ from fastapi.responses import JSONResponse, Response
 import psycopg2
 
 from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication
-from .common import noauth, mqtt_publish_changed
+from .common import mqtt_publish_changed
 import validators
 from datatypes import Account, Bot, Permission, Person, AccessDeniedError, User
 from utils import log
@@ -679,7 +679,6 @@ def _is_tor_exit_node(ipv4):
 
 
 @users_api.post('/api/persons/signup/new')
-@noauth
 async def users_person_signup_new(request: Request, background_tasks: BackgroundTasks):
     """
         ---
@@ -731,7 +730,6 @@ async def users_person_signup_new(request: Request, background_tasks: Background
 
 
 @users_api.post('/api/persons/signup/validatepin')
-@noauth
 async def users_person_signup_validatepin(request: Request):
     """
         ---
@@ -768,7 +766,6 @@ async def users_person_signup_validatepin(request: Request):
 
 
 @users_api.post('/api/persons/signup/complete')
-@noauth
 # async def users_person_signup_complete(request: Request, auth: AuthenticatedUser = Depends(validate_user_authentication)):
 async def users_person_signup_complete(request: Request):
     """
@@ -820,7 +817,6 @@ Grafolean Team
 
 
 @users_api.post('/api/persons/forgot')
-@noauth
 async def users_person_forgot_password(request: Request, background_tasks: BackgroundTasks):
     """
         ---
@@ -865,7 +861,6 @@ async def users_person_forgot_password(request: Request, background_tasks: Backg
 
 
 @users_api.post('/api/persons/forgot/reset')
-@noauth
 async def users_person_forgot_password_reset(request: Request):
     """
         ---

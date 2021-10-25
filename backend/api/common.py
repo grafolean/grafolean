@@ -20,15 +20,6 @@ CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').low
 
 
 
-def noauth(func):
-    # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
-    # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
-    # The beauty of this approach is that every endpoint is defended *by default*.
-    # WARNING: any further decorators must carry the attribute "_noauth" over to the wrapper.
-    func._noauth = True
-    return func
-
-
 class SuperuserJWTToken(object):
     """
         SuperuserJWTToken is a workaround which allows us to post information (about changed resources) to MQTT. When we post such information,
