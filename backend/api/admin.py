@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication, api_authorization_header
 from .objschemas import ReqPersonPOST, ResId, ReqAccountsPOST
-from .common import noauth, mqtt_publish_changed
+from .common import mqtt_publish_changed
 from datatypes import Account, Permission, Person, Bot
 from auth import Auth, JWT, AuthFailedException
 import dbutils
@@ -26,7 +26,6 @@ def admin_apidoc_schemas():
 # --------------
 
 @admin_api.post('/api/admin/migratedb')
-@noauth
 def admin_migratedb_post(background_tasks: BackgroundTasks):
     """
         ---
@@ -48,7 +47,6 @@ def admin_migratedb_post(background_tasks: BackgroundTasks):
 
 
 @admin_api.post('/api/admin/first', response_model=ResId, status_code=201)
-@noauth
 def admin_first_post(admin: ReqPersonPOST, background_tasks: BackgroundTasks):
     """
         ---
@@ -97,7 +95,6 @@ def admin_first_post(admin: ReqPersonPOST, background_tasks: BackgroundTasks):
 
 
 @admin_api.post('/api/admin/mqtt-auth-plug/getuser')
-@noauth
 def admin_mqttauth_plug_getuser(authorization_header: str = Depends(lambda authorization_header = Security(api_authorization_header): authorization_header)):
     # def admin_mqttauth_plug(check_type):
     """
@@ -153,7 +150,6 @@ def admin_mqttauth_plug_getuser(authorization_header: str = Depends(lambda autho
 
 
 @admin_api.post('/api/admin/mqtt-auth-plug/superuser')
-@noauth
 def admin_mqttauth_plug_superuser(authorization_header: str = Depends(lambda authorization_header = Security(api_authorization_header): authorization_header)):
     # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
     authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')
@@ -177,7 +173,6 @@ def admin_mqttauth_plug_superuser(authorization_header: str = Depends(lambda aut
 
 
 @admin_api.post('/api/admin/mqtt-auth-plug/aclcheck')
-@noauth
 def admin_mqttauth_plug_aclcheck(acc: int = Form(...), topic: str = Form(...), authorization_header: str = Depends(lambda authorization_header = Security(api_authorization_header): authorization_header)):
     # mqtt-auth-plug urlencodes JWT tokens, so we must decode them here:
     authorization_header = urllib.parse.unquote(authorization_header, encoding='utf-8')

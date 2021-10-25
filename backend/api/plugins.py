@@ -7,7 +7,7 @@ import requests
 
 from .fastapiutils import APIRouter, AuthenticatedUser, validate_user_authentication
 from datatypes import Account, Bot, Permission, Person, WidgetPlugin
-from .common import mqtt_publish_changed, noauth
+from .common import mqtt_publish_changed
 
 
 plugins_api = APIRouter()
@@ -19,7 +19,6 @@ plugins_api = APIRouter()
 
 
 @plugins_api.get('/api/plugins/widgets')
-@noauth
 def plugins_widgets():
     rec = WidgetPlugin.get_list()
     return JSONResponse(content={'list': rec}, status_code=200)
@@ -52,7 +51,6 @@ async def plugins_widgets_post(request: Request):
 
 
 @plugins_api.get('/api/plugins/widgets/{widget_plugin_id}')
-@noauth
 def plugins_widgets_get(widget_plugin_id: int):
     rec = WidgetPlugin.get(widget_plugin_id)
     if not rec:
@@ -84,7 +82,6 @@ def plugins_widget_upgrade_post(widget_plugin_id: int):
 
 
 @plugins_api.get('/api/plugins/widgets/{widget_plugin_id}/widget.js')
-@noauth
 def plugins_widgets_get_widget_js(widget_plugin_id: int, request: Request):
     rec = WidgetPlugin.get(widget_plugin_id)
     if not rec:
@@ -102,7 +99,6 @@ def plugins_widgets_get_widget_js(widget_plugin_id: int, request: Request):
 
 
 @plugins_api.get('/api/plugins/widgets/{widget_plugin_id}/form.js')
-@noauth
 def plugins_widgets_get_form_js(widget_plugin_id: int, request: Request):
     rec = WidgetPlugin.get(widget_plugin_id)
     if not rec:

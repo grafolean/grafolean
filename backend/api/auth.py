@@ -8,7 +8,6 @@ from .fastapiutils import APIRouter, api_authorization_header
 from .objschemas import ReqPersonCredentialsPOST
 from datatypes import Permission, PersonCredentials, Person
 from auth import JWT
-from .common import noauth
 
 
 auth_api = APIRouter()
@@ -20,7 +19,6 @@ auth_api = APIRouter()
 
 
 @auth_api.post('/api/auth/login')
-@noauth
 def auth_login_post(credentials: ReqPersonCredentialsPOST):
     credentials_record = PersonCredentials.forge_from_input(credentials.dict())
     user_id = credentials_record.check_user_login()
@@ -37,7 +35,6 @@ def auth_login_post(credentials: ReqPersonCredentialsPOST):
 
 
 @auth_api.post('/api/auth/refresh')
-@noauth
 def auth_refresh_post(authorization_header: str = Depends(lambda authorization_header = Security(api_authorization_header): authorization_header)):
     try:
         # authorization_header = flask.request.headers.get('Authorization')

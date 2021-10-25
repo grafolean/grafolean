@@ -11,7 +11,7 @@ from .fastapiutils import APIRouter
 from datatypes import Auth
 import dbutils
 from utils import log
-from .common import noauth, CORS_DOMAINS, MQTT_WS_HOSTNAME, MQTT_WS_PORT
+from .common import CORS_DOMAINS, MQTT_WS_HOSTNAME, MQTT_WS_PORT
 
 
 status_api = APIRouter()
@@ -24,7 +24,6 @@ status_api = APIRouter()
 
 # Useful for determining status of backend (is it available, is the first user initialized,...)
 @status_api.get('/api/status/info')
-@noauth
 def status_info_get():
     db_migration_needed = dbutils.is_migration_needed()
     result = {
@@ -41,7 +40,6 @@ def status_info_get():
 
 
 # @status_api.get('/api/status/sitemap')
-# @noauth
 # def status_sitemap_get():
 #     ignored_methods = set(['HEAD', 'OPTIONS'])
 #     rules = defaultdict(set)
@@ -52,7 +50,6 @@ def status_info_get():
 
 
 @status_api.post('/api/status/cspreport')
-@noauth
 async def status_cspreport(request: Request):
     log.error("CSP report received: {}".format(await request.body()))
     return Response(status_code=204)
