@@ -34,7 +34,7 @@ app = FastAPI(
         'url': 'https://github.com/grafolean/grafolean/blob/master/LICENSE.md',
     },
 )
-app.mount("/api/static", StaticFiles(directory="static"), name="static")
+app.mount("/api/static", StaticFiles(directory=os.path.dirname(os.path.abspath(__file__)) + "/static"), name="static")
 
 
 try:
