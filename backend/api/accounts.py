@@ -901,7 +901,7 @@ async def dashboards_crud_post(account_id: int, request: Request, auth: Authenti
     try:
         dashboard.insert()
     except psycopg2.IntegrityError:
-        return "Dashboard with this slug already exists", 400
+        raise HTTPException(status_code=400, detail="Dashboard with this slug already exists")
     mqtt_publish_changed(['accounts/{}/dashboards'.format(account_id)])
     return JSONResponse(content={'slug': dashboard.slug}, status_code=201)
 

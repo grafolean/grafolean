@@ -139,14 +139,14 @@ def admin_mqttauth_plug_getuser(authorization_header: str = Depends(lambda autho
         received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=JWT.TOKEN_CAN_BE_REFRESHED_FOR)
         # jwt token was successfully decoded, so we can allow for the fact that this is a valid user - we'll still see about
         # access rights though (might be superuser, in which case everything goes, or it might be checked via aclcheck)
-        return "", 200
+        return Response(status_code=200, content="")
 
     except AuthFailedException as ex:
         log.info(f"Authentication failed: {str(ex)}")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
     except:
         log.exception("Exception while checking access rights")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
 
 
 @admin_api.post('/api/admin/mqtt-auth-plug/superuser')
@@ -159,17 +159,17 @@ def admin_mqttauth_plug_superuser(authorization_header: str = Depends(lambda aut
         # is this our own attempt to publish something to MQTT, and the mosquitto auth plugin is asking us to authenticate ourselves?
         is_superuser = bool(received_jwt.data.get('superuser', False))
         if is_superuser:
-            return "", 200
+            return Response(status_code=200, content="")
 
         log.info("Access denied (not a superuser)")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
 
     except AuthFailedException as ex:
         log.info(f"Authentication failed: {str(ex)}")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
     except:
         log.exception("Exception while checking access rights")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
 
 
 @admin_api.post('/api/admin/mqtt-auth-plug/aclcheck')
@@ -185,7 +185,7 @@ def admin_mqttauth_plug_aclcheck(acc: int = Form(...), topic: str = Form(...), a
         # superusers can do whatever they want to:
         is_superuser = bool(received_jwt.data.get('superuser', False))
         if is_superuser:
-            return "", 200
+            return Response(status_code=200, content="")
 
 
         # From https://github.com/iegomez/mosquitto-go-auth#acl-access-values:
@@ -215,12 +215,12 @@ def admin_mqttauth_plug_aclcheck(acc: int = Form(...), topic: str = Form(...), a
         if requested_access not in [1, 4] :  # NONE = 0, READ = 1, WRITE = 2, SUBSCRIBE = 4
             instead_got = {0: "0/NONE", 2: "2/WRITE"}.get(requested_access, requested_access)
             log.info(f"Access denied (only 1/READ or 4/SUBSCRIBE allowed, requested access: {instead_got})")
-            return "Access denied", 401
+            raise HTTPException(status_code=401, detail="Access denied")
 
         # only 'changed/#' can actually be read by normal users:
         if topic[:8] != 'changed/':
             log.info("Access denied (wrong topic)")
-            return "Access denied", 401
+            raise HTTPException(status_code=401, detail="Access denied")
         resource = topic[8:]  # remove 'changed/' from the start of the topic to get the resource
         resource = resource.rstrip('/')
 
@@ -232,17 +232,17 @@ def admin_mqttauth_plug_aclcheck(acc: int = Form(...), topic: str = Form(...), a
             method='GET',  # users can only request read access (apart from backend, which is superuser anyway)
         )
         if is_allowed:
-            return "", 200
+            return Response(status_code=200, content="")
 
         log.info("Access denied (permissions check failed for user '{}', url '{}', method 'GET')".format(user_id, resource))
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
 
     except AuthFailedException as ex:
         log.info(f"Authentication failed: {str(ex)}")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
     except:
         log.exception("Exception while checking access rights")
-        return "Access denied", 401
+        raise HTTPException(status_code=401, detail="Access denied")
 
 
 @admin_api.get('/api/admin/accounts')
