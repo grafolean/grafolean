@@ -81,14 +81,6 @@ def app_client():
     _delete_all_from_db()
     migrate_if_needed()
     app.testing = True
-    # app.config.update(
-    #     MAIL_SERVER = 'smtp.grafolean.com',
-    #     MAIL_PORT = 587,
-    #     MAIL_USE_TLS = True,
-    #     MAIL_USERNAME = 'noreply@grafolean.com',
-    #     MAIL_PASSWORD = '',
-    #     TESTING = True,
-    # )
     return TestClient(app)
 
 
@@ -331,8 +323,7 @@ def smtp_messages():
             messages.put((mailfrom, rcpttos, data.decode('utf-8'),))
     smtp_server = _SMTPServer(('127.0.0.1', 22587,), None)
 
-    loop_thread = threading.Thread(target=asyncore.loop)
-    loop_thread.daemon = True
+    loop_thread = threading.Thread(target=asyncore.loop, kwargs={'timeout':1, 'use_poll': True})
     loop_thread.start()
 
     # before using it, double check that the testing SMTP daemon is started:
@@ -346,3 +337,6 @@ def smtp_messages():
     assert _body == "\ntest body"
 
     yield messages
+
+    smtp_server.close()
+    loop_thread.join()
