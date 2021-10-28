@@ -124,4 +124,4 @@ def plugins_widgets_delete(widget_plugin_id: int):
     mqtt_publish_changed([
         'plugins/widgets',
     ])
-    return "", 204
+    return Response(status_code=204)
