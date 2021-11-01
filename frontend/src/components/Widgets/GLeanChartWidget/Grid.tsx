@@ -1,6 +1,15 @@
 import React from 'react';
 
-export default class Grid extends React.Component {
+import { CSSColor } from './utils';
+
+interface GridProps {
+  yTicks: number[];
+  v2y: Function;
+  width: number;
+  color: CSSColor;
+}
+
+export default class Grid extends React.Component<GridProps> {
   render() {
     const { yTicks, v2y, width, color } = this.props;
     return (

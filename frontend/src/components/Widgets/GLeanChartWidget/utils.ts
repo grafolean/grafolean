@@ -1,5 +1,7 @@
 export const MAX_AGGR_LEVEL = 6;
 
+export type CSSColor = string;
+
 const GOOGLE_CHART_COLOR_LIST = [
   '#3366CC',
   '#DC3912',
