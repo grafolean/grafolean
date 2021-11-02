@@ -7,8 +7,9 @@ import os
 import requests
 
 
+logging_level_str = os.environ.get('LOGGING_LEVEL', 'INFO').upper()
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S', level=logging.DEBUG)
+                    datefmt='%Y-%m-%d %H:%M:%S', level=logging_level_str)
 logging.addLevelName(logging.DEBUG, color("DBG", 7))
 logging.addLevelName(logging.INFO, "INF")
 logging.addLevelName(logging.WARNING, color('WRN', fg='red'))
