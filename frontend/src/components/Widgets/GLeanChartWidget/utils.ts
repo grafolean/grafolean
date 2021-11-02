@@ -2,6 +2,18 @@ export const MAX_AGGR_LEVEL = 6;
 
 export type CSSColor = string;
 
+interface TimeInterval {
+  fromTs: number;
+  toTs: number;
+}
+interface DataPoint {
+  t: number;
+  v: number;
+}
+interface ChartSeriesData {
+  [key: string]: DataPoint[];
+}
+
 const GOOGLE_CHART_COLOR_LIST = [
   '#3366CC',
   '#DC3912',
@@ -24,7 +36,7 @@ const GOOGLE_CHART_COLOR_LIST = [
   '#5574A6',
   '#3B3EAC',
 ];
-export const generateSerieColor = (path, index) => {
+export const generateSerieColor = (path: string, index: number): CSSColor => {
   // if index is not defined, use the random generator - which doesn't work quite as well as curated lists
   // if (index === null) {
   //   var rnd = getHash(path);
@@ -35,12 +47,17 @@ export const generateSerieColor = (path, index) => {
 
 const GRID_COLORS_LIGHT_MODE = ['#f0f0f0', '#e7e7e7'];
 const GRID_COLORS_DARK_MODE = ['#343434', '#454545'];
-export const generateGridColor = (index, isDarkMode) => {
+export const generateGridColor = (index: number, isDarkMode: boolean): CSSColor => {
   const gridColors = isDarkMode ? GRID_COLORS_DARK_MODE : GRID_COLORS_LIGHT_MODE;
   return gridColors[index % gridColors.length];
 };
 
-export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLevel = -1) => {
+export const getSuggestedAggrLevel = (
+  fromTs: number,
+  toTs: number,
+  maxPointsAllowed: number,
+  minAggrLevel: number = -1,
+): number => {
   // returns -1 for no aggregation, aggr. level otherwise
   let nHours = Math.ceil((toTs - fromTs) / 3600.0);
   for (let l = minAggrLevel; l < MAX_AGGR_LEVEL; l++) {
@@ -51,10 +68,13 @@ export const getSuggestedAggrLevel = (fromTs, toTs, maxPointsAllowed, minAggrLev
   return MAX_AGGR_LEVEL;
 };
 
-export const getMissingIntervals = (existingIntervals, wantedInterval) => {
+export const getMissingIntervals = (
+  existingIntervals: TimeInterval[],
+  wantedInterval: TimeInterval,
+): TimeInterval[] => {
   let wantedIntervals = [wantedInterval];
   for (let existingInterval of existingIntervals) {
-    wantedIntervals = wantedIntervals.reduce((newWantedIntervals, wantedInterval) => {
+    wantedIntervals = wantedIntervals.reduce((newWantedIntervals: TimeInterval[], wantedInterval) => {
       // punch the holes into wantedInterval with each existingInterval:
       if (existingInterval.toTs <= wantedInterval.fromTs || existingInterval.fromTs >= wantedInterval.toTs) {
         newWantedIntervals.push(wantedInterval);
@@ -79,14 +99,19 @@ export const getMissingIntervals = (existingIntervals, wantedInterval) => {
   return wantedIntervals;
 };
 
-export const aggregateIntervalOnTheFly = (fromTs, toTs, csData, useAggrLevel) => {
+export const aggregateIntervalOnTheFly = (
+  fromTs: number,
+  toTs: number,
+  csData: ChartSeriesData,
+  useAggrLevel: number,
+) => {
   const interval = Math.round(3600 * 3 ** useAggrLevel);
   const fromTsAligned = Math.floor(fromTs / interval) * interval;
   const toTsAligned = Math.ceil(toTs / interval) * interval;
 
   // initialize result array:
   const numberOfBuckets = Math.round((toTsAligned - fromTsAligned) / interval);
-  let result = {};
+  let result: any = {};
   for (let chartSerieId in csData) {
     result[chartSerieId] = new Array(numberOfBuckets);
     for (let i = 0; i < numberOfBuckets; i++) {
