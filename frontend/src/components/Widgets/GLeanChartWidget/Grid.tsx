@@ -4,13 +4,13 @@ import { CSSColor } from './utils';
 
 interface GridProps {
   yTicks: number[];
-  v2y: Function;
+  v2y: (v: number) => number;
   width: number;
   color: CSSColor;
 }
 
 export default class Grid extends React.Component<GridProps> {
-  render() {
+  render(): React.ReactNode {
     const { yTicks, v2y, width, color } = this.props;
     return (
       <g>

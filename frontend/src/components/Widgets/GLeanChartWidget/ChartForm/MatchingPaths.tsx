@@ -33,7 +33,7 @@ interface RouterProps {
 
 interface MatchingPathsProps extends RouteComponentProps<RouterProps> {
   pathFilter: string;
-  onClick: () => {};
+  onClick: React.MouseEventHandler<HTMLDivElement> | undefined;
   pathRenamer: string;
   accountEntities: AccountEntity[];
 }
@@ -235,7 +235,7 @@ class MatchingPaths extends React.Component<MatchingPathsProps, any> {
 
   static substituteSharedValues(path: string, sharedValues: Record<string, string>) {
     let result = path;
-    for (let k in sharedValues) {
+    for (const k in sharedValues) {
       result = result.replace(new RegExp(`[$]${k}`, 'g'), String(sharedValues[k]));
     }
     return result;

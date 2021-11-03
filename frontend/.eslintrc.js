@@ -11,9 +11,16 @@ module.exports = {
   rules: {
     'no-use-before-define': 'off',
     '@typescript-eslint/no-use-before-define': ['error'],
+    '@typescript-eslint/no-inferrable-types': 'off', // we like being explicit
   },
   overrides: [
-    // we don't want to deal with come classes of errors on some of the files, so we turn them off:
+    // selective overrides depending on file types:
+    {
+      files: ['*.ts', '*.tsx'],
+      rules: {
+        '@typescript-eslint/no-explicit-any': 'off', // temporary: until we have everything typed, we sometimes use `any` as a short-term way out
+      },
+    },
     {
       files: ['*.js'],
       rules: {

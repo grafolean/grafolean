@@ -59,7 +59,7 @@ export const getSuggestedAggrLevel = (
   minAggrLevel: number = -1,
 ): number => {
   // returns -1 for no aggregation, aggr. level otherwise
-  let nHours = Math.ceil((toTs - fromTs) / 3600.0);
+  const nHours = Math.ceil((toTs - fromTs) / 3600.0);
   for (let l = minAggrLevel; l < MAX_AGGR_LEVEL; l++) {
     if (maxPointsAllowed >= nHours / 3 ** l) {
       return l;
@@ -73,7 +73,7 @@ export const getMissingIntervals = (
   wantedInterval: TimeInterval,
 ): TimeInterval[] => {
   let wantedIntervals = [wantedInterval];
-  for (let existingInterval of existingIntervals) {
+  for (const existingInterval of existingIntervals) {
     wantedIntervals = wantedIntervals.reduce((newWantedIntervals: TimeInterval[], wantedInterval) => {
       // punch the holes into wantedInterval with each existingInterval:
       if (existingInterval.toTs <= wantedInterval.fromTs || existingInterval.fromTs >= wantedInterval.toTs) {
@@ -104,15 +104,15 @@ export const aggregateIntervalOnTheFly = (
   toTs: number,
   csData: ChartSeriesData,
   useAggrLevel: number,
-) => {
+): any => {
   const interval = Math.round(3600 * 3 ** useAggrLevel);
   const fromTsAligned = Math.floor(fromTs / interval) * interval;
   const toTsAligned = Math.ceil(toTs / interval) * interval;
 
   // initialize result array:
   const numberOfBuckets = Math.round((toTsAligned - fromTsAligned) / interval);
-  let result: any = {};
-  for (let chartSerieId in csData) {
+  const result: any = {};
+  for (const chartSerieId in csData) {
     result[chartSerieId] = new Array(numberOfBuckets);
     for (let i = 0; i < numberOfBuckets; i++) {
       result[chartSerieId][i] = {
@@ -125,8 +125,8 @@ export const aggregateIntervalOnTheFly = (
   }
 
   // aggregate each of the values with correct bucket:
-  for (let chartSerieId in csData) {
-    for (let x of csData[chartSerieId]) {
+  for (const chartSerieId in csData) {
+    for (const x of csData[chartSerieId]) {
       const bucketNo = Math.floor((x.t - fromTsAligned) / interval);
       const r = result[chartSerieId][bucketNo];
       result[chartSerieId][bucketNo] = {
@@ -139,7 +139,7 @@ export const aggregateIntervalOnTheFly = (
   }
 
   // and now set the times of the buckets too, and forget count, and calculate average value:
-  for (let chartSerieId in csData) {
+  for (const chartSerieId in csData) {
     for (let i = 0; i < numberOfBuckets; i++) {
       if (result[chartSerieId][i].count === 0) {
         result[chartSerieId][i] = {

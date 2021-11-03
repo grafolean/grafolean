@@ -25,6 +25,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "lint": "eslint --max-warnings 0 --ext .js,.ts,.tsx src/ .storybook/",
+    "tslint": "eslint --max-warnings 0 --ext .ts,.tsx src/",
     "prettier": "prettier --write \"src/**/*.{js,ts,tsx}\" \".storybook/**/*.{js,ts,tsx}\"",
     "test": "react-scripts test --env=jsdom",
     "storybook": "start-storybook -p 9001 --no-version-updates -c .storybook"
@@ -44,7 +45,7 @@
   ],
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.7.2",
-    "@storybook/react": "^5.3.21",
+    "@storybook/react": "^6.3.12",
     "@types/node": "^16.7.1",
     "@types/qs": "^6.9.7",
     "@types/react": "^17.0.19",
@@ -53,6 +54,7 @@
     "@types/react-router-dom": "^5.1.8",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
+    "babel-loader": "8.1.0",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "eslint": "^7.32.0",
