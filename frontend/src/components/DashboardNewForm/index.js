@@ -247,17 +247,7 @@ class DashboardNewForm extends React.Component {
           onSubmit={this.handleSubmit}
           isInitialValid={false}
         >
-          {({
-            values,
-            errors,
-            touched,
-            handleChange,
-            setFieldValue,
-            handleBlur,
-            handleSubmit,
-            isSubmitting,
-            isValid,
-          }) => (
+          {({ values, errors, handleChange, handleBlur, handleSubmit, isSubmitting, isValid }) => (
             <form onSubmit={handleSubmit}>
               <div className="field">
                 <label>Name:</label>

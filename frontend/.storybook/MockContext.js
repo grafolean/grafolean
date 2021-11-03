@@ -9,6 +9,6 @@ const MockContext = React.createContext({
     console.log(props);
     props.onError(`Don't know how to mock resource fetching: ${props.resource}`);
   },
-  onUnmount: props => {},
+  onUnmount: () => {},
 });
 export default MockContext;
