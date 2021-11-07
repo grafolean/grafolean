@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
+import { ChartSerie } from './ChartView';
 
 import { generateSerieColor } from './utils';
 
@@ -10,37 +11,57 @@ export const CHART_TYPE_POINT = 'point';
 export const KNOWN_CHART_TYPES = [CHART_TYPE_LINE, CHART_TYPE_POINT, CHART_TYPE_LINEFILL];
 export const KNOWN_CHART_TYPES_NAMES = ['line chart', 'point chart', 'filled line chart'];
 
-class LineChartSingleCanvas extends React.PureComponent {
-  constructor(props) {
-    super(props);
-    this.canvasRef = React.createRef();
-  }
+interface LineChartSingleCanvasProps {
+  fromTs: number;
+  toTs: number;
+  scale: number;
+  height: number;
+  chartType: ChartType;
+  drawnChartSeries: ChartSerie[];
+  intervals: any;
+  yAxesProperties: any;
+  isAggr: boolean;
+}
 
-  componentDidMount() {
-    this.canvasContext = this.canvasRef.current.getContext('2d');
+class LineChartSingleCanvas extends React.PureComponent<LineChartSingleCanvasProps> {
+  canvasRef = React.createRef<HTMLCanvasElement>();
+  canvasContext: CanvasRenderingContext2D | null = null;
+
+  componentDidMount(): void {
     this.drawOnCanvas();
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(): void {
     this.drawOnCanvas();
   }
 
-  drawOnCanvas() {
+  drawOnCanvas(): void {
+    if (!this.canvasContext) {
+      if (!this.canvasRef || !this.canvasRef.current) {
+        return;
+      }
+      this.canvasContext = this.canvasRef.current.getContext('2d');
+    }
+    if (!this.canvasContext || !this.canvasRef || !this.canvasRef.current) {
+      return;
+    }
+
     const { chartType = CHART_TYPE_LINE } = this.props;
     const ctx = this.canvasContext;
     const { fromTs, scale } = this.props;
-    const ts2x = ts => (ts - fromTs) * scale;
-    ctx.clearRect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
+    const ts2x = (ts: number): number => (ts - fromTs) * scale;
+    const { width, height } = this.canvasRef.current;
+    ctx.clearRect(0, 0, width, height);
     // debugging:
     // ctx.strokeStyle = `#${Math.floor(Math.random() * 0x1000000).toString(16).padStart(6, 0)}`; // random color
-    // ctx.rect(0, 0, this.canvasRef.current.width, this.canvasRef.current.height);
+    // ctx.rect(0, 0, width, height);
     // ctx.stroke();
     this.props.drawnChartSeries.forEach(cs => {
       const serieColor = generateSerieColor(cs.path, cs.index);
       ctx.strokeStyle = serieColor;
       ctx.fillStyle = serieColor;
 
-      this.props.intervals.forEach(interval => {
+      this.props.intervals.forEach((interval: any) => {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           return;
         }
@@ -51,7 +72,7 @@ class LineChartSingleCanvas extends React.PureComponent {
           return;
         }
         const v2y = this.props.yAxesProperties[cs.unit].derived.v2y;
-        const pathPoints = interval.csData[cs.chartSerieId].map(p => ({
+        const pathPoints = interval.csData[cs.chartSerieId].map((p: any) => ({
           x: ts2x(p.t),
           y: v2y(p.v),
           minY: v2y(p.minv),
@@ -61,7 +82,7 @@ class LineChartSingleCanvas extends React.PureComponent {
         // single point behaves like it's a point chart:
         if (chartType === CHART_TYPE_POINT || pathPoints.length === 1) {
           ctx.lineWidth = 0;
-          pathPoints.forEach(p => {
+          pathPoints.forEach((p: any) => {
             ctx.fillRect(p.x, p.y, 2, 2);
           });
         } else {
@@ -96,8 +117,8 @@ class LineChartSingleCanvas extends React.PureComponent {
             for (let i = 1; i < pathPoints.length; i++) {
               ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
             }
-            ctx.lineTo(lastPathPoint.x, this.canvasRef.current.height);
-            ctx.lineTo(pathPoints[0].x, this.canvasRef.current.height);
+            ctx.lineTo(lastPathPoint.x, height);
+            ctx.lineTo(pathPoints[0].x, height);
             ctx.fill();
             ctx.globalAlpha = 1.0;
           }
@@ -106,7 +127,7 @@ class LineChartSingleCanvas extends React.PureComponent {
     });
   }
 
-  render() {
+  render(): ReactNode {
     const { fromTs, toTs, scale, height } = this.props;
     const width = Math.round((toTs - fromTs) * scale);
     return (

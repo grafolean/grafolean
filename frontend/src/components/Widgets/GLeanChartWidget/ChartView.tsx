@@ -22,6 +22,7 @@ export interface ChartSerie {
   };
   expression: string;
   unit: string;
+  index: number;
 }
 
 interface ChartViewProps {
@@ -41,11 +42,18 @@ interface ChartViewProps {
   fetchedIntervalsData: any;
   drawnChartSeries: ChartSerie[];
   yAxesProperties: any;
-  setSharedValue: (key: string, newValue: string) => void;
+  setSharedValue: (key: string, newValue: number | string | null) => void;
   fetching: boolean;
   errorMsg: string;
   isDarkMode: boolean;
   chartType: ChartType;
+  onMaxYChange: (unit: string, y: number | null) => void;
+  onMinYChange: (unit: string, y: number | null) => void;
+}
+
+interface ChartViewState {
+  closestPoint: ClosestPoint | null;
+  overrideClosestPoint: ClosestPoint | null;
 }
 
 interface ClosestPoint {
@@ -57,7 +65,7 @@ interface ClosestPoint {
   dist: number;
 }
 
-export default class ChartView extends React.Component<ChartViewProps> {
+export default class ChartView extends React.Component<ChartViewProps, ChartViewState> {
   static defaultProps = {
     width: 500,
     height: 300,
@@ -76,7 +84,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
     yAxesProperties: {},
     setSharedValue: (key: string, newValue: string): void => {},
   };
-  state = {
+  public readonly state: Readonly<ChartViewState> = {
     closestPoint: null,
     overrideClosestPoint: null, // when tooltip is open, this is set
   };
@@ -94,7 +102,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
   x2t = (x: number): number => this.props.fromTs + x / this.props.scale;
   t2x = (t: number): number => (t - this.props.fromTs) * this.props.scale;
 
-  _getClosestPointFromEvent = (ev: React.MouseEvent): ClosestPoint => {
+  _getClosestPointFromEvent = (ev: React.MouseEvent): ClosestPoint | null => {
     // this will get called from RePinchy when there is a mousemove event:
     const rect = ev.currentTarget.getBoundingClientRect();
     const ts = this.x2t(ev.clientX - rect.left);
@@ -103,7 +111,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
     return newClosest;
   };
 
-  _hasClosestPointChanged = (newClosest: ClosestPoint): boolean => {
+  _hasClosestPointChanged = (newClosest: ClosestPoint | null): boolean => {
     // if both are null, no change:
     if (this.oldClosest === null && newClosest === null) {
       return false;
@@ -317,7 +325,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
                 chartType={this.props.chartType}
               />
 
-              {closest && (
+              {closest !== null && (
                 <TooltipIndicator
                   {...closest}
                   x={this.dt2dx(closest.point.t - this.props.fromTs)}
@@ -367,7 +375,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
                   shadowWidth={shadowWidth}
                   topLimit={maxY}
                   bottomLimit={minY - 10}
-                  onChangeEnd={y => this.props.onMaxYChange(unit, y)}
+                  onChangeEnd={(y: number | null) => this.props.onMaxYChange(unit, y)}
                 />
                 <YAxisMinMaxAdjuster
                   startY={minY}
@@ -375,7 +383,7 @@ export default class ChartView extends React.Component<ChartViewProps> {
                   shadowWidth={shadowWidth}
                   topLimit={maxY + 10}
                   bottomLimit={minY}
-                  onChangeEnd={y => this.props.onMinYChange(unit, y)}
+                  onChangeEnd={(y: number | null) => this.props.onMinYChange(unit, y)}
                 />
               </g>
             );
