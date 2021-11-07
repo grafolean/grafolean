@@ -2,6 +2,8 @@ import React from 'react';
 
 import { generateSerieColor } from './utils';
 
+export type ChartType = 'line' | 'linefill' | 'point';
+
 export const CHART_TYPE_LINE = 'line';
 export const CHART_TYPE_LINEFILL = 'linefill';
 export const CHART_TYPE_POINT = 'point';

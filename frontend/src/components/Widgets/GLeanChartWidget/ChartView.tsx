@@ -10,8 +10,54 @@ import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
 import ChartTooltipPopup from './ChartTooltipPopup';
 import YAxisMinMaxAdjuster from './YAxisMinMaxAdjuster';
+import { ChartType } from './LineChartSingleCanvas';
 
-export default class ChartView extends React.Component {
+export interface ChartSerie {
+  chartSerieId: string;
+  path: string;
+  serieNameParts: {
+    path: string;
+    filter: string;
+    renaming: string;
+  };
+  expression: string;
+  unit: string;
+}
+
+interface ChartViewProps {
+  width: number;
+  height: number;
+  fromTs: number;
+  toTs: number;
+  yAxisWidth: number;
+  xAxisHeight: number;
+  nDecimals: number;
+  scale: number;
+  zoomInProgress: boolean;
+  isAggr: boolean;
+  aggrLevel: number;
+  registerMouseMoveHandler: (handler: React.MouseEventHandler) => void;
+  registerClickHandler: (handler: React.MouseEventHandler) => void;
+  fetchedIntervalsData: any;
+  drawnChartSeries: ChartSerie[];
+  yAxesProperties: any;
+  setSharedValue: (key: string, newValue: string) => void;
+  fetching: boolean;
+  errorMsg: string;
+  isDarkMode: boolean;
+  chartType: ChartType;
+}
+
+interface ClosestPoint {
+  cs: ChartSerie;
+  point: {
+    v: number;
+    t: number;
+  };
+  dist: number;
+}
+
+export default class ChartView extends React.Component<ChartViewProps> {
   static defaultProps = {
     width: 500,
     height: 300,
@@ -23,41 +69,41 @@ export default class ChartView extends React.Component {
     scale: 1,
     zoomInProgress: false,
     isAggr: false,
-    registerMouseMoveHandler: handler => {},
-    registerClickHandler: handler => {},
+    registerMouseMoveHandler: (handler: React.MouseEventHandler): void => {},
+    registerClickHandler: (handler: React.MouseEventHandler): void => {},
     fetchedIntervalsData: [],
     drawnChartSeries: [],
     yAxesProperties: {},
-    setSharedValue: () => {},
+    setSharedValue: (key: string, newValue: string): void => {},
   };
   state = {
     closestPoint: null,
     overrideClosestPoint: null, // when tooltip is open, this is set
   };
-  oldClosest = null;
+  oldClosest: ClosestPoint | null = null;
 
-  componentDidMount() {
+  componentDidMount(): void {
     // we want to receive mousemove events from RePinchy:
     this.props.registerMouseMoveHandler(this.handleMouseMove);
     this.props.registerClickHandler(this.handleClick);
   }
 
   // functions for converting x <-> t:
-  dx2dt = dx => dx / this.props.scale;
-  dt2dx = dt => dt * this.props.scale;
-  x2t = x => this.props.fromTs + x / this.props.scale;
-  t2x = t => (t - this.props.fromTs) * this.props.scale;
+  dx2dt = (dx: number): number => dx / this.props.scale;
+  dt2dx = (dt: number): number => dt * this.props.scale;
+  x2t = (x: number): number => this.props.fromTs + x / this.props.scale;
+  t2x = (t: number): number => (t - this.props.fromTs) * this.props.scale;
 
-  _getClosestPointFromEvent = ev => {
+  _getClosestPointFromEvent = (ev: React.MouseEvent): ClosestPoint => {
     // this will get called from RePinchy when there is a mousemove event:
-    let rect = ev.currentTarget.getBoundingClientRect();
+    const rect = ev.currentTarget.getBoundingClientRect();
     const ts = this.x2t(ev.clientX - rect.left);
     const y = ev.clientY - rect.top;
     const newClosest = this.getClosestValue(ts, y);
     return newClosest;
   };
 
-  _hasClosestPointChanged = newClosest => {
+  _hasClosestPointChanged = (newClosest: ClosestPoint): boolean => {
     // if both are null, no change:
     if (this.oldClosest === null && newClosest === null) {
       return false;
@@ -78,7 +124,7 @@ export default class ChartView extends React.Component {
     }
   };
 
-  handleClick = ev => {
+  handleClick = (ev: React.MouseEvent): void => {
     const newClosest = this._getClosestPointFromEvent(ev);
     this.oldClosest = newClosest;
     this.setState({
@@ -88,7 +134,7 @@ export default class ChartView extends React.Component {
     this.props.setSharedValue('selectedTime', newClosest === null ? null : newClosest.point.t);
   };
 
-  handleMouseMove = ev => {
+  handleMouseMove = (ev: React.MouseEvent): void => {
     const newClosest = this._getClosestPointFromEvent(ev);
     if (!this._hasClosestPointChanged(newClosest)) {
       return;
@@ -100,7 +146,7 @@ export default class ChartView extends React.Component {
     });
   };
 
-  static getYTicks(minYValue, maxYValue) {
+  static getYTicks(minYValue: number | null, maxYValue: number | null): string[] | null {
     // returns an array of strings - values of Y ticks
     if (minYValue === null || maxYValue === null) {
       return null;
@@ -112,7 +158,7 @@ export default class ChartView extends React.Component {
     // interval:
     const diffValue = maxYValue - minYValue;
     if (diffValue === 0) {
-      return [0, 1];
+      return ['0', '1'];
     }
     const power10 = Math.floor(Math.log10(diffValue)) - 1;
     const normalizedDiff = Math.floor(diffValue / Math.pow(10, power10));
@@ -127,7 +173,7 @@ export default class ChartView extends React.Component {
 
     const interval = normalizedInterval * Math.pow(10, power10);
     const minValueLimit = Math.floor(minYValue / interval) * interval;
-    let ret = [];
+    const ret: string[] = [];
     let i;
     const numberOfDecimals = Math.max(0, -power10 - (normalizedInterval === 10 ? 1 : 0));
     for (i = minValueLimit; i < maxYValue; i += interval) {
@@ -137,18 +183,18 @@ export default class ChartView extends React.Component {
     return ret;
   }
 
-  getClosestValue(ts, y) {
+  getClosestValue(ts: number, y: number): ClosestPoint | null {
     const MAX_DIST_PX = 10;
     const maxDistTs = this.dx2dt(MAX_DIST_PX);
 
     // brute-force search:
     const applicableIntervals = this.props.fetchedIntervalsData.filter(
-      fid => !(fid.toTs < ts - maxDistTs || fid.fromTs > ts + maxDistTs),
+      (fid: any) => !(fid.toTs < ts - maxDistTs || fid.fromTs > ts + maxDistTs),
     ); // only intervals which are close enough to our ts
 
     let closest = null;
-    for (let interval of applicableIntervals) {
-      for (let cs of this.props.drawnChartSeries) {
+    for (const interval of applicableIntervals) {
+      for (const cs of this.props.drawnChartSeries) {
         if (!interval.csData.hasOwnProperty(cs.chartSerieId)) {
           // do we have fetched data for this cs?
           continue;
@@ -159,7 +205,7 @@ export default class ChartView extends React.Component {
         const helpers = this.props.yAxesProperties[cs.unit].derived;
         const v = helpers.y2v(y);
         const maxDistV = helpers.dy2dv(MAX_DIST_PX);
-        for (let point of interval.csData[cs.chartSerieId]) {
+        for (const point of interval.csData[cs.chartSerieId]) {
           const distV = Math.abs(point.v - v);
           const distTs = Math.abs(point.t - ts);
           if (distTs > maxDistTs || distV > maxDistV) continue;
@@ -170,9 +216,9 @@ export default class ChartView extends React.Component {
 
           if (closest === null || dist < closest.dist) {
             closest = {
-              cs,
-              point,
-              dist,
+              cs: cs,
+              point: point,
+              dist: dist,
             };
           }
         }
@@ -181,7 +227,7 @@ export default class ChartView extends React.Component {
     return closest;
   }
 
-  render() {
+  render(): React.ReactNode {
     const { fetching, errorMsg, isDarkMode } = this.props;
     // with scale == 1, every second is one pixel exactly: (1 min == 60px, 1 h == 3600px, 1 day == 24*3600px,...)
     const xAxisTop = this.props.height - this.props.xAxisHeight;
