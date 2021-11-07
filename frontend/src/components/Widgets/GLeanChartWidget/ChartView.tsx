@@ -4,7 +4,7 @@ import { generateGridColor } from './utils';
 
 import TimestampXAxis from './TimestampXAxis';
 import YAxis from './YAxis';
-import LineChartCanvases from './LineChartCanvas';
+import LineChartCanvases from './LineChartCanvases';
 import Grid from './Grid';
 import Status from './Status';
 import TooltipIndicator from './TooltipIndicator';
@@ -319,7 +319,6 @@ export default class ChartView extends React.Component<ChartViewProps, ChartView
                 intervals={this.props.fetchedIntervalsData}
                 scale={this.props.scale}
                 isAggr={this.props.isAggr}
-                aggrLevel={this.props.aggrLevel}
                 drawnChartSeries={this.props.drawnChartSeries}
                 yAxesProperties={this.props.yAxesProperties}
                 chartType={this.props.chartType}

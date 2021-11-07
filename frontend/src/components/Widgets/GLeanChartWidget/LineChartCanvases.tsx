@@ -1,18 +1,20 @@
 import React from 'react';
 
-import LineChartSingleCanvas from './LineChartSingleCanvas';
+import LineChartSingleCanvas, { LineChartSingleCanvasProps } from './LineChartSingleCanvas';
 
-export default class LineChartCanvases extends React.Component {
+type LineChartCanvasesProps = LineChartSingleCanvasProps;
+
+export default class LineChartCanvases extends React.Component<LineChartCanvasesProps> {
   CANVAS_WIDTH_PX = 1000;
   N_ADDITIONAL = 0; // n additional canvases to each of the sides
 
-  getCanvasIntervals() {
+  getCanvasIntervals(): { fromTsCanvas: number; toTsCanvas: number }[] {
     // each canvas covers a smaller part of the whole area, and we draw each one of them with a separate transform:
     const { fromTs, toTs, scale } = this.props;
     // the width of each canvas influences the timespan we draw on each of the canvases:
     const diffTs = Math.round(this.CANVAS_WIDTH_PX / scale);
 
-    let result = [];
+    const result = [];
     for (
       let i = Math.floor(fromTs / diffTs) - this.N_ADDITIONAL;
       i < Math.ceil(toTs / diffTs) + this.N_ADDITIONAL;
@@ -25,7 +27,7 @@ export default class LineChartCanvases extends React.Component {
     return result;
   }
 
-  render() {
+  render(): React.ReactNode {
     const { fromTs, toTs, ...rest } = this.props;
     const canvasIntervals = this.getCanvasIntervals();
     return (

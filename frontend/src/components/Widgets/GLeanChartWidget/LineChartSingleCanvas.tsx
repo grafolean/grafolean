@@ -11,7 +11,7 @@ export const CHART_TYPE_POINT = 'point';
 export const KNOWN_CHART_TYPES = [CHART_TYPE_LINE, CHART_TYPE_POINT, CHART_TYPE_LINEFILL];
 export const KNOWN_CHART_TYPES_NAMES = ['line chart', 'point chart', 'filled line chart'];
 
-interface LineChartSingleCanvasProps {
+export interface LineChartSingleCanvasProps {
   fromTs: number;
   toTs: number;
   scale: number;
