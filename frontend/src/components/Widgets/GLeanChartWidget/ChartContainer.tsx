@@ -3,26 +3,70 @@ import { compile } from 'mathjs';
 import get from 'lodash/get';
 
 import { getSuggestedAggrLevel } from './utils';
-import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
+import { PersistentFetcher, PersistentFetcherListener } from '../../../utils/fetch/PersistentFetcher';
 
-import ChartView from './ChartView';
+import ChartView, { ChartSerie, ChartViewProps, DataPoint, DataPointAggr } from './ChartView';
 
-export default class ChartContainer extends React.Component {
-  state = {
+interface ChartContainerProps extends ChartViewProps {
+  allChartSeries: ChartSerie[];
+  accountId: number;
+}
+
+interface ChartContainerState {
+  fetchedPathsValues: {
+    [aggrLevel: number]: {
+      [intervalId: string]: {
+        fromTs: number;
+        toTs: number;
+        paths: any;
+      };
+    };
+  };
+  errorMsg: string | null;
+  yAxesProperties: YAxesProperties;
+  derivedFetchedIntervalsData: any;
+  fetchingPerFetcher: any;
+  aggrLevel: number | null;
+}
+
+interface YAxesPropertiesValue {
+  minYValue: number;
+  maxYValue: number;
+  minYValueUserSet: number | null;
+  maxYValueUserSet: number | null;
+  derived: any;
+}
+
+interface YAxesProperties {
+  [key: string]: YAxesPropertiesValue;
+}
+
+interface APIGetAccountValuesResponseBody {
+  paths: {
+    [path: string]: {
+      next_data_point: number | null;
+      data: DataPoint[];
+    };
+  };
+}
+
+export default class ChartContainer extends React.Component<ChartContainerProps, ChartContainerState> {
+  public readonly state: Readonly<ChartContainerState> = {
     fetchedPathsValues: {},
     errorMsg: null,
     yAxesProperties: {},
     derivedFetchedIntervalsData: [], // optimization for faster rendering - derived from fetchedPathsValues
     fetchingPerFetcher: {},
+    aggrLevel: null,
   };
   YAXIS_TOP_PADDING = 40;
   MAX_POINTS_PER_100PX = 5;
 
-  componentDidMount() {
+  componentDidMount(): void {
     this.updateAggrLevel();
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps: ChartContainerProps): void {
     if (prevProps.allChartSeries !== this.props.allChartSeries) {
       this.updateYAxisProperties();
     }
@@ -41,7 +85,7 @@ export default class ChartContainer extends React.Component {
     }
   }
 
-  updateAggrLevel() {
+  updateAggrLevel(): void {
     const { fromTs, toTs, allChartSeries, width } = this.props;
     if (allChartSeries.length === 0) {
       return; // we didn't receive the list of paths that match our path filters yet
@@ -53,19 +97,22 @@ export default class ChartContainer extends React.Component {
     });
   }
 
-  getFetchIntervals() {
+  getFetchIntervals(): { fromTs: number; toTs: number }[] {
     /*
       We put multiple PersistentFetchers on the DOM so that each takes care of a smaller part of fetching. Their data
       is being held by us though, and we need to know which intervals should be fetched.
     */
-    const { fromTs, toTs } = this.props;
     const { aggrLevel } = this.state;
+    if (aggrLevel === null) {
+      return [];
+    }
+    const { fromTs, toTs } = this.props;
     const intervalSizeTs = 360000 * 3 ** aggrLevel;
     const marginTs = Math.round((toTs - fromTs) / 4.0); // behave like the screen is bigger, to avoid fetching only when the data reaches the corner of the visible chart
     const fromTsWithMargin = fromTs - marginTs;
     const toTsWithMargin = toTs + marginTs;
 
-    let result = [];
+    const result = [];
     for (
       let i = Math.floor(fromTsWithMargin / intervalSizeTs);
       i < Math.ceil(toTsWithMargin / intervalSizeTs);
@@ -78,26 +125,17 @@ export default class ChartContainer extends React.Component {
     return result;
   }
 
-  // API requests the timestamps to be aligned to correct times according to aggr. level:
-  alignTs(originalTs, aggrLevel, floorCeilFunc) {
-    if (aggrLevel === -1) {
-      return originalTs; // no aggregation -> no alignment
-    }
-    const interval = 3600 * 3 ** aggrLevel;
-    return floorCeilFunc(originalTs / interval) * interval;
-  }
-
-  _applyExpression(data, expression) {
+  _applyExpression(data: DataPoint[], expression: string): DataPoint[] {
     if (data.length === 0) {
       return [];
     }
     const mathExpression = compile(expression);
-    if (data[0].minv) {
+    if ('minv' in data[0]) {
       return data.map(d => ({
         t: d.t,
         v: mathExpression.evaluate({ $1: d.v }),
-        minv: mathExpression.evaluate({ $1: d.minv }),
-        maxv: mathExpression.evaluate({ $1: d.maxv }),
+        minv: mathExpression.evaluate({ $1: (d as DataPointAggr).minv }),
+        maxv: mathExpression.evaluate({ $1: (d as DataPointAggr).maxv }),
       }));
     } else {
       return data.map(d => ({
@@ -107,17 +145,17 @@ export default class ChartContainer extends React.Component {
     }
   }
 
-  updateYAxisProperties() {
+  updateYAxisProperties(): void {
     // update min/max value and similar:
-    this.setState(prevState => {
+    this.setState((prevState: any) => {
       const newYAxesProperties = { ...prevState.yAxesProperties };
       const { fetchedPathsValues, aggrLevel } = prevState;
 
       if (!fetchedPathsValues || !fetchedPathsValues[aggrLevel]) {
-        return {};
+        return { yAxesProperties: prevState.yAxesProperties };
       }
 
-      for (let cs of this.props.allChartSeries) {
+      for (const cs of this.props.allChartSeries) {
         if (!newYAxesProperties.hasOwnProperty(cs.unit)) {
           newYAxesProperties[cs.unit] = {
             minYValue: 0,
@@ -131,8 +169,12 @@ export default class ChartContainer extends React.Component {
             return;
           }
           const data = fetchedPathsValues[aggrLevel][intervalId].paths[cs.path].data;
-          const lowestV = Math.min(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.minv)));
-          const highestV = Math.max(...data.map(d => (prevState.aggrLevel < 0 ? d.v : d.maxv)));
+          const lowestV = Math.min(
+            ...data.map((d: DataPoint) => (prevState.aggrLevel < 0 ? d.v : (d as DataPointAggr).minv)),
+          );
+          const highestV = Math.max(
+            ...data.map((d: DataPoint) => (prevState.aggrLevel < 0 ? d.v : (d as DataPointAggr).maxv)),
+          );
           const minYValue = mathExpression.evaluate({ $1: lowestV });
           const maxYValue = mathExpression.evaluate({ $1: highestV });
           newYAxesProperties[cs.unit].minYValue = Math.min(newYAxesProperties[cs.unit].minYValue, minYValue);
@@ -157,34 +199,39 @@ export default class ChartContainer extends React.Component {
   }
 
   // in-place updates yAxesProperties derived properties (v2y and similar)
-  updateYAxisDerivedProperties = yAxesProperties => {
+  updateYAxisDerivedProperties(yAxesProperties: YAxesProperties): void {
     const { height, xAxisHeight } = this.props;
     const yAxisHeight = height - xAxisHeight - this.YAXIS_TOP_PADDING;
-    for (let unit in yAxesProperties) {
+    for (const unit in yAxesProperties) {
       const minYValueEffective =
-        yAxesProperties[unit].minYValueUserSet !== undefined
+        yAxesProperties[unit].minYValueUserSet !== null
           ? yAxesProperties[unit].minYValueUserSet
           : yAxesProperties[unit].minYValue;
       const maxYValueEffective =
-        yAxesProperties[unit].maxYValueUserSet !== undefined
+        yAxesProperties[unit].maxYValueUserSet !== null
           ? yAxesProperties[unit].maxYValueUserSet
           : yAxesProperties[unit].maxYValue;
       const ticks = ChartView.getYTicks(minYValueEffective, maxYValueEffective);
+      if (ticks === null) {
+        continue;
+      }
       const minY = parseFloat(ticks[0]);
       const maxY = parseFloat(ticks[ticks.length - 1]);
       yAxesProperties[unit].derived = {
         minY: minY, // !!! misnomer: minYValue
         maxY: maxY,
         ticks: ticks,
-        v2y: v => this.YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY),
-        y2v: y => ((maxY - minY) * (yAxisHeight - y + this.YAXIS_TOP_PADDING)) / yAxisHeight + minY,
-        dy2dv: dy => (dy * (maxY - minY)) / yAxisHeight,
-        dv2dy: dv => (dv * yAxisHeight) / (maxY - minY),
+        v2y: (v: number): number =>
+          this.YAXIS_TOP_PADDING + yAxisHeight - ((v - minY) * yAxisHeight) / (maxY - minY),
+        y2v: (y: number): number =>
+          ((maxY - minY) * (yAxisHeight - y + this.YAXIS_TOP_PADDING)) / yAxisHeight + minY,
+        dy2dv: (dy: number): number => (dy * (maxY - minY)) / yAxisHeight,
+        dv2dy: (dv: number): number => (dv * yAxisHeight) / (maxY - minY),
       };
     }
-  };
+  }
 
-  getMinKnownTs() {
+  getMinKnownTs(): number {
     /*
       Fun fact: did you know the coordinate system in SVG is limited (by implementation)? It turns out that the circle in the
       folowing SVG will not be displayed: (in Firefox at least)
@@ -202,16 +249,16 @@ export default class ChartContainer extends React.Component {
       which is then our point of reference.
     */
     const { fetchedPathsValues, aggrLevel } = this.state;
-    const fetchedPathsValuesArray = Object.values(get(fetchedPathsValues, aggrLevel, {}));
+    const fetchedPathsValuesArray = Object.values(get(fetchedPathsValues, `${aggrLevel}`, {}));
     if (fetchedPathsValuesArray.length === 0) {
       return 0;
     }
-    return fetchedPathsValuesArray[0].fromTs;
+    return (fetchedPathsValuesArray[0] as { fromTs: number }).fromTs;
   }
 
-  onMinYChange = (unit, y) => {
+  onMinYChange = (unit: string, y: number | null): void => {
     this.setState(prevState => {
-      const v = y === undefined ? undefined : prevState.yAxesProperties[unit].derived.y2v(y);
+      const v = y === null ? null : prevState.yAxesProperties[unit].derived.y2v(y);
       const newYAxesProperties = { ...prevState.yAxesProperties };
       newYAxesProperties[unit].minYValueUserSet = v;
       this.updateYAxisDerivedProperties(newYAxesProperties);
@@ -221,9 +268,9 @@ export default class ChartContainer extends React.Component {
     });
   };
 
-  onMaxYChange = (unit, y) => {
+  onMaxYChange = (unit: string, y: number | null): void => {
     this.setState(prevState => {
-      const v = y === undefined ? undefined : prevState.yAxesProperties[unit].derived.y2v(y);
+      const v = y === null ? null : prevState.yAxesProperties[unit].derived.y2v(y);
       const newYAxesProperties = { ...prevState.yAxesProperties };
       newYAxesProperties[unit].maxYValueUserSet = v;
       this.updateYAxisDerivedProperties(newYAxesProperties);
@@ -233,7 +280,7 @@ export default class ChartContainer extends React.Component {
     });
   };
 
-  onNotification = (mqttPayload, topic) => {
+  onNotification = (mqttPayload: { t: number }, topic: string): boolean => {
     const { allChartSeries, accountId } = this.props;
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs <= mqttPayload.t && fi.toTs > mqttPayload.t);
@@ -252,7 +299,7 @@ export default class ChartContainer extends React.Component {
     return true;
   };
 
-  onFetchStart = fetcherKey => {
+  onFetchStart = (fetcherKey: string): void => {
     this.setState(prevState => ({
       // since we use multiple PersistentFetchers, we need to follow multiple states to display a loading indicator:
       fetchingPerFetcher: {
@@ -262,7 +309,7 @@ export default class ChartContainer extends React.Component {
     }));
   };
 
-  onFetchError = (errorMsg, fetcherKey) => {
+  onFetchError = (errorMsg: string, fetcherKey: string): void => {
     this.setState(prevState => ({
       fetchingPerFetcher: {
         ...prevState.fetchingPerFetcher,
@@ -273,14 +320,18 @@ export default class ChartContainer extends React.Component {
     console.error(errorMsg);
   };
 
-  onUpdateData = (json, listenerInfo, fetcherKey) => {
+  onUpdateData = (
+    json: APIGetAccountValuesResponseBody,
+    listenerInfo: PersistentFetcherListener,
+    fetcherKey: string,
+  ): void => {
     this.setState(prevState => ({
       fetchingPerFetcher: {
         ...prevState.fetchingPerFetcher,
         [fetcherKey]: false,
       },
     }));
-    const queryParams = JSON.parse(listenerInfo.fetchOptions.body);
+    const queryParams = JSON.parse(listenerInfo.fetchOptions.body as string);
     const fetchIntervals = this.getFetchIntervals();
     const interval = fetchIntervals.find(fi => fi.fromTs === queryParams.t0 && fi.toTs === queryParams.t1);
     if (!interval) {
@@ -290,12 +341,12 @@ export default class ChartContainer extends React.Component {
       return;
     }
     const intervalId = `${interval.fromTs}-${interval.toTs}`;
-    this.setState(
-      prevState => ({
+    this.setState((prevState: ChartContainerState) => {
+      return {
         fetchedPathsValues: {
           ...prevState.fetchedPathsValues,
-          [prevState.aggrLevel]: {
-            ...get(prevState.fetchedPathsValues, prevState.aggrLevel, {}),
+          [prevState.aggrLevel as number]: {
+            ...get(prevState.fetchedPathsValues, prevState.aggrLevel as number, {}),
             [intervalId]: {
               fromTs: interval.fromTs,
               toTs: interval.toTs,
@@ -303,12 +354,11 @@ export default class ChartContainer extends React.Component {
             },
           },
         },
-      }),
-      this.updateDerivedFetchedIntervalsData,
-    );
+      };
+    }, this.updateDerivedFetchedIntervalsData);
   };
 
-  updateDerivedFetchedIntervalsData() {
+  updateDerivedFetchedIntervalsData(): void {
     this.setState(prevState => {
       return {
         // Optimization: this is derived information (data in format which is understood by ChartView), but
@@ -321,13 +371,24 @@ export default class ChartContainer extends React.Component {
     }, this.updateYAxisProperties);
   }
 
-  getDataInFetchedIntervalsDataFormat = (fetchedPathsValues, aggrLevel) => {
+  getDataInFetchedIntervalsDataFormat = (
+    fetchedPathsValues: { [k: number]: any },
+    aggrLevel: number | null,
+  ): { csData: any; fromTs: number; toTs: number }[] => {
     // this function converts our internal data to the format that ChartView expects
     const { allChartSeries } = this.props;
 
-    const result = Object.values(get(fetchedPathsValues, aggrLevel, {})).map(fetched => {
+    if (aggrLevel === null) {
+      return [];
+    }
+
+    const result = (Object.values(get(fetchedPathsValues, aggrLevel, {})) as {
+      fromTs: number;
+      toTs: number;
+      paths: any;
+    }[]).map(fetched => {
       const { fromTs, toTs, paths } = fetched;
-      const csData = {};
+      const csData: { [k: string]: any } = {};
       allChartSeries.forEach(cs => {
         if (!paths[cs.path]) {
           return;
@@ -344,9 +405,12 @@ export default class ChartContainer extends React.Component {
     return result;
   };
 
-  render() {
+  render(): React.ReactNode {
     const { allChartSeries, accountId } = this.props;
     const { aggrLevel, fetchingPerFetcher } = this.state;
+    if (aggrLevel === null) {
+      return null;
+    }
     const allPaths = allChartSeries.map(cs => cs.path);
     const fetchIntervals = this.getFetchIntervals();
     const fetching = Object.values(fetchingPerFetcher).some(x => x);
@@ -372,10 +436,10 @@ export default class ChartContainer extends React.Component {
               }}
               onFetchStart={() => this.onFetchStart(`${aggrLevel}-${fi.fromTs}`)}
               onNotification={this.onNotification}
-              onUpdate={(json, listenerInfo) =>
+              onUpdate={(json: APIGetAccountValuesResponseBody, listenerInfo: PersistentFetcherListener) =>
                 this.onUpdateData(json, listenerInfo, `${aggrLevel}-${fi.fromTs}`)
               }
-              onError={errMsg => this.onFetchError(errMsg, `${aggrLevel}-${fi.fromTs}`)}
+              onError={(errMsg: string) => this.onFetchError(errMsg, `${aggrLevel}-${fi.fromTs}`)}
             />
           ))}
         <ChartView
@@ -383,9 +447,9 @@ export default class ChartContainer extends React.Component {
           fetching={fetching}
           fetchedIntervalsData={this.state.derivedFetchedIntervalsData}
           errorMsg={this.state.errorMsg}
-          isAggr={this.state.aggrLevel >= 0}
-          aggrLevel={this.state.aggrLevel}
-          minKnownTs={this.getMinKnownTs()}
+          isAggr={aggrLevel >= 0}
+          aggrLevel={aggrLevel}
+          // minKnownTs={this.getMinKnownTs()}
           yAxesProperties={this.state.yAxesProperties}
           onMinYChange={this.onMinYChange}
           onMaxYChange={this.onMaxYChange}

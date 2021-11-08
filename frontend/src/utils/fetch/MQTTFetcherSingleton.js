@@ -44,8 +44,8 @@ class MQTTFetcher {
     onErrorCallback,
     onNotification,
     onFetchStart,
-    mqttTopicOverride = null,
-    fetchOptions = {},
+    mqttTopicOverride,
+    fetchOptions,
   ) => {
     const listenerId = '' + this._nextListenerId;
     this._nextListenerId += 1;

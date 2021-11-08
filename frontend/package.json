@@ -7,8 +7,8 @@
   "dependencies": {
     "@paciolan/remote-component": "^2.7.2",
     "formik": "^1.5.8",
-    "lodash": "^4.17.15",
-    "mathjs": "^6.0.0",
+    "lodash": "^4.17.21",
+    "mathjs": "^10.0.0",
     "moment": "^2.19.3",
     "moment-timezone": "^0.5.33",
     "qs": "^6.5.1",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.7.2",
     "@storybook/react": "^6.3.12",
+    "@types/lodash": "^4.14.176",
     "@types/node": "^16.7.1",
     "@types/qs": "^6.9.7",
     "@types/react": "^17.0.19",

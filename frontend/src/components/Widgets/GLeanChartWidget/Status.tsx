@@ -2,7 +2,7 @@ import React from 'react';
 
 interface StatusProps {
   fetching: boolean;
-  errorMsg: string;
+  errorMsg: string | null;
 }
 
 export default class Status extends React.PureComponent<StatusProps> {
@@ -16,7 +16,7 @@ export default class Status extends React.PureComponent<StatusProps> {
         {fetching ? (
           <i className="fa fa-circle-o-notch fa-spin" />
         ) : (
-          <i className="fa fa-exclamation-triangle" title={errorMsg} />
+          <i className="fa fa-exclamation-triangle" title={errorMsg || ''} />
         )}
       </div>
     );

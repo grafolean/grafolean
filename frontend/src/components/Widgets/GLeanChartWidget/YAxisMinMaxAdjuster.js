@@ -32,7 +32,7 @@ export default class YAxisMinMaxAdjuster extends React.PureComponent {
   endDrag = () => {
     const { draggedToY, isReset } = this.state;
     this.dragging = false;
-    this.props.onChangeEnd(isReset ? undefined : draggedToY);
+    this.props.onChangeEnd(isReset ? null : draggedToY);
     this.setState({
       draggedToY: null,
       isReset: false,

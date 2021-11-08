@@ -25,7 +25,7 @@ export interface ChartSerie {
   index: number;
 }
 
-interface ChartViewProps {
+export interface ChartViewProps {
   width: number;
   height: number;
   fromTs: number;
@@ -44,7 +44,7 @@ interface ChartViewProps {
   yAxesProperties: any;
   setSharedValue: (key: string, newValue: number | string | null) => void;
   fetching: boolean;
-  errorMsg: string;
+  errorMsg: string | null;
   isDarkMode: boolean;
   chartType: ChartType;
   onMaxYChange: (unit: string, y: number | null) => void;
@@ -56,12 +56,23 @@ interface ChartViewState {
   overrideClosestPoint: ClosestPoint | null;
 }
 
+export interface DataPointNonAggr {
+  t: number;
+  v: number;
+}
+
+export interface DataPointAggr {
+  t: number;
+  v: number;
+  minv: number;
+  maxv: number;
+}
+
+export type DataPoint = DataPointAggr | DataPointNonAggr;
+
 interface ClosestPoint {
   cs: ChartSerie;
-  point: {
-    v: number;
-    t: number;
-  };
+  point: DataPoint;
   dist: number;
 }
 
