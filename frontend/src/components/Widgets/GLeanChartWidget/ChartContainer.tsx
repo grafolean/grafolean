@@ -231,31 +231,6 @@ export default class ChartContainer extends React.Component<ChartContainerProps,
     }
   }
 
-  getMinKnownTs(): number {
-    /*
-      Fun fact: did you know the coordinate system in SVG is limited (by implementation)? It turns out that the circle in the
-      folowing SVG will not be displayed: (in Firefox at least)
-
-        <svg width="100" height="100">
-          <g transform="translate(1234567890, 0)">
-            <circle cx="-1234567890" cy="50" r="3" />
-          </g>
-        </svg>
-
-      More details here: https://oreillymedia.github.io/Using_SVG/extras/ch08-precision.html
-
-      How is this important? We were drawing with coordinate system translated by fromTs * scale. That simplified maths but
-      lead to largish numbers being used, so the points weren't being displayed. Instead we now need to find minKnownTs,
-      which is then our point of reference.
-    */
-    const { fetchedPathsValues, aggrLevel } = this.state;
-    const fetchedPathsValuesArray = Object.values(get(fetchedPathsValues, `${aggrLevel}`, {}));
-    if (fetchedPathsValuesArray.length === 0) {
-      return 0;
-    }
-    return (fetchedPathsValuesArray[0] as { fromTs: number }).fromTs;
-  }
-
   onMinYChange = (unit: string, y: number | null): void => {
     this.setState(prevState => {
       const v = y === null ? null : prevState.yAxesProperties[unit].derived.y2v(y);
@@ -449,7 +424,6 @@ export default class ChartContainer extends React.Component<ChartContainerProps,
           errorMsg={this.state.errorMsg}
           isAggr={aggrLevel >= 0}
           aggrLevel={aggrLevel}
-          // minKnownTs={this.getMinKnownTs()}
           yAxesProperties={this.state.yAxesProperties}
           onMinYChange={this.onMinYChange}
           onMaxYChange={this.onMaxYChange}

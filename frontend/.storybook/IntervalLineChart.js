@@ -176,7 +176,6 @@ stories.add('ChartView', () => {
     fromTs: timeFrom,
     toTs: timeTo,
     isAggr: true,
-    minKnownTs: timeFrom,
     nDecimals: 2,
     registerClickHandler: () => {},
     registerMouseMoveHandler: () => {},
