@@ -89,9 +89,9 @@ class MatchingPaths extends React.Component<MatchingPathsProps, any> {
       this.fetchTimeoutHandle = null;
     }
     // if fetch is in progress, abort it:
-    if (this.fetchInProgressAbortController !== undefined) {
+    if (this.fetchInProgressAbortController !== null) {
       this.fetchInProgressAbortController.abort();
-      this.fetchInProgressAbortController = undefined;
+      this.fetchInProgressAbortController = null;
     }
     // now start a new one after a short timeout:
     this.fetchTimeoutHandle = setTimeout(() => {
