@@ -6,7 +6,7 @@ interface StatusProps {
 }
 
 export default class Status extends React.PureComponent<StatusProps> {
-  render() {
+  render(): React.ReactNode {
     const { fetching, errorMsg } = this.props;
     if (!fetching && !errorMsg) {
       return null;

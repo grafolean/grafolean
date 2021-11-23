@@ -4,7 +4,8 @@ import { resolve } from '../../remote-component.config';
 // regular import throws a warning about a missing remote-component.config.js:
 //   https://github.com/Paciolan/remote-component#you-may-see-some-warnings
 import { createUseRemoteComponent } from '@paciolan/remote-component/dist/hooks/useRemoteComponent';
-import { createRequires } from '@paciolan/remote-component/dist/lib/createRequires';
+import { createRequires } from '@paciolan/remote-component/dist/createRequires';
+// import { createRequires, createUseRemoteComponent } from '@paciolan/remote-component';
 
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 
