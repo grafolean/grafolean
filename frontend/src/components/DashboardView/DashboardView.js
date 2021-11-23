@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import GridLayout from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+// import 'react-grid-layout/node_modules/react-resizable/css/styles.css';
 import groupBy from 'lodash/groupBy';
 
 import store from '../../store';
