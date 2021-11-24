@@ -28,7 +28,7 @@
     "tslint": "eslint --max-warnings 0 --ext .ts,.tsx src/",
     "prettier": "prettier --write \"src/**/*.{js,ts,tsx}\" \".storybook/**/*.{js,ts,tsx}\"",
     "test": "react-scripts test --env=jsdom",
-    "storybook": "start-storybook -p 9001 --no-version-updates -c .storybook"
+    "storybook": "start-storybook -p 9000 --no-version-updates -c .storybook"
   },
   "eslintConfig": {
     "settings": {
@@ -45,6 +45,12 @@
   ],
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.7.2",
+    "@storybook/addon-actions": "^6.3.12",
+    "@storybook/addon-essentials": "^6.3.12",
+    "@storybook/addon-links": "^6.3.12",
+    "@storybook/node-logger": "^6.3.12",
+    "@storybook/preset-create-react-app": "^3.2.0",
+    "@storybook/preset-scss": "^1.0.3",
     "@storybook/react": "^6.3.12",
     "@types/lodash": "^4.14.176",
     "@types/node": "^16.7.1",
@@ -56,6 +62,7 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "babel-loader": "8.1.0",
+    "css-loader": "^6.5.1",
     "enzyme": "^3.11.0",
     "enzyme-adapter-react-16": "^1.15.2",
     "eslint": "^7.32.0",
@@ -63,6 +70,9 @@
     "eslint-plugin-prettier": "^3.4.1",
     "node-sass": "^4.13.1",
     "prettier": "^1.19.1",
+    "sass": "^1.43.4",
+    "sass-loader": "^12.3.0",
+    "style-loader": "^3.3.1",
     "typescript": "^4.4.4"
   }
 }
