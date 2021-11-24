@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import TimestampXAxis from '../src/components/Widgets/GLeanChartWidget/TimestampXAxis';
+import TimestampXAxis from '../../src/components/Widgets/GLeanChartWidget/TimestampXAxis';
 
 const stories = storiesOf('TimestampXAxis', module);
 
@@ -50,7 +50,7 @@ stories.add('list of possible scales', () => {
         }}
       >
         {scales.map((scale, i) => (
-          <g transform={`translate(${0} ${i * (height + 10)})`}>
+          <g key={i} transform={`translate(${0} ${i * (height + 10)})`}>
             <TimestampXAxis
               width={width}
               height={height}

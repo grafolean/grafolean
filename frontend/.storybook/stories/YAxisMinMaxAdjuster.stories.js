@@ -1,6 +1,6 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
-import YAxisMinMaxAdjuster from '../src/components/Widgets/GLeanChartWidget/YAxisMinMaxAdjuster';
+import YAxisMinMaxAdjuster from '../../src/components/Widgets/GLeanChartWidget/YAxisMinMaxAdjuster';
 
 const stories = storiesOf('YAxisMinMaxAdjuster', module);
 

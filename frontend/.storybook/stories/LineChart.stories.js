@@ -2,13 +2,13 @@ import React from 'react';
 import { storiesOf } from '@storybook/react';
 import { Provider } from 'react-redux';
 
-import store from '../src/store';
-import { CoreGLeanChartWidget } from '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
-import { setAccountEntities, setColorScheme } from '../src/store/actions';
+import store from '../../src/store';
+import { CoreGLeanChartWidget } from '../../src/components/Widgets/GLeanChartWidget/GLeanChartWidget';
+import { setAccountEntities, setColorScheme } from '../../src/store/actions';
 import MockContext from './MockContext';
 
-import '../src/components/Widgets/GLeanChartWidget/GLeanChartWidget.scss';
-import '../src/index.scss';
+import '../../src/components/Widgets/GLeanChartWidget/GLeanChartWidget.scss';
+import '../../src/index.scss';
 import './index.scss';
 
 const stories = storiesOf('Line chart - complete', module);

@@ -1,13 +1,12 @@
 import React from 'react';
-import { connect } from 'react-redux';
 
-class Checkbox extends React.Component {
+export default class Checkbox extends React.Component {
   handleClick = () => {
     this.props.onChange(this.props.value);
   };
 
   render() {
-    const { color, checked, isDarkMode, children } = this.props;
+    const { color, checked, isDarkMode = true, children } = this.props;
     const bgColor = isDarkMode ? '#161616' : '#fff';
     return (
       <div className="checkbox-parent" onClick={this.handleClick}>
@@ -27,8 +26,3 @@ class Checkbox extends React.Component {
     );
   }
 }
-
-const mapStoreToProps = store => ({
-  isDarkMode: store.preferences.colorScheme === 'dark',
-});
-export default connect(mapStoreToProps)(Checkbox);
