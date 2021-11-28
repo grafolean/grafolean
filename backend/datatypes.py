@@ -35,7 +35,7 @@ from const import SYSTEM_PATH_PREFIX, SYSTEM_PATH_INSERTED_COUNT
 def clear_all_lru_cache():
     # when testing, it is important to clear memoization cache in between runs, or the results will be... interesting.
     # Dashboard.get_id.cache_clear()
-    Path._get_path_id_from_db.cache_clear()
+    # Path._get_path_id_from_db.cache_clear()
     # PathFilter._find_matching_paths_for_filter.cache_clear()
     pass
 
@@ -104,7 +104,10 @@ class Path(object):
         return cls(path, account_id, force_id=force_id)
 
     @staticmethod
-    @lru_cache(maxsize=None)
+    # The problem with lru_cache: when do we clear it? Any change should invalidate cache, but in multi-worker
+    # setup this means clearing lru_cache in another process. For this reason we disable cache until a better
+    # solution is found.
+    #@lru_cache(maxsize=None)
     def _get_path_id_from_db(account_id, path):
         with db.cursor() as c:
             path_cleaned = path.strip()
@@ -146,8 +149,8 @@ class Path(object):
             return 0
         with db.cursor() as c:
             c.execute("UPDATE paths SET path = %s WHERE id = %s AND account = %s;", (self.path, self.force_id, self.account_id,))
-            if c.rowcount:
-                Path._get_path_id_from_db.cache_clear()
+            # if c.rowcount:
+            #     Path._get_path_id_from_db.cache_clear()
             return c.rowcount
 
     @staticmethod
@@ -155,8 +158,8 @@ class Path(object):
         with db.cursor() as c:
             # delete just the path, "ON DELETE CASCADE" takes care of removing values:
             c.execute("DELETE FROM paths WHERE id = %s AND account = %s;", (path_id, account_id,))
-            if c.rowcount:
-                Path._get_path_id_from_db.cache_clear()
+            # if c.rowcount:
+            #     Path._get_path_id_from_db.cache_clear()
             return c.rowcount
 
 
