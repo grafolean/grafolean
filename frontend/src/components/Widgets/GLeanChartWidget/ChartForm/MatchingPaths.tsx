@@ -55,7 +55,7 @@ class MatchingPaths extends React.Component<MatchingPathsProps, any> {
     },
     fetchingError: false,
   };
-  fetchInProgressAbortController: any = null;
+  fetchInProgressAbortController: AbortController | null = null;
   fetchTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   static MATCH_EXACT = 0;
