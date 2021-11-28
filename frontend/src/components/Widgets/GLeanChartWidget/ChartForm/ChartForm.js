@@ -55,7 +55,7 @@ export default class ChartForm extends React.Component {
 
   handleAddEmptySerie = ev => {
     this.props.setFieldValue('content.series_groups', [
-      ...this.props.content,
+      ...this.props.content.series_groups,
       ChartForm.DEFAULT_SERIE_GROUP_CONTENT,
     ]);
     ev.preventDefault();
