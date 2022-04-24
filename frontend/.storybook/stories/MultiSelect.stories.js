@@ -1,7 +1,7 @@
 import React from 'react';
 import { storiesOf } from '@storybook/react';
 
-import MultiSelect from '../src/components/MultiSelect/MultiSelect';
+import MultiSelect from '../../src/components/MultiSelect/MultiSelect';
 
 const options = [
   { id: '1', label: 'Option 1 aa', color: '#ff0000' },

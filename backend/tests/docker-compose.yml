@@ -1,4 +1,4 @@
-version: '2.1'
+version: '2.3'
 services:
 
   # This file helps set up postgres and mosquitto so that they can be used for integration tests
@@ -15,6 +15,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    volumes:
+      - type: tmpfs
+        target: /var/lib/postgresql/data/
     ports:
       - "5432:5432"
     networks:

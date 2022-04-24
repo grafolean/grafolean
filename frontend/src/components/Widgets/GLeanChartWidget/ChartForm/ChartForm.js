@@ -55,7 +55,7 @@ export default class ChartForm extends React.Component {
 
   handleAddEmptySerie = ev => {
     this.props.setFieldValue('content.series_groups', [
-      ...this.props.content,
+      ...this.props.content.series_groups,
       ChartForm.DEFAULT_SERIE_GROUP_CONTENT,
     ]);
     ev.preventDefault();
@@ -95,7 +95,7 @@ export default class ChartForm extends React.Component {
         <div className="field">
           <label>Type of chart:</label>
           {KNOWN_CHART_TYPES.map((chart_type_id, i) => (
-            <div className="radio_option_container">
+            <div className="radio_option_container" key={chart_type_id}>
               <label>
                 <input
                   type="radio"

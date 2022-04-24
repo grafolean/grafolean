@@ -5,6 +5,7 @@ import { Route } from 'react-router-dom';
 import { fetchAuth } from '../../utils/fetch';
 import store from '../../store';
 import { ROOT_URL, handleFetchErrors, onFailure, setFullscreenDibs } from '../../store/actions';
+import withErrorBoundary from '../withErrorBoundary';
 
 import './index.scss';
 
@@ -122,7 +123,7 @@ const isWidget = WrappedComponent => {
       );
     }
   };
-  return connect(mapStoreToProps)(wrappedComponent);
+  return connect(mapStoreToProps)(withErrorBoundary(wrappedComponent));
 };
 
 export default isWidget;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { evaluate } from 'mathjs';
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import isWidget from '../isWidget';
 import { PersistentFetcher } from '../../../utils/fetch/PersistentFetcher';
@@ -113,7 +113,7 @@ class _TopNWidget extends React.Component {
         {calculatedTopList && (
           <div>
             <div className="time">
-              {moment.utc(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss')} UTC (<When t={topListTime} />)
+              {moment(topListTime * 1000).format('YYYY-MM-DD HH:mm:ss z')} (<When t={topListTime} />)
             </div>
             {(calc_percent || pie_chart) && (
               <div className="total">

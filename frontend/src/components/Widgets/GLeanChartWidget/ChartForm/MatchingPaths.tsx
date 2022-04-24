@@ -1,12 +1,44 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
+import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { stringify } from 'qs';
 
 import { ROOT_URL, handleFetchErrors } from '../../../../store/actions';
 import { fetchAuth } from '../../../../utils/fetch';
 
-class MatchingPaths extends React.Component {
+interface Sensor {
+  sensor: number;
+  interval: number;
+}
+
+interface Protocols {
+  [protocol: string]: {
+    credential: number;
+    sensors: Sensor[];
+  };
+}
+
+interface AccountEntity {
+  id: number;
+  name: string;
+  entity_type: string; // 'device' / 'interface'
+  parent: number;
+  details: any;
+  protocols: Protocols;
+}
+
+interface RouterProps {
+  accountId: string;
+}
+
+interface MatchingPathsProps extends RouteComponentProps<RouterProps> {
+  pathFilter: string;
+  onClick: React.MouseEventHandler<HTMLDivElement> | undefined;
+  pathRenamer: string;
+  accountEntities: AccountEntity[];
+}
+
+class MatchingPaths extends React.Component<MatchingPathsProps, any> {
   /*
     Given the pathFilter, this component fetches the data needed to display the matching paths. When
     props.pathFilter changes, new fetch request is issued (after some small timeout).
@@ -21,7 +53,11 @@ class MatchingPaths extends React.Component {
       pathsWithTrailing: [],
       pathFilter: this.props.pathFilter,
     },
+    fetchingError: false,
   };
+  fetchInProgressAbortController: AbortController | null = null;
+  fetchTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
   static MATCH_EXACT = 0;
   static MATCH_WILDCARD = 1;
   static MATCH_RESIDUAL = 2;
@@ -32,29 +68,30 @@ class MatchingPaths extends React.Component {
     this.onPathFilterChange(this.props.pathFilter);
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prevProps: MatchingPathsProps) {
     if (prevProps.pathFilter !== this.props.pathFilter) {
       this.onPathFilterChange(this.props.pathFilter);
     }
   }
 
   componentWillUnmount() {
-    if (this.fetchInProgressAbortController !== undefined) {
-      this.fetchInProgressAbortController.abort();
-      this.fetchInProgressAbortController = undefined;
+    const fetchInProgressAbortController = this.fetchInProgressAbortController;
+    if (fetchInProgressAbortController !== null) {
+      fetchInProgressAbortController.abort();
+      this.fetchInProgressAbortController = null;
     }
   }
 
-  onPathFilterChange(newPathFilter) {
+  onPathFilterChange(newPathFilter: string) {
     // if fetch is being scheduled, cancel it:
     if (this.fetchTimeoutHandle !== null) {
       clearTimeout(this.fetchTimeoutHandle);
       this.fetchTimeoutHandle = null;
     }
     // if fetch is in progress, abort it:
-    if (this.fetchInProgressAbortController !== undefined) {
+    if (this.fetchInProgressAbortController !== null) {
       this.fetchInProgressAbortController.abort();
-      this.fetchInProgressAbortController = undefined;
+      this.fetchInProgressAbortController = null;
     }
     // now start a new one after a short timeout:
     this.fetchTimeoutHandle = setTimeout(() => {
@@ -79,9 +116,11 @@ class MatchingPaths extends React.Component {
           this.setState({
             fetched: {
               paths:
-                json.paths && json.paths[newPathFilter] ? json.paths[newPathFilter].map(p => p.path) : [],
+                json.paths && json.paths[newPathFilter]
+                  ? json.paths[newPathFilter].map((p: any) => p.path)
+                  : [],
               pathsWithTrailing: json.paths_with_trailing
-                ? json.paths_with_trailing[newPathFilter].map(p => p.path)
+                ? json.paths_with_trailing[newPathFilter].map((p: any) => p.path)
                 : [],
               pathFilter: newPathFilter,
             },
@@ -94,19 +133,26 @@ class MatchingPaths extends React.Component {
           });
         })
         .then(() => {
-          this.fetchInProgressAbortController = undefined;
+          this.fetchInProgressAbortController = null;
         });
-    }, this.FETCH_DELAY_MS);
+    }, MatchingPaths.FETCH_DELAY_MS);
   }
 
-  static breakMatchingPath(path, partialPathFilter) {
+  static breakMatchingPath(path: string, partialPathFilter: string) {
     const regex = `^(${partialPathFilter
       .replace(/[.]/g, '[.]') // escape '.'
       .replace(/[*]/g, ')(.+)(') // escape '*'
       .replace(/[?]/g, ')([^.]+)(')})(.*)$` // escape '?'
       .replace(/[(][)]/g, ''); // get rid of empty parenthesis, if any
     const regexGroupPatterns = regex.substr(2, regex.length - 4).split(')('); // remove leading and trailing 2 chars and split by parenthesis
-    const matches = path.match(new RegExp(regex)).slice(1);
+    if (!path) {
+      return [];
+    }
+    const allMatches = path.match(new RegExp(regex));
+    if (!allMatches) {
+      return [];
+    }
+    const matches = allMatches.slice(1);
     return matches.map((m, i) => ({
       part: m,
       match: regexGroupPatterns[i].endsWith('+')
@@ -118,7 +164,12 @@ class MatchingPaths extends React.Component {
   }
 
   // given a path, path filter and path renamer, construct a name:
-  static constructChartSerieName(path, partialPathFilter, pathRenamer, accountEntities) {
+  static constructChartSerieName(
+    path: string,
+    partialPathFilter: string,
+    pathRenamer: string,
+    accountEntities: AccountEntity[],
+  ) {
     if (!pathRenamer) {
       return path;
     }
@@ -143,7 +194,7 @@ class MatchingPaths extends React.Component {
     const PATH_RENAMING_MODIFIERS = [
       {
         regex: /[$][{]interfaceName[(]([0-9]+)[,][ ]*([^)]+)[)][}]/g,
-        replacementFunc: (match, parentEntityId, interfaceSNMPIndex) => {
+        replacementFunc: (match: string, parentEntityId: any, interfaceSNMPIndex: any) => {
           const parentEntityIdInt = parseInt(parentEntityId);
           if (!accountEntities) {
             return `interface ${interfaceSNMPIndex}`;
@@ -162,7 +213,7 @@ class MatchingPaths extends React.Component {
       },
       {
         regex: /[$][{]deviceName[(]([0-9]+)[)][}]/g,
-        replacementFunc: (match, deviceEntityId) => {
+        replacementFunc: (match: string, deviceEntityId: any) => {
           const deviceEntityIdInt = parseInt(deviceEntityId);
           if (!accountEntities) {
             return `device ${deviceEntityId}`;
@@ -182,9 +233,9 @@ class MatchingPaths extends React.Component {
     return ret;
   }
 
-  static substituteSharedValues(path, sharedValues) {
+  static substituteSharedValues(path: string, sharedValues: Record<string, string>) {
     let result = path;
-    for (let k in sharedValues) {
+    for (const k in sharedValues) {
       result = result.replace(new RegExp(`[$]${k}`, 'g'), String(sharedValues[k]));
     }
     return result;
@@ -227,8 +278,7 @@ class MatchingPaths extends React.Component {
   }
 }
 
-const mapStoreToProps = store => ({
-  accounts: store.accounts,
+const mapStoreToProps = (store: any) => ({
   accountEntities: store.accountEntities,
 });
 export default withRouter(connect(mapStoreToProps)(MatchingPaths));

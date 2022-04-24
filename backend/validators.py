@@ -47,6 +47,7 @@ PersonSchemaInputsPOST = {
         'password': {'type': 'string'},
         'name': {'type': 'string'},
         'email': {'type': 'string'},
+        'timezone': {'type': ['string', 'null']},
     },
     'additionalProperties': False,
     'required': ['username', 'password', 'name', 'email'],
@@ -60,6 +61,7 @@ PersonSchemaInputsPUT = {
         'username': {'type': 'string'},
         'name': {'type': 'string'},
         'email': {'type': 'string'},
+        'timezone': {'type': 'string'},
     },
 }
 

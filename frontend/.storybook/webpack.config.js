@@ -4,7 +4,7 @@ module.exports = async ({ config }) => {
   config.plugins.push(
     new webpack.NormalModuleReplacementPlugin(
       /PersistentFetcher[.]js$/,
-      '../../../.storybook/MockPersistentFetcher.js',
+      '../../../.storybook/stories/MockPersistentFetcher.js',
     ),
   );
   return config;

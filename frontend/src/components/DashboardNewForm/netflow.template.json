@@ -79,7 +79,7 @@
       "w": 12,
       "h": 10,
       "p": "netflow_interface",
-      "content": "[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface\",\"renaming\":\"Traffic on interface\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]"
+      "content": "{\"chart_type\":\"line\",\"series_groups\":[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.$selectedInterface\",\"renaming\":\"Traffic on interface\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]}"
     },
     {
       "type": "chart",
@@ -89,7 +89,7 @@
       "w": 12,
       "h": 10,
       "p": "default",
-      "content": "[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId\",\"renaming\":\"Sum\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"},{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.?\",\"renaming\":\"${interfaceName($selectedEntityId, $1)}\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]"
+      "content": "{\"chart_type\":\"line\",\"series_groups\":[{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId\",\"renaming\":\"Sum\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"},{\"path_filter\":\"netflow.$netflowSelectedInterval.$netflowSelectedDirection.entity.$selectedEntityId.if.?\",\"renaming\":\"${interfaceName($selectedEntityId, $1)}\",\"expression\":\"$1 / (1024*1024)\",\"unit\":\"MB\"}]}"
     }
   ]
 }

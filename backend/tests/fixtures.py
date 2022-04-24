@@ -1,11 +1,16 @@
+import asyncore
 from collections import namedtuple
 import json
 import multiprocessing
 import os
 import pytest
 import re
+from smtpd import SMTPServer
+import smtplib
+import threading
 import time
 
+from fastapi.testclient import TestClient
 import paho.mqtt.client as paho
 
 
@@ -76,40 +81,32 @@ def app_client():
     _delete_all_from_db()
     migrate_if_needed()
     app.testing = True
-    app.config.update(
-        MAIL_SERVER = 'smtp.grafolean.com',
-        MAIL_PORT = 587,
-        MAIL_USE_TLS = True,
-        MAIL_USERNAME = 'noreply@grafolean.com',
-        MAIL_PASSWORD = '',
-        TESTING = True,
-    )
-    return app.test_client()
+    return TestClient(app)
 
 
 @pytest.fixture
 def app_client_db_not_migrated():
     _delete_all_from_db()
     app.testing = True
-    return app.test_client()
+    return TestClient(app)
 
 
 @pytest.fixture
 def first_admin_id(app_client):
     data = { 'name': 'First User - Admin', 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN, 'email': EMAIL_ADMIN }
-    r = app_client.post('/api/admin/first', data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 201
-    admin_id = json.loads(r.data.decode('utf-8'))['id']
+    r = app_client.post('/api/admin/first', json=data)
+    assert r.status_code == 201, r.text
+    admin_id = r.json()['id']
     return int(admin_id)
 
 
 @pytest.fixture
 def admin_authorization_header(app_client, first_admin_id):
     data = { 'username': USERNAME_ADMIN, 'password': PASSWORD_ADMIN }
-    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
-    assert r.status_code == 200
-    auth_header = dict(r.headers).get('X-JWT-Token', None)
-    assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
+    r = app_client.post('/api/auth/login', json=data)
+    assert r.status_code == 200, r.text
+    auth_header = r.headers.get('X-JWT-Token', None)
+    assert re.match(r'^Bearer [0-9]+[:].+$', auth_header), auth_header
     return auth_header
 
 
@@ -125,9 +122,9 @@ def account_id_factory(app_client, admin_authorization_header):
     def gen(*account_names):
         for account_name in account_names:
             data = { 'name': account_name }
-            r = app_client.post('/api/admin/accounts', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = app_client.post('/api/admin/accounts', json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            account_id = json.loads(r.data.decode('utf-8'))['id']
+            account_id = r.json()['id']
             yield account_id
     yield gen
 
@@ -148,13 +145,13 @@ def bot_factory(app_client, admin_authorization_header):
     """
     def gen(name, protocol):
         data = { 'name': name, 'protocol': protocol }
-        r = app_client.post('/api/bots', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 201, r.data
-        j = json.loads(r.data.decode('utf-8'))
+        r = app_client.post('/api/bots', json=data, headers={'Authorization': admin_authorization_header})
+        assert r.status_code == 201, r.text
+        j = r.json()
         bot_id = j['id']
         r = app_client.get('/api/bots/{}/token'.format(bot_id), headers={'Authorization': admin_authorization_header})
-        assert r.status_code == 200, r.data
-        j = json.loads(r.data.decode('utf-8'))
+        assert r.status_code == 200, r.text
+        j = r.json()
         bot_token = j['token']
         return bot_id, bot_token
     return gen
@@ -181,9 +178,9 @@ def account_credentials_factory(app_client, admin_authorization_header, account_
     def gen(*credential_data):
         for protocol, name in credential_data:
             data = { 'name': name, 'protocol': protocol, 'details': {} }
-            r = app_client.post('/api/accounts/{}/credentials'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = app_client.post('/api/accounts/{}/credentials'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            credential_id = json.loads(r.data.decode('utf-8'))['id']
+            credential_id = r.json()['id']
             yield credential_id
     yield gen
 
@@ -193,9 +190,9 @@ def account_sensors_factory(app_client, admin_authorization_header, account_id):
     def gen(*sensor_data):
         for protocol, name, interval in sensor_data:
             data = { 'name': name, 'protocol': protocol, 'default_interval': interval, 'details': {} }
-            r = app_client.post('/api/accounts/{}/sensors'.format(account_id), data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
+            r = app_client.post('/api/accounts/{}/sensors'.format(account_id), json=data, headers={'Authorization': admin_authorization_header})
             assert r.status_code == 201
-            sensor_id = json.loads(r.data.decode('utf-8'))['id']
+            sensor_id = r.json()['id']
             yield sensor_id
     yield gen
 
@@ -203,18 +200,18 @@ def account_sensors_factory(app_client, admin_authorization_header, account_id):
 @pytest.fixture
 def person_id(app_client, admin_authorization_header):
     data = { 'name': 'User 1', 'username': USERNAME_USER1, 'password': PASSWORD_USER1, 'email': EMAIL_USER1 }
-    r = app_client.post('/api/persons', data=json.dumps(data), content_type='application/json', headers={'Authorization': admin_authorization_header})
-    assert r.status_code == 201
-    user_id = json.loads(r.data.decode('utf-8'))['id']
+    r = app_client.post('/api/persons', json=data, headers={'Authorization': admin_authorization_header})
+    assert r.status_code == 201, r.text
+    user_id = r.json()['id']
     return user_id
 
 
 @pytest.fixture
 def person_authorization_header(app_client, admin_authorization_header, person_id):
     data = { 'username': USERNAME_USER1, 'password': PASSWORD_USER1 }
-    r = app_client.post('/api/auth/login', data=json.dumps(data), content_type='application/json')
+    r = app_client.post('/api/auth/login', json=data)
     assert r.status_code == 200
-    auth_header = dict(r.headers).get('X-JWT-Token', None)
+    auth_header = r.headers.get('X-JWT-Token', None)
     assert re.match(r'^Bearer [0-9]+[:].+$', auth_header)
     return auth_header
 
@@ -314,3 +311,32 @@ def mqtt_wait_for_message(message_queue, topics, timeout=2):
             return message
         else:
             continue
+
+
+@pytest.fixture
+def smtp_messages():
+    messages = multiprocessing.Queue()
+
+    # run a smtp server in a separate thread:
+    class _SMTPServer(SMTPServer):
+        def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
+            messages.put((mailfrom, rcpttos, data.decode('utf-8'),))
+    smtp_server = _SMTPServer(('127.0.0.1', 22587,), None)
+
+    loop_thread = threading.Thread(target=asyncore.loop, kwargs={'timeout':1, 'use_poll': True})
+    loop_thread.start()
+
+    # before using it, double check that the testing SMTP daemon is started:
+    mailer = smtplib.SMTP('127.0.0.1', 22587)
+    mailer.helo()
+    mailer.sendmail('test@grafolean.com', 'test_to@grafolean.com', "\ntest body")
+    mailer.quit()
+    _from, _to, _body = messages.get(timeout=1)
+    assert _from == 'test@grafolean.com'
+    assert _to == ['test_to@grafolean.com']
+    assert _body == "\ntest body"
+
+    yield messages
+
+    smtp_server.close()
+    loop_thread.join()

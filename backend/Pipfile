@@ -5,7 +5,6 @@ name = "pypi"
 
 [packages]
 ansicolors = "*"
-flask = "*"
 python-slugify = "*"
 jsonschema = "*"
 passlib = "*"
@@ -15,9 +14,11 @@ paho-mqtt = "*"
 python-dotenv = "*"
 psycopg2-binary = "*"
 dnspython = "*"
-flask-mail = "*"
-flask-executor = "*"
 requests = "*"
+fastapi = "*"
+uvicorn = "*"
+python-multipart = "*"
+aiofiles = "*"
 
 [dev-packages]
 pytest = "*"

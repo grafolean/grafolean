@@ -34,7 +34,9 @@ jobs:
       run: |
         export VERSION=${GITHUB_REF_TAG:10:50}
         echo "export const VERSION_INFO = { ciCommitTag: '$VERSION' };" > ./frontend/src/VERSION.js
-        cat frontend/src/VERSION.js
+        echo "GRAFOLEAN_VERSION='$VERSION'" > ./backend/version.py
+        cat ./frontend/src/VERSION.js
+        cat ./backend/version.py
 
 
     - name: Create CHANGELOG.json

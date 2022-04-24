@@ -1,6 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { Switch, Route, withRouter } from 'react-router-dom';
+import moment from 'moment-timezone';
 
 import store from '../../store';
 import { ROOT_URL, doRequestBackendStatus } from '../../store/actions';
@@ -18,6 +19,15 @@ import ResetPassword from '../ForgotPassword/ResetPassword';
 class MainWrapper extends React.Component {
   componentDidMount() {
     store.dispatch(doRequestBackendStatus());
+    if (this.props.timezone) {
+      moment.tz.setDefault(this.props.timezone);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.timezone !== this.props.timezone && this.props.timezone) {
+      moment.tz.setDefault(this.props.timezone);
+    }
   }
 
   backendIsCrossOrigin() {
@@ -74,6 +84,7 @@ class MainWrapper extends React.Component {
 const mapStoreToProps = store => ({
   isDarkMode: store.preferences.colorScheme === 'dark',
   backendStatus: store.backendStatus.status,
+  timezone: store.user && store.user.personData ? store.user.personData.timezone : 'UTC',
 });
 // withRouter is needed to force re-rendering of this component when URL changes:
 export default withRouter(connect(mapStoreToProps)(MainWrapper));

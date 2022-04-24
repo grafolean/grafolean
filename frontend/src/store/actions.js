@@ -16,6 +16,14 @@ export function onLogout() {
   };
 }
 
+export const SET_PERSON_DATA = 'SET_PERSON_DATA';
+export function setPersonData(personData) {
+  return {
+    type: SET_PERSON_DATA,
+    personData,
+  };
+}
+
 export const DO_REQUEST_BACKEND_STATUS = 'DO_REQUEST_BACKEND_STATUS';
 export function doRequestBackendStatus() {
   return {

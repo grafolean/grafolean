@@ -3,7 +3,6 @@ import os
 import time
 import traceback
 
-from flask_executor import Executor
 import paho.mqtt.publish as mqtt_publish
 
 from auth import JWT
@@ -19,19 +18,6 @@ MQTT_WS_PORT = os.environ.get('MQTT_WS_PORT', '')
 CORS_DOMAINS = list(filter(len, os.environ.get('GRAFOLEAN_CORS_DOMAINS', '').lower().split(",")))
 
 
-# flask-executor allows us to easily put blocking tasks (publishing to mqtt broker) to background. It is defined
-# here, so that all blueprints can use it, but it is initialized with Flask app in grafolean.py:
-# https://github.com/dchevell/flask-executor/issues/29#issuecomment-599225443
-executor = Executor()
-
-
-def noauth(func):
-    # This decorator puts a mark in *the route function* so that before_request can check for it, and decide not to
-    # do authorization checks. It is a bit of a hack, but it works: https://stackoverflow.com/a/19575396/593487
-    # The beauty of this approach is that every endpoint is defended *by default*.
-    # WARNING: any further decorators must carry the attribute "_noauth" over to the wrapper.
-    func._noauth = True
-    return func
 
 
 class SuperuserJWTToken(object):
@@ -73,26 +59,16 @@ def mqtt_publish_changed(topics, payload='1'):
     topics_with_payloads = [(t, payload,) for t in topics]
     mqtt_publish_changed_multiple_payloads(topics_with_payloads)
 
+
 def mqtt_publish_changed_multiple_payloads(topics_with_payloads):
     if not MQTT_HOSTNAME:
         log.warn("MQTT not connected, not publishing change")
         return
     superuserJwtToken = SuperuserJWTToken.get_valid_token('backend_changed_notif')
-    future_response = executor.submit(_bg_mqtt_publish, topics_with_payloads, superuserJwtToken)
-    future_response.add_done_callback(_bg_mqtt_publish_done)  # log any errors
 
-def _bg_mqtt_publish(topics_with_payloads, superuserJwtToken):
     # https://www.eclipse.org/paho/clients/python/docs/#id2
-    msgs = [('changed/{}'.format(t), json.dumps(p), 1, False) for t, p, in topics_with_payloads]
-    mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
-
-def _bg_mqtt_publish_done(fn):
-    if fn.cancelled():
-        log.warn("MQTT publishing: cancelled")
-        return
-    ex = fn.exception()
-    if ex:
+    try:
+        msgs = [('changed/{}'.format(t), json.dumps(p), 1, False) for t, p, in topics_with_payloads]
+        mqtt_publish.multiple(msgs, hostname=MQTT_HOSTNAME, port=MQTT_PORT, auth={"username": superuserJwtToken, "password": "not.used"})
+    except Exception as ex:
         log.error(f"MQTT publishing: exception {''.join(traceback.format_exception(None, ex, ex.__traceback__))}")
-
-def send_telemetry_bg(action):
-    future_response = executor.submit(telemetry_send, action)

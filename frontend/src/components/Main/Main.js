@@ -2,6 +2,9 @@ import React from 'react';
 import { connect } from 'react-redux';
 import Sidebar from 'react-sidebar';
 
+import store from '../../store';
+import { setPersonData } from '../../store/actions';
+import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import Button from '../Button';
 import LoginPage from '../LoginPage';
 import Notifications from '../Notifications';
@@ -66,70 +69,78 @@ class Main extends React.Component {
     this.setState({ sidebarOpen: open });
   };
 
+  handlePersonUpdate = json => {
+    store.dispatch(setPersonData(json));
+  };
+
   render() {
     const { widthAllowsDocking, sidebarOpen, windowWidth } = this.state;
-    const { isDarkMode, fullscreenDibs, loggedIn } = this.props;
+    const { isDarkMode, fullscreenDibs, user } = this.props;
 
     const innerWindowWidth = windowWidth - 2 * this.CONTENT_PADDING_LR - this.SCROLLBAR_WIDTH;
     const sidebarWidth = Math.min(this.SIDEBAR_MAX_WIDTH, windowWidth - 40); // always leave a bit of place (40px) to the right of menu
     const sidebarDocked = widthAllowsDocking && !fullscreenDibs;
     const contentWidth = sidebarDocked ? innerWindowWidth - sidebarWidth : innerWindowWidth;
 
+    const loggedIn = Boolean(user);
     if (!loggedIn) {
       return <LoginPage />;
     }
 
     return (
-      <Sidebar
-        sidebar={
-          <SidebarContent
-            sidebarDocked={sidebarDocked}
-            onSidebarXClick={this.onSidebarXClick}
-            onSidebarLinkClick={this.onSidebarLinkClick}
-          />
-        }
-        open={sidebarOpen}
-        docked={sidebarDocked}
-        onSetOpen={this.onSetSidebarOpen}
-        shadow={false}
-        rootClassName={`${isDarkMode ? 'dark-mode with-bg-image' : ''} ${
-          fullscreenDibs ? 'fullscreen-dibs' : ''
-        }`}
-        contentClassName={'content-root'}
-        styles={{
-          sidebar: {
-            backgroundColor: isDarkMode ? '#202020' : '#f5f5f5',
-            width: sidebarWidth,
-            borderRight: `1px solid ${isDarkMode ? '#151515' : '#e3e3e3'}`,
-            zIndex: 88008800,
-            opacity: 0.95,
-          },
-          content: {
-            display: 'flex',
-            flexDirection: 'column',
-          },
-          overlay: {
-            zIndex: 88008800 - 1,
-          },
-        }}
-      >
-        {!sidebarDocked && (
-          <Button className="burger" onClick={this.onBurgerClick}>
-            <i className="fa fa-bars" />
-          </Button>
-        )}
+      <>
+        <PersistentFetcher resource={`persons/${user.user_id}`} onUpdate={this.handlePersonUpdate} />
+        <Sidebar
+          sidebar={
+            <SidebarContent
+              sidebarDocked={sidebarDocked}
+              onSidebarXClick={this.onSidebarXClick}
+              onSidebarLinkClick={this.onSidebarLinkClick}
+            />
+          }
+          open={sidebarOpen}
+          docked={sidebarDocked}
+          onSetOpen={this.onSetSidebarOpen}
+          shadow={false}
+          rootClassName={`${isDarkMode ? 'dark-mode with-bg-image' : ''} ${
+            fullscreenDibs ? 'fullscreen-dibs' : ''
+          }`}
+          contentClassName={'content-root'}
+          styles={{
+            sidebar: {
+              backgroundColor: isDarkMode ? '#202020' : '#f5f5f5',
+              width: sidebarWidth,
+              borderRight: `1px solid ${isDarkMode ? '#151515' : '#e3e3e3'}`,
+              zIndex: 88008800,
+              opacity: 0.95,
+            },
+            content: {
+              display: 'flex',
+              flexDirection: 'column',
+            },
+            overlay: {
+              zIndex: 88008800 - 1,
+            },
+          }}
+        >
+          {!sidebarDocked && (
+            <Button className="burger" onClick={this.onBurgerClick}>
+              <i className="fa fa-bars" />
+            </Button>
+          )}
 
-        <Breadcrumbs />
+          <Breadcrumbs />
 
-        <Notifications />
+          <Notifications />
 
-        <Content contentWidth={contentWidth} />
-      </Sidebar>
+          <Content contentWidth={contentWidth} />
+        </Sidebar>
+      </>
     );
   }
 }
 const mapBackendStatusToProps = store => ({
-  loggedIn: Boolean(store.user),
+  user: store.user,
   isDarkMode: store.preferences.colorScheme === 'dark',
   fullscreenDibs: store.fullscreenDibs,
 });

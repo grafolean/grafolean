@@ -10,6 +10,7 @@ import {
   REMOVE_NOTIFICATION,
   ON_LOGIN_SUCCESS,
   ON_LOGOUT,
+  SET_PERSON_DATA,
   CLEAR_NOTIFICATIONS,
   ON_RECEIVE_ACCOUNTS_LIST_SUCCESS,
   SET_COLOR_SCHEME,
@@ -36,11 +37,17 @@ function user(state = null, action) {
   switch (action.type) {
     case ON_LOGIN_SUCCESS:
       return {
+        ...state,
         ...action.userData,
         jwtToken: action.jwtToken,
       };
     case ON_LOGOUT:
       return null;
+    case SET_PERSON_DATA:
+      return {
+        ...state,
+        personData: action.personData,
+      };
     default:
       return state;
   }

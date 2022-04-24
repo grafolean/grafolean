@@ -37,10 +37,16 @@ def get_db_connection():
 
         conn.autocommit = True
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        yield conn
     except (DBConnectionError, psycopg2.OperationalError):
-        db_pool = None  # make sure that we reconnect next time
+        try:
+            if db_pool is not None:
+                db_pool.closeall()
+        finally:
+            db_pool = None  # make sure that we reconnect next time
         yield None
+        return
+    try:
+        yield conn
     finally:
         if db_pool is not None:
             db_pool.putconn(conn)
@@ -53,12 +59,16 @@ def get_db_cursor():
             yield InvalidDBCursor()
             return
 
-        cursor = connection.cursor()
+        try:
+            cursor = connection.cursor()
+        except:
+            yield InvalidDBCursor()
+            return
+
         try:
             yield cursor
         finally:
-            if not isinstance(cursor, InvalidDBCursor):
-                cursor.close()
+            cursor.close()
 
 
 # In python it is not possible to throw an exception within the __enter__ phase of a with statement:
@@ -101,8 +111,6 @@ def db_disconnect():
     db_pool = None
     log.info("DB connection is closed")
 
-
-db_connect()
 
 # This class is only needed until we replace all db.cursor() calls with get_db_cursor()
 class ThinDBWrapper(object):
@@ -594,3 +602,8 @@ def migration_step_29():
                 "series_groups": json.loads(content),
             })
             c2.execute("UPDATE widgets SET content = %s WHERE id = %s;", (new_content, widget_id,))
+
+def migration_step_30():
+    """ Persons should be able to select their timezone. """
+    with db.cursor() as c:
+        c.execute("ALTER TABLE persons ADD COLUMN timezone VARCHAR(64) NOT NULL DEFAULT 'UTC';")

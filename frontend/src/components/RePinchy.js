@@ -1,4 +1,6 @@
 import React from 'react';
+import debounce from 'lodash/debounce';
+import Overlay from './Overlay';
 
 export default class RePinchy extends React.Component {
   /*
@@ -41,6 +43,7 @@ export default class RePinchy extends React.Component {
       return <p>Please specify renderSub prop!</p>;
     },
   };
+  activeAreaDivRef = React.createRef();
 
   constructor() {
     super(...arguments);
@@ -70,21 +73,23 @@ export default class RePinchy extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener('keyup', this.handleShiftKeyUp, true);
-    window.addEventListener('touchstart', this.maybeKillDefaultTouchHandler, {
-      passive: false,
-    });
-    window.addEventListener('touchmove', this.maybeKillDefaultTouchHandler, {
-      passive: false,
-    });
+    if (!this.props.kidnapScroll) {
+      window.addEventListener('keyup', this.handleShiftKeyUp, true);
+    }
+    window.addEventListener('touchstart', this.maybeKillDefaultTouchHandler, { passive: false });
+    window.addEventListener('touchmove', this.maybeKillDefaultTouchHandler, { passive: false });
+    // We would prefer to define this event listener the same way as others, but it needs to be non-passive (so
+    // that we can call e.stopPropagation()) and React currently doesn't support defining such event handlers.
+    this.activeAreaDivRef.current.addEventListener('wheel', this.handleWheel, { passive: false });
   }
 
   componentWillUnmount() {
-    window.removeEventListener('keyup', this.handleShiftKeyUp, true);
+    if (!this.props.kidnapScroll) {
+      window.removeEventListener('keyup', this.handleShiftKeyUp, true);
+    }
     window.removeEventListener('touchstart', this.maybeKillDefaultTouchHandler, { passive: false });
-    window.removeEventListener('touchmove', this.maybeKillDefaultTouchHandler, {
-      passive: false,
-    });
+    window.removeEventListener('touchmove', this.maybeKillDefaultTouchHandler, { passive: false });
+    this.activeAreaDivRef.current.removeEventListener('wheel', this.handleWheel, { passive: false });
   }
 
   maybeKillDefaultTouchHandler = event => {
@@ -240,6 +245,7 @@ export default class RePinchy extends React.Component {
       this.ensureOverlayShown('Use SHIFT + mouse wheel to zoom');
       return;
     }
+    event.preventDefault();
 
     let currentTargetRect = event.currentTarget.getBoundingClientRect();
 
@@ -251,9 +257,18 @@ export default class RePinchy extends React.Component {
     this.setState({
       zoomInProgress: this.zoomInProgress,
     });
-    // listening for keyUp for Ctrl doesn't always work for unknown reasons (not because of onblur), so
-    // we use a failsafe: (though we now use Shift instead of Ctrl so this might not be needed)
-    window.addEventListener('mousemove', this.handleMouseMoveCheckShift, true);
+
+    if (this.props.kidnapScroll) {
+      // just mousewheel for zooming:
+      // The zoomInProgress gets set to false only when wheel has stopped moving for some delay, to allow chart to avoid
+      // excessive redrawing during zooming.
+      this.debouncedEndZooming();
+    } else {
+      // shift + mousewheel for scrolling:
+      // listening for keyUp for Ctrl doesn't always work for unknown reasons (not because of onblur), so
+      // we use a failsafe: (though we now use Shift instead of Ctrl so this might not be needed)
+      window.addEventListener('mousemove', this.handleMouseMoveCheckShift, true);
+    }
 
     let scaleFactor;
     if (event.deltaY < 0) {
@@ -279,14 +294,12 @@ export default class RePinchy extends React.Component {
       y: this.y,
       scale: this.scale,
     });
-
-    event.preventDefault();
   };
 
   handleShiftKeyUp = event => {
     if (event.keyCode === 16) {
       // Shift: 16, Ctrl: 17
-      this.onShiftKeyUp();
+      this.endZooming();
     }
   };
 
@@ -298,16 +311,20 @@ export default class RePinchy extends React.Component {
       return; // it seems all is ok (Shift is still pressed)
     }
     console.warn('KeyUp event failed to detect Shift key up, fixing with workaround');
-    this.onShiftKeyUp();
+    this.endZooming();
   };
 
-  onShiftKeyUp() {
+  endZooming = () => {
     this.zoomInProgress = false;
     this.setState({
       zoomInProgress: this.zoomInProgress,
     });
-    window.removeEventListener('mousemove', this.handleMouseMoveCheckShift, true); // no need for the workaround anymore
-  }
+    if (!this.props.kidnapScroll) {
+      window.removeEventListener('mousemove', this.handleMouseMoveCheckShift, true); // no need for the workaround anymore
+    }
+  };
+
+  debouncedEndZooming = debounce(this.endZooming, 400);
 
   handleMouseDownDrag = event => {
     // mouse drag started, let's remember everything we need to know to follow it:
@@ -502,49 +519,23 @@ export default class RePinchy extends React.Component {
             this.setXYScale,
           )}
         </div>
-        {this.state.overlay.shown
-          ? [
-              <div
-                key="overlay-bg"
-                style={{
-                  position: 'absolute',
-                  left: this.props.activeArea.x,
-                  top: this.props.activeArea.y,
-                  width: this.props.activeArea.w,
-                  height: this.props.activeArea.h,
-                  backgroundColor: '#000000',
-                  opacity: 0.2,
-                  pointerEvents: 'none', // do not catch mouse and touch events
-                  touchAction: 'none',
-                }}
-              />,
-              <div
-                key="overlay-text"
-                style={{
-                  position: 'absolute',
-                  left: this.props.activeArea.x,
-                  top: this.props.activeArea.y,
-                  width: this.props.activeArea.w,
-                  height: this.props.activeArea.h,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontSize: 20,
-                  pointerEvents: 'none', // do not catch mouse and touch events
-                  touchAction: 'none',
-                }}
-              >
-                <span style={{ textAlign: 'center' }}>{this.state.overlay.msg}</span>
-              </div>,
-            ]
-          : null}
+
+        {this.state.overlay.shown && (
+          <Overlay
+            left={this.props.activeArea.x}
+            top={this.props.activeArea.y}
+            width={this.props.activeArea.w}
+            height={this.props.activeArea.h}
+            msg={this.state.overlay.msg}
+          />
+        )}
 
         <div
+          ref={this.activeAreaDivRef}
           onTouchStartCapture={this.handleTouchStart}
           onTouchMoveCapture={this.handleTouchMove}
           onTouchEndCapture={this.handleTouchEnd}
-          onWheel={this.handleWheel}
+          // onWheel={this.handleWheel} // if defined this way, event.stopPropagation() will not work
           onMouseDown={this.handleMouseDownDrag}
           onMouseMove={this.handleMouseMove}
           onMouseLeave={this.handleMouseLeave}

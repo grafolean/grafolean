@@ -5,6 +5,7 @@ import { Link, withRouter, Switch, Route } from 'react-router-dom';
 import { havePermission } from '../../utils/fetch';
 import { PersistentFetcher } from '../../utils/fetch/PersistentFetcher';
 import { doLogout } from '../../store/helpers';
+import { ROOT_URL } from '../../store/actions';
 
 import Button from '../Button';
 import VersionInfo from './VersionInfo';
@@ -63,9 +64,25 @@ class SidebarContent extends React.Component {
         </Link>
         <div className="bottom">
           <VersionInfo />
-          <a className="api-doc" href="/api-doc/" target="_blank">
-            API
-          </a>
+          <div className="api-doc">
+            <a
+              className="api-doc"
+              href={`${ROOT_URL}/docs`}
+              target="_blank"
+              rel="external nofollow noopener noreferrer"
+            >
+              API docs
+            </a>{' '}
+            /{' '}
+            <a
+              className="api-doc"
+              href={`${ROOT_URL}/redoc`}
+              target="_blank"
+              rel="external nofollow noopener noreferrer"
+            >
+              redoc
+            </a>
+          </div>
           <ColorSchemeSwitch />
         </div>
       </div>

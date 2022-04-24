@@ -6,7 +6,7 @@
 
 - [Highlights](#highlights)
 - [Installation](#installation)
-- [Quick start - sending values to Grafolean](#quick-start---sending-values-to-grafolean)
+- [Quick start - sending values to Grafolean](#sending-values-to-grafolean-custom-bots)
 - [Guides](#guides)
 - [Privacy](#privacy)
 - [License](#license)

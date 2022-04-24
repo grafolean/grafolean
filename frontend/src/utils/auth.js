@@ -1,4 +1,4 @@
-import moment from 'moment';
+import moment from 'moment-timezone';
 
 import { ROOT_URL, handleFetchErrors } from '../store/actions';
 

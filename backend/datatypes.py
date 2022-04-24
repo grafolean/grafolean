@@ -11,6 +11,8 @@ import re
 import tarfile
 import time
 
+from fastapi import HTTPException
+from fastapi.encoders import jsonable_encoder
 import jsonschema
 import psycopg2.extras
 import requests
@@ -33,13 +35,14 @@ from const import SYSTEM_PATH_PREFIX, SYSTEM_PATH_INSERTED_COUNT
 def clear_all_lru_cache():
     # when testing, it is important to clear memoization cache in between runs, or the results will be... interesting.
     # Dashboard.get_id.cache_clear()
-    Path._get_path_id_from_db.cache_clear()
+    # Path._get_path_id_from_db.cache_clear()
     # PathFilter._find_matching_paths_for_filter.cache_clear()
     pass
 
 
-class ValidationError(Exception):
-    pass
+class ValidationError(HTTPException):
+    def __init__(self, s):
+        super().__init__(status_code=400, detail=s)
 
 
 class AccessDeniedError(Exception):
@@ -101,7 +104,10 @@ class Path(object):
         return cls(path, account_id, force_id=force_id)
 
     @staticmethod
-    @lru_cache(maxsize=None)
+    # The problem with lru_cache: when do we clear it? Any change should invalidate cache, but in multi-worker
+    # setup this means clearing lru_cache in another process. For this reason we disable cache until a better
+    # solution is found.
+    #@lru_cache(maxsize=None)
     def _get_path_id_from_db(account_id, path):
         with db.cursor() as c:
             path_cleaned = path.strip()
@@ -143,8 +149,8 @@ class Path(object):
             return 0
         with db.cursor() as c:
             c.execute("UPDATE paths SET path = %s WHERE id = %s AND account = %s;", (self.path, self.force_id, self.account_id,))
-            if c.rowcount:
-                Path._get_path_id_from_db.cache_clear()
+            # if c.rowcount:
+            #     Path._get_path_id_from_db.cache_clear()
             return c.rowcount
 
     @staticmethod
@@ -152,8 +158,8 @@ class Path(object):
         with db.cursor() as c:
             # delete just the path, "ON DELETE CASCADE" takes care of removing values:
             c.execute("DELETE FROM paths WHERE id = %s AND account = %s;", (path_id, account_id,))
-            if c.rowcount:
-                Path._get_path_id_from_db.cache_clear()
+            # if c.rowcount:
+            #     Path._get_path_id_from_db.cache_clear()
             return c.rowcount
 
 
@@ -252,7 +258,7 @@ class EmailAddress(object):
         try:
             if not self.is_valid(str(v)):
                 raise ValidationError("Invalid email: {}".format(str(v)))
-        except dns.exception.Timeout:
+        except (dns.exception.Timeout, dns.resolver.NoResolverConfiguration):
             if strict_check:
                 raise ValidationError("Could not validate email: {}".format(str(v)))
             else:
@@ -780,33 +786,34 @@ class Account(object):
             return c.rowcount
 
     @staticmethod
-    def get_list(user_id=None):
+    def get_list(user_id):
         with db.cursor() as c:
             ret = []
-            if user_id is None:
-                c.execute('SELECT id, name FROM accounts ORDER BY name;')
-            else:
-                # get the list of accounts that this user has the permission to access: (GET)
-                # - get user's permissions, then:
-                #   - find a permission that grants access to all accounts, or
-                #   - find specific accounts that users has GET permission for
-                can_access_all_accounts = False
-                specific_accounts = []
-                for permission in Permission.get_list(user_id):
-                    # we are only interested in GET methods: (or None)
-                    if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
-                        can_access_all_accounts = True
-                        break
-                    m = Account.RESOURCE_ACCOUNTS_REGEX.match(permission['resource_prefix'])
-                    if m:
-                        specific_accounts.append(int(m.group(1)))
+            if not user_id:
+                #c.execute('SELECT id, name FROM accounts ORDER BY name;')
+                raise AccessDeniedError("User id not available - this should not happen!")
 
-                if can_access_all_accounts:
-                    c.execute('SELECT id, name FROM accounts ORDER BY name;')
-                elif specific_accounts:
-                    c.execute('SELECT id, name FROM accounts WHERE id IN %s ORDER BY name;', (tuple(specific_accounts),))
-                else:
-                    c = []
+            # get the list of accounts that this user has the permission to access: (GET)
+            # - get user's permissions, then:
+            #   - find a permission that grants access to all accounts, or
+            #   - find specific accounts that users has GET permission for
+            can_access_all_accounts = False
+            specific_accounts = []
+            for permission in Permission.get_list(user_id):
+                # we are only interested in GET methods: (or None)
+                if permission['resource_prefix'] is None or permission['resource_prefix'] == 'accounts':
+                    can_access_all_accounts = True
+                    break
+                m = Account.RESOURCE_ACCOUNTS_REGEX.match(permission['resource_prefix'])
+                if m:
+                    specific_accounts.append(int(m.group(1)))
+
+            if can_access_all_accounts:
+                c.execute('SELECT id, name FROM accounts ORDER BY name;')
+            elif specific_accounts:
+                c.execute('SELECT id, name FROM accounts WHERE id IN %s ORDER BY name;', (tuple(specific_accounts),))
+            else:
+                c = []
 
             for account_id, name in c:
                 ret.append({'id': account_id, 'name': name})
@@ -877,6 +884,7 @@ class Permission(object):
 
     @staticmethod
     def is_access_allowed(user_id, resource, method):
+        method = method.upper()
         if method == 'HEAD':
             method = 'GET'  # access for HEAD is the same as for GET
 
@@ -1163,39 +1171,44 @@ class Bot(object):
 
 
 class Person(object):
-    def __init__(self, name, email, username, password, email_confirmed, force_id=None):
+    def __init__(self, name, email, username, password, timezone, email_confirmed, force_id=None):
         self.name = name
         self.email = EmailAddress(email, strict_check=False)
         self.username = username
         self.password = password
+        self.timezone = timezone
         self.email_confirmed = email_confirmed
         self.force_id = force_id
 
     @classmethod
-    def forge_from_input(cls, json_data, force_id=None):
+    def forge_from_input(cls, person_data, force_id=None):
         if force_id is None:
-            jsonschema.validate(json_data, PersonSchemaInputsPOST)
+            jsonschema.validate(person_data, PersonSchemaInputsPOST)
         else:
-            jsonschema.validate(json_data, PersonSchemaInputsPUT)
+            jsonschema.validate(person_data, PersonSchemaInputsPUT)
 
-        name = json_data.get('name', None)
-        email = json_data.get('email', None)
-        username = json_data.get('username', None)
-        password = json_data.get('password', None)
+        name = person_data.get('name', None)
+        email = person_data.get('email', None)
+        username = person_data.get('username', None)
+        password = person_data.get('password', None)
+        timezone = person_data.get('timezone', None)
+        if timezone is None:
+            timezone = 'UTC'
         email_confirmed = True  # when manually entering user, e-mail check is not performed
-        return cls(name, email, username, password, email_confirmed, force_id)
+        return cls(name, email, username, password, timezone, email_confirmed, force_id)
 
     @staticmethod
     def get_list():
         with db.cursor() as c:
             ret = []
-            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons ORDER BY username ASC;')
-            for user_id, name, email, username, email_confirmed in c:
+            c.execute('SELECT user_id, name, email, username, timezone, email_confirmed FROM persons ORDER BY username ASC;')
+            for user_id, name, email, username, timezone, email_confirmed in c:
                 ret.append({
                     'user_id': user_id,
                     'name': name,
                     'email': email,
                     'username': username,
+                    'timezone': timezone,
                     'email_confirmed': email_confirmed,
                 })
             return ret
@@ -1211,8 +1224,10 @@ class Person(object):
         email = json_data.get('email', None)
 
         # insert a person which needs the e-mail to be confirmed and password entered before it can login:
-        person = cls('', email, email, None, False)
+        person = cls('', email, email, None, 'UTC', False)
         user_id = person.insert()
+        if user_id is None:
+            return None, None
 
         with db.cursor() as c:
             c.execute('SELECT confirm_pin FROM persons WHERE user_id = %s;', (user_id,))
@@ -1297,12 +1312,22 @@ class Person(object):
 
     def insert(self):
         with db.cursor() as c:
-            c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
-            user_id, = c.fetchone()
-            pass_hash = Auth.password_hash(self.password) if self.password is not None else None
-            c.execute("INSERT INTO persons (user_id, name, email, username, passhash, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s);",
-                (user_id, self.name, str(self.email), self.username, pass_hash, self.email_confirmed,))
-            return user_id
+            c.execute("START TRANSACTION;")
+            try:
+                c.execute("INSERT INTO users (user_type) VALUES ('person') RETURNING id;")
+                user_id, = c.fetchone()
+                pass_hash = Auth.password_hash(self.password) if self.password is not None else None
+                c.execute("INSERT INTO persons (user_id, name, email, username, passhash, timezone, email_confirmed) VALUES (%s, %s, %s, %s, %s, %s, %s);",
+                    (user_id, self.name, str(self.email), self.username, pass_hash, self.timezone, self.email_confirmed,))
+                c.execute("COMMIT;")
+                return user_id
+            except psycopg2.errors.UniqueViolation:
+                # duplicated record - but we do not let the user know this, we just rollback the partial insert:
+                c.execute("ROLLBACK;")
+                return None
+            except:
+                c.execute("ROLLBACK;")
+                raise
 
     def update(self):
         if self.force_id is None:
@@ -1314,6 +1339,8 @@ class Person(object):
                 c.execute("UPDATE persons SET username = %s WHERE user_id = %s;", (self.username, self.force_id,))
             if self.email:
                 c.execute("UPDATE persons SET email = %s WHERE user_id = %s;", (str(self.email), self.force_id,))
+            if self.timezone:
+                c.execute("UPDATE persons SET timezone = %s WHERE user_id = %s;", (str(self.timezone), self.force_id,))
             # changing password is disabled here - it is only allowed through change_password(), which requests the old password too.
             # if self.password:
             #     pass_hash = Auth.password_hash(self.password)
@@ -1351,16 +1378,17 @@ class Person(object):
     @staticmethod
     def get(user_id):
         with db.cursor() as c:
-            c.execute('SELECT user_id, name, email, username, email_confirmed FROM persons WHERE user_id = %s;', (user_id,))
+            c.execute('SELECT user_id, name, email, username, timezone, email_confirmed FROM persons WHERE user_id = %s;', (user_id,))
             res = c.fetchone()
             if not res:
                 return None
-            user_id, name, email, username, email_confirmed = res
+            user_id, name, email, username, timezone, email_confirmed = res
         return {
             'user_id': user_id,
             'name': name,
             'email': email,
             'username': username,
+            'timezone': timezone,
             'email_confirmed': email_confirmed,
         }
 

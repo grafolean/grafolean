@@ -1,4 +1,4 @@
-import moment from 'moment';
+import moment from 'moment-timezone';
 import { stringify } from 'qs';
 import debounce from 'lodash/debounce';
 

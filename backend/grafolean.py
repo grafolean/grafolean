@@ -1,13 +1,40 @@
 #!/usr/bin/env python
 import os
+import re
 import sys
+
 from dotenv import load_dotenv
-import flask
+from fastapi import FastAPI, Request, Response, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.middleware import Middleware
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html, get_swagger_ui_oauth2_redirect_html
+from fastapi.staticfiles import StaticFiles
 import jsonschema
-from werkzeug.exceptions import HTTPException
+import uvicorn
 
 
-app = flask.Flask(__name__, static_folder=None)
+from version import GRAFOLEAN_VERSION
+
+
+app = FastAPI(
+    title="Grafolean",
+    description="Easy to use monitoring solution",
+    version=GRAFOLEAN_VERSION,
+    openapi_url="/api/swagger.json",
+    docs_url=None,  # https://github.com/tiangolo/fastapi/issues/2518#issuecomment-827513744
+    redoc_url=None,
+    contact={
+        "name": "Grafolean",
+        "url": "https://grafolean.com/",
+        "email": "info@grafolean.com",
+    },
+    license_info={
+        'name': 'Commons Clause',
+        'url': 'https://github.com/grafolean/grafolean/blob/master/LICENSE.md',
+    },
+)
+app.mount("/api/static", StaticFiles(directory=os.path.dirname(os.path.abspath(__file__)) + "/static"), name="static")
 
 
 try:
@@ -19,251 +46,172 @@ except:
     pass
 
 
+# custom documentation endpoints to avoid leaking any information to third parties:
+@app.get("/api/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Swagger UI",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="/api/static/swagger-ui-bundle.js",
+        swagger_css_url="/api/static/swagger-ui.css",
+        swagger_favicon_url="/api/static/favicon.ico",
+    )
+
+
+@app.get(app.swagger_ui_oauth2_redirect_url, include_in_schema=False)
+async def swagger_ui_redirect():
+    return get_swagger_ui_oauth2_redirect_html()
+
+
+@app.get("/api/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - ReDoc",
+        redoc_js_url="/api/static/redoc.standalone.js",
+        redoc_favicon_url="/api/static/favicon.ico",
+        with_google_fonts=False,
+    )
+
+
 from datatypes import ValidationError, Permission, Bot
 import dbutils
 from utils import log
 from auth import JWT, AuthFailedException
-from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, users_apidoc_schemas, \
-    accounts_apidoc_schemas, admin_apidoc_schemas, executor, plugins_api
+from api import CORS_DOMAINS, accounts_api, admin_api, auth_api, profile_api, users_api, status_api, plugins_api
 import validators
 
 
-# since this is API, we don't care about trailing slashes - and we don't want redirects:
-app.url_map.strict_slashes = False
-# executor allows us to put long-running tasks (publish to mqtt) to background:
-executor.init_app(app)
 # register the blueprints for different api endpoints:
-app.register_blueprint(users_api, url_prefix='/api')  # /api/users, /api/persons and /api/bots
-app.register_blueprint(admin_api, url_prefix='/api/admin')
-app.register_blueprint(profile_api, url_prefix='/api/profile')
-app.register_blueprint(accounts_api, url_prefix='/api/accounts')
-app.register_blueprint(status_api, url_prefix='/api/status')
-app.register_blueprint(auth_api, url_prefix='/api/auth')
-app.register_blueprint(plugins_api, url_prefix='/api/plugins')
+app.include_router(users_api)  # /api/users, /api/persons and /api/bots
+app.include_router(admin_api)
+app.include_router(auth_api)
+app.include_router(accounts_api)
+app.include_router(status_api)
+app.include_router(profile_api)
+app.include_router(plugins_api)
 
 
-if os.environ.get('MAIL_SERVER'):
-    app.config.update(
-        MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.grafolean.com'),
-        MAIL_PORT = os.environ.get('MAIL_PORT', 587),
-        MAIL_USE_TLS = os.environ.get('MAIL_USE_TSL', 'true').lower() in ['true', 'yes', 'on', '1'],
-        MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'noreply@grafolean.com'),
-        MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', ''),
-    )
+NO_AUTH_ENDPOINTS = [
+    ('POST', '/api/persons/signup/new'),
+    ('POST', '/api/admin/migratedb'),
+    ('POST', '/api/admin/first'),
+    ('POST', '/api/admin/mqtt-auth-plug/getuser'),
+    ('POST', '/api/admin/mqtt-auth-plug/superuser'),
+    ('POST', '/api/admin/mqtt-auth-plug/aclcheck'),
+    ('POST', '/api/auth/login'),
+    ('POST', '/api/auth/refresh'),
+    ('GET', '/api/docs'),
+    ('GET', '/api/redoc'),
+    ('GET', '/api/swagger.json'),
+    ('GET', '/api/plugins/widgets'),
+    ('GET', '/api/status/info'),
+    # ('GET', '/api/status/sitemap'),
+    ('POST', '/api/status/cspreport'),
+    ('POST', '/api/persons/signup/new'),
+    ('POST', '/api/persons/signup/validatepin'),
+    ('POST', '/api/persons/signup/complete'),
+    ('POST', '/api/persons/forgot'),
+    ('POST', '/api/persons/forgot/reset'),
+]
+NO_AUTH_GET_ENDPOINTS_REGEXES = [
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+')),
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/widget[.]js')),
+    ('GET', re.compile(r'/api/plugins/widgets/[0-9]+/form[.]js')),
+    ('GET', re.compile(r'/api/static/[a-zA-Z0-9_.-]+[.](js|css|ico)')),
+]
 
 
-@app.before_request
-def before_request():
+@app.middleware("http")
+async def grafolean_auth(request: Request, call_next):
+    request.state.grafolean_auth = {}
 
-    # http://flask.pocoo.org/docs/1.0/api/#application-globals
-    flask.g.grafolean_data = {}
+    # some endpoints do not want us to perform any authorization for them:
+    method = request.method.upper()
+    url_path = request.url.path
+    if (method, url_path) in NO_AUTH_ENDPOINTS:
+        return await call_next(request)
+    # some of these endpoints use path params and must be matched via regex:
+    for no_auth_method, no_auth_path_pattern in NO_AUTH_GET_ENDPOINTS_REGEXES:
+        if method == no_auth_method and re.match(no_auth_path_pattern, url_path):
+            return await call_next(request)
 
-    if not flask.request.endpoint in app.view_functions:
-        # Calling /api/admin/migratedb with GET (instead of POST) is a common mistake, so it deserves a warning in the log:
-        if flask.request.path == '/api/admin/migratedb' and flask.request.method == 'GET':
-            log.warning("Did you want to use POST instead of GET?")
-        return "Resource not found", 404
+    try:
+        user_id = None
+        user_is_bot = False
+        authorization_header = request.headers.get('authorization')
+        query_params_bot_token = request.query_params.get('b')
+        if authorization_header is not None:
+            received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
+            request.state.grafolean_auth['jwt'] = received_jwt
+            user_id = received_jwt.data['user_id']
+        elif query_params_bot_token is not None:
+            user_id = Bot.authenticate_token(query_params_bot_token)
+            user_is_bot = True
 
-    # Browser might (if frontend and backend are not on the same origin) send a pre-flight OPTIONS request to get the
-    # CORS settings. In this case 'Authorization' header will not be set, which could lead to 401 response, which browser
-    # doesn't like. So let's just return 200 on all OPTIONS:
-    if flask.request.method == 'OPTIONS':
-        # we need to set 'Allow' header to notify caller which methods are available:
-        methods = set()
-        for rule in app.url_map.iter_rules():
-            if flask.request.url_rule == rule:
-                methods |= rule.methods
-        response = flask.make_response('', 200)
-        response.headers['Allow'] = ",".join(sorted(methods))
-        return response
+        if user_id is None:
+            log.info("Authentication failed (no such user)")
+            return Response(status_code=401, content="Access denied")
 
-    if flask.request.method in ['GET', 'HEAD', 'POST']:
-        # While it is true that CORS is client-side protection, the rules about preflights allow these 3 types of requests
-        # to be sent to the server without OPTIONS preflight - which means that browser will learn about violation too late.
-        # To combat this, we still check Origin header and explicitly deny non-whitelisted requests:
-        origin_header = flask.request.headers.get('Origin', None)
-        if origin_header:  # is it a cross-origin request?
-            # still, we sometimes get origin header even if it is not a cross-origin request, so let's double check that we
-            # indeed are doing CORS:
-            if flask.request.url_root.rstrip('/') != origin_header:
-                if origin_header not in CORS_DOMAINS and flask.request.path != '/api/status/info':  # this path is an exception
-                    return 'CORS not allowed for this origin', 403
+        # check permissions:
+        resource = request.url.path[len('/api/'):]
+        resource = resource.rstrip('/')
+        is_allowed = Permission.is_access_allowed(
+            user_id=user_id,
+            resource=resource,
+            method=request.method,
+        )
+        if not is_allowed:
+            log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, request.method.upper()))
+            return Response(status_code=403, content="Access to resource denied, insufficient permissions")
 
-    if dbutils.db is None:
-        dbutils.db_connect()
-        if dbutils.db is None:
-            # oops, DB error... we should return 5xx:
-            return 'Service unavailable', 503
+        request.state.grafolean_auth['user_id'] = user_id
+        request.state.grafolean_auth['user_is_bot'] = user_is_bot
+    except AuthFailedException as ex:
+        log.info(f"Authentication failed: {str(ex)}")
+        return Response(status_code=401, content="Access denied")
+    except HTTPException:
+        raise
+    except:
+        log.exception("Exception while checking access rights")
+        return Response(status_code=500, content="Could not validate access")
 
-    view_func = app.view_functions[flask.request.endpoint]
-    # unless we have explicitly used @noauth decorator, do authorization check here:
-    if not hasattr(view_func, '_noauth'):
-        try:
-            user_id = None
-            user_is_bot = False
-            authorization_header = flask.request.headers.get('Authorization')
-            query_params_bot_token = flask.request.args.get('b')
-            if authorization_header is not None:
-                received_jwt = JWT.forge_from_authorization_header(authorization_header, allow_leeway=0)
-                flask.g.grafolean_data['jwt'] = received_jwt
-                user_id = received_jwt.data['user_id']
-            elif query_params_bot_token is not None:
-                user_id = Bot.authenticate_token(query_params_bot_token)
-                user_is_bot = True
+    return await call_next(request)
 
-            if user_id is None:
-                log.info("Authentication failed (no such user)")
-                return "Access denied", 401
 
-            # check permissions:
-            resource = flask.request.path[len('/api/'):]
-            resource = resource.rstrip('/')
-            is_allowed = Permission.is_access_allowed(
-                user_id=user_id,
-                resource=resource,
-                method=flask.request.method,
-            )
-            if not is_allowed:
-                log.info("Access denied (permissions check failed) {} {} {}".format(user_id, resource, flask.request.method))
-                return "Access to resource denied, insufficient permissions", 403
-
-            flask.g.grafolean_data['user_id'] = user_id
-            flask.g.grafolean_data['user_is_bot'] = user_is_bot
-        except AuthFailedException as ex:
-            log.info(f"Authentication failed: {str(ex)}")
-            return "Access denied", 401
-        except:
-            log.exception("Exception while checking access rights")
-            return "Could not validate access", 500
-
-def _add_cors_headers(response):
-    if flask.request.path == '/api/status/info':
-        # we are nice to the frontend - we allow call to (only) this path, so that if CORS is misconfigured, frontend can advise on proper solution:
-        allow_origin = '*'
-    else:
-        # allow cross-origin request if Origin matches env var:
-        if not CORS_DOMAINS:
-            # browser has set Origin header (so the request might be cross-domain or POST), but we don't allow CORS, so we don't set any header
-            return
-        origin_header = flask.request.headers.get('Origin', None)
-        if not origin_header:
-            # Origin header was not set in request, so there is no need to set CORS headers (browser apparently thinks this is the same domain)
-            return
-        if origin_header not in CORS_DOMAINS:
-            # the protocol + domain (+ port) in Origin header doesn't match any of the specified domains, so we don't set any headers:
-            return
-        allow_origin = origin_header
-
-    # domain in Origin header matches, return appropriate CORS headers:
-    response.headers['Access-Control-Allow-Origin'] = allow_origin
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, If-None-Match'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, DELETE, PUT, OPTIONS'
-    response.headers['Access-Control-Expose-Headers'] = 'X-JWT-Token'
-    response.headers['Access-Control-Max-Age'] = '3600'  # https://damon.ghost.io/killing-cors-preflight-requests-on-a-react-spa/
-
-@app.after_request
-def after_request(response):
-    _add_cors_headers(response)
-    # don't you just hate it when curl output hijacks half of the line? Let's always add newline:
-    response.set_data(response.get_data() + b"\n")
-    #time.sleep(1.0)  # so we can see "loading" signs
+# we are nice to the frontend - we allow call to (only) this path, so that if CORS is misconfigured, frontend can advise on proper solution:
+@app.middleware("http")
+async def status_info_no_cors(request: Request, call_next):
+    url_path = request.url.path
+    response = await call_next(request)
+    if url_path == '/api/status/info':
+        response.headers['access-control-allow-origin'] = '*'
     return response
 
 
-@app.errorhandler(ValidationError)
-@app.errorhandler(jsonschema.exceptions.ValidationError)
-def handle_invalid_usage(error):
-    content_type_header = flask.request.headers.get('Content-Type', None)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_DOMAINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["Content-Type", "Authorization", "If-None-Match"],
+    expose_headers=["X-JWT-Token"],
+    max_age=3600,  # https://damon.ghost.io/killing-cors-preflight-requests-on-a-react-spa/
+)
+
+
+@app.exception_handler(ValidationError)
+@app.exception_handler(jsonschema.exceptions.ValidationError)
+def handle_invalid_usage(request: Request, error: Exception):
+    content_type_header = request.headers.get('content-type', None)
     str_error = error.message if hasattr(error, 'message') else str(error)
     if not content_type_header or content_type_header != 'application/json':
         str_error = "{} - maybe Content-Type header was not set to application/json?".format(str_error)
-    return 'Input validation failed: {}'.format(str_error), 400
-
-
-@app.errorhandler(Exception)
-def handle_error(e):
-    if not isinstance(e, dbutils.DBConnectionError):
-        log.exception(e)
-    code = 500
-    if isinstance(e, HTTPException):
-        code = e.code
-    response = flask.make_response('Unknown exception: {}'.format(str(e)), code)
-    _add_cors_headers(response)  # even if we fail, we should still add CORS headers, or browsers won't display real error status
-    return response
-
-
-def generate_api_docs(filename, api_version, openapi_version):
-    """
-        Generates swagger (openapi) yaml from routes' docstrings (using apispec library).
-    """
-    from apispec import APISpec
-    from apispec_webframeworks.flask import FlaskPlugin
-
-    apidoc = APISpec(
-        title="Grafolean API",
-        version=api_version,
-        openapi_version=openapi_version,
-        plugins=[FlaskPlugin()],
-        info={
-            "description":
-                "> IMPORTANT: API is under development and is **not final yet** - breaking changes might occur.\n\n" \
-                "Grafolean is designed API-first. In other words, every functionality of the system is accessible through the API " \
-                "described below. This allows integration with external systems so that (given the permissions) they too can " \
-                "enter values, automatically modify entities, set up dashboards... Everything that can be done through frontend " \
-                "can also be achieved through API.\n\n" \
-                "This documentation is also available as Swagger/OpenAPI definition: [OAS2](./swagger2.yml) / [OAS3](./swagger3.yml)."
-        }
-    )
-
-    for apidoc_schemas_func in [users_apidoc_schemas, accounts_apidoc_schemas, admin_apidoc_schemas]:
-        for schema_name, schema in apidoc_schemas_func():
-            apidoc.components.schema(schema_name, schema)
-
-    with app.test_request_context():
-        for rule in app.url_map.iter_rules():
-            view = app.view_functions.get(rule.endpoint)
-            apidoc.path(view=view)
-
-    with open(filename, 'w') as openapi_yaml_file:
-        openapi_yaml_file.write(apidoc.to_yaml())
-
-
-def print_usage():
-    print("""
-    This is the Grafolean backend.
-
-    Usage:
-
-        grafolean.py
-            *** DO NOT USE THIS IN PRODUCTION! ***
-            Starts Grafolean backend in *DEVELOPMENT* mode. It is only useful
-            for development purposes.
-
-        grafolean.py generate-api-doc-yaml /tmp/api_docs/openapi.yaml 1.0.0 2.0
-            Auto-generates API documentation in Swagger/OpenAPI format and
-            writes it to the specified output file. Arguments:
-            - output file
-            - API version
-            - OpenAPI version (2.0 or 3.0.2)
-
-            When docs are generated, they can be served via Swagger-UI:
-            $ docker run -d --rm -p 9000:8080 --name swagger-ui \
-              -e SWAGGER_JSON=/api_docs/openapi.yaml \
-              -v /tmp/api_docs:/api_docs swaggerapi/swagger-ui
-            To change CSS one must replace /usr/share/nginx/html/swagger-ui.css.
-    """)
+    return Response(content='Input validation failed: {}'.format(str_error), status_code=400)
 
 
 if __name__ == "__main__":
 
-    if len(sys.argv) > 1:
-        if len(sys.argv) == 5 and sys.argv[1] == 'generate-api-doc-yaml':
-            _, _, output_filename, version, openapi_version = sys.argv
-            generate_api_docs(output_filename, version, openapi_version)
-            sys.exit(0)
-        else:
-            print_usage()
-            sys.exit(1)
-
     log.info("Starting main")
-    app.run()
+    uvicorn.run(app)
