@@ -1,5 +1,5 @@
 # Prepare (build) frontend:
-FROM node:12.22-buster-slim as build-frontend
+FROM arm32v5/debian:buster-slim as build-frontend
 WORKDIR /usr/src/app
 # first copy just package.json & lock, so we don't re-install packages on every change:
 COPY frontend/package.json frontend/package-lock.json ./
@@ -8,7 +8,7 @@ ENV ADBLOCK=yes
 # installing python and build-essential is not needed for x86, but it is mandatory on armv7:
 RUN \
     apt-get update && \
-    apt-get install -q -y python build-essential && \
+    apt-get install -q -y python build-essential nodejs && \
     npm ci
 COPY frontend/. ./
 ARG REACT_APP_BACKEND_ROOT_URL=/api
@@ -19,7 +19,7 @@ RUN npm run build
 RUN rm -rf build/workbox
 
 
-FROM python:3.8-slim-buster as python-requirements
+FROM arm32v5/python:3.8 as python-requirements
 WORKDIR /grafolean/backend
 COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 
@@ -28,7 +28,7 @@ COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 #  - /requirements.txt
 #  - /api-doc.yml
 #  - /grafolean/backend/
-FROM python:3.8-slim-buster as build-backend
+FROM arm32v5/python:3.8 as build-backend
 ARG VERSION="0.0.0"
 WORKDIR /grafolean/backend
 # installing build-essential is not needed for x86, but it is mandatory on armv7:
@@ -51,7 +51,7 @@ RUN \
 
 
 
-FROM python:3.8-slim-buster
+FROM arm32v5/python:3.8
 ARG VERSION
 ARG VCS_REF
 ARG BUILD_DATE
