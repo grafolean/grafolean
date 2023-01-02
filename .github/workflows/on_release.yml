@@ -54,16 +54,17 @@ jobs:
         DOCKER_IMAGE: grafolean/grafolean
         DOCKER_USER: grafolean
         DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        BUILD_PLATFORMS: linux/arm/v7
+        BUILD_PLATFORMS: linux/arm/v6
+        PLATFORM_ID: "armv6"
       run: |
         echo "Available plaftorms: ${{ steps.buildx.outputs.platforms }}"
         echo "Building for plaftorms: $BUILD_PLATFORMS"
         export VERSION=${GITHUB_REF_TAG:10:50}
-        echo "Version is $VERSION"
+        echo "Version is $VERSION-$PLATFORM_ID"
         export LAST_KNOWN_VERSION=`git tag -l --sort=-version:refname "v*.*.*" | grep -v rc | head -n 1 | tr -d '[:space:]'`
         echo "Last known version is $LAST_KNOWN_VERSION"
         cp ./install/docker-compose/Dockerfile .
         docker login -u $DOCKER_USER -p $DOCKER_PASSWORD $DOCKER_REGISTRY
         docker pull "docker.io/$DOCKER_IMAGE" || true
         [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && echo "MARKING AS LATEST!" || echo "NOT MARKING AS LATEST!"
-        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker buildx build --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" -t "docker.io/$DOCKER_IMAGE:latest" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') . || docker buildx build --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg VERSION=$VERSION --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
+        [ "$LAST_KNOWN_VERSION" == "$VERSION" ] && docker buildx build --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION-$PLATFORM_ID" -t "docker.io/$DOCKER_IMAGE:latest-$PLATFORM_ID" --build-arg "VERSION=$VERSION-$PLATFORM_ID" --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') . || docker buildx build --push --platform "$BUILD_PLATFORMS" -t "docker.io/$DOCKER_IMAGE:$VERSION" --build-arg "VERSION=$VERSION-$PLATFORM_ID" --build-arg VCS_REF=$GITHUB_SHA --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') .
