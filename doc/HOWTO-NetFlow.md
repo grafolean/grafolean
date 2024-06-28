@@ -6,9 +6,13 @@ This guide is also available as video ([vimeo](https://vimeo.com/463939591) / [y
 
 #### 1) Installation
 
-To collect data, NetFlow bot needs to be installed and configured. This already happens by default during [installation of Grafolean](https://github.com/grafolean/grafolean#installation). The alternative option is to install NetFlow bot on a [remote machine](https://github.com/grafolean/grafolean-netflow-bot/#install).
+To collect data, NetFlow bot needs to be installed and configured. This already happens by default during [installation of Grafolean](https://github.com/grafolean/grafolean#installation). The alternative option is to install NetFlow bot on a [remote machine](https://github.com/grafolean/grafolean-netflow-bot/#install) and make it send data to Grafolean.
 
-#### 2) Enable (suggested) entity
+#### 2) Sending NetFlow data
+
+Configure your device(s) to send data to Grafolean server. By default, port 2055 UDP is used (use `NETFLOW_PORT` environment variable to change this).
+
+#### 3) Enable (suggested) entity
 
 Grafolean helps with configuration by automatically creating the entities for any NetFlow exporter it receives data from (see "Monitored entities"). Note that it may take up to 2 minutes for the suggestions to appear.
 
@@ -27,7 +31,7 @@ Don't forget to save changes by clicking the `Submit` button.
 
 ![screenshot](NetFlow/enable-netflow.png)
 
-#### 3) View data
+#### 4) View data
 
 Grafolean should now be collecting the data automatically. To view it, create a new Dashboard, but make sure you select "NetFlow" template. This will automatically populate the dashboard with the widgets that are useful for this kind of data. Of course, you can always modify the existing widgets, add new ones (even those unrelated to NetFlow) or remove those that are not needed.
 
