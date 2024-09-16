@@ -34,7 +34,7 @@ RUN \
 # - prepare pip requirements.txt for backend:
 COPY ./backend/Pipfile ./backend/Pipfile.lock /grafolean/backend/
 RUN \
-    pipenv lock -r > /requirements.txt && \
+    pipenv requirements > /requirements.txt && \
     pipenv install --dev
 # - build .py files to .pyc:
 COPY ./backend/ /grafolean/backend/
