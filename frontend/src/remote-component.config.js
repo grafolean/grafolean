@@ -1,5 +1,5 @@
-module.exports = {
-  resolve: {
-    react: require('react'),
-  },
-};
+// module.exports = {
+//   resolve: {
+//     react: require('react'),
+//   },
+// };

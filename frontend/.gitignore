@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/.pnp
+.pnp.js
 
 # testing
 /coverage
@@ -17,5 +19,3 @@
 .env.production.local
 
 npm-debug.log*
-
-extras/
