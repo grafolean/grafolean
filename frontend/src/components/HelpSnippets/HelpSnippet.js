@@ -22,8 +22,8 @@ export default class HelpSnippet extends React.Component {
         ? 'fa-chevron-down'
         : 'fa-chevron-right'
       : this.props.icon
-      ? this.props.icon
-      : 'fa-info-circle';
+        ? this.props.icon
+        : 'fa-info-circle';
     return (
       <div className={`help-snippet frame ${className || ''}`}>
         <h1 onClick={this.toggleOpened}>

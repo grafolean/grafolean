@@ -89,14 +89,8 @@ export default class FetchingFormik extends React.Component {
 
   render() {
     const { editing, resource, afterSubmitRedirectTo } = this.props;
-    const {
-      fetchedFormValues,
-      loading,
-      warnChangedOnServer,
-      afterSubmitUrl,
-      submitted,
-      errorMsg,
-    } = this.state;
+    const { fetchedFormValues, loading, warnChangedOnServer, afterSubmitUrl, submitted, errorMsg } =
+      this.state;
 
     return (
       <>

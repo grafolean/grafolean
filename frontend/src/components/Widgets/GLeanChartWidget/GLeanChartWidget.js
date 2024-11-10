@@ -128,12 +128,8 @@ export class CoreGLeanChartWidget extends React.Component {
     const yAxesCount = new Set(this.state.drawnChartSeries.map(cs => cs.unit)).size;
     const yAxesWidth = yAxesCount * yAxisWidth;
 
-    const toTs = moment()
-      .add(1, 'minute')
-      .unix();
-    const fromTs = moment()
-      .subtract(30, 'minute')
-      .unix();
+    const toTs = moment().add(1, 'minute').unix();
+    const fromTs = moment().subtract(30, 'minute').unix();
     const initialScale = chartWidth / (toTs - fromTs);
     const initialPanX = -fromTs * initialScale;
     const timeIntervalSelectorHeight = 30;
@@ -222,9 +218,7 @@ export class CoreGLeanChartWidget extends React.Component {
                   <TimeIntervalSelector
                     onChange={intervalDuration => {
                       const toTs = moment().unix();
-                      const fromTs = moment()
-                        .subtract(intervalDuration)
-                        .unix();
+                      const fromTs = moment().subtract(intervalDuration).unix();
                       const newScale = chartWidth / (toTs - fromTs);
                       const panX = -fromTs * newScale;
                       setXYScale(panX, 0, newScale);

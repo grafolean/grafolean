@@ -108,14 +108,8 @@ const isFormikForm = WrappedComponent => {
 
     render() {
       const { editing, resource, afterSubmitRedirectTo, ...passThroughProps } = this.props;
-      const {
-        fetchedFormValues,
-        loading,
-        warnChangedOnServer,
-        afterSubmitUrl,
-        submitted,
-        errorMsg,
-      } = this.state;
+      const { fetchedFormValues, loading, warnChangedOnServer, afterSubmitUrl, submitted, errorMsg } =
+        this.state;
 
       return (
         <>

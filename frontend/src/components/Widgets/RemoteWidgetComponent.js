@@ -35,5 +35,5 @@ import React from 'react';
 
 const RemoteWidgetComponent = props => {
   return <div>RemoteWidgetComponent functionality is currently disabled.</div>;
-}
+};
 export default RemoteWidgetComponent;

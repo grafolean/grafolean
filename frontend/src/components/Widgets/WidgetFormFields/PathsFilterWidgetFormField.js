@@ -6,15 +6,8 @@ import './PathsFilterWidgetFormField.scss';
 
 export default class PathsFilterWidgetFormField extends React.Component {
   render() {
-    const {
-      pathFilterName,
-      pathFilterValue,
-      renamingName,
-      renamingValue,
-      onChange,
-      onBlur,
-      sharedValues,
-    } = this.props;
+    const { pathFilterName, pathFilterValue, renamingName, renamingValue, onChange, onBlur, sharedValues } =
+      this.props;
     return (
       <div className="paths-filter-widget-form-field">
         <div className="left-column">

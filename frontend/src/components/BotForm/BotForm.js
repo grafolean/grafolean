@@ -66,8 +66,8 @@ class BotForm extends React.Component {
         ? `accounts/${accountId}/bots/${botId}`
         : `accounts/${accountId}/bots`
       : editing
-      ? `bots/${botId}`
-      : `bots`;
+        ? `bots/${botId}`
+        : `bots`;
     return (
       <BotFormRender
         initialFormValues={{}}

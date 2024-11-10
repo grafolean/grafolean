@@ -265,10 +265,9 @@ class PieChartSvg extends React.Component {
             fill="transparent"
             stroke={color}
             strokeWidth="1"
-            strokeDasharray={`0 ${r * (prevPercent / 100) * Math.PI * 2} ${r *
-              (percent / 100) *
-              Math.PI *
-              2} ${r * Math.PI * 2}`}
+            strokeDasharray={`0 ${r * (prevPercent / 100) * Math.PI * 2} ${
+              r * (percent / 100) * Math.PI * 2
+            } ${r * Math.PI * 2}`}
           />
         ))}
         <circle r="0.6" cx="0" cy="0" fill="#191919" />

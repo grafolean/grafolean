@@ -47,11 +47,13 @@ class WrappedRoute extends React.Component {
           // We need some className that will allow us to write CSS rules for specific pages if needed. In theory
           // we could use `Component.name` here, but when we build for production, names are obfuscated
           <div
-            className={`page ${pageClassName ||
+            className={`page ${
+              pageClassName ||
               rest.path
                 .replace(/[^a-z0-9A-Z]+/g, ' ')
                 .trim()
-                .replace(/[ ]/g, '-')}`}
+                .replace(/[ ]/g, '-')
+            }`}
           >
             {/* we need information about all of the entities available live, all the time, so that we can show nice entity names dynamically: */}
             <AccountEntitiesUpdater />

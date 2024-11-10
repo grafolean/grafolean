@@ -105,15 +105,8 @@ const isForm = WrappedComponent => {
 
     render() {
       const { editing, resource, afterSubmitRedirectTo, ...passThroughProps } = this.props;
-      const {
-        formValues,
-        loading,
-        posting,
-        valid,
-        warnChangedOnServer,
-        submitted,
-        afterSubmitUrl,
-      } = this.state;
+      const { formValues, loading, posting, valid, warnChangedOnServer, submitted, afterSubmitUrl } =
+        this.state;
 
       if (submitted) {
         return <Redirect to={afterSubmitUrl || afterSubmitRedirectTo || '/'} />;

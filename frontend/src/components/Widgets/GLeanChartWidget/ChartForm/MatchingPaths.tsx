@@ -158,8 +158,8 @@ class MatchingPaths extends React.Component<MatchingPathsProps, any> {
       match: regexGroupPatterns[i].endsWith('+')
         ? this.MATCH_WILDCARD
         : regexGroupPatterns[i] === '.*'
-        ? this.MATCH_RESIDUAL
-        : this.MATCH_EXACT,
+          ? this.MATCH_RESIDUAL
+          : this.MATCH_EXACT,
     }));
   }
 

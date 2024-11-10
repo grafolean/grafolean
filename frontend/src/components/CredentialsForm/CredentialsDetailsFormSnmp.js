@@ -175,8 +175,8 @@ export default class CredentialsDetailsFormSnmp extends React.Component {
           {version === 'snmpv1' || version === 'snmpv2c'
             ? this.renderSnmpV12()
             : version === 'snmpv3'
-            ? this.renderSnmpV3()
-            : null}
+              ? this.renderSnmpV3()
+              : null}
         </div>
       </div>
     );
