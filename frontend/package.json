@@ -5,7 +5,6 @@
   "repository": "https://github.com/grafolean/grafolean/",
   "private": true,
   "dependencies": {
-    "@paciolan/remote-component": "^2.13.0",
     "formik": "^2.4.6",
     "lodash": "^4.17.21",
     "mathjs": "^13.2.1",
