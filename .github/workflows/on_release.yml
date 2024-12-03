@@ -39,11 +39,11 @@ jobs:
         cat /tmp/tags.json | jq '[.[] | select(.name | test("^v[0-9]+[.][0-9]+[.][0-9]+$")) | { version: .name, changelog: .body, created_at: .created_at }]' > frontend/src/CHANGELOG.json
 
 
-    # - name: Frontend - linter
-    #   run: |
-    #     cd frontend
-    #     npm ci
-    #     npm run lint
+    - name: Frontend - linter
+      run: |
+        cd frontend
+        npm ci
+        npm run lint
 
 
     - name: Deploy Grafolean to Docker Hub
