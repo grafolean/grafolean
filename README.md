@@ -1,4 +1,4 @@
-<p align="center"><a href="https://grafolean.com/"><img src="frontend/public/logo.svg" alt="Grafolean" width="230" height="99" /></a></p>
+<p align="center"><a href="https://github.com/grafolean/grafolean/"><img src="frontend/public/logo.svg" alt="Grafolean" width="230" height="99" /></a></p>
 
 <h3 align="center">Easy to use monitoring system</h3>
 
@@ -15,9 +15,7 @@
 
 ## Highlights
 
-- demo: https://app.grafolean.com/ (use credentials `demo` / `demo`)
-- self-hosted or [hosted service](https://app.grafolean.com/)
-- [API-first](https://app.grafolean.com/api-doc/)
+- API-first
 - built-in or remote agents ("bots")
 - UI-controlled agents (bots) for [NetFlow](doc/HOWTO-NetFlow.md), ICMP ping and SNMP (SNMPv1, SNMPv2 and SNMPv3)
 - uses PostgreSQL / TimescaleDB as data storage (easy data maintenance)
@@ -115,7 +113,6 @@ We do our best to make sure no 3rd party receives any data from your installatio
 Frontend uses [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) to disallow loading of resources from anywhere except from the host itself. The limit also applies to external plugins.
 
 The backend should make no requests to the external services, except:
-- `https://app.grafolean.com/` - reporting telemetry if enabled (see below), and
 - `https://github.com/` - downloading [external plugins](https://github.com/grafolean/widget-plugin-template) when admin installs / upgrades them.
 
 Note that this list might be updated in the future, however, we will make an effort to avoid any tracking that is not strictly necessary.
