@@ -61,7 +61,7 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_REPLY_TO=${MAIL_REPLY_TO}
       - ENABLE_SIGNUP=${ENABLE_SIGNUP:-false}
-      - TELEMETRY=${TELEMETRY}
+      - TELEMETRY=none
     ports:
       - "5000:80"
     networks:

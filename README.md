@@ -119,7 +119,7 @@ Note that this list might be updated in the future, however, we will make an eff
 
 ### Telemetry
 
-Telemetry can be disabled by setting `TELEMETRY=none` in the `.env` file when starting Grafolean (as indicated in `.env.example`). The default telemetry is `basic` and allows us to determine active installations of the app (app start, daily "ping"). We would appreciate if you leave the telemetry enabled as it helps us to focus our efforts on what matters the most, but we understand if you have concerns about it and decide to turn it off. We will not allow 3rd parties access to telemetry data, but we might publish aggregated data through public channels (blogs,...).
+Telemetry should be disabled by setting `TELEMETRY=none` in the `.env` file when starting Grafolean (as indicated in `.env.example`), as the telemetry endpoint is no longer active.
 
 ## License
 
